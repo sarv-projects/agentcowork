@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="EveryAIOS — agentic desktop OS. Browser, office, code, shell — one cockpit, one timeline, one approval at a time."
+      content="AgentCowork — agentic desktop OS. Browser, office, code, shell — one cockpit, one timeline, one approval at a time."
     />
-    <title>EveryAIOS — Agentic Desktop OS</title>
+    <title>AgentCowork — Agentic Desktop OS</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -27,12 +27,26 @@
     <script>
       (function () {
         var d = document.documentElement
-        var P = 'everyaios.settings.'
+        var P = 'agentcowork.settings.'
+        // DEC-053: the legacy `everyaios.*` spellings are honored so a stored
+        // choice survives the rename (promotion to the new key happens when
+        // the theme provider mounts — see `storage-compat.ts`).
+        function legacy(key) {
+          return key.indexOf('agentcowork.') === 0 ? 'everyaios.' + key.slice('agentcowork.'.length) : null
+        }
         function read(key) {
           var raw = null
           try {
             raw = localStorage.getItem(key)
             if (raw === null) raw = localStorage.getItem(P + key)
+            if (raw === null) {
+              var lk = legacy(key)
+              if (lk !== null) raw = localStorage.getItem(lk)
+            }
+            if (raw === null) {
+              var lp = legacy(P + key)
+              if (lp !== null) raw = localStorage.getItem(lp)
+            }
           } catch (e) { return null }
           if (raw === null || raw === '') return null
           // Values are plain text; the quoted form is the JSON era, still read
@@ -43,7 +57,7 @@
           return raw
         }
         try {
-          var mode = read('everyaios.theme')
+          var mode = read('agentcowork.theme')
           if (mode !== 'light' && mode !== 'dark' && mode !== 'system') mode = 'system'
           var dark = mode === 'dark'
           if (mode === 'system') {
@@ -54,7 +68,7 @@
           d.classList.add(dark ? 'dark' : 'light')
 
           var accents = ['blue', 'sky', 'emerald', 'violet', 'amber', 'rose', 'teal']
-          var accent = read('everyaios.accent')
+          var accent = read('agentcowork.accent')
           d.setAttribute('data-accent', accents.indexOf(accent) >= 0 ? accent : 'blue')
 
           var scale = read(P + 'fontScale')

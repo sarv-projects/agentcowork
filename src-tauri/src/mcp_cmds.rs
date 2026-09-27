@@ -1,9 +1,9 @@
 //! P2.3 / P6.x — MCP tool-catalog Tauri command. Exposes the real 42-tool
-//! registry (`everyaios-mcp`: 37 browser tools + 5 storage tools) to the
+//! registry (`agentcowork-mcp`: 37 browser tools + 5 storage tools) to the
 //! Connectors panel, so the "what tools does this OS ship" surface is live
 //! data from the crate, not invented UI copy.
 
-use everyaios_mcp::{all_tools, ToolDef};
+use agentcowork_mcp::{all_tools, ToolDef};
 use serde::Serialize;
 use std::io::{Read, Write};
 use std::net::TcpListener;
@@ -36,8 +36,8 @@ pub fn mcp_catalog() -> McpCatalog {
     let tools: Vec<&ToolDef> = all_tools();
     McpCatalog {
         total: tools.len(),
-        browser: everyaios_mcp::BROWSER_TOOLS.len(),
-        storage: everyaios_mcp::STORAGE_TOOLS.len(),
+        browser: agentcowork_mcp::BROWSER_TOOLS.len(),
+        storage: agentcowork_mcp::STORAGE_TOOLS.len(),
         read_only: tools.iter().filter(|t| t.read_only).count(),
         open_world: tools.iter().filter(|t| t.open_world).count(),
         tools: tools
@@ -159,9 +159,9 @@ pub struct PendingRemoteCall {
 /// server under `<data_dir>/mcp-scratch/`, so the bwrap bind exists before the
 /// spawn and each server's writes stay in its own box.
 fn mcp_scratch_dir(name: &str) -> std::path::PathBuf {
-    everyaios_core::default_data_dir()
+    agentcowork_core::default_data_dir()
         .join("mcp-scratch")
-        .join(everyaios_mcp::attach::sanitize_attach_name(name).unwrap_or_else(|| "default".into()))
+        .join(agentcowork_mcp::attach::sanitize_attach_name(name).unwrap_or_else(|| "default".into()))
 }
 
 fn call_args_hash(parts: &[&str]) -> String {
@@ -177,7 +177,7 @@ fn call_args_hash(parts: &[&str]) -> String {
 /// count, scopes desc) to `<data_dir>/mcp_servers.json` so attach state and
 /// disconnects survive a shell restart. Atomic tmp+rename; best-effort.
 fn persist_attached(state: &crate::AppState) -> Result<(), String> {
-    let path = everyaios_core::default_data_dir().join("mcp_servers.json");
+    let path = agentcowork_core::default_data_dir().join("mcp_servers.json");
     let attached = state.mcp_servers.lock().map_err(|e| e.to_string())?;
     let json = serde_json::to_vec_pretty(&*attached).map_err(|e| format!("encode: {e}"))?;
     drop(attached);
@@ -192,7 +192,7 @@ fn persist_attached(state: &crate::AppState) -> Result<(), String> {
 /// (name/transport/desc) the user can re-attach or remove, never a faked
 /// live connection.
 pub fn load_attached_servers() -> std::collections::HashMap<String, McpServerRow> {
-    let path = everyaios_core::default_data_dir().join("mcp_servers.json");
+    let path = agentcowork_core::default_data_dir().join("mcp_servers.json");
     let Ok(bytes) = std::fs::read(&path) else {
         return Default::default();
     };
@@ -219,7 +219,7 @@ pub fn load_attached_servers() -> std::collections::HashMap<String, McpServerRow
 pub fn mcp_servers(state: tauri::State<'_, crate::AppState>) -> Result<Vec<McpServerRow>, String> {
     let catalog = mcp_catalog();
     let mut rows = vec![McpServerRow {
-        name: "EveryAIOS native (built-in)".into(),
+        name: "AgentCowork native (built-in)".into(),
         status: "connected".into(),
         transport: "native".into(),
         tools: catalog.total,
@@ -275,7 +275,7 @@ pub struct StoreRow {
 
 #[tauri::command]
 pub fn store_catalog() -> Vec<StoreRow> {
-    use everyaios_mcp::{StoreIndex, StoreKind};
+    use agentcowork_mcp::{StoreIndex, StoreKind};
     StoreIndex::bundled()
         .entries()
         .into_iter()
@@ -289,9 +289,9 @@ pub fn store_catalog() -> Vec<StoreRow> {
             description: e.description.clone(),
             url: e.url.clone(),
             flow: match e.flow {
-                everyaios_mcp::ConnectFlow::Pkce => "pkce".into(),
-                everyaios_mcp::ConnectFlow::DeviceCode => "device-code".into(),
-                everyaios_mcp::ConnectFlow::ApiKey => "api-key".into(),
+                agentcowork_mcp::ConnectFlow::Pkce => "pkce".into(),
+                agentcowork_mcp::ConnectFlow::DeviceCode => "device-code".into(),
+                agentcowork_mcp::ConnectFlow::ApiKey => "api-key".into(),
             },
             vault_provider: e.vault_provider.clone(),
             tool_hint: e.tool_hint,
@@ -315,14 +315,14 @@ pub fn mcp_attach_request(
     command: String,
     args: Vec<String>,
 ) -> Result<serde_json::Value, String> {
-    use everyaios_guard::{Operation as GuardOp, RiskLevel};
+    use agentcowork_guard::{Operation as GuardOp, RiskLevel};
     // P51.17 — name sanitize before anything else: the name is bound into the
     // ticket args-hash and rendered on the approval card (`mcp:{name}`), so a
     // hostile name must never reach either surface. Reject, never rewrite.
-    let name = everyaios_mcp::sanitize_attach_name(&name)
+    let name = agentcowork_mcp::sanitize_attach_name(&name)
         .ok_or_else(|| "invalid MCP server name (letters/digits/-/_/., 1-64 chars)".to_string())?;
     let args_hash = call_args_hash(&["mcp.attach", &name, &command, &args.join("\u{1f}")]);
-    let decision = everyaios_guard::DecisionPackage::new(format!(
+    let decision = agentcowork_guard::DecisionPackage::new(format!(
         "Attach MCP server `{name}` (runs {command} {})",
         args.join(" ")
     ))
@@ -342,7 +342,7 @@ pub fn mcp_attach_request(
         0,
     );
     match verdict {
-        everyaios_core::GuardDecision::Allow { ticket_id } => {
+        agentcowork_core::GuardDecision::Allow { ticket_id } => {
             let approval_nonce = guard.approval_nonce(&ticket_id).unwrap_or("").to_string();
             Ok(serde_json::json!({
                 "action": "allow",
@@ -350,7 +350,7 @@ pub fn mcp_attach_request(
                 "approvalNonce": approval_nonce,
             }))
         }
-        everyaios_core::GuardDecision::Ask { ticket_id } => {
+        agentcowork_core::GuardDecision::Ask { ticket_id } => {
             let approval_nonce = guard.approval_nonce(&ticket_id).unwrap_or("").to_string();
             Ok(serde_json::json!({
                 "action": "ask",
@@ -358,7 +358,7 @@ pub fn mcp_attach_request(
                 "approvalNonce": approval_nonce,
             }))
         }
-        everyaios_core::GuardDecision::Block { reason } => {
+        agentcowork_core::GuardDecision::Block { reason } => {
             Err(format!("MCP attach blocked: {reason}"))
         }
     }
@@ -371,10 +371,10 @@ pub fn mcp_attach_request(
 /// child down and fail honestly rather than record a connected row with zero
 /// tools.
 pub fn handshake_attached(
-    server: &mut everyaios_mcp::attach::AttachedServer,
+    server: &mut agentcowork_mcp::attach::AttachedServer,
     name: &str,
-) -> Result<(Vec<String>, everyaios_mcp::ToolCatalog), String> {
-    let mut catalog = everyaios_mcp::ToolCatalog::new();
+) -> Result<(Vec<String>, agentcowork_mcp::ToolCatalog), String> {
+    let mut catalog = agentcowork_mcp::ToolCatalog::new();
     let names = server
         .attach(&mut catalog, &format!("mcp:{name}"))
         .map_err(|e| format!("handshake failed ({e}) — not an MCP server?"))?;
@@ -391,13 +391,13 @@ pub fn handshake_attached(
 /// user-stopped, command persisted), first `tools/call` brings it back.
 struct LoopExternal {
     live: std::sync::Arc<
-        std::sync::Mutex<std::collections::HashMap<String, everyaios_mcp::attach::AttachedServer>>,
+        std::sync::Mutex<std::collections::HashMap<String, agentcowork_mcp::attach::AttachedServer>>,
     >,
     attached: std::sync::Arc<std::sync::Mutex<std::collections::HashMap<String, McpServerRow>>>,
     server: String,
 }
 
-impl everyaios_core::ExternalToolBackend for LoopExternal {
+impl agentcowork_core::ExternalToolBackend for LoopExternal {
     fn call(&self, tool_id: &str, args: &serde_json::Value) -> Result<serde_json::Value, String> {
         {
             let mut live = self.live.lock().map_err(|e| e.to_string())?;
@@ -436,12 +436,12 @@ fn spawn_named_stdio(
     name: &str,
     command: &str,
     args: &[String],
-) -> Result<everyaios_mcp::attach::AttachedServer, String> {
-    use everyaios_mcp::attach::AttachedServer;
+) -> Result<agentcowork_mcp::attach::AttachedServer, String> {
+    use agentcowork_mcp::attach::AttachedServer;
     let scratch = mcp_scratch_dir(name).to_string_lossy().into_owned();
     let arg_refs: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
     AttachedServer::spawn_with_posture(
-        everyaios_mcp::attach::SandboxPosture::preferred(),
+        agentcowork_mcp::attach::SandboxPosture::preferred(),
         &scratch,
         "allow",
         command,
@@ -471,7 +471,7 @@ pub fn mcp_attach_commit(
     args: Vec<String>,
     ticket_id: String,
 ) -> Result<serde_json::Value, String> {
-    let name = everyaios_mcp::sanitize_attach_name(&name)
+    let name = agentcowork_mcp::sanitize_attach_name(&name)
         .ok_or_else(|| "invalid MCP server name (letters/digits/-/_/., 1-64 chars)".to_string())?;
     let args_hash = call_args_hash(&["mcp.attach", &name, &command, &args.join("\u{1f}")]);
     {
@@ -508,7 +508,7 @@ pub fn mcp_attach_commit(
     // same Guard-2 ticket path as a native tool. Without a live relay there is
     // no agent loop to register into yet; the row still records the honest
     // handshake result and `agentVisible` says which case this was.
-    let discovered_tools: Vec<everyaios_core::ExternalTool> =
+    let discovered_tools: Vec<agentcowork_core::ExternalTool> =
         discovered.external_tools().cloned().collect();
     let label = format!("mcp:{name}");
     let mut registered: Vec<String> = Vec::new();
@@ -576,7 +576,7 @@ pub fn mcp_attach_commit(
 pub fn mcp_external_tools(
     state: tauri::State<'_, crate::AppState>,
 ) -> Result<serde_json::Value, String> {
-    let native = everyaios_mcp::all_tools().len();
+    let native = agentcowork_mcp::all_tools().len();
     // name → `mcp:<server>` from the attached rows (native row excluded).
     let mut origin: std::collections::HashMap<String, String> = std::collections::HashMap::new();
     let mut registered_names = 0usize;
@@ -696,7 +696,7 @@ pub fn mcp_refresh(state: tauri::State<'_, crate::AppState>) -> Result<serde_jso
 /// P51.18 — AnythingLLM Stop: kill the child, keep identity + command.
 #[tauri::command]
 pub fn mcp_stop(state: tauri::State<'_, crate::AppState>, name: String) -> Result<bool, String> {
-    if name == "EveryAIOS native (built-in)" {
+    if name == "AgentCowork native (built-in)" {
         return Err("the native catalog cannot be stopped".into());
     }
     let removed_live = state
@@ -785,7 +785,7 @@ fn bring_up_stdio(
         let mut live = state.mcp_live.lock().map_err(|e| e.to_string())?;
         live.insert(name.to_string(), server);
     }
-    let discovered_tools: Vec<everyaios_core::ExternalTool> =
+    let discovered_tools: Vec<agentcowork_core::ExternalTool> =
         discovered.external_tools().cloned().collect();
     let label = format!("mcp:{name}");
     let mut registered: Vec<String> = Vec::new();
@@ -829,8 +829,8 @@ fn bring_up_stdio(
 /// `mcp_connect_start` browser-open and the loopback callback).
 #[derive(Debug, Clone)]
 pub struct RemoteFlowState {
-    pub target: everyaios_mcp::RemoteTarget,
-    pub flow: everyaios_mcp::PkceFlow,
+    pub target: agentcowork_mcp::RemoteTarget,
+    pub flow: agentcowork_mcp::PkceFlow,
     pub redirect_uri: String,
 }
 
@@ -842,7 +842,7 @@ pub struct RemoteFlowState {
 /// another. The record is a pure function of the bundled index, so it is read
 /// on demand rather than cached in a second store.
 fn store_remote(store_id: &str) -> Result<(String, bool), String> {
-    let store = everyaios_mcp::StoreIndex::bundled();
+    let store = agentcowork_mcp::StoreIndex::bundled();
     let entry = store
         .get(store_id)
         .ok_or_else(|| format!("store entry `{store_id}` not found"))?;
@@ -863,12 +863,12 @@ fn store_url(store_id: &str) -> Result<String, String> {
 /// runtime-only flag would be lost on restart and would silently re-pin the
 /// origin to a wrong era, which is exactly the failure the escape hatch exists
 /// to survive.
-fn remote_target(store_id: &str) -> Result<everyaios_mcp::RemoteTarget, String> {
+fn remote_target(store_id: &str) -> Result<agentcowork_mcp::RemoteTarget, String> {
     let (url, force_legacy) = store_remote(store_id)?;
-    everyaios_mcp::connect_with_options(
+    agentcowork_mcp::connect_with_options(
         &url,
-        &everyaios_mcp::UreqTransport,
-        everyaios_mcp::ConnectOptions { force_legacy },
+        &agentcowork_mcp::UreqTransport,
+        agentcowork_mcp::ConnectOptions { force_legacy },
     )
     .map_err(|e| e.to_string())
 }
@@ -891,13 +891,13 @@ fn effective_era(store_id: &str) -> serde_json::Value {
     };
     if force_legacy {
         return serde_json::json!({
-            "era": everyaios_mcp::LEGACY_PROTOCOL_VERSION,
+            "era": agentcowork_mcp::LEGACY_PROTOCOL_VERSION,
             "eraSource": "forced",
         });
     }
-    let (era, source) = match everyaios_mcp::cached_era(&everyaios_mcp::origin_of(&url)) {
+    let (era, source) = match agentcowork_mcp::cached_era(&agentcowork_mcp::origin_of(&url)) {
         Some(cached) => (cached.version(), "cached"),
-        None => (everyaios_mcp::MODERN_PROTOCOL_VERSION, "default"),
+        None => (agentcowork_mcp::MODERN_PROTOCOL_VERSION, "default"),
     };
     serde_json::json!({ "era": era, "eraSource": source })
 }
@@ -917,7 +917,7 @@ pub fn mcp_connect_start(
     let listener = TcpListener::bind("127.0.0.1:0").map_err(|e| e.to_string())?;
     let port = listener.local_addr().map_err(|e| e.to_string())?.port();
     let redirect = format!("http://127.0.0.1:{port}/oauth/callback");
-    let flow = everyaios_mcp::build_authorize_url(&target, &redirect).map_err(|e| e.to_string())?;
+    let flow = agentcowork_mcp::build_authorize_url(&target, &redirect).map_err(|e| e.to_string())?;
 
     let flow_state = RemoteFlowState {
         target: target.clone(),
@@ -945,11 +945,11 @@ pub fn mcp_connect_start(
             let (code, st) = parse_callback(&req);
             let body = if let (Some(code), Some(st)) = (code, st) {
                 if st == flow_c.state {
-                    match everyaios_mcp::exchange_code(
+                    match agentcowork_mcp::exchange_code(
                                 &target_c,
                                 &flow_c,
                                 &code,
-                                &everyaios_mcp::UreqTransport,
+                                &agentcowork_mcp::UreqTransport,
                             ) {
                         Ok(tok) => {
                             if let Ok(mut t) = tokens.lock() {
@@ -958,7 +958,7 @@ pub fn mcp_connect_start(
                             // Persist at rest (item: remote tokens in vault keyring),
                             // so a restart keeps the connection. Best-effort.
                             if let Ok(v) = vault.lock() {
-                                let _ = everyaios_vault::oauth::OAuthManager::new(&v)
+                                let _ = agentcowork_vault::oauth::OAuthManager::new(&v)
                                     .store_connector_token(
                                         "remote-mcp",
                                         &store_c,
@@ -968,7 +968,7 @@ pub fn mcp_connect_start(
                                         &tok.scope,
                                     );
                             }
-                            "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<html><body>EveryAIOS connected. You can close this tab.</body></html>".to_string()
+                            "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<html><body>AgentCowork connected. You can close this tab.</body></html>".to_string()
                         }
                         Err(_) => {
                             "HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\n\r\noauth exchange failed".to_string()
@@ -1012,7 +1012,7 @@ pub fn remote_access_token(
     }
     // Persisted connection from a previous run.
     if let Ok(v) = state.vault.lock() {
-        let mgr = everyaios_vault::oauth::OAuthManager::new(&v);
+        let mgr = agentcowork_vault::oauth::OAuthManager::new(&v);
         if let Ok(Some(t)) = mgr.load_connector_token("remote-mcp", store_id) {
             return Some(t);
         }
@@ -1059,14 +1059,14 @@ pub fn mcp_remote_call(
         let target = remote_target(&store_id)?;
         let token = remote_access_token(&state, &store_id)
             .ok_or_else(|| format!("`{store_id}` is not connected"))?;
-        let http = everyaios_mcp::UreqTransport;
-        let resp = everyaios_mcp::rpc(&target, &token, &method, params, &http)
+        let http = agentcowork_mcp::UreqTransport;
+        let resp = agentcowork_mcp::rpc(&target, &token, &method, params, &http)
             .map_err(|e| e.to_string())?;
         return Ok(resp);
     }
 
     // Request half — Guard-2 ticket over the exact (server, tool, arguments).
-    use everyaios_guard::{Operation as GuardOp, RiskLevel};
+    use agentcowork_guard::{Operation as GuardOp, RiskLevel};
     let tool = params
         .get("name")
         .and_then(|n| n.as_str())
@@ -1080,7 +1080,7 @@ pub fn mcp_remote_call(
         &params.to_string(),
     ]);
     let decision =
-        everyaios_guard::DecisionPackage::new(format!("Remote MCP call: {tool} on {store_id}"))
+        agentcowork_guard::DecisionPackage::new(format!("Remote MCP call: {tool} on {store_id}"))
             .with_risk(RiskLevel::High)
             .with_network(vec![url]);
     let mut guard = state.guard_service.lock().map_err(|e| e.to_string())?;
@@ -1094,8 +1094,8 @@ pub fn mcp_remote_call(
         0,
     );
     match verdict {
-        everyaios_core::GuardDecision::Allow { ticket_id }
-        | everyaios_core::GuardDecision::Ask { ticket_id } => {
+        agentcowork_core::GuardDecision::Allow { ticket_id }
+        | agentcowork_core::GuardDecision::Ask { ticket_id } => {
             let approval_nonce = guard.approval_nonce(&ticket_id).unwrap_or("").to_string();
             state
                 .mcp_pending_calls
@@ -1116,7 +1116,7 @@ pub fn mcp_remote_call(
                 "approvalNonce": approval_nonce,
             }))
         }
-        everyaios_core::GuardDecision::Block { reason } => {
+        agentcowork_core::GuardDecision::Block { reason } => {
             Err(format!("remote MCP call blocked: {reason}"))
         }
     }
@@ -1146,8 +1146,8 @@ pub fn mcp_remote_call_commit(
     let target = remote_target(&pending.store_id)?;
     let token = remote_access_token(&state, &pending.store_id)
         .ok_or_else(|| format!("`{}` is not connected", pending.store_id))?;
-    let http = everyaios_mcp::UreqTransport;
-    let resp = everyaios_mcp::rpc(
+    let http = agentcowork_mcp::UreqTransport;
+    let resp = agentcowork_mcp::rpc(
         &target,
         &token,
         &pending.method,
@@ -1193,9 +1193,9 @@ pub fn mcp_remote_tools(
 ) -> Result<Vec<RemoteToolInfo>, String> {
     let token = remote_access_token(&state, &store_id)
         .ok_or_else(|| format!("`{store_id}` is not connected"))?;
-    let http = everyaios_mcp::UreqTransport;
+    let http = agentcowork_mcp::UreqTransport;
     let target = remote_target(&store_id)?;
-    let resp = everyaios_mcp::rpc(&target, &token, "tools/list", serde_json::json!({}), &http)
+    let resp = agentcowork_mcp::rpc(&target, &token, "tools/list", serde_json::json!({}), &http)
         .map_err(|e| e.to_string())?;
     let tools = resp
         .get("result")
@@ -1256,7 +1256,7 @@ mod tests {
     #[test]
     fn handshake_rejects_a_non_mcp_command() {
         let (command, args) = non_mcp_fixture();
-        let mut server = everyaios_mcp::attach::AttachedServer::spawn(command, args)
+        let mut server = agentcowork_mcp::attach::AttachedServer::spawn(command, args)
             .unwrap_or_else(|e| panic!("`{command}` must be spawnable on this platform: {e}"));
         let err = handshake_attached(&mut server, "notmcp").unwrap_err();
         assert!(
@@ -1333,12 +1333,12 @@ mod tests {
     /// The reconciled external catalog never shadows a native tool name.
     #[test]
     fn external_catalog_never_shadows_native_names() {
-        let mut catalog = everyaios_mcp::ToolCatalog::new();
-        let native = everyaios_mcp::all_tools()
+        let mut catalog = agentcowork_mcp::ToolCatalog::new();
+        let native = agentcowork_mcp::all_tools()
             .first()
             .map(|t| t.name.to_string())
             .expect("native catalog is non-empty");
-        let registered = catalog.register(everyaios_mcp::ExternalTool {
+        let registered = catalog.register(agentcowork_mcp::ExternalTool {
             name: native.clone(),
             description: "hostile shadow".into(),
             input_schema: serde_json::json!({}),

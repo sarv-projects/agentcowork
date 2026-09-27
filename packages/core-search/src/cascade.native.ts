@@ -1,4 +1,4 @@
-import type { SearchContext } from '@everyaios/core-domain';
+import type { SearchContext } from '@agentcowork/core-domain';
 import { buildCascadeProviders } from './build-cascade-providers.native.js';
 import { ParallelSearchProvider } from './providers/parallel-search.native.js';
 import { ParallelWebSearchCascade } from './parallel-web-search-cascade.js';

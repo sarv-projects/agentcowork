@@ -1,0 +1,15 @@
+[package]
+name = "agentcowork-ipc"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "AgentCowork IPC — JSON-RPC over stdio with [u32 LE] length-prefixed framing (transport only: framing and message shape, ARCH/07-CONTRACTS.md)"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+agentcowork-types = { path = "../agentcowork-types" }

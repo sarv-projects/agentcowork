@@ -3,8 +3,8 @@
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P2).
 > **P7 pass (2026-09-26):** line-checked; requirements seeded (`REQ-CTX-*`, Requirements section).
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
-> **Core idea (DEC-007):** *Context is a platform capability; context control is an agent capability.* Core answers **“what context exists?”**; Agent X answers **“what should the model see right now?”**
-> **Dependencies:** `10-KERNEL`, `17-MEMORY`, `25-FILES`, `26-CODE`, `21-WORLD-MODEL`, `29-ARTIFACTS`, `30-EVENTS`, `11-WORK` (sessions), `18-MODEL-ROUTING` (windows/tokenizers), `12-TRUST` (sensitivity/projections), `15-AGENT-X` (control side).
+> **Core idea (DEC-007):** *Context is a platform capability; context control is an agent capability.* Core answers **“what context exists?”**; the bound engine answers **“what should the model see right now?”**
+> **Dependencies:** `10-KERNEL`, `17-MEMORY`, `25-FILES`, `26-CODE`, `21-WORLD-MODEL`, `29-ARTIFACTS`, `30-EVENTS`, `11-WORK` (sessions), `18-MODEL-ROUTING` (windows/tokenizers), `12-TRUST` (sensitivity/projections), `15-AGENT-PLANE` (control side).
 > **Evidence:** `ARCHIVE/v1-research/agent-harness-verification.md` §A1/§A2/§C1/§C2/§E1/§E2 · `ARCHIVE/v1-research/memory.md` §4 · product-owner brief. Key decisions: DEC-007, DEC-015, DEC-019, DEC-027, DEC-045, INV-08, INV-22.
 
 ## 1. The two-layer split
@@ -22,9 +22,9 @@ One service surface that fronts the context **sources** — it never assembles p
 
 Rules: references over copies; every source is read-only through this service (INV-08); sensitivity filtering happens here **and** is enforced again at Trust (`12`). **Retrieval ownership (C-09):** `context.search` and the `27` search plane return refs + bounded snippets for user/agent search; the **injection** path is `memory.recall` (`17` §6) — each path has exactly one scoring owner and neither re-ranks the other's results.
 
-### 1.2 Agent context control — “what the model sees now” (owned by Agent X)
+### 1.2 Agent context control — “what the model sees now” (owned by the bound engine)
 `assemble` · `estimateBudget` · `select` · `prune` · `compact` · `rebuild` · `pin` · `exclude`.
-Only Agent X (and every external agent for its own turn) owns this intelligence; different agents may use different strategies (`15`).
+Only the bound engine (every agent, for its own turn) owns this intelligence; different agents may use different strategies (`15`).
 
 ### 1.3 Context projection for external agents (DEC-009)
 A scoped slice — workspace root, relevant rules, RepoMap, relevant files, git status, recent task history, relevant artifacts, relevant test failures — never the substrate, never other projects. Contract in `32-CHANNELS`; enforcement in `12-TRUST`.
@@ -129,10 +129,10 @@ Retrieve (search/snapshot) → Select/Rank → Budget → Prune → Checkpoint �
 
 ## 12. Open questions (`OQ-CTX-*`)
 
-1. Provider-native compaction: which providers adopt it, behind capability detection and the DEC-045 rules (a verified shipping reference exists — Codex remote compaction v2); ties OQ-AX-06.
+1. Provider-native compaction: which providers adopt it, behind capability detection and the DEC-045 rules (a verified shipping reference exists — Codex remote compaction v2); ties OQ-AGENT-06.
 2. Default `buffer`/`keep`/`reserve` per model class — absolute floors vs percent-of-window resolution (small local models need different constants).
 3. Tokenizer strategy: per-provider tokenizers vs conservative estimation (ties `18`).
-4. `fork_context` default policy per worker role (ties OQ-AX-02).
+4. `fork_context` default policy per worker role (ties OQ-AGENT-02).
 5. Context Inspector scope for v1 vs v1.5 (UI tie).
 6. Hook surface stability: which pre/post-compact hooks are stable plugin API vs experimental.
 

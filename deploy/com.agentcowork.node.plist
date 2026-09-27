@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- AgentCowork headless executor node — launchd unit (P40.1, macOS).
+     Install:
+       cp deploy/com.agentcowork.node.plist ~/Library/LaunchAgents/
+       launchctl load ~/Library/LaunchAgents/com.agentcowork.node.plist
+     The node runs the same binary headless: core + B7 scheduler (inside the
+     Bun-compiled coordinator) + engines; no tray/UI. Guard-2-required steps
+     park as pending and surface on the control plane. -->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.agentcowork.node</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/agentcowork-core</string>
+        <string>--headless</string>
+        <string>--coordinator-bin</string>
+        <string>/usr/local/bin/coordinator</string>
+    </array>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>AGENTCOWORK_HOME</key>
+        <string>/usr/local/var/agentcowork</string>
+        <key>EVERYAIOS_HOME</key>
+        <string>/usr/local/var/agentcowork</string>
+    </dict>
+
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+    <key>StandardOutPath</key>
+    <string>/usr/local/var/log/agentcowork-node.log</string>
+    <key>StandardErrorPath</key>
+    <string>/usr/local/var/log/agentcowork-node.err.log</string>
+</dict>
+</plist>

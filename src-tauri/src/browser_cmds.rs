@@ -1,6 +1,6 @@
 //! P11.5.3 — browse view over a real CDP session. `browser_start` spawns a
 //! headless Chrome (chrome-for-testing fallback), connects through
-//! `everyaios-cdp`, attaches the first page target, and holds the session in
+//! `agentcowork-cdp`, attaches the first page target, and holds the session in
 //! `AppState.browser`. The UI drives it with `browser_navigate` /
 //! `browser_snapshot` / `browser_read` / `browser_click` / `browser_type` and
 //! tears it down with `browser_stop`. Every call is the real engine — the
@@ -31,8 +31,8 @@ use crate::AppState;
 /// view should be able to do. Polls for up to 3s, then returns an honest
 /// error.
 pub(crate) fn wait_for_page_target(
-    client: &everyaios_cdp::CdpClient,
-) -> Result<everyaios_cdp::TargetInfo, String> {
+    client: &agentcowork_cdp::CdpClient,
+) -> Result<agentcowork_cdp::TargetInfo, String> {
     let deadline = std::time::Instant::now() + std::time::Duration::from_secs(3);
     let mut last_err: Option<String> = None;
     loop {
@@ -40,7 +40,7 @@ pub(crate) fn wait_for_page_target(
             Ok(ts) => {
                 if let Some(t) = ts
                     .into_iter()
-                    .find(|t| t.target_type == everyaios_cdp::TargetType::Page)
+                    .find(|t| t.target_type == agentcowork_cdp::TargetType::Page)
                 {
                     return Ok(t);
                 }
@@ -62,11 +62,11 @@ pub struct LiveBrowser {
     /// the session is cleared (browser_stop / app teardown). Never read
     /// directly; its Drop is the whole point.
     #[allow(dead_code)]
-    child: everyaios_cdp::BrowserChild,
-    client: std::sync::Arc<everyaios_browser::tiers::CdpNetworkGuard>,
+    child: agentcowork_cdp::BrowserChild,
+    client: std::sync::Arc<agentcowork_browser::tiers::CdpNetworkGuard>,
     session_id: String,
     url: String,
-    channel: everyaios_cdp::BrowserChannel,
+    channel: agentcowork_cdp::BrowserChannel,
     browser_name: String,
     browser_version: Option<String>,
 }
@@ -74,25 +74,25 @@ pub struct LiveBrowser {
 /// Shared CDP backend injected into the agent `ToolService` so browser.*
 /// tools on the loop hit the same session as the browse view.
 struct LoopBrowser {
-    client: std::sync::Arc<everyaios_browser::tiers::CdpNetworkGuard>,
+    client: std::sync::Arc<agentcowork_browser::tiers::CdpNetworkGuard>,
     session_id: String,
 }
 
 fn browser_config_path() -> std::path::PathBuf {
-    everyaios_core::default_data_dir().join("browser_config.json")
+    agentcowork_core::default_data_dir().join("browser_config.json")
 }
 
-pub fn load_browser_config() -> everyaios_cdp::BrowserConfig {
+pub fn load_browser_config() -> agentcowork_cdp::BrowserConfig {
     let path = browser_config_path();
     if let Ok(data) = std::fs::read_to_string(&path) {
-        if let Ok(cfg) = serde_json::from_str::<everyaios_cdp::BrowserConfig>(&data) {
+        if let Ok(cfg) = serde_json::from_str::<agentcowork_cdp::BrowserConfig>(&data) {
             return cfg;
         }
     }
-    everyaios_cdp::BrowserConfig::default()
+    agentcowork_cdp::BrowserConfig::default()
 }
 
-pub fn save_browser_config(cfg: &everyaios_cdp::BrowserConfig) -> Result<(), String> {
+pub fn save_browser_config(cfg: &agentcowork_cdp::BrowserConfig) -> Result<(), String> {
     let path = browser_config_path();
     if let Some(parent) = path.parent() {
         let _ = std::fs::create_dir_all(parent);
@@ -104,26 +104,26 @@ pub fn save_browser_config(cfg: &everyaios_cdp::BrowserConfig) -> Result<(), Str
 
 /// Discover all supported installed browsers on the host system.
 #[tauri::command]
-pub fn browser_list_installed() -> Result<Vec<everyaios_cdp::BrowserCandidate>, String> {
-    Ok(everyaios_cdp::discover_installed_browsers())
+pub fn browser_list_installed() -> Result<Vec<agentcowork_cdp::BrowserCandidate>, String> {
+    Ok(agentcowork_cdp::discover_installed_browsers())
 }
 
 /// Get the current user browser configuration.
 #[tauri::command]
-pub fn browser_get_config() -> Result<everyaios_cdp::BrowserConfig, String> {
+pub fn browser_get_config() -> Result<agentcowork_cdp::BrowserConfig, String> {
     Ok(load_browser_config())
 }
 
 /// Update the user browser configuration.
 #[tauri::command]
 pub fn browser_set_config(
-    config: everyaios_cdp::BrowserConfig,
-) -> Result<everyaios_cdp::BrowserConfig, String> {
+    config: agentcowork_cdp::BrowserConfig,
+) -> Result<agentcowork_cdp::BrowserConfig, String> {
     save_browser_config(&config)?;
     Ok(config)
 }
 
-impl everyaios_core::BrowserBackend for LoopBrowser {
+impl agentcowork_core::BrowserBackend for LoopBrowser {
     fn save_pdf_enhanced(&self, dir: &std::path::Path) -> Result<String, String> {
         let path = dir.join("page.pdf");
         let res = self
@@ -175,7 +175,7 @@ impl everyaios_core::BrowserBackend for LoopBrowser {
     }
 
     fn snapshot(&self) -> Result<String, String> {
-        let actions = everyaios_browser::BrowserActions::new(&*self.client, Some(&self.session_id));
+        let actions = agentcowork_browser::BrowserActions::new(&*self.client, Some(&self.session_id));
         let snap = actions.snapshot("loop").map_err(|e| e.to_string())?;
         ensure_network_guard_clean(&self.client)?;
         Ok(snap.root.render())
@@ -198,13 +198,13 @@ impl everyaios_core::BrowserBackend for LoopBrowser {
         selector: Option<&str>,
         text: Option<&str>,
     ) -> Result<String, String> {
-        let actions = everyaios_browser::BrowserActions::new(&*self.client, Some(&self.session_id));
+        let actions = agentcowork_browser::BrowserActions::new(&*self.client, Some(&self.session_id));
         let kind = kind.to_lowercase();
         match kind.as_str() {
             "click" => {
                 let r = selector.ok_or("ref required")?;
                 actions
-                    .act(everyaios_browser::ActKind::Click {
+                    .act(agentcowork_browser::ActKind::Click {
                         ref_id: r.to_string(),
                     })
                     .map_err(|e| e.to_string())?;
@@ -212,7 +212,7 @@ impl everyaios_core::BrowserBackend for LoopBrowser {
             "type" => {
                 let r = selector.ok_or("ref required")?;
                 actions
-                    .act(everyaios_browser::ActKind::Type {
+                    .act(agentcowork_browser::ActKind::Type {
                         ref_id: r.to_string(),
                         text: text.unwrap_or("").to_string(),
                     })
@@ -233,12 +233,12 @@ fn lock_browser<'a>(
 
 fn actions(
     b: &LiveBrowser,
-) -> everyaios_browser::BrowserActions<'_, everyaios_browser::tiers::CdpNetworkGuard> {
-    everyaios_browser::BrowserActions::new(&*b.client, Some(&b.session_id))
+) -> agentcowork_browser::BrowserActions<'_, agentcowork_browser::tiers::CdpNetworkGuard> {
+    agentcowork_browser::BrowserActions::new(&*b.client, Some(&b.session_id))
 }
 
 fn ensure_network_guard_clean(
-    client: &everyaios_browser::tiers::CdpNetworkGuard,
+    client: &agentcowork_browser::tiers::CdpNetworkGuard,
 ) -> Result<(), String> {
     client.pump_network_guard();
     if let Some(error) = client.take_network_error() {
@@ -268,22 +268,22 @@ pub fn browser_start(state: State<'_, AppState>) -> Result<serde_json::Value, St
 
     let config = load_browser_config();
     let (resolved_bin, channel) =
-        everyaios_cdp::resolve_browser_binary(&config).map_err(|e| e.to_string())?;
-    let browser_version = everyaios_cdp::probe_browser_version(&resolved_bin);
+        agentcowork_cdp::resolve_browser_binary(&config).map_err(|e| e.to_string())?;
+    let browser_version = agentcowork_cdp::probe_browser_version(&resolved_bin);
     let browser_name = channel.display_name().to_string();
 
     let channel_dir_name = match channel {
-        everyaios_cdp::BrowserChannel::Brave => "brave",
-        everyaios_cdp::BrowserChannel::Chrome => "chrome",
-        everyaios_cdp::BrowserChannel::Edge => "edge",
-        everyaios_cdp::BrowserChannel::Chromium => "chromium",
-        everyaios_cdp::BrowserChannel::Arc => "arc",
-        everyaios_cdp::BrowserChannel::Vivaldi => "vivaldi",
-        everyaios_cdp::BrowserChannel::Custom => "custom",
-        everyaios_cdp::BrowserChannel::Auto => "auto",
+        agentcowork_cdp::BrowserChannel::Brave => "brave",
+        agentcowork_cdp::BrowserChannel::Chrome => "chrome",
+        agentcowork_cdp::BrowserChannel::Edge => "edge",
+        agentcowork_cdp::BrowserChannel::Chromium => "chromium",
+        agentcowork_cdp::BrowserChannel::Arc => "arc",
+        agentcowork_cdp::BrowserChannel::Vivaldi => "vivaldi",
+        agentcowork_cdp::BrowserChannel::Custom => "custom",
+        agentcowork_cdp::BrowserChannel::Auto => "auto",
     };
 
-    let profile = everyaios_core::default_data_dir()
+    let profile = agentcowork_core::default_data_dir()
         .join("browser-profiles")
         .join(channel_dir_name);
     std::fs::create_dir_all(&profile).map_err(|e| e.to_string())?;
@@ -295,23 +295,23 @@ pub fn browser_start(state: State<'_, AppState>) -> Result<serde_json::Value, St
         }
     }
 
-    let opts = everyaios_cdp::LaunchOptions {
+    let opts = agentcowork_cdp::LaunchOptions {
         user_data_dir: profile,
         headless: config.headless,
         browser_binary: Some(resolved_bin),
         extra_args,
         wait_timeout: std::time::Duration::from_secs(30),
     };
-    let child = everyaios_cdp::spawn_browser(&opts).map_err(|e| format!("spawn browser: {e}"))?;
+    let child = agentcowork_cdp::spawn_browser(&opts).map_err(|e| format!("spawn browser: {e}"))?;
     let endpoint = child.endpoint().clone();
     let client =
-        everyaios_cdp::connect_to_browser(&endpoint).map_err(|e| format!("connect: {e}"))?;
+        agentcowork_cdp::connect_to_browser(&endpoint).map_err(|e| format!("connect: {e}"))?;
     let targets = client
         .list_targets()
         .map_err(|e| format!("list targets: {e}"))?;
     let page = match targets
         .iter()
-        .find(|t| t.target_type == everyaios_cdp::TargetType::Page)
+        .find(|t| t.target_type == agentcowork_cdp::TargetType::Page)
         .cloned()
     {
         Some(page) => page,
@@ -331,10 +331,10 @@ pub fn browser_start(state: State<'_, AppState>) -> Result<serde_json::Value, St
 
     let client = std::sync::Arc::new(client);
     let client = std::sync::Arc::new(
-        everyaios_browser::tiers::CdpNetworkGuard::enable(
+        agentcowork_browser::tiers::CdpNetworkGuard::enable(
             std::sync::Arc::clone(&client),
             &session.session_id,
-            everyaios_guard::netfloor::NetPolicy::strict(),
+            agentcowork_guard::netfloor::NetPolicy::strict(),
             Vec::new(),
         )
         .map_err(|error| format!("enable browser network guard: {error}"))?,
@@ -428,7 +428,7 @@ pub fn browser_read(state: State<'_, AppState>) -> Result<serde_json::Value, Str
         .as_ref()
         .ok_or("browser not attached — start it first")?;
     let out = actions(b)
-        .read(everyaios_browser::ReadMode::Full)
+        .read(agentcowork_browser::ReadMode::Full)
         .map_err(|e| format!("read: {e}"))?;
     ensure_network_guard_clean(&b.client)?;
     Ok(serde_json::json!({ "url": b.url, "text": out.text }))
@@ -445,7 +445,7 @@ pub fn browser_click(
         .as_ref()
         .ok_or("browser not attached — start it first")?;
     let res = actions(b)
-        .act(everyaios_browser::ActKind::Click {
+        .act(agentcowork_browser::ActKind::Click {
             ref_id: ref_id.clone(),
         })
         .map_err(|e| format!("click {ref_id}: {e}"))?;
@@ -483,11 +483,11 @@ pub fn browser_type(
         .as_ref()
         .ok_or("browser not attached — start it first")?;
     let act = match ref_id.clone() {
-        Some(id) => everyaios_browser::ActKind::Type {
+        Some(id) => agentcowork_browser::ActKind::Type {
             ref_id: id.clone(),
             text: text.clone(),
         },
-        None => everyaios_browser::ActKind::TypeAt {
+        None => agentcowork_browser::ActKind::TypeAt {
             x: 0.0,
             y: 0.0,
             text: text.clone(),
@@ -525,11 +525,11 @@ pub async fn browser_read_url(
     needs_js: Option<bool>,
 ) -> Result<serde_json::Value, String> {
     let intent = if needs_js.unwrap_or(false) {
-        everyaios_browser::FetchIntent::NeedsJs
+        agentcowork_browser::FetchIntent::NeedsJs
     } else {
-        everyaios_browser::FetchIntent::Static
+        agentcowork_browser::FetchIntent::Static
     };
-    let engine = everyaios_browser::TieredEngine::new(everyaios_browser::EngineConfig::default());
+    let engine = agentcowork_browser::TieredEngine::new(agentcowork_browser::EngineConfig::default());
     let url_for_log = url.clone();
     // Blocking HTTP/CDP work off the async runtime (this is a plain command
     // thread, but the tiered stack spawns a child browser on escalation).

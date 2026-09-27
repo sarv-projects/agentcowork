@@ -1,0 +1,64 @@
+[package]
+name = "agentcowork-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "AgentCowork orchestrator binary — boots headless, loads config, supervises sidecar"
+
+[dependencies]
+agentcowork-ipc = { path = "../agentcowork-ipc" }
+agentcowork-types = { path = "../agentcowork-types" }
+agentcowork-vault = { path = "../agentcowork-vault" }
+agentcowork-guard = { path = "../agentcowork-guard" }
+agentcowork-memory = { path = "../agentcowork-memory" }
+agentcowork-blueprint = { path = "../agentcowork-blueprint" }
+agentcowork-mcp = { path = "../agentcowork-mcp" }
+agentcowork-audit = { path = "../agentcowork-audit" }
+agentcowork-script = { path = "../agentcowork-script" }
+agentcowork-storage = { path = "../agentcowork-storage" }
+agentcowork-office = { path = "../agentcowork-office" }
+agentcowork-search = { path = "../agentcowork-search" }
+agentcowork-catalog = { path = "../agentcowork-catalog" }
+agentcowork-codeintel = { path = "../agentcowork-codeintel" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+urlencoding = { workspace = true }
+base64 = { workspace = true }
+chacha20poly1305 = { workspace = true }
+x25519-dalek = { workspace = true }
+toml = { workspace = true }
+thiserror = { workspace = true }
+sha2 = { workspace = true }
+argon2 = { workspace = true }
+rand = { workspace = true }
+opentelemetry = { workspace = true }
+ureq = { workspace = true }
+portable-pty = "0.9"
+sysinfo = "0.30"
+
+[dev-dependencies]
+# P10 E2E/bench suites — browser tree/diff/ownership compose the pipeline
+# tests and the snapshot/tab benchmarks (production build unaffected).
+agentcowork-browser = { path = "../agentcowork-browser" }
+# TabRegistry::sync_targets takes cdp TargetInfo (the ownership stress bench).
+# P69.D31 — dev-only: CDP is a backend under `BrowserService`, never an
+# agent-facing or production dependency of the kernel.
+agentcowork-cdp = { path = "../agentcowork-cdp" }
+# P70.C5 — the upgrade-evidence acceptance harness writes temp data dirs
+tempfile = "3"
+# P70.C5 — the harness seals/verifies store bytes and returns Result
+anyhow = "1"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = [
+    "Win32_Foundation",
+    "Win32_System_JobObjects",
+    "Win32_System_Threading",
+    # CreateJobObjectW takes a SECURITY_ATTRIBUTES pointer — the link is
+    # gated behind the Win32_Security feature in windows-sys 0.61.
+    "Win32_Security",
+] }

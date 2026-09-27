@@ -7,7 +7,7 @@ import type {
   ConnectorResult,
   UserQuery,
   MemoryFact,
-} from '@everyaios/core-domain';
+} from '@agentcowork/core-domain';
 
 /**
  * Geocoding connector — OpenStreetMap Nominatim.

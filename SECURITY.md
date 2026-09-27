@@ -1,6 +1,6 @@
 # Security policy (P70.F5)
 
-EveryAIOS runs AI agents with real authority over the user's machine, so the
+AgentCowork runs AI agents with real authority over the user's machine, so the
 security contract is the product. This file states the model, how to report a
 problem, and which floors are *enforced in code* rather than promised.
 
@@ -8,9 +8,9 @@ problem, and which floors are *enforced in code* rather than promised.
 
 Open a private security advisory on the repository
 (`Security → Report a vulnerability`) rather than a public issue. Please
-include: the version (`About` shows it, or `everyaios-core --version`), the platform,
+include: the version (`About` shows it, or `agentcowork-core --version`), the platform,
 the exact steps, and — if a guard floor was bypassed — the audit event ids from
-`~/.everyaios/audit.ndjson`. Do not include live credentials; the audit ledger
+`~/.agentcowork/audit.ndjson`. Do not include live credentials; the audit ledger
 never contains them by design, and neither should your report.
 
 We aim to acknowledge within 3 working days. This is a v1-stage project: there
@@ -20,20 +20,20 @@ is no bug-bounty programme, and no version is under long-term support yet
 ## The model (summary — the authority is `ARCH/CORE.md`)
 
 **The sidecar proposes; the Rust core disposes.** Every mutating effect requires
-an authorization ticket minted in Rust (`everyaios-guard`), and provider API keys
-never leave the vault (`everyaios-vault`). A compromised renderer cannot mint a
+an authorization ticket minted in Rust (`agentcowork-guard`), and provider API keys
+never leave the vault (`agentcowork-vault`). A compromised renderer cannot mint a
 ticket, approve one, or write the audit log — that split is tested, not assumed
 (`P48.2`, the KERNEL GATE item).
 
 | Layer | Enforced by | Where |
 |---|---|---|
-| Outbound network floor (SSRF) | `everyaios-guard::netfloor` | every outbound call |
-| Path floor (traversal) | `everyaios-guard::pathfloor` | every file effect |
-| Secret-file protection | `everyaios-guard::protected_paths` | `.env*`, `.ssh/`, `.aws/`, `id_rsa`, … |
-| Single-use tickets + nonce | `everyaios-guard` | every effect |
+| Outbound network floor (SSRF) | `agentcowork-guard::netfloor` | every outbound call |
+| Path floor (traversal) | `agentcowork-guard::pathfloor` | every file effect |
+| Secret-file protection | `agentcowork-guard::protected_paths` | `.env*`, `.ssh/`, `.aws/`, `id_rsa`, … |
+| Single-use tickets + nonce | `agentcowork-guard` | every effect |
 | Three-party approval window | dedicated `guard.html` renderer | approval only |
-| Credential custody | `everyaios-vault` (SQLCipher) | keys are vault-only; the sidecar never holds one |
-| Audit integrity | `everyaios-audit` Merkle chain | every mutating operation |
+| Credential custody | `agentcowork-vault` (SQLCipher) | keys are vault-only; the sidecar never holds one |
+| Audit integrity | `agentcowork-audit` Merkle chain | every mutating operation |
 | Third-party MCP containment | ticket-gated, audited, net-floored; filesystem confinement **only on Linux with bwrap** | see below |
 
 ## What is *not* contained (stated, not implied)
@@ -44,7 +44,7 @@ ticket, approve one, or write the audit log — that split is tested, not assume
   posture the host actually delivers (`P70.D7`), and the reason is recorded as
   `P49.5`.
 - **Agents are user-installed external programs.** An agent the user installs
-  runs with the user's own authority; EveryAIOS governs the *effects* it
+  runs with the user's own authority; AgentCowork governs the *effects* it
   requests through the kernel, not the agent's internals.
 - **Windows is not yet qualified on a real host** (`P70.E8`); the native
   sandbox backends for Windows/macOS are unbuilt.

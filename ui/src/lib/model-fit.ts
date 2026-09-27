@@ -6,8 +6,8 @@
  * uses — no client-side copy of the *decision*, only of the *input build*.
  *
  * The decision stays native: estimate tiers come from
- * `everyaios_core::models::fit` (60% / 85% of budget) and the variant pick
- * from `everyaios_core::models::best`. This module only shapes their inputs
+ * `agentcowork_core::models::fit` (60% / 85% of budget) and the variant pick
+ * from `agentcowork_core::models::best`. This module only shapes their inputs
  * and turns their outputs into UI semantics.
  */
 
@@ -18,7 +18,7 @@ import type { HwClass, VariantCandidate } from "./models-download"
 export const DEFAULT_QUANT = "Q4_K_M"
 
 /** Context the fit pre-check estimates at — the serving default `num_ctx`
- * (16,384; see `everyaios-core` `default_num_ctx`). */
+ * (16,384; see `agentcowork-core` `default_num_ctx`). */
 export const FIT_CTX = 16384
 export const FIT_CTX_LABEL = "16K"
 

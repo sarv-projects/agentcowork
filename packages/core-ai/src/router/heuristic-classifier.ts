@@ -1,4 +1,4 @@
-import type { IntentCategory, IntentClassification, UserQuery } from '@everyaios/core-domain';
+import type { IntentCategory, IntentClassification, UserQuery } from '@agentcowork/core-domain';
 import type { IntentClassifier } from './types.js';
 
 const KEYWORD_RULES: Array<{ category: IntentCategory; patterns: RegExp[]; confidence: number }> = [

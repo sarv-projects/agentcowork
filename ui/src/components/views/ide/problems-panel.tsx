@@ -7,7 +7,7 @@ import { lspDiagnostics, type LspProblem } from '@/lib/lsp'
 import { SkeletonBlock } from '@/components/ui/loading-state'
 
 /**
- * Problems panel — real LSP diagnostics (lsp_cmds → everyaios-codeintel
+ * Problems panel — real LSP diagnostics (lsp_cmds → agentcowork-codeintel
  * LspRunner) for the active editor file. The runner spawns the configured
  * server (rust-analyzer / typescript-language-server / pyright), opens the
  * file and returns publishDiagnostics. Honest ceiling: per-file collect

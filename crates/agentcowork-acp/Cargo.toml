@@ -1,0 +1,29 @@
+[package]
+name = "agentcowork-acp"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "P6.8 / F12 / J17 — ACP (Agent Client Protocol) harness bridge: newline-delimited JSON-RPC framing, v1 message types, an AcpSession client lifecycle, and the agent launch registry (Ollama-launch pattern)."
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+ureq = { workspace = true }
+url = { workspace = true }
+sha2 = { workspace = true }
+flate2 = { workspace = true }
+zip = { workspace = true }
+tar = { workspace = true }
+# Linux-only at runtime; the sandbox APIs are #[cfg(target_os = "linux")]-gated.
+agentcowork-guard = { path = "../agentcowork-guard" }
+# P69.C11/D25 — the canonical `AuthMode` (and the shared id vocabulary) live in
+# the schema crate so the Rust serializers and the TS projection cannot drift.
+agentcowork-types = { path = "../agentcowork-types" }
+
+[dev-dependencies]
+# P71.6b — the engine-optional acceptance suite asserts the usage ledger the
+# turn path feeds (P71.4), so the test drives the real observation model
+# instead of a stand-in.
+agentcowork-memory = { path = "../agentcowork-memory" }

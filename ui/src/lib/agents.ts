@@ -79,19 +79,19 @@ export interface AgentRuntime {
   mark: string
   /** Tailwind bg/text classes for the logo square */
   accent: string
-  /** Capabilities this runtime exposes to EveryAIOS */
+  /** Capabilities this runtime exposes to AgentCowork */
   capabilities: AgentCapability[]
   /** Models this runtime can drive (must reference MODEL ids) */
   models: string[]
   /** Default model id */
   defaultModel: string
-  /** Whether EveryAIOS can invoke this runtime headless */
+  /** Whether AgentCowork can invoke this runtime headless */
   headless: boolean
   /** Whether the runtime can sandbox (Guard-aware) */
   sandbox: 'strict' | 'soft' | 'none'
   /** Notes / install hint */
   note?: string
-  /** P50.3.9 — governance truth: how much of this agent's effects EveryAIOS
+  /** P50.3.9 — governance truth: how much of this agent's effects AgentCowork
    * actually governs. Rendered in the picker; never imply un-audited coverage. */
   governance?: import('./acp').GovernanceInfo
 }
@@ -350,9 +350,9 @@ export function formatPrice(price: number): string {
 }
 
 // === Agent catalog ============================================================
-// Static catalog of the runtimes EveryAIOS can drive. **Status is honest**: a
+// Static catalog of the runtimes AgentCowork can drive. **Status is honest**: a
 // runtime is only `installed` when the live ACP install-status probe (bridge
-// hydration, `acp_install_status`) found it — either EveryAIOS-installed or
+// hydration, `acp_install_status`) found it — either AgentCowork-installed or
 // auto-discovered on PATH. The static seed marks external runtimes
 // `available` (catalog entry, not an install claim) so the pre-hydration and
 // plain-browser UI never pretends a CLI exists on this machine.
@@ -489,7 +489,7 @@ export function getModelsForAgent(agentId: string): AgentModel[] {
 }
 
 /** Model ownership boundary (P60, tightened by P71.2d): **no** runtime owns an
- * EveryAIOS model surface any more. Every agent here is an external ACP agent
+ * AgentCowork model surface any more. Every agent here is an external ACP agent
  * that owns its own model, credentials and routing; the desktop's catalogue,
  * key vault and usage ledger are *observation*, never a control over an agent.
  * The UI must never present a provider/model list as something it can push
@@ -537,12 +537,12 @@ export function readinessToInstallStatus(
 /** Model rows this runtime is allowed to display — **`[]` for every runtime**
  * (`P71.2d`, ADR-0005 §2).
  *
- * No runtime's model surface is EveryAIOS's to draw any more: an external ACP
+ * No runtime's model surface is AgentCowork's to draw any more: an external ACP
  * agent's models are whatever the agent itself exposes over ACP `configOptions`
  * (`category: "model"`), and the desktop's models.dev catalogue is
  * *observation* (Providers / Local models), never a list this agent receives.
  * The curated seed describes a provider catalog no agent gets, so rendering it
- * would claim control EveryAIOS does not have.
+ * would claim control AgentCowork does not have.
  *
  * Kept as the single choke point the picker, the palette and the settings panel
  * all route through: if a model-owning runtime ever returns (the post-v1
@@ -556,7 +556,7 @@ export function getDefaultModelForAgent(agentId: string): string {
 }
 
 // === Task routing =============================================================
-// When "Auto-route by task" is on, EveryAIOS picks the runtime per task kind.
+// When "Auto-route by task" is on, AgentCowork picks the runtime per task kind.
 
 export type TaskKind =
   | 'code'
@@ -581,7 +581,7 @@ export const TASK_LABELS: Record<TaskKind, string> = {
 
 /** Task-kind → agent table. **Empty is the v1 default and it is meaningful:**
  * an empty row means "run this task under the session's bound agent" — v1 has
- * no built-in engine to fall back to, so EveryAIOS cannot name a default agent
+ * no built-in engine to fall back to, so AgentCowork cannot name a default agent
  * on the user's behalf (ADR-0005 §2). A non-empty value is a choice the user
  * made in Settings. */
 export const DEFAULT_ROUTING: Record<TaskKind, string> = {

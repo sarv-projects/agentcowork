@@ -19,7 +19,7 @@
 | DEC-007 | Context: infrastructure in Core, control in the agent, projection for external agents | Locked | 16 |
 | DEC-008 | Workflow engine is Core infrastructure; agent ⇄ workflow composition in both directions | Locked | 20 |
 | DEC-009 | External agents get projections only (identity/capabilities/context/workspace/tools/artifacts/events) | Locked | 12, 16, 32 |
-| DEC-010 | Agent X is an architectural peer — one `AgentEngine` contract, no privileged path | Locked | 15, 32 |
+| DEC-010 | ~~Agent X is an architectural peer~~ → **generalized by DEC-052:** *every* agent engine is a peer — one `AgentEngine` contract, no privileged path | Locked (rule unchanged in force; the first-party agent is retired, DEC-052) | 15, 32 |
 | DEC-011 | World Model is first-class; computer-use ladder; vision is fallback | Locked | 21, 24 |
 | DEC-012 | Browser: managed Chromium default; Chrome/Edge/Firefox/Opera as adapters | Locked | 23 |
 | DEC-013 | Office: runtime under the universal document surface; L1/L2/L3; resident contexts | Locked | 22 |
@@ -29,7 +29,7 @@
 | DEC-017 | Absorb strategy: study → redesign → implement; licensing ledger gates code reuse | Locked | 44 |
 | DEC-018 | Memory v1 store: SQLite + FTS5; ADD-only extraction + `superseded_by`; suppression-based forget; no vectors/graph/decay | Locked | 17 |
 | DEC-019 | Memory ≠ context; recall returns candidates; non-touching read; budget is a maximum | Locked | 16, 17 |
-| DEC-020 | Working names: AgentCowork / Core / Agent X; code identifiers frozen until post-freeze | Provisional | 01 |
+| DEC-020 | Working names: ~~AgentCowork / Core / Agent X~~ → **AgentCowork / Core**; engines are external in v1 (DEC-052) · code identifiers unfrozen and renamed by DEC-053 | Provisional | 01 |
 | DEC-021 | Approval is a first-class primitive for agents and workflows | Locked | 12, 20 |
 | DEC-022 | Receipts mandatory for externally visible effects; verification proportional to risk | Locked | 29, 34 |
 | DEC-023 | Effect-verification plane (validate / render / reconcile) | Locked | 34 |
@@ -52,7 +52,7 @@
 | DEC-040 | Memory project identity: bind the `project` scope to `DM-024 project_identity`, not raw paths; canonicalization + re-key rules for move/clone/rename/worktree/path-reuse; Windows verification pending | Locked | 17, 25, 21, 06 |
 | DEC-041 | Summary ownership: the checkpoint (`DM-006`) is authoritative for work state; memory `summary` items reference checkpoints/sessions via `source_ref` and are never served as work state; no second timeline | Locked | 17, 16, 11 |
 | DEC-042 | Memory mutation classification: in-store writes are local persistent mutations (policy-gated + audited, no per-write tickets); export/import/sharing follow the guarded effect path; permitted scopes and ceilings are actor-derived, never caller-supplied | Locked | 17, 07, 12, 05 |
-| DEC-043 | External-agent memory boundary: v1 recall-only projection (bound project + own session/task + user preferences); Core never writes native agent stores; provider-session transcripts not harvested; subagent child sessions harvested only when Core-owned with parent linkage; Agent X private notes are session-scope items + session log | Locked | 17, 15, 32 |
+| DEC-043 | External-agent memory boundary: v1 recall-only projection (bound project + own session/task + user preferences); Core never writes an engine's own stores; provider-session transcripts not harvested; subagent child sessions harvested only when Core-owned with parent linkage; An engine's private notes are session-scope items + session log | Locked | 17, 15, 32 |
 | DEC-044 | Extraction model & disclosure: session provider default; `confidential` scopes local-only or off until enabled; global extraction budget + global/per-scope kill switches + per-run metering; concurrent sessions bounded | Locked | 17, 18, 11 |
 | DEC-045 | Provider-native compaction adoption policy: amends DEC-027's evidence clause only (a verified shipping reference exists — Codex remote compaction v2) and freezes the adoption rules (provider capability event · Guard egress + audit + per-provider off switch · usage via `18` · deterministic checkpoint stays primary); DEC-027 stays Locked with its rules untouched | Locked | 16, 18 |
 | DEC-046 | Verification plane stage completion: completes DEC-023's stage list to five — observe → validate → render → verify → reconcile (DEC-023's rules otherwise unchanged) | Locked | 34, 12 |
@@ -60,6 +60,8 @@
 | DEC-048 | MCP client core ownership + DEC-030 clarifications: the client core stays hand-rolled, dual-era and patch-owned (`rmcp` not adopted; OQ-PRV-1 closed) · force-legacy is a persisted per-server record field and era+source is a read-only projection · era caching per origin (HTTP) / per command fingerprint (stdio) and a stdio probe timeout fails the attach typed · the façade's `initialize` compatibility is lease-less, method-restricted and session-less | Locked | 14, 32, 08 |
 | DEC-049 | ACP governance class: no ACP-launched agent is ever `Mediated` (all are external processes) — withhold the `fs`/`terminal` client capabilities at `initialize`, answer `session/request_permission` through the one Trust decider, and claim only `SelfContained` (mediated at the ACP boundary; effects inside the agent's own process are outside our audit trail) · `Mediated` stays in the vocabulary only for the post-v1 governed baseline; `NotGoverned` remains the honest answer when an agent neither mediates permissions nor routes effects · the Channel-B availability flag is **derived from the mounted server list, never asserted** | Locked | 32, 12, 15 |
 | DEC-050 | Base-envelope actor context carries a permissions **reference**, not a snapshot: `permissions_ref` is resolved by the Trust owner at admission (INV-11), because the envelope crosses a trust boundary and an in-envelope snapshot would be a second, unaudited copy of an authorization decision — clarifies the `10-KERNEL` §7 and `REQ-KERNEL-007` prose to the canonical shape already stated in that section; no envelope field, contract or trust rule changes | Locked | 10, 08, 07, 05 |
+| DEC-052 | The first-party native agent is **not** an AgentCowork component: the engine is developed outside this repository and bound afterwards as an ordinary binding — same `AgentEngine`, same Guard, no privileged path (DEC-010's parity rule generalized to every engine and unchanged in force) · `ARCH/15-AGENT-X.md` becomes `ARCH/15-AGENT-PLANE.md` (the agent plane) · `REQ-AGX-001…013` and `TASK-AGX-001…014` are retired (never reused) and the engine-agnostic subset is re-seeded as `REQ-AGENT-001…004` · W4 is retired · INV-12 becomes engine parity | Locked | 01, 15, 05, 08, 09, 03, 02 |
+| DEC-053 | Code identifiers are unfrozen and renamed: `everyaios-*` → `agentcowork-*` (crates, packages, scopes, imports, strings) · the data home `~/.everyaios` → `~/.agentcowork` and env vars `EVERYAIOS_*` → `AGENTCOWORK_*` **with a legacy fallback and a one-time migration owned solely by Core**, so existing local data is never orphaned · supersedes DEC-020's identifier freeze | Locked | 01, 10, 12 |
 
 ## 2. Details
 
@@ -92,15 +94,15 @@ Context infrastructure (store/query/snapshot/checkpoint/projection) is Core's; c
 **Affects:** `ARCH/16-CONTEXT.md`.
 
 ### DEC-008 — Workflow engine placement
-The Workflow Engine is Core infrastructure, a peer of the Agent Runtime — not a feature inside Agent X. Workflows call agents; agents author and invoke workflows (workflows-as-tools). Deterministic vs adaptive is an explicit distinction.
+The Workflow Engine is Core infrastructure, a peer of the Agent Runtime — not a feature inside any engine. Workflows call agents; agents author and invoke workflows (workflows-as-tools). Deterministic vs adaptive is an explicit distinction.
 **Affects:** `ARCH/20-WORKFLOW.md`.
 
 ### DEC-009 — External agents get projections
-External agents (ACP/A2A/API/CLI) connect through the Agent Gateway and receive exactly: identity contract, capability projection, context projection, workspace projection (allowed/read-only paths), filtered tool set, artifact gateway, filtered event stream. No Core internals, no Agent X internals.
+External agents (ACP/A2A/API/CLI) connect through the Agent Gateway and receive exactly: identity contract, capability projection, context projection, workspace projection (allowed/read-only paths), filtered tool set, artifact gateway, filtered event stream. No Core internals, no engine internals.
 **Affects:** `12`, `16`, `32`.
 
 ### DEC-010 — Native agent parity
-Agent X implements the same `AgentEngine` contract as every external agent and passes the same Guard. Any proposal to give it a shortcut (direct store access, bypassed tickets, internal hooks) is rejected unless a superseding DEC records the full trade-off.
+Every engine implements the same `AgentEngine` contract and passes the same Guard. Any proposal to give one a shortcut (direct store access, bypassed tickets, internal hooks) is rejected unless a superseding DEC records the full trade-off.
 **Affects:** `15`, `32`.
 
 ### DEC-011 — World Model + ladder
@@ -140,7 +142,9 @@ Memory is the durable scoped store; context is a per-turn selection under budget
 **Evidence:** `ARCHIVE/v1-research/memory.md` §4.1; NOOA non-touching read (`clone2/nooa/packages/nooa-memory/src/nooa_memory/schema.py:315-331`); claude-mem whole-item budget degradation (`clone2/claude-mem/src/services/context/ContextBudget.ts:4-40`).
 
 ### DEC-020 — Working names
-AgentCowork (product), Core (runtime), Agent X (native agent) are working names for v1; the rename map and rules live in `ARCH/01-NAMING.md`. Code identifiers (`everyaios-*`, `EveryAIOS` strings) stay frozen until a post-freeze code-phase rename.
+**Superseded in two parts (2026-09-27):** DEC-052 retires the third working name, DEC-053 lifts the identifier freeze recorded below. The reasoning this entry records — names are provisional and live in one layer, the layer is centralized so a rename is mechanical — is unchanged and is what made both changes cheap.
+
+AgentCowork (product) and Core (runtime) are the working names for v1 (DEC-052 retires the third name); the rename map and rules live in `ARCH/01-NAMING.md`. Code identifiers (`everyaios-*`, `EveryAIOS` strings) stay frozen until a post-freeze code-phase rename.
 **Status note:** Provisional — branding may change; the architecture must not depend on the names.
 
 ### DEC-021 — Approval primitive
@@ -171,7 +175,7 @@ v1 is written from scratch; v0 is archived locally (`ARCHIVE/v0/`) and is refere
 ### DEC-027 — Context budget & compaction discipline
 Named budget vocabulary (`keep` ≈ 8k retained recent tokens; `buffer`/`reserve` ≈ 20k safety margin; summary output reserve), a pre-turn feasibility check (resolved window × effective percent), mandatory overflow recovery (compact-after-overflow → retry the **same step**), and compaction as a **projection boundary over a durable log**: the full session event log is never rewritten; a checkpoint segment is rendered as historical context. Tool-output pruning is a separate, opt-in transform that never touches log truth. A provider-native compaction path is ours to design — the verified shipping set has none (OpenCode summarizes with the model in both generations).
 **Evidence:** `agent-harness-verification.md` §C1–C2, §E2; anchors `clone2/opencode/packages/core/src/session/compaction.ts:12-15, 178, 232-243` · `to-llm-message.ts:152-162` · `history.ts:13-80` · `clone2/codex/codex-rs/core/src/session/mod.rs:4560-4587`.
-**Affects:** `16-CONTEXT`, `11-WORK`, `15-AGENT-X`.
+**Affects:** `16-CONTEXT`, `11-WORK`, `15-AGENT-PLANE`.
 
 ### DEC-028 — Guard as three layers
 Permission enforcement composes three distinct layers and never collapses them into one enum: (1) **platform confinement** (sandbox policy — OS-level bounds per platform); (2) **approval policy** (when a human is asked; policy enum + granular per-category config); (3) **declarative exec rules** (pre-authorized command/prefix/network patterns). Guard turns the composition into ALLOW/ASK/DENY; tickets encode the outcome; protected subpaths (e.g. VCS hooks) stay read-only inside writable roots.
@@ -181,7 +185,7 @@ Permission enforcement composes three distinct layers and never collapses them i
 ### DEC-029 — Subagent model
 One child session per subagent (own context/toolset/persona), full escaped project rules delivered to children; `fork_context` is a per-spawn option (default fresh + bounded snapshot); worktree isolation is a per-spawn option, with write leases for overlapping files; parents receive **worker receipts**, never transcripts; the platform enforces outer bounds (parallel/total/depth/tokens/spend) while the running agent decides within them. A "review queue" is our own product-layer feature — not borrowed (Codex source contains no queue).
 **Evidence:** `agent-harness-verification.md` §A3, §B3, §E7; anchors `clone2/grok-build/crates/codegen/xai-grok-shell/src/agent/subagent/spawn.rs:1-33` · `host_service.rs:500-503, 566-578` · `prompt/context.rs:152,196` · `clone2/codex/codex-rs/core/src/tools/handlers/multi_agents_spec.rs:14-16, 726-737`.
-**Affects:** `15-AGENT-X`, `11-WORK`, `20-WORKFLOW`.
+**Affects:** `15-AGENT-PLANE`, `11-WORK`, `20-WORKFLOW`.
 
 ### DEC-030 — MCP dual-era policy
 Client side: detect and negotiate per transport — **stdio** probes `server/discover` (10 s cap) then falls back to legacy `initialize`; **HTTP** classifies the `400` body; the negotiated era is cached per process/origin; a per-server force-legacy escape hatch exists. Implement on `rmcp` 3.4.x (verified to carry both `2026-07-28` and `2025-11-25`). Server façade (our own MCP surface): stateless modern + `initialize` compatibility, with the mandatory `server/discover` method and `Mcp-Method`/`Mcp-Name` validation. **Non-goals:** HTTP+SSE transport, sessions/resumability, sampling, roots, logging.
@@ -192,7 +196,7 @@ Client side: detect and negotiate per transport — **stdio** probes `server/dis
 ### DEC-031 — Work scheduler lanes + outer limits
 Three lanes — **foreground** (the active interactive turn; 1/session) · **background** (jobs/workers admitted without blocking the UI) · **detached** (long work that may outlive the app session; rehydrated on start) — with Core-enforced outer bounds the running agent cannot exceed: max simultaneous agents · max total workers per work tree · max depth · max worker tokens · max session spend · per-lane concurrency. Interactive > background priority; starvation guard; queue-depth backpressure; parent→child cancellation; budget exhaustion pauses and surfaces (no silent overrun).
 **Evidence:** product-owner brief (lanes, limits; “background work is essential”); `ARCH/11-WORK.md` §3; `agent-harness-verification.md` §A3 (background guidance), §E7 (bounds as per-spawn policy).
-**Affects:** `11-WORK`, `15-AGENT-X`, `20-WORKFLOW`.
+**Affects:** `11-WORK`, `15-AGENT-PLANE`, `20-WORKFLOW`.
 
 ### DEC-032 — Artifact storage & retention
 Artifacts live in a **managed per-workspace store** with content-addressed immutable versions; workspace-file artifacts are referenced by identity (`25`) plus a managed copy when they must survive edits. **Receipt-pinned versions are never garbage-collected** — chain integrity is never traded for storage. Unreferenced versions are pruned by age/count policy; all deletions are audited. External-agent exchange uses artifact refs through the gateway (working scheme token `eaios://artifact/<id>`; the final scheme renames with the brand — OQ-003 tie).
@@ -218,7 +222,7 @@ When a provider requires client identification and session affinity (the OpenCod
 ### DEC-036 — Async subagent lifecycle (completes DEC-029)
 Completion delivery has exactly two modes: a **bounded foreground wait** (declared tiers, used sparingly) or a **turn-boundary queue-only wake** (the result is admitted at `next-turn`/`next-step`, never mid-step). A **wake-suppression gate** decides relevance (`backgrounded && !cancelled && wake_enabled && !block_waited && !explicitly_killed && !goal_loop_active && parent_channel_open`); a cancelled child never wakes the parent and never re-buffers a completion after teardown. The child stream is typed: `spawned` (before the first prompt dispatch) · `progress` (≈2 s) · `finished {will_wake}`. Waits that exceed budget **auto-background** instead of freezing the parent. Concurrency slots are **held until closed**; admission is queue-on-limit with a `fail` opt-in; defaults/depth are declared and enforced by `11` (DEC-031). Cancellation is cooperative and token-based with parent-prompt/teardown/close cascades. **Child receipts are untrusted data** — scanned for instruction-shaped patterns and delivered under a no-authority header; background completion notices are automated events.
 **Evidence:** `ARCHIVE/v1-research/async-subagents-websearch-absorption.md` §0–§2 — Claude Code subagent docs; Codex `trigger_turn:false` (`completion.rs:98-129`); Grok wake gate (`spawn.rs:456-472`) + typed notifications (`notification.rs:723-830`); Cline continuation gate; OpenCode `<task>` inject; Aider verdict (no upstream subagents).
-**Affects:** `15-AGENT-X`, `11-WORK`, `12-TRUST`, `30-EVENTS`.
+**Affects:** `15-AGENT-PLANE`, `11-WORK`, `12-TRUST`, `30-EVENTS`.
 
 ### DEC-037 — Web search & fetch capabilities
 `web.search` and `web.fetch` are capabilities (never the local search plane). Provider variants: native/server-side search · MCP search server · guarded local fetch; browser (`23`) as the fallback for rendered pages. Rules: credentials only via the vault and **never in URLs** (INV-02); egress via Guard with domain allow/block policy that **overrides model requests** (INV-05); SSRF floor (no localhost/no-dot/private/link-local/metadata; resolve-then-check); caps (fetch 5 MB · search response 256 KiB · default 8 results/hard max 20 · synthesis ≤10k chars · per-session search budget counted across subagents); fetch TTL cache (default 15 min) keyed `(normalized URL, format)` with an explicit `fresh` bypass; citations/provenance first-class (`{ref, url, title?, retrieved_at, sha256?}`) and never merged into prose without the source ref; **fetched content is untrusted input** — no instruction authority, URL-provenance option, cross-host redirects surfaced, robots/ToS honored, no evasion tooling (DEC-016).
@@ -256,10 +260,10 @@ In-store memory writes (extraction, `remember`, forget/supersede/pin/edit, scope
 **Affects:** `17-MEMORY`, `07-CONTRACTS`, `12-TRUST`, `05-INVARIANTS`.
 
 ### DEC-043 — External-agent memory boundary
-v1 memory exposure to external agents is **read-only filtered recall** — bound project + own session/task + user preferences; no org, no other projects, `confidential` only with a recorded loadout (v1 default: none). Core never writes or mutates an external agent's native memory/config/session stores, and provider-session transcripts we do not own are never harvested; imports from native stores stay deferred (U8), explicit, read-only to the source, and audited. Subagent child sessions are Core-owned: they may be harvested at their own settle boundaries with parent linkage (`source_ref`), never auto-promoted, and receipts enter extraction only as untrusted data. Agent X's “private working notes” are session-scope memory items + the session log — there is no second durable store.
-**Evidence:** `ARCHIVE/v1-research/v1-sdd/memory-agent-deep-dive.md` §4/§6.1 (findings F-13/F-14; contradiction C-08); `ARCH/15-AGENT-X.md` §5/§7; `ARCH/32-CHANNELS.md` §3; `ARCH/41-EDGE-CASES.md` EDGE-150/151.
+v1 memory exposure to external agents is **read-only filtered recall** — bound project + own session/task + user preferences; no org, no other projects, `confidential` only with a recorded loadout (v1 default: none). Core never writes or mutates an external agent's native memory/config/session stores, and provider-session transcripts we do not own are never harvested; imports from native stores stay deferred (U8), explicit, read-only to the source, and audited. Subagent child sessions are Core-owned: they may be harvested at their own settle boundaries with parent linkage (`source_ref`), never auto-promoted, and receipts enter extraction only as untrusted data. An engine's “private working notes” are session-scope memory items + the session log — there is no second durable store.
+**Evidence:** `ARCHIVE/v1-research/v1-sdd/memory-agent-deep-dive.md` §4/§6.1 (findings F-13/F-14; contradiction C-08); `ARCH/15-AGENT-PLANE.md` §5/§7; `ARCH/32-CHANNELS.md` §3; `ARCH/41-EDGE-CASES.md` EDGE-150/151.
 **Status note:** Locked.
-**Affects:** `17-MEMORY`, `15-AGENT-X`, `32-CHANNELS`.
+**Affects:** `17-MEMORY`, `15-AGENT-PLANE`, `32-CHANNELS`.
 
 ### DEC-044 — Extraction model & disclosure policy
 Background extraction defaults to the session's active provider (no *new* disclosure). `confidential` scopes extract **local-only or not at all** until explicitly enabled by the user. Extraction runs against a declared **global budget** (calls/tokens per period) with global and per-scope **kill switches** and per-run metering (`memory.extraction.run`); concurrent sessions cannot exceed the budget. This closes the extraction-disclosure item (`OQ-MEM-03`) and bounds cost/DoS exposure.
@@ -272,7 +276,7 @@ Background extraction defaults to the session's active provider (no *new* disclo
 **Supersession scope (explicit):** this decision amends DEC-027's **evidence clause only**. DEC-027 remains Locked; its behavioural rules — named budget terms, pre-turn feasibility, one overflow recovery, the projection boundary over a durable log, and pruning as a separate transform — are not superseded or amended, and this decision is the correction on record wherever that evidence clause is read.
 
 **Adoption rules (frozen):** a provider-native compaction path is a **provider capability event**, never an implementation detail — conversation egress goes through Guard with provider allowlisting, audit and a per-provider off switch (INV-02/INV-05); its usage/cost rolls into `18` telemetry as a second inference call; the deterministic checkpoint remains the primary reconstructable state and provider output is never the sole checkpoint. Adoption is decided per provider behind capability detection (OQ-CTX-01).
-**Status note:** Locked — the correction and the adoption rules are fixed; which providers ship the path remains open (`OQ-CTX-01`). Proposed 2026-09-26 (Agent X finalisation, P7 pass 15); DEC-027's text is not amended.
+**Status note:** Locked — the correction and the adoption rules are fixed; which providers ship the path remains open (`OQ-CTX-01`). Proposed 2026-09-26 (P7 pass 15); DEC-027's text is not amended.
 **Evidence:** `ARCHIVE/v1-research/v1-sdd/agentx-opencode-harness-notes.md` §5 (correction 1 — re-verified at the pinned Codex HEAD) · `ARCHIVE/v1-research/v1-sdd/agentx-finalization-draft.md` §4.2.
 **Affects:** `16-CONTEXT`, `18-MODEL-ROUTING`.
 
@@ -328,7 +332,7 @@ Background extraction defaults to the session's active provider (no *new* disclo
 
 **Evidence:** `ARCH/12-TRUST.md` §8 (external-agent boundary — the projection model whose governance half this class is) · `ARCH/32-CHANNELS.md` §3/§4 (the 7-item projection; ACP as client over a spawned child) · `ARCH/42-EVIDENCE-MAP.md` §4 FIX-07 (the governance-badge register entry, annotated close pending exactly this DEC/evidence note) · implementation `crates/everyaios-acp/src/client.rs:1422-1427` (the withhold-by-default handshake) · `crates/everyaios-acp/src/permission_bridge.rs:1-28` (projection-not-decider, the three mapping rules) · `crates/everyaios-acp/src/chief.rs:228-249` (`GovernedSession` + badge), `:255-272` (`governance_mode`) · `src-tauri/src/acp_cmds.rs:1667-1681` (the `SelfContained` classification and the derived `channel_b`) · `src-tauri/src/acp_cmds.rs:1426-1439` (a failed lease yields an empty server list) · `src-tauri/src/acp_cmds.rs:567-605` (every registry row classified, with the explicit note that internal effects are un-audited) · `crates/everyaios-acp/tests/acceptance_permission_bridge.rs:110,146,171,209,239,301` (the six bridge cases: single-use ticket · reject · `always` narrowed to `once` without a recorded policy change · fail-closed · replay refusal · never invent an option id) · `crates/everyaios-acp/src/chief.rs:767-791,876-878,986-1012` (the class mapping and the Channel-B bit, unit-tested) · `ARCHIVE/v0/ARCH/ADR/0005-external-agents-are-the-v1-engines.md` (archived, reference-only) · `ARCH/05-INVARIANTS.md` INV-11 (projections only) / INV-15 (transport isolation) · verified 2026-09-26: `cargo test -p everyaios-acp --lib --test acceptance_permission_bridge` ⇒ 176 + 6 passed, 0 failed (the derivation *at the call site* — `acp_cmds.rs:1680` — is exercised by the crate's `governance_mode` cases, not by a dedicated shell-side test).
 
-**Affects:** `32-CHANNELS`, `12-TRUST`, `15-AGENT-X`.
+**Affects:** `32-CHANNELS`, `12-TRUST`, `15-AGENT-PLANE`.
 
 ### DEC-050 — Base envelope carries a permissions reference, not a snapshot
 
@@ -343,6 +347,30 @@ Background extraction defaults to the session's active provider (no *new* disclo
 **Evidence:** `ARCH/10-KERNEL.md` §7 (JSON canonical shape) · `ARCH/05-INVARIANTS.md` INV-11 · `crates/everyaios-types/src/envelope.rs` `ActorContext` · `crates/everyaios-types/tests/envelope.rs`.
 
 **Affects:** `10-KERNEL`, `08-REQUIREMENTS`, `07-CONTRACTS`, `05-INVARIANTS`.
+
+### DEC-052 — The first-party agent is external; the agent plane is what we specify
+
+**Owner decision (2026-09-27):** AgentCowork ships **no first-party reasoning engine**. The engine is developed outside this repository and is bound here afterwards as an ordinary engine binding. This removes the `Agent X` design from the v1 set.
+
+**What this supersedes, and what survives.** DEC-010 is **not** weakened — its rule ("one `AgentEngine` contract, no privileged path") is *generalized*: it previously read as a first-party agent held to parity with external ones; it now reads as **every** engine held to parity with every other, which is a strictly larger surface with the same force. DEC-010 stays Locked. DEC-020's third working name is retired (the naming layer keeps AgentCowork and Core).
+
+**Doc surgery (all of it, not a partial sweep).** `ARCH/15-AGENT-X.md` → `ARCH/15-AGENT-PLANE.md`, carrying the engine contract (`CTR-001/002/007`), session model, delegation + subagent lifecycle, isolation modes, receipts, interop and the Core/engine boundaries — and losing the loop, the planner, the recovery design, the eager-hot-set tool prescription and the proposed implementation crate. The first-party design is removed, not reworded. `REQ-AGX-001…013` and `TASK-AGX-001…014` are retired and never reused; the four genuinely v1 behaviors among them (delegation contract, subagent spawn/completion, isolation modes, receipts-not-transcripts) are re-seeded as `REQ-AGENT-001…004` so the coverage is not lost with the IDs. W4 is retired. INV-12 is renamed to engine parity and generalized. Every incidental reference across the spec, HLD, flows, context, memory, workflow, channels, skills, code, glossary, evidence map and the agent contract is reworded to the engine-agnostic form.
+
+**The single architectural mention.** `AGENTCOWORK-SPEC.md` and `ARCH/03-HLD.md` state it once: no first-party engine ships in v1; a first-party engine bound later is a peer, not a privileged component. `ARCH/01-NAMING.md` records that the engine is external and why.
+
+**Status note:** Locked (2026-09-27).
+
+**Affects:** `01-NAMING`, `15-AGENT-PLANE`, `05-INVARIANTS`, `08-REQUIREMENTS`, `09-FEATURE-MATRIX`, `03-HLD`, `02-THESIS`, `16-CONTEXT`, `17-MEMORY`, `20-WORKFLOW`, `32-CHANNELS`, `40-FLOWS`, SPEC.
+
+### DEC-053 — Identifier rename and the data-home migration owner
+
+**Owner decision (2026-09-27):** code identifiers are unfrozen and renamed to the product name. `everyaios-*` → `agentcowork-*` across the 21 crates, the 10 TypeScript packages (`@everyaios/*` → `@agentcowork/*`), import paths, the workspace manifests, the Tauri identifiers and every user-facing string. `EveryAIOS` → `AgentCowork`. This supersedes DEC-020's identifier freeze; OQ-003 closes here.
+
+**Data home and environment (the part that can lose data).** `~/.everyaios` → `~/.agentcowork` and `EVERYAIOS_*` → `AGENTCOWORK_*`, **with a legacy fallback**: resolution tries the new location and falls back to the legacy one, and a **single owner** — Core, at startup — performs the one-time migration. No lower-level crate migrates, so there is no migration race and no second migrator. Split constructors rather than a nullable key/argument where a store is encrypted (DEC-039, INV-02): the product path never opens a plaintext store and never silently falls back to a well-known default key.
+
+**Status note:** Locked (2026-09-27).
+
+**Affects:** `01-NAMING`, `10-KERNEL`, `12-TRUST`, `29-ARTIFACTS`, `17-MEMORY`.
 
 ## 3. Pending decisions
 

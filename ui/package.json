@@ -1,9 +1,9 @@
 {
-  "name": "@everyaios/ui",
+  "name": "@agentcowork/ui",
   "private": true,
   "version": "2.0.0",
   "type": "module",
-  "description": "EveryAIOS desktop UI v2 — warm-cream cockpit (UI-DESIGN-PROMPT) served by the Tauri shell (P0.7)",
+  "description": "AgentCowork desktop UI v2 — warm-cream cockpit (UI-DESIGN-PROMPT) served by the Tauri shell (P0.7)",
   "scripts": {
     "dev": "vite",
     "build": "node scripts/build.mjs",

@@ -1,7 +1,7 @@
 // P50.3.2 — task response contract (wire-shape test).
 //
 // `tasks_list` / `tasks_show` return the Rust `TaskRecord` serde shape
-// (crates/everyaios-core/src/task_ledger.rs). The Rust side carries a mirror
+// (crates/agentcowork-core/src/task_ledger.rs). The Rust side carries a mirror
 // test (`serialized_record_matches_ts_bridge_contract`) asserting the exact
 // key set + enum spellings this validator accepts. If either side changes,
 // one of the two tests fails — the `tasks/*` responses can no longer desync

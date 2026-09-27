@@ -1,5 +1,5 @@
 // P42.3 — OAuth scope review + honesty surface. Mirrors the Rust manifest in
-// `everyaios-core::connectors::scopes` (the connector modules request exactly
+// `agentcowork-core::connectors::scopes` (the connector modules request exactly
 // these strings). Read-only-first: the write scope is opt-in per connector and
 // Guard-2-gated. No compliance/enterprise claims — the panel renders these
 // rows verbatim.

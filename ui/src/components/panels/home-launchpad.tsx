@@ -260,7 +260,7 @@ export function ProjectsPanel() {
     <div className="flex h-full w-full flex-col">
       <header className="border-b border-border px-4 py-3">
         <h2 className="text-sm font-semibold">Projects</h2>
-        <p className="text-[11px] text-muted-foreground">Persistent bodies of work — folders EveryAIOS has used.</p>
+        <p className="text-[11px] text-muted-foreground">Persistent bodies of work — folders AgentCowork has used.</p>
       </header>
       <div className="border-b border-border px-4 pb-2">
         <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-card/40 px-2.5 py-1.5">

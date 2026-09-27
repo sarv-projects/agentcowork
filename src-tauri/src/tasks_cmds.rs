@@ -1,6 +1,6 @@
 //! P43 (B7 v3.53) — detached-work task ledger commands.
 //!
-//! Thin wrappers over the shared `everyaios-core::TaskLedger` (BackgroundTaskRecord
+//! Thin wrappers over the shared `agentcowork-core::TaskLedger` (BackgroundTaskRecord
 //! lifecycle `queued → running → terminal`, push completion, lost-state grace,
 //! 7-day retention). The ledger state machine is tested in the crates; this
 //! module is the shell surface the activity rail / H19 progress panel calls.
@@ -9,7 +9,7 @@
 //! transition (registered at `connect_chat_relay` boot) — the UI is woken,
 //! never polled.
 
-use everyaios_core::{FileStore, TaskKind, TaskLedger};
+use agentcowork_core::{FileStore, TaskKind, TaskLedger};
 use serde_json::Value;
 use tauri::State;
 
@@ -140,7 +140,7 @@ pub fn tasks_complete(
 #[tauri::command]
 pub fn tasks_sweep(state: State<'_, AppState>) -> Result<Value, String> {
     let file_direct = || -> Result<Value, String> {
-        let path = everyaios_core::default_data_dir().join("tasks.json");
+        let path = agentcowork_core::default_data_dir().join("tasks.json");
         let mut ledger = TaskLedger::new(Box::new(FileStore::new(path)));
         let reaped = ledger.handle("tasks/reap", &serde_json::json!({}))?;
         let pruned = ledger.handle("tasks/prune", &serde_json::json!({}))?;

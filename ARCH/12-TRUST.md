@@ -126,7 +126,7 @@ Policy evaluated by Trust; records owned by `21`. Required record fields (per co
 
 1. Granular approval category list for v1.
 2. Approval routing defaults per channel (desktop first; mobile/API later).
-3. Pathfloor/netfloor mapping to the current crate reality (code phase — `everyaios-guard` exists; wiring fidelity to verify).
+3. Pathfloor/netfloor mapping to the current crate reality (code phase — `agentcowork-guard` exists; wiring fidelity to verify).
 4. Policy version storage + migration semantics.
 5. Consent-record ownership split confirmation (`21` records, Trust evaluates — assumed here).
 
@@ -134,7 +134,7 @@ Policy evaluated by Trust; records owned by `21`. Required record fields (per co
 
 Owner brief (projections, permission defaults, isolation: host / agent workspace / vault) · `agent-harness-verification.md` §A4 (three verified layers + anchors) · DEC-028 · INV-01…12/24 · `ARCH/06-DATA-MODEL.md` DM-009/010 · `ARCH/07-CONTRACTS.md` CTR-011/012/013 · `ARCH/21-WORLD-MODEL.md` §5 (consent fields).
 
-**Code-phase anchors (§1.1, §8):** `crates/everyaios-guard/src/ratelimit.rs` (the limiter) · `src-tauri/src/lib.rs:845` + `:82-149` (the IPC gate, wrapping the `invoke_handler`) · `crates/everyaios-core/src/tools.rs:1176-1192` (the tool-path gate) · `src-tauri/src/fs_cmds.rs:33,91,149` (read commands un-intercepted, write command floored — the open part of §8).
+**Code-phase anchors (§1.1, §8):** `crates/agentcowork-guard/src/ratelimit.rs` (the limiter) · `src-tauri/src/lib.rs:845` + `:82-149` (the IPC gate, wrapping the `invoke_handler`) · `crates/agentcowork-core/src/tools.rs:1176-1192` (the tool-path gate) · `src-tauri/src/fs_cmds.rs:33,91,149` (read commands un-intercepted, write command floored — the open part of §8).
 
 ## 15. Requirements (`REQ-TRUST-*`)
 

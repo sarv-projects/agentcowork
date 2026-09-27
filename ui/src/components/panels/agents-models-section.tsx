@@ -398,9 +398,9 @@ function AgentLogo({ agent }: { agent: AgentRuntime }) {
 }
 
 // === P65.2 — dual-card agent detail ===========================================
-// Native capabilities (owned by the agent itself) vs shared cowork (EveryAIOS
+// Native capabilities (owned by the agent itself) vs shared cowork (AgentCowork
 // grants that apply from the next turn). Never copy an external agent's keys
-// into EveryAIOS config surfaces — this detail shows env *names* only, never
+// into AgentCowork config surfaces — this detail shows env *names* only, never
 // values, and external model picks stay inside the agent's own config.
 
 type AgentReadiness = 'ready' | 'degraded' | 'unavailable' | 'unverified'
@@ -559,16 +559,16 @@ function AgentDetailCards({ agent }: { agent: AgentRuntime }) {
           </div>
         </dl>
         <p className="mt-1.5 rounded border border-border/40 bg-background/40 px-1.5 py-1 text-[9px] leading-relaxed text-muted-foreground">
-          Authentication stays in the agent&apos;s own sign-in. EveryAIOS can add only
+          Authentication stays in the agent&apos;s own sign-in. AgentCowork can add only
           credential-free launch inputs such as model or base URL; it never copies or injects a
           host-vault credential.
         </p>
       </div>
-      {/* Shared cowork — EveryAIOS grants, next-turn only. */}
+      {/* Shared cowork — AgentCowork grants, next-turn only. */}
       <div className="rounded-md border border-border/50 bg-background/30 p-2">
         <div className="flex items-center gap-1.5">
           <span className="text-[10px] font-medium text-foreground">Shared cowork</span>
-          <Badge variant="outline" className="text-[8px] text-muted-foreground">EveryAIOS grants</Badge>
+          <Badge variant="outline" className="text-[8px] text-muted-foreground">AgentCowork grants</Badge>
         </div>
         <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">
           Office, Browser, Computer Use, connectors, memory, and MCP for this runtime.
@@ -814,7 +814,7 @@ function SubagentConfigCard({ agent }: { agent: AgentRuntime }) {
 
       <p className="mt-1.5 rounded border border-border/40 bg-background/30 px-2 py-1 text-[9px] leading-relaxed text-muted-foreground">
         Sandbox: coding specialists run worktree-isolated (ephemeral, branched off the current
-        branch via <span className="font-mono">everyaios-core worktrees</span>) — no direct
+        branch via <span className="font-mono">agentcowork-core worktrees</span>) — no direct
         mutation of the primary branch without review and an explicit merge.
       </p>
 
@@ -870,7 +870,7 @@ function AgentCard({
     liveSource?.find((a) => a.id === agent.id) ?? agent,
   )
   // P60/P71.2d — ownership. Every CLI owns its own model and exposes it (if at
-  // all) over ACP config options; EveryAIOS owns no model surface to show.
+  // all) over ACP config options; AgentCowork owns no model surface to show.
   const acpOptions = useAppStore((s) => s.acpConfigOptions[agent.id])
   const [busyInstall, setBusyInstall] = useState(false)
   const [busyScan, setBusyScan] = useState(false)
@@ -1174,7 +1174,7 @@ function AgentsTab() {
   // letting the seed read as "these are on this machine".
   const catalog = liveAgents.length > 0 ? liveAgents : AGENTS
   const occupancyUnknown = inTauri() && liveAgents.length === 0
-  // P71.2d — there is no built-in runtime card and no "EveryAIOS Native model
+  // P71.2d — there is no built-in runtime card and no "AgentCowork Native model
   // catalog" disclosure: the desktop's models.dev table is *observation*
   // (Providers / Local models), not a surface any agent receives. Every row in
   // `catalog` is an external agent, so the grid is the whole list.
@@ -1202,7 +1202,7 @@ function AgentsTab() {
   return (
     <SectionShell
       title="Agent runtimes"
-      desc="The underlying coding-agent CLI / IDE plugin EveryAIOS can drive. Installed state is detected live — EveryAIOS-installed or auto-discovered on PATH. Each runtime ships its own model support."
+      desc="The underlying coding-agent CLI / IDE plugin AgentCowork can drive. Installed state is detected live — AgentCowork-installed or auto-discovered on PATH. Each runtime ships its own model support."
       action={
         <Button
           size="sm"

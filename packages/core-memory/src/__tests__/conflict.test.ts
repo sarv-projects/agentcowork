@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { MemoryConflictResolver } from '../conflict.js';
-import type { FactCandidate, MemoryFact } from '@everyaios/core-domain';
+import type { FactCandidate, MemoryFact } from '@agentcowork/core-domain';
 
 function hashEmbed(text: string): Float32Array {
   const vector = new Float32Array(16);

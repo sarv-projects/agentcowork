@@ -26,7 +26,7 @@ This registry answers one question per entry: **what behavior must this system e
 | `TRUST` | Policy · Guard · approvals · tickets · vault · egress · audit | `ARCH/12-TRUST.md` |
 | `CAP` | Registry · catalog · resolver · handles · affordances · guidance | `ARCH/13-CAPABILITY.md` |
 | `PROV` | Provider adapter contract + native/MCP/ACP/HTTP/CLI/plugin/remote | `ARCH/14-PROVIDERS.md` |
-| `AGX` | Agent X loop, planner, delegation, recovery, completion contracts | `ARCH/15-AGENT-X.md` |
+| `AGENT` | The engine contract every agent implements: delegation + subagent lifecycle, isolation modes, receipts | `ARCH/15-AGENT-PLANE.md` |
 | `CTX` | Context infrastructure + context control + projections | `ARCH/16-CONTEXT.md` |
 | `MEM` | Durable memory: layers, write/read paths, minimal algorithm set | `ARCH/17-MEMORY.md` |
 | `MODEL` | Model registry · router · adapters; local discovery; effort mapping | `ARCH/18-MODEL-ROUTING.md` |
@@ -77,8 +77,8 @@ This registry answers one question per entry: **what behavior must this system e
 - **Statement:** GIVEN any externally visible effect requested from any surface, domain, adapter or agent, WHEN the effect is proposed, THEN it executes only through the governed path (`Work → Capability → Provider → Handle → Guard → Ticket → Execute → Effect → Verify → Receipt → Event`) and its receipt references its ticket.
 - **Priority:** must
 - **Source:** `AGENTCOWORK-SPEC.md` §4 · `ARCH/05-INVARIANTS.md` INV-01/INV-03 · `DEC-002`
-- **Acceptance:** an attempted effect without a ticket fails closed and is audited; every receipt cites a ticket; no bypass path exists for domains, adapters, UI or Agent X.
-- **Failure cases:** bypass attempt via domain/adapter/UI/Agent X → denied; missing ticket → denied + audit entry; receipt without ticket → verification failure (no silent effects).
+- **Acceptance:** an attempted effect without a ticket fails closed and is audited; every receipt cites a ticket; no bypass path exists for domains, adapters, UI or any engine.
+- **Failure cases:** bypass attempt via domain/adapter/UI/engine → denied; missing ticket → denied + audit entry; receipt without ticket → verification failure (no silent effects).
 - **Tests:** pending
 - **Status:** seeded
 
@@ -100,11 +100,11 @@ This registry answers one question per entry: **what behavior must this system e
 - **Tests:** pending
 - **Status:** seeded
 
-#### REQ-PROD-004 — Native parity (Agent X)
-- **Statement:** GIVEN Agent X performs an action, WHEN it mutates state or reaches outside its sandbox, THEN it traverses the same guard/ticket path as any external agent; no privileged shortcut exists, even temporarily.
+#### REQ-PROD-004 — Engine parity
+- **Statement:** GIVEN any agent engine performs an action, WHEN it mutates state or reaches outside its sandbox, THEN it traverses the same guard/ticket path as any other engine; no privileged shortcut exists for a first-party engine either, even temporarily (DEC-052).
 - **Priority:** must
 - **Source:** `AGENTCOWORK-SPEC.md` §11 · `ARCH/05-INVARIANTS.md` INV-12 · `DEC-010`
-- **Acceptance:** Agent X runs through the same guard/ticket path as an external adapter in tests.
+- **Acceptance:** an in-process engine runs through the same guard/ticket path as an external adapter in tests; no binding kind is exempt from the parity test.
 - **Failure cases:** native-only fast path → forbidden; parity exceptions → require a superseding `DEC`.
 - **Tests:** pending
 - **Status:** seeded
@@ -492,7 +492,7 @@ This registry answers one question per entry: **what behavior must this system e
 - **Statement:** GIVEN our MCP façade, WHEN an external client connects, THEN it serves stateless modern behavior with `initialize` compatibility, MUST implement `server/discover`, and MUST validate `Mcp-Method` and `Mcp-Name` headers.
 - **Priority:** must
 - **Source:** `ARCH/14-PROVIDERS.md` §4 · `ARCH/04-DECISIONS.md` DEC-030, DEC-048
-- **Acceptance:** façade tests cover modern and legacy clients; `server/discover` present; header validation rejects mismatches; and `initialize` compatibility is reachable **on the strict lease**, method-restricted (only `initialize` is exempt from the revision pin) and session-less (no lease, no session, no capability handle) — `crates/everyaios-mcp/tests/acceptance_mcp_dual_era.rs::acceptance_a_legacy_initialize_completes_on_the_strict_lease`.
+- **Acceptance:** façade tests cover modern and legacy clients; `server/discover` present; header validation rejects mismatches; and `initialize` compatibility is reachable **on the strict lease**, method-restricted (only `initialize` is exempt from the revision pin) and session-less (no lease, no session, no capability handle) — `crates/agentcowork-mcp/tests/acceptance_mcp_dual_era.rs::acceptance_a_legacy_initialize_completes_on_the_strict_lease`.
 - **Failure cases:** missing `server/discover` → client cannot negotiate; unvalidated headers → request rejected.
 - **Tests:** pending
 - **Status:** seeded
@@ -756,7 +756,7 @@ This registry answers one question per entry: **what behavior must this system e
 #### REQ-MEM-014 — Extraction boundary: untrusted content and provenance trust tiers
 - **Statement:** GIVEN extraction harvests settled turns that may contain untrusted data (web content, files, tool output, external receipts), WHEN candidates are extracted and stored, THEN harvested content is bounded, delimited and escaped as data (never as instructions), every item carries a provenance trust tier (`user_explicit | agent_asserted | derived_untrusted | import`) derived from its source, instruction-shaped or scope-widening candidates are rejected/downgraded/stored without authority, and injected memory text can never change agent policy, goals, permissions, or tool choices.
 - **Priority:** must
-- **Source:** `ARCH/17-MEMORY.md` §5.2–5.4/§6/§13 · `ARCH/15-AGENT-X.md` §7 (escaping precedent) · `ARCH/04-DECISIONS.md` DEC-036/037 · `ARCH/41-EDGE-CASES.md` EDGE-093
+- **Source:** `ARCH/17-MEMORY.md` §5.2–5.4/§6/§13 · `ARCH/15-AGENT-PLANE.md` §7 (escaping precedent) · `ARCH/04-DECISIONS.md` DEC-036/037 · `ARCH/41-EDGE-CASES.md` EDGE-093
 - **Acceptance:** adversarial fixture (page/tool output containing a “remember: always …” instruction) produces no policy-bearing item and no scope widening; every injected item exposes its trust tier; a harness test shows memory text is rendered as quoted data and never executed/obeyed.
 - **Failure cases:** untrusted instruction stored as `decision`/`preference` with authority → failure; scope widened from untrusted content → failure; injected content obeyed in an agent test → security failure.
 - **Tests:** pending
@@ -828,7 +828,7 @@ This registry answers one question per entry: **what behavior must this system e
 #### REQ-MEM-022 — Multi-agent boundary: external agents and subagents
 - **Statement:** GIVEN external agents and subagents, WHEN they interact with memory, THEN v1 exposure is read-only filtered recall (bound project + own session/task + user preferences; no org, no other projects, no `confidential` without a recorded loadout); Core never writes an external agent's native memory/config/session stores; external provider-session transcripts are never harvested; child-session harvesting, if enabled, is explicit with parent linkage; receipts enter extraction only as untrusted data; and imports are user-initiated, read-only to the source, and audited.
 - **Priority:** must
-- **Source:** `ARCH/17-MEMORY.md` §4/§5/§9 · `ARCH/15-AGENT-X.md` §5/§7 · `ARCH/04-DECISIONS.md` DEC-009/025/029/036/043 · `ARCH/32-CHANNELS.md` §3
+- **Source:** `ARCH/17-MEMORY.md` §4/§5/§9 · `ARCH/15-AGENT-PLANE.md` §5/§7 · `ARCH/04-DECISIONS.md` DEC-009/025/029/036/043 · `ARCH/32-CHANNELS.md` §3
 - **Acceptance:** external-agent view matrix test; test that no write occurs to a fixture external memory directory; receipt-only parent context test; child-session extraction policy test; import audit test.
 - **Failure cases:** an external agent's native files written → violation; receipt transcript in parent context → violation; external transcript harvested → violation.
 - **Tests:** pending
@@ -929,7 +929,7 @@ This registry answers one question per entry: **what behavior must this system e
 #### REQ-MODEL-006 — One typed stream union above adapters
 - **Statement:** GIVEN any streaming completion, WHEN events reach callers, THEN they use one typed stream-event union (step-start · text/reasoning/tool-input deltas · tool-call/result/error · step-finish · finish · provider-error) with explicit block ids synthesized when absent, step-finish and turn-finish distinct, and cancellation and backpressure mandatory — no consumer branches on provider id.
 - **Priority:** must
-- **Source:** `ARCH/18-MODEL-ROUTING.md` §4 · `ARCH/04-DECISIONS.md` DEC-034 · `ARCH/15-AGENT-X.md` §4
+- **Source:** `ARCH/18-MODEL-ROUTING.md` §4 · `ARCH/04-DECISIONS.md` DEC-034 · `ARCH/15-AGENT-PLANE.md` §4
 - **Acceptance:** union-conformance tests per adapter; block-id synthesis test; provider-id branching absent above the adapter; cancellation and backpressure tests.
 - **Failure cases:** provider-specific event shape leaking upward → defect; missing step/turn distinction → defect; silent stream end treated as success → defect.
 - **Tests:** pending
@@ -1613,124 +1613,43 @@ This registry answers one question per entry: **what behavior must this system e
 - **Tests:** pending
 - **Status:** seeded
 
-### Agent X (`AGX`)
+### Agent engine (`AGENT`)
 
-#### REQ-AGX-001 — Delegation contract
-- **Statement:** GIVEN Agent X delegates to a subagent, WHEN the child runs, THEN it runs in a child session with full escaped project rules, an optional per-spawn worktree, returns receipts (not transcripts), and its outer bounds are enforced by Core.
-- **Priority:** must
-- **Source:** `AGENTCOWORK-SPEC.md` §11 · `DEC-029`, `DEC-031`
-- **Acceptance:** child-session isolation test; bounds enforcement test (time/steps/budget); handoff contains receipts, not raw transcripts.
-- **Failure cases:** unbounded child → terminated by Core; transcript handoff → replaced by receipt summary; rule leakage across projects → zero.
-- **Tests:** pending
-- **Status:** seeded
+> The engine-agnostic obligations AgentCowork holds over **any** agent engine — an
+> external CLI or protocol agent, and any engine bound natively later. The engine's
+> own loop, prompt construction, native tools and internal recovery are the engine's
+> business (`ARCH/02-THESIS.md` agent-native plane); what is specified here is only what
+> we require of it and what we refuse to do on its behalf. The first-party engine
+> requirement set (`REQ-AGX-001…013`) is retired by DEC-052; these IDs are new and are
+> never renumbered or reused.
 
-#### REQ-AGX-002 — Native harness loop contract
-- **Statement:** GIVEN a bound Agent X session, WHEN a turn runs, THEN the loop is a step loop with admission boundaries (`next-turn`/`next-step`), per-agent step budget with a hard text-only wrap-up, tool materialization per step, and an explicit continuation decision (continue | compact | finish); the loop finishes only when the completion contract is satisfied or the run is genuinely blocked — never because it read a file, made an edit, ran a command, or completed one subtask.
+#### REQ-AGENT-001 — Delegation contract
+- **Statement:** GIVEN a delegation request, WHEN it is dispatched, THEN it names the bound engine, the work item, the permitted scopes and the deadline, and the delegated work appears as a first-class `Work` item with its own journal — never as an opaque side effect of a turn.
 - **Priority:** must
-- **Source:** `ARCH/15` §4 · `DEC-022` · `DEC-027` · harness notes §1
-- **Acceptance:** no-early-finish test (tool result alone cannot end a turn); last-step test shows tools not materialized + wrap-up prompt; steer lands only at a boundary; completion requires `goal + success_conditions[] + verification[]`.
-- **Failure cases:** finish on first tool result → defect; tool call attempted on last step → refused by materialization; mid-step steer → rejected and deferred.
-- **Tests:** pending
-- **Status:** seeded
+- **Source:** `ARCH/15-AGENT-PLANE.md` §7 · `ARCH/11-WORK.md` · `ARCH/04-DECISIONS.md` DEC-029, DEC-031, DEC-036
+- **Acceptance:** a delegated item is queryable as `Work` while running and after completion; a cancelled parent leaves the child's terminal state honest.
+- **Failure cases:** a delegation that cannot be represented as `Work` → refused; a child outliving its deadline → reported as expired, never as completed.
 
-#### REQ-AGX-003 — Deterministic loop guards
-- **Statement:** GIVEN repeated identical tool calls or N steps without progress, WHEN the detector threshold trips, THEN Agent X escalates through the approval primitive with full context (or a typed failure with a user-visible retry path) — deterministically, independent of model behavior, and never as a silent abort.
+#### REQ-AGENT-002 — Subagent spawn and completion
+- **Statement:** GIVEN a spawn request, WHEN the child is created, THEN its lifecycle (spawned → running → terminal) is observable, its result is a receipt-bearing terminal record, and an async child is tracked by the scheduler rather than by an in-memory promise.
 - **Priority:** must
-- **Source:** `ARCH/15` §8 · `DEC-021` · harness notes §10.6 (OpenCode `doom_loop` is an advisory ask — counter-example)
-- **Acceptance:** N identical calls produce one escalation; no-progress detector test; thresholds configurable and audited.
-- **Failure cases:** silent abort → defect; infinite retry → defect; advisory-only guard → defect.
-- **Tests:** pending
-- **Status:** seeded
+- **Source:** `ARCH/15-AGENT-PLANE.md` §7 · `ARCH/20-WORKFLOW.md` · `ARCH/04-DECISIONS.md` DEC-029, DEC-036 · `ARCH/30-EVENTS.md`
+- **Acceptance:** spawn → completion is reconstructable from the journal alone after a restart; a child that dies without a terminal record settles as uncertain, never as completed.
+- **Failure cases:** a lost child record → `uncertain`; a completion claimed without evidence → rejected.
 
-#### REQ-AGX-004 — Tool plane: bounded, mapped, no flat dump
-- **Statement:** GIVEN an Agent X turn, WHEN tools are materialized, THEN exactly the agent's declared loadout is exposed (bounded eager hot set + meta-tool for the long tail), every effect-bearing tool resolves through the capability/Guard/ticket path, every read-only tool is path-scope-checked, independent reads may run in parallel while mutating calls serialize per workspace lease, and no raw tool catalog is ever injected into the request.
+#### REQ-AGENT-003 — Subagent isolation modes
+- **Statement:** GIVEN a spawn request, WHEN isolation is chosen, THEN the mode is explicit and recorded per spawn (in-process by default for an in-process engine; worktree or ACP-bound for an external one) and the mode is visible in the work record.
 - **Priority:** must
-- **Source:** `ARCH/13` §6 · REQ-CAP-001 · `DEC-028` · `ARCH/25` §6 · harness notes §3/§7 (R-01/R-10/R-12)
-- **Acceptance:** materialized-tool-count cap test; permission-key mapping test per tool; parallel-read + serialized-mutation test with an explicit lease-conflict result; every effect call carries a ticket.
-- **Failure cases:** flat MCP injection → rejected; effect without ticket → denied + audited; overlapping concurrent writes → blocked by lease; unbounded output entering context → truncated-to-artifact.
-- **Tests:** pending
-- **Status:** seeded
+- **Source:** `ARCH/15-AGENT-PLANE.md` §7 · `ARCH/04-DECISIONS.md` DEC-025, DEC-029 · `ARCH/19-RUNTIME-ENVIRONMENTS.md`
+- **Acceptance:** the recorded mode is the mode actually enforced; a request for a mode the runtime cannot provide is refused rather than downgraded.
+- **Failure cases:** silent downgrade to a weaker isolation mode → violation; unavailable worktree/ACP mode → refused with the reason.
 
-#### REQ-AGX-005 — Tool output bounding with artifact retention
-- **Statement:** GIVEN any tool result exceeding the declared bounds, WHEN the result is returned, THEN the model sees a bounded preview explicitly marked truncated, the full output persists as an artifact/event reference, retention failure is a typed operational failure, and lossy success is forbidden.
+#### REQ-AGENT-004 — Receipts, not transcripts
+- **Statement:** GIVEN a completed delegated item, WHEN its result is projected to the user or a parent engine, THEN it is a receipt (what was intended, what changed, what it cost, what remains uncertain) and never a raw transcript presented as a result.
 - **Priority:** must
-- **Source:** harness notes §3/R-12 · `DEC-032` · `ARCH/16` §4 item 2 · REQ-CTX-006
-- **Acceptance:** >2,000 lines/50 KiB yields preview + artifact ref; receipt-pinned artifact is not GC'd; forced retention failure surfaces as a typed failure.
-- **Failure cases:** silent truncation → defect; preview presented as complete → defect; receipt-pinned artifact pruned → violation.
-- **Tests:** pending
-- **Status:** seeded
-
-#### REQ-AGX-006 — Subagent spawn and completion contract
-- **Statement:** GIVEN a delegation, WHEN spawn executes, THEN it returns `{agent_id, nickname?, session_ref, work_id, status, parent_turn_id}` immediately (or after a bounded await), the child is a fresh session with full escaped project rules and an explicit fork option, completion is delivered only at a turn boundary through the wake-suppression gate, cancelled children never wake, and slots are held until closed with queue-on-limit default (fail opt-in).
-- **Priority:** must
-- **Source:** `DEC-029` · `DEC-036` · `DEC-031` · `ARCH/15` §7 · ASW §0/§1.7
-- **Acceptance:** spawn returns before child completion; wake-gate truth table; cancelled-never-wakes test; held-slot test; queue/fail behavior test.
-- **Failure cases:** blocking spawn by default → defect; wake from a cancelled child → violation; slot leak after completion → defect; completion delivered mid-step → rejected.
-- **Tests:** pending
-- **Status:** seeded
-
-#### REQ-AGX-007 — Subagent isolation modes: worktree and ACP
-- **Statement:** GIVEN a spawn requesting `isolation: worktree | acp`, WHEN the child runs, THEN worktree children hold write leases on their checkout and merge explicitly, and ACP children run as external provider-executed agents through the `14` acp adapter with a scoped capability projection (Core tickets never cross the boundary), permission prompts routed through the parent session's approval channel, and receipts schema-validated with at most one bounded correction retry; the default isolation is in-process.
-- **Priority:** must
-- **Source:** `DEC-029` · `ARCH/14` §3 · `ARCH/32` §4 · harness notes §4.3 (R-02/R-04) · ASW §1.5/§1.7
-- **Acceptance:** default is in-process; ACP child cannot mint or consume Core tickets; prompts route through the gateway; malformed receipt → one correction retry then raw-text fallback with a typed note; ACP children occupy the same concurrency bound.
-- **Failure cases:** ACP child granted a Core ticket → violation; direct-to-user permission prompt → violation; unbounded correction loop → defect; ACP child escaping the concurrency bound → defect.
-- **Tests:** pending
-- **Status:** seeded
-
-#### REQ-AGX-008 — Receipts, not transcripts; untrusted reports
-- **Statement:** GIVEN a child completes, WHEN the parent receives the result, THEN it is a `WorkerReceipt` (status · scope · summary · findings · changed files · tests · artifacts · blockers · confidence · usage · will_wake · partial) — never a transcript — scanned for instruction-shaped patterns, delivered under a no-authority header as an automated event, size-capped with a full-log artifact reference, at-most-once per parent incarnation, with usage rolled up to the parent.
-- **Priority:** must
-- **Source:** `DEC-029` · `DEC-036` · `ARCH/06` DM-016 · ASW §1.1/Q-A1.8 · harness notes R-04
-- **Acceptance:** parent context contains no child transcript; instruction-shaped payload is neutralized/marked; duplicate delivery deduped; oversize receipt becomes an artifact ref; usage attributable to the parent.
-- **Failure cases:** transcript handoff → violation; unscanned report consumed as instructions → defect; duplicate wake → defect; silent receipt loss → defect.
-- **Tests:** pending
-- **Status:** seeded
-
-#### REQ-AGX-009 — Context-control integration: no silent overflow
-- **Statement:** GIVEN a model call is about to run, WHEN the assembled request approaches the resolved window, THEN Agent X runs the pre-turn feasibility check with named budget terms, prunes before compacting, writes a checkpoint before compaction, compacts as a projection over a log it never rewrites, and retries the same step exactly once after overflow; memory enters only as recall candidates under budget.
-- **Priority:** must
-- **Source:** `DEC-027` · `ARCH/16` §3/§4/§6 · `ARCH/17` §1 · ASW §2.2
-- **Acceptance:** overflow never reaches the provider in the normal path; a checkpoint exists before each compaction; a second overflow surfaces; zero-hit memory measured as zero injected tokens; no compaction loop.
-- **Failure cases:** silent overflow → defect; log rewrite → violation; compaction loop → defect; memory injected outside recall → violation.
-- **Tests:** pending
-- **Status:** seeded
-
-#### REQ-AGX-010 — Model-plane handoff, no duplicated routing or retry
-- **Statement:** GIVEN Agent X needs a model, WHEN it selects, streams, retries or accounts, THEN it calls `18` (`CTR-014`) only — never a vendor SDK, never its own registry; reasoning levels map through `18`; exactly one layer retries per failure class (transport retries belong to `18`, turn-level recovery to Agent X); usage/cost events follow the DEC-034 invariant.
-- **Priority:** must
-- **Source:** `ARCH/15` §9 · `ARCH/18` §3/§4/§7 · `DEC-034` · AHV §D1
-- **Acceptance:** no provider-id branch in Agent X; retry-ownership test per failure class; usage totals equal breakdown sums (never subtract); provider switch mid-session does not change agent state.
-- **Failure cases:** direct vendor SDK call → violation; double retry → defect; subtract-based accounting → defect.
-- **Tests:** pending
-- **Status:** seeded
-
-#### REQ-AGX-011 — Meta-tool long-tail loading (cache-stable)
-- **Statement:** GIVEN a capability outside the eager tool set, WHEN the model needs it, THEN it discovers it through a static-description `capability.search` (deterministic BM25 over descriptors, typed results carrying the full schema, stable fingerprint) and invokes it through `capability.invoke`, which resolves through `13`/Guard and mints its ticket at invoke time — the eager set stays bounded and meta-tool descriptions never change per turn.
-- **Priority:** must
-- **Source:** REQ-CAP-001 · `ARCH/13` §6 · harness notes §7 (R-01/R-08)
-- **Acceptance:** tool-schema token count bounded independent of connected MCP servers; search-descriptor hash stable across a session; invoke without a ticket denied; unknown capability returns a typed corrective error naming candidates and schema.
-- **Failure cases:** flat injection → violation; per-turn descriptor churn → cache-bust defect; invoke bypassing Guard → violation; mis-guessed args without corrective output → defect.
-- **Tests:** pending
-- **Status:** seeded
-
-#### REQ-AGX-012 — ACP/CLI surface parity
-- **Statement:** GIVEN an ACP or CLI client attaches, WHEN it drives Agent X, THEN it receives the same session lifecycle (initialize/new/list/resume/close/fork), typed updates mapped from the internal stream, cooperative `cancel`, and the 7-item projection through the gateway — no internal stores exposed and no protocol vocabulary leaking above the gateway; session state is durable across detach.
-- **Priority:** must
-- **Source:** `ARCH/15` §11 · `ARCH/32` §2/§4 · AHV §B1/§B2/§C3
-- **Acceptance:** ACP handshake acceptance test; cancel produces a terminal reason; detached session resumes; projection excludes internals; protocol mapping is the only protocol-aware layer.
-- **Failure cases:** protocol semantics leaking inward → violation; cancel not honored → defect; session state lost on detach → defect; internal store exposed → violation.
-- **Tests:** pending
-- **Status:** seeded
-
-#### REQ-AGX-013 — Recovery and no-fabrication
-- **Statement:** GIVEN a failure (model, tool, context, child, crash), WHEN Agent X recovers, THEN retries are bounded and typed, replan is recorded, crash recovery reconstructs from the session log + inbox projection, and no terminal state claims success without the completion contract and verification; partial completions are marked `partial` and resumable.
-- **Priority:** must
-- **Source:** `ARCH/15` §12 · `ARCH/11` §4/§9 · `INV-16`/`INV-19` · `DEC-022` · ASW A2-8
-- **Acceptance:** kill/restart resume test restores pending input; stuck-loop escalation; step-cap overrun yields a `partial` marker + resume; receipt only after verification.
-- **Failure cases:** fabricated completion → violation; unbounded retry loop → defect; accepted input lost after crash → violation; partial output shown as complete → defect.
-- **Tests:** pending
-- **Status:** seeded
+- **Source:** `ARCH/15-AGENT-PLANE.md` §7 · `ARCH/29-ARTIFACTS.md` · `ARCH/34-EFFECT-VERIFICATION.md` · `ARCH/04-DECISIONS.md` DEC-022
+- **Acceptance:** a delegated result is renderable as a receipt with no transcript access; an engine's self-report of success is labelled as a report until verified.
+- **Failure cases:** an unverified report rendered as fact → violation; a transcript surfaced as a user-facing result → violation.
 
 ### UI (`UI`)
 
@@ -2707,7 +2626,7 @@ This registry answers one question per entry: **what behavior must this system e
 #### REQ-CHAN-007 — ACP maps the typed stream in both directions
 - **Statement:** GIVEN ACP, WHEN it operates as a server, THEN it exposes session management + tool registry + typed streaming updates mapping the internal typed stream (`30` §3) onto ACP update classes; as a client, external agents arrive in-process or as stdio ND-JSON subprocesses whose adapters register a factory (`15` §2).
 - **Priority:** must
-- **Source:** `ARCH/32-CHANNELS.md` §4 · `ARCH/30-EVENTS.md` §3 · `ARCH/15-AGENT-X.md` §2
+- **Source:** `ARCH/32-CHANNELS.md` §4 · `ARCH/30-EVENTS.md` §3 · `ARCH/15-AGENT-PLANE.md` §2
 - **Acceptance:** ACP server update-class mapping test; subprocess factory-registration test; no opaque update channel.
 - **Failure cases:** ACP-specific semantics leaking into Core → violation; an unregistered adapter path → defect.
 - **Tests:** pending
@@ -2755,7 +2674,7 @@ This registry answers one question per entry: **what behavior must this system e
 - **Source:** `ARCH/32-CHANNELS.md` §8 · `ARCH/41-EDGE-CASES.md` EDGE-079 · `ARCH/30-EVENTS.md` §6 · `ARCH/04-DECISIONS.md` DEC-048
 - **Acceptance:** a mismatch test returns a typed error + window; compatible clients connect; no silent partial stream; the refusal carries the window as data, not only as prose — `error.data.supportedProtocolVersions` on the MCP façade (DEC-048).
 - **Failure cases:** silent vocabulary drop → violation; untyped rejection → defect.
-- **Tests:** `crates/everyaios-mcp/tests/acceptance_mcp_dual_era.rs::{acceptance_the_revision_pin_holds_for_every_method_except_initialize, acceptance_a_comma_duplicated_version_header_is_normalized, acceptance_an_unknown_initialize_version_is_answered_not_echoed}`
+- **Tests:** `crates/agentcowork-mcp/tests/acceptance_mcp_dual_era.rs::{acceptance_the_revision_pin_holds_for_every_method_except_initialize, acceptance_a_comma_duplicated_version_header_is_normalized, acceptance_an_unknown_initialize_version_is_answered_not_echoed}`
 - **Status:** implemented
 
 #### REQ-CHAN-013 — External-agent disconnects leave no orphaned state
@@ -2781,7 +2700,7 @@ This registry answers one question per entry: **what behavior must this system e
 #### REQ-VERIFY-002 — Verification is read-only; repairs are new operations
 - **Statement:** GIVEN a verification run, WHEN it observes/validates/renders, THEN it never mutates the effect; a repair is a new work item/operation with its own ticket and receipt — never a silent re-execution.
 - **Priority:** must
-- **Source:** `ARCH/34-EFFECT-VERIFICATION.md` §1/§6 · `ARCH/29-ARTIFACTS.md` §3 · `ARCH/15-AGENT-X.md` §8
+- **Source:** `ARCH/34-EFFECT-VERIFICATION.md` §1/§6 · `ARCH/29-ARTIFACTS.md` §3 · `ARCH/15-AGENT-PLANE.md` §8
 - **Acceptance:** verification makes no write; a repair has a distinct ticket + receipt; no silent re-fire path exists.
 - **Failure cases:** verification mutating state → violation; silent retry → violation.
 - **Tests:** pending
@@ -2894,7 +2813,7 @@ This registry answers one question per entry: **what behavior must this system e
 | `CTX` (10) | drafted above + expanded in pass `16` | verified during pass `16` ✅ (2026-09-26) |
 | `TRUST` (10), `CAP` (10) | drafted above + expanded in passes `12`/`13` | verified during passes `12` ✅ / `13` ✅ (2026-09-26) |
 | `PROV` (10) | drafted above + expanded in pass `14` | verified during pass `14` ✅ (2026-09-26) |
-| `AGX` (13) | drafted above + expanded in the Agent X finalisation | verified during the Agent X finalisation (2026-09-26) |
+| `AGENT` (4) | drafted 2026-09-27 from the retired `AGX` set (DEC-052) | pending — no engine binding exists yet |
 | `UI` (14) | drafted above + expanded in the P7 UI merge | verified during the P7 UI merge ✅ (2026-09-26) |
 | `KERNEL` (7), `WORK` (8) | drafted above | verified during passes `10` ✅ / `11` ✅ (2026-09-26) |
 | `MEM` (27) | drafted above + expanded in pass `17` and the P7 memory merge (`REQ-MEM-013…027`) | verified during pass `17` ✅ / P7 memory merge ✅ (2026-09-26) |

@@ -82,7 +82,7 @@ export default function FolderView() {
     void fsReadFile(fullPath).then((f) => {
       if (f.binary || f.truncated) return
       window.dispatchEvent(
-        new CustomEvent('everyaios:open-file', { detail: { path: fullPath, content: f.content } })
+        new CustomEvent('agentcowork:open-file', { detail: { path: fullPath, content: f.content } })
       )
       setActiveView('code' as never)
     })

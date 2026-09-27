@@ -1,13 +1,13 @@
 //! P1.8 — local model picker (LM Studio-style fit badges + context floor).
 
-use everyaios_core::{detect_hardware, LocalManager};
+use agentcowork_core::{detect_hardware, LocalManager};
 use tauri::State;
 
 use crate::AppState;
 
 #[tauri::command]
 pub fn local_models() -> Result<serde_json::Value, String> {
-    let cfg = everyaios_core::Config::load().unwrap_or_default();
+    let cfg = agentcowork_core::Config::load().unwrap_or_default();
     let mgr = LocalManager::from_config(&cfg);
     let hw = detect_hardware();
     Ok(serde_json::json!({

@@ -1,4 +1,4 @@
-# EveryAIOS — Rust workspace CI (P0.1)
+# AgentCowork — Rust workspace CI (P0.1)
 # Runs cargo test + clippy + fmt on every push/PR, on all 3 desktop platforms.
 
 name: ci
@@ -174,13 +174,16 @@ jobs:
 
       - name: LibreOffice oracle (docx patch round-trip)
         run: >-
-          cargo test -p everyaios-office --lib
+          cargo test -p agentcowork-office --lib
           conformance::tests::live_oracle_opens_clean
           -- --ignored --test-threads=1
         env:
+          # New name first; the pre-rename Rust harness still gates on the
+          # legacy spelling, so both are set until Core lands DEC-053.
+          AGENTCOWORK_LIVE_TEST: "1"
           EVERYAIOS_LIVE_TEST: "1"
 
-  # UI: self-contained (own package-lock.json, no @everyaios/* deps) — always runs.
+  # UI: self-contained (own package-lock.json, no @agentcowork/* deps) — always runs.
   ui:
     name: ui typecheck + build
     runs-on: ubuntu-latest
@@ -208,7 +211,7 @@ jobs:
         working-directory: ui
         run: bun test
 
-  # Sidecar: coordinator bun tests + typecheck. The @everyaios/core-*
+  # Sidecar: coordinator bun tests + typecheck. The @agentcowork/core-*
   # engine packages are vendored in-repo under packages/core-*, so this job
   # needs no private-repo token and always runs.
   sidecar:
@@ -227,7 +230,7 @@ jobs:
         run: |
           npm install -g pnpm
           pnpm install
-      # Fail loudly if the reused @everyaios/core-* engine packages are not
+      # Fail loudly if the reused @agentcowork/core-* engine packages are not
       # vendored in-repo. This is the explicit replacement for the dropped
       # APP_CLONE_TOKEN gate: building the sidecar must NEVER silently succeed
       # against a missing/typosquatted core dependency when the workspace is
@@ -239,7 +242,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          # The coordinator's @everyaios/* direct deps (mirrors package.json).
+          # The coordinator's @agentcowork/* direct deps (mirrors package.json).
           need=(core-ai core-connectors core-providers core-search)
           err=0
           for p in "${need[@]}"; do
@@ -247,8 +250,8 @@ jobs:
             if [ ! -d "$pkg" ] || [ ! -f "$pkg/package.json" ]; then
               echo "::error::vendored package '$pkg' is MISSING — the coordinator would fail only later, loudly"; err=1
             fi
-            if ! grep -q "\"@everyaios/$p\"" packages/coordinator/package.json; then
-              echo "::error::coordinator does not depend on '@everyaios/$p' but vendored '$pkg' exists — mismatch"; err=1
+            if ! grep -q "\"@agentcowork/$p\"" packages/coordinator/package.json; then
+              echo "::error::coordinator does not depend on '@agentcowork/$p' but vendored '$pkg' exists — mismatch"; err=1
             fi
           done
           # Belt-and-suspenders: confirm the workspace glob actually resolves them.
@@ -345,7 +348,7 @@ jobs:
           pnpm install
           pnpm --filter './packages/core-*' run build
           mkdir -p packages/coordinator/dist
-          pnpm --filter @everyaios/coordinator build
+          pnpm --filter @agentcowork/coordinator build
           mkdir -p src-tauri/bin
           if [ "$RUNNER_OS" = "Windows" ]; then
             cp packages/coordinator/dist/coordinator.exe src-tauri/bin/coordinator.exe

@@ -1,6 +1,6 @@
 // Regression tests for the P31 builder's `bundleToToml`: the emitted
 // agent.toml must round-trip through the Rust `AgentBundle::from_toml`
-// schema (`everyaios-agents::bundle`), which is what `agent_registry_save`
+// schema (`agentcowork-agents::bundle`), which is what `agent_registry_save`
 // feeds. The critical layout rule: in TOML a table header absorbs every key
 // after it, so array fields MUST precede `[engine]`/`[model]`/`[tools]` — a
 // `mcp_servers` line after `[model]` silently lands in the model table and

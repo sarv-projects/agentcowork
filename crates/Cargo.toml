@@ -1,32 +1,32 @@
 [workspace]
 resolver = "2"
 members = [
-    "everyaios-core",
-    "everyaios-ipc",
-    "everyaios-guard",
-    "everyaios-audit",
-    "everyaios-vault",
-    "everyaios-cdp",
-    "everyaios-browser",
-    "everyaios-script",
-    "everyaios-mcp",
-    "everyaios-office",
-    "everyaios-storage",
-    "everyaios-memory",
-    "everyaios-eval",
-    "everyaios-blueprint",
-    "everyaios-codeintel",
-    "everyaios-acp",
-    "everyaios-agents",
-    "everyaios-search",
-    "everyaios-catalog",
-    "everyaios-desktop",
-    "everyaios-types",
+    "agentcowork-core",
+    "agentcowork-ipc",
+    "agentcowork-guard",
+    "agentcowork-audit",
+    "agentcowork-vault",
+    "agentcowork-cdp",
+    "agentcowork-browser",
+    "agentcowork-script",
+    "agentcowork-mcp",
+    "agentcowork-office",
+    "agentcowork-storage",
+    "agentcowork-memory",
+    "agentcowork-eval",
+    "agentcowork-blueprint",
+    "agentcowork-codeintel",
+    "agentcowork-acp",
+    "agentcowork-agents",
+    "agentcowork-search",
+    "agentcowork-catalog",
+    "agentcowork-desktop",
+    "agentcowork-types",
 ]
 
-# N.B. crates/everyaios-desktop has package name everyaios-computeruse (renamed
+# N.B. crates/agentcowork-desktop has package name agentcowork-computeruse (renamed
 # to disambiguate from the src-tauri shell package, which is also
-# everyaios-desktop). The [workspace.dependencies] section below does not list
+# agentcowork-desktop). The [workspace.dependencies] section below does not list
 # it as a shared dep — src-tauri declares it directly with a :rename.
 
 [workspace.package]

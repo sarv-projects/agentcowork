@@ -8,7 +8,7 @@ import type {
   ConnectorResult,
   MemoryFact,
   UserQuery,
-} from '@everyaios/core-domain';
+} from '@agentcowork/core-domain';
 
 /**
  * RSS / News connector (Day-0, zero cost, spec §12.1).

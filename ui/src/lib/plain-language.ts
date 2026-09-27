@@ -11,6 +11,8 @@
  * - P32.6 `inheritContext` — fewest-questions folder/session pre-fill.
  */
 
+import { getLocalItem } from './storage-compat'
+
 // ---------------------------------------------------------------------------
 // P32.1 — plain-language stage labels (now-doing strip)
 // ---------------------------------------------------------------------------
@@ -279,7 +281,8 @@ export interface InheritedContext {
  */
 export function inheritContext(): InheritedContext {
   try {
-    const last = window.localStorage.getItem('everyaios.lastFolder')
+    // DEC-053: legacy `everyaios.*` key honored + promoted once.
+    const last = getLocalItem('agentcowork.lastFolder')
     if (last) return { folder: last }
   } catch {
     /* storage unavailable — no inheritance */

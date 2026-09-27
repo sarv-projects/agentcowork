@@ -1,4 +1,4 @@
-// P11.5.3 — LSP bridge (lsp_cmds.rs → everyaios-codeintel LspRunner).
+// P11.5.3 — LSP bridge (lsp_cmds.rs → agentcowork-codeintel LspRunner).
 
 import { invoke, inTauri } from './tauri'
 import { nativeCall } from './runtime'

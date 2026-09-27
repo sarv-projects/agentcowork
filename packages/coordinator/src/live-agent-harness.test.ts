@@ -70,7 +70,7 @@ describe("Live Real-World Agent Harness Verification", () => {
       params: {
         protocolVersion: 1,
         clientInfo: {
-          name: "EveryAIOS",
+          name: "AgentCowork",
           version: "2.0.0",
         },
       },

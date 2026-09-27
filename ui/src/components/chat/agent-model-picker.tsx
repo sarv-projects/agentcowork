@@ -118,7 +118,7 @@ function ProvenanceBadge({ location }: { location?: AgentRuntime['location'] }) 
   let label: string = source.replaceAll('_', ' ')
   let tone = 'bg-zinc-800 text-zinc-300 border-zinc-700'
 
-  if (kind === 'managed' || source === 'everyaios_install') {
+  if (kind === 'managed' || source === 'everyaios_install') { // DEC-053: persisted source enum — stays so stored runtimes keep matching.
     label = 'Managed'
     tone = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
   } else if (source === 'user_selected') {
@@ -308,6 +308,7 @@ export default function AgentModelPicker({ compact }: Props) {
   // the retired spellings (`inbuilt` / `everyaios` / `everyaios-native`) are
   // read as "nothing set" rather than as an engine (ADR-0005 §1, P71.5b — the
   // retired name "Chief"). Resolution is fail-closed upstream.
+  // DEC-053: these legacy spellings stay verbatim so retirement recognition keeps working.
   const [defaultAgent, setDefaultAgent] = useState<string | null>(null)
   useEffect(() => {
     chiefDefaultGet()
@@ -476,7 +477,7 @@ export default function AgentModelPicker({ compact }: Props) {
       catalog.find((a) => a.id === selectedAgentId),
   )
   // P60/P71.2d — model ownership: every runtime is an external ACP agent that
-  // owns its own model; P71.9c removed the EveryAIOS-owned branches this
+  // owns its own model; P71.9c removed the AgentCowork-owned branches this
   // constant used to guard, so the agent's ACP model option is the only row.
   const externalModelOption =
     acpConfigOptions.find((o) => o.category === 'model') ??
@@ -485,7 +486,7 @@ export default function AgentModelPicker({ compact }: Props) {
     ? String(externalModelOption.currentValue)
     : null
   // P71.9c — the trigger paints the agent-owned model value (or an explicit
-  // em dash); EveryAIOS has no model list of its own to pin.
+  // em dash); AgentCowork has no model list of its own to pin.
   const pinnedLabel = externalModelLabel ?? '—'
 
   useEffect(() => {
@@ -702,7 +703,7 @@ export default function AgentModelPicker({ compact }: Props) {
                         )}
                         <div className="truncate text-[10px] text-muted-foreground/80">{a.tagline}</div>
                         {/* P50.3.9 — governance truth badge: the picker never
-                            implies EveryAIOS audit coverage that does not exist. */}
+                            implies AgentCowork audit coverage that does not exist. */}
                         {a.governance && (
                           <div
                             className={cn(
@@ -945,7 +946,7 @@ export default function AgentModelPicker({ compact }: Props) {
                 </div>
 
                 {/* P60/P71.9c — the agent's own ACP config option is the only
-                    model surface here. EveryAIOS ships no model catalogue of
+                    model surface here. AgentCowork ships no model catalogue of
                     its own to fall back to (ADR-0005 §4). */}
                 <div className="mb-2 rounded-md border border-emerald-500/20 bg-emerald-500/5 px-2 py-2 text-[10px] leading-relaxed text-emerald-100/80">
                     <div className="mb-1 flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-wider text-emerald-300/90">
@@ -976,7 +977,7 @@ export default function AgentModelPicker({ compact }: Props) {
                         )}
                       </div>
                     ) : (
-                      <span>No ACP model option is exposed. EveryAIOS will not show or inject its Native BYOK/local models here.</span>
+                      <span>No ACP model option is exposed. AgentCowork will not show or inject its Native BYOK/local models here.</span>
                     )}
                   </div>
 

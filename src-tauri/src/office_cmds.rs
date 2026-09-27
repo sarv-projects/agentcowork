@@ -4,9 +4,9 @@
 //! view for the webview. Surgical edits (P4.1–P4.4) stay behind their own
 //! engines; the viewers here feed the H5 "open + read + chat-overlay" flow.
 
-use everyaios_office::docx::DocxEngine;
-use everyaios_office::pdf;
-use everyaios_office::pptx::PptxEngine;
+use agentcowork_office::docx::DocxEngine;
+use agentcowork_office::pdf;
+use agentcowork_office::pptx::PptxEngine;
 use tauri::State;
 
 use crate::AppState;
@@ -132,7 +132,7 @@ pub fn docx_patch(
         .patch_block(&address, &text)
         .map_err(|e| e.to_string())?;
     let out = engine.save().map_err(|e| e.to_string())?;
-    everyaios_office::write_atomic(&path, &out).map_err(|e| e.to_string())?;
+    agentcowork_office::write_atomic(&path, &out).map_err(|e| e.to_string())?;
     crate::control::record_mutation(
         &state,
         crate::control::AuthKind::HumanGesture,
@@ -151,18 +151,18 @@ pub fn docx_patch(
 pub fn docx_tracks(path: String) -> Result<serde_json::Value, String> {
     let bytes = read_bytes(&path)?;
     let mut archive =
-        everyaios_office::zip::OoxmlArchive::open(bytes).map_err(|e| e.to_string())?;
+        agentcowork_office::zip::OoxmlArchive::open(bytes).map_err(|e| e.to_string())?;
     let doc_xml = archive
         .read_part("word/document.xml")
         .map_err(|e| e.to_string())?;
     let doc_str = String::from_utf8_lossy(&doc_xml);
-    let changes = everyaios_office::docx::track::extract_tracked_changes(&doc_str)
+    let changes = agentcowork_office::docx::track::extract_tracked_changes(&doc_str)
         .map_err(|e| e.to_string())?;
     let comments_xml = archive.read_part("word/comments.xml").ok();
     let comments = comments_xml
         .as_ref()
         .and_then(|b| std::str::from_utf8(b).ok())
-        .and_then(|s| everyaios_office::docx::track::extract_comments(s).ok())
+        .and_then(|s| agentcowork_office::docx::track::extract_comments(s).ok())
         .unwrap_or_default();
     Ok(serde_json::json!({
         "changes": changes.iter().map(|c| serde_json::json!({
@@ -182,13 +182,13 @@ pub fn docx_tracks(path: String) -> Result<serde_json::Value, String> {
 pub fn pptx_notes(path: String) -> Result<serde_json::Value, String> {
     let bytes = read_bytes(&path)?;
     let mut archive =
-        everyaios_office::zip::OoxmlArchive::open(bytes).map_err(|e| e.to_string())?;
+        agentcowork_office::zip::OoxmlArchive::open(bytes).map_err(|e| e.to_string())?;
     let mut notes = Vec::new();
     for i in 1..=64 {
         let part = format!("ppt/notesSlides/notesSlide{i}.xml");
         if let Ok(xml) = archive.read_part(&part) {
             if let Ok(s) = std::str::from_utf8(&xml) {
-                if let Ok(text) = everyaios_office::pptx::notes::extract_notes_text(s) {
+                if let Ok(text) = agentcowork_office::pptx::notes::extract_notes_text(s) {
                     notes.push(serde_json::json!({ "slide": i, "talk": text }));
                 }
             }
@@ -217,24 +217,24 @@ pub fn pdf_page_op(
     // Each arm produces the new bytes plus whatever evidence the receipt needs.
     let (result, evidence) = match op.as_str() {
         "split" if pages.len() >= 2 => (
-            everyaios_office::split_pdf(&bytes, pages[0]..=pages[1])
+            agentcowork_office::split_pdf(&bytes, pages[0]..=pages[1])
                 .map_err(|e| e.to_string())?,
             None,
         ),
         "extract" => (
-            everyaios_office::extract_pages(&bytes, &pages).map_err(|e| e.to_string())?,
+            agentcowork_office::extract_pages(&bytes, &pages).map_err(|e| e.to_string())?,
             None,
         ),
         "reorder" => (
-            everyaios_office::reorder_pages(&bytes, &pages).map_err(|e| e.to_string())?,
+            agentcowork_office::reorder_pages(&bytes, &pages).map_err(|e| e.to_string())?,
             None,
         ),
         "delete" => (
-            everyaios_office::delete_pages(&bytes, &pages).map_err(|e| e.to_string())?,
+            agentcowork_office::delete_pages(&bytes, &pages).map_err(|e| e.to_string())?,
             None,
         ),
         "rotate" => (
-            everyaios_office::rotate_pages(
+            agentcowork_office::rotate_pages(
                 &bytes,
                 delta.unwrap_or(90),
                 if pages.is_empty() {
@@ -251,7 +251,7 @@ pub fn pdf_page_op(
             let other = crate::control::floor_user_file(&other)?;
             let b2 = std::fs::read(&other).map_err(|e| e.to_string())?;
             (
-                everyaios_office::merge_pdfs(&[bytes.clone(), b2]).map_err(|e| e.to_string())?,
+                agentcowork_office::merge_pdfs(&[bytes.clone(), b2]).map_err(|e| e.to_string())?,
                 None,
             )
         }
@@ -280,7 +280,7 @@ pub fn pdf_page_op(
                 return Err("form_fill requires at least one {field, value}".into());
             }
             (
-                everyaios_office::pdf::form::form_fill(&bytes, &fields)
+                agentcowork_office::pdf::form::form_fill(&bytes, &fields)
                     .map_err(|e| e.to_string())?,
                 None,
             )
@@ -341,19 +341,19 @@ pub fn pdf_page_op(
             let allow_unremovable = items
                 .iter()
                 .any(|v| v.get("allowUnremovable").and_then(|x| x.as_bool()) == Some(true));
-            let opts = everyaios_office::pdf::redact::RedactOptions {
+            let opts = agentcowork_office::pdf::redact::RedactOptions {
                 unremovable: if allow_unremovable {
-                    everyaios_office::pdf::redact::UnremovablePolicy::Report
+                    agentcowork_office::pdf::redact::UnremovablePolicy::Report
                 } else {
-                    everyaios_office::pdf::redact::UnremovablePolicy::Refuse
+                    agentcowork_office::pdf::redact::UnremovablePolicy::Refuse
                 },
-                ..everyaios_office::pdf::redact::RedactOptions::default()
+                ..agentcowork_office::pdf::redact::RedactOptions::default()
             };
             let request =
-                everyaios_office::pdf::redact::RedactRequest::new(rects.clone())
+                agentcowork_office::pdf::redact::RedactRequest::new(rects.clone())
                     .with_verify_absent(verify_absent);
             let report =
-                everyaios_office::pdf::redact::redact_checked(&bytes, &request, &opts)
+                agentcowork_office::pdf::redact::redact_checked(&bytes, &request, &opts)
                     .map_err(redact_error)?;
             // The evidence a receipt needs: what was removed, what the page
             // still says, and the engine's declared reach.
@@ -392,10 +392,10 @@ pub fn pdf_page_op(
             let rect = [rect[0], rect[1], rect[2], rect[3]];
             let out = match v.get("text").and_then(serde_json::Value::as_str) {
                 Some(text) if !text.is_empty() => {
-                    everyaios_office::pdf::annot::add_text_annotation(&bytes, page, rect, text)
+                    agentcowork_office::pdf::annot::add_text_annotation(&bytes, page, rect, text)
                         .map_err(|e| e.to_string())?
                 }
-                _ => everyaios_office::pdf::annot::add_highlight_annotation(&bytes, page, rect)
+                _ => agentcowork_office::pdf::annot::add_highlight_annotation(&bytes, page, rect)
                     .map_err(|e| e.to_string())?,
             };
             (out, None)
@@ -406,15 +406,15 @@ pub fn pdf_page_op(
     // The commit path (FIX-16): staging package → fsync → atomic swap, under a
     // short-lived exclusive writer lease (REQ-OFFICE-003/004). A second writer
     // is refused with the "in use" result instead of overwriting.
-    let receipt = everyaios_office::commit_under_lease(
+    let receipt = agentcowork_office::commit_under_lease(
         dest.as_path(),
         &result,
         &format!("office.pdf_op:{op}"),
         "tauri:office_cmds",
-        everyaios_office::now_ms(),
+        agentcowork_office::now_ms(),
     )
     .map_err(|e| match e {
-        everyaios_office::ResidentError::InUse(c) => c.message(),
+        agentcowork_office::ResidentError::InUse(c) => c.message(),
         other => other.to_string(),
     })?;
 
@@ -443,9 +443,9 @@ pub fn pdf_page_op(
 /// Render a redaction failure for the surface. The typed variants name what
 /// happened, so the UI can offer a real action (shrink the rectangle, accept
 /// the residual) instead of a generic error.
-fn redact_error(e: everyaios_office::PdfError) -> String {
+fn redact_error(e: agentcowork_office::PdfError) -> String {
     match e {
-        everyaios_office::PdfError::Unremovable(findings) => format!(
+        agentcowork_office::PdfError::Unremovable(findings) => format!(
             "redaction refused — {} item(s) intersect the area but cannot be removed: {}",
             findings.len(),
             findings
@@ -454,7 +454,7 @@ fn redact_error(e: everyaios_office::PdfError) -> String {
                 .collect::<Vec<_>>()
                 .join("; ")
         ),
-        everyaios_office::PdfError::RemovalUnproven(hits) => format!(
+        agentcowork_office::PdfError::RemovalUnproven(hits) => format!(
             "redaction refused — the target text is still present after the pass: {:?}",
             hits
         ),
@@ -466,7 +466,7 @@ fn redact_error(e: everyaios_office::PdfError) -> String {
 #[tauri::command]
 pub fn office_open_external(path: String) -> Result<serde_json::Value, String> {
     let path = crate::control::floor_user_file(&path)?;
-    let soffice = everyaios_office::find_soffice().ok_or_else(|| {
+    let soffice = agentcowork_office::find_soffice().ok_or_else(|| {
         "LibreOffice (soffice) is not installed — optional human-fidelity viewer".to_string()
     })?;
     std::process::Command::new(soffice)

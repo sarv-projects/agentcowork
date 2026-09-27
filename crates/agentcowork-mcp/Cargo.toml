@@ -1,0 +1,19 @@
+[package]
+name = "agentcowork-mcp"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "AgentCowork MCP server — 37-tool catalog (ARCH/08 §8.2) + stateless Streamable HTTP (P0.1 catalog; P6.7 server)"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+thiserror = { workspace = true }
+base64 = { workspace = true }
+rand = { workspace = true }
+ureq = { workspace = true }
+agentcowork-guard = { path = "../agentcowork-guard" }
+# DEC-053 — the one `AGENTCOWORK_*`/legacy-`EVERYAIOS_*` env + data-home rule.
+agentcowork-types = { path = "../agentcowork-types" }

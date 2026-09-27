@@ -9,7 +9,7 @@
 import {
   createDefaultRegistry,
   type ConnectorOrchestrator,
-} from "@everyaios/core-connectors";
+} from "@agentcowork/core-connectors";
 
 let registry: ConnectorOrchestrator | undefined;
 

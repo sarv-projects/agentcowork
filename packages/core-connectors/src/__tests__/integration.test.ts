@@ -6,7 +6,7 @@
 import { describe, it, expect } from 'vitest';
 
 // Integration tests require network. Run explicitly:
-//   RUN_CONNECTOR_INTEGRATION=1 pnpm --filter @everyaios/core-connectors test
+//   RUN_CONNECTOR_INTEGRATION=1 pnpm --filter @agentcowork/core-connectors test
 const runIntegration = process.env.RUN_CONNECTOR_INTEGRATION === '1';
 const describeMaybe = runIntegration ? describe : describe.skip;
 

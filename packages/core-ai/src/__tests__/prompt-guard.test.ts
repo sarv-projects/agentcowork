@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { RouteContext, RouteDecision } from '@everyaios/core-domain';
+import type { RouteContext, RouteDecision } from '@agentcowork/core-domain';
 import {
   HeuristicIntentClassifier,
   SmartRouter,

@@ -4,7 +4,7 @@
  * P71.6a / P71.9b — First-run gate: **bind an agent, because v1 has no engine.**
  *
  * The old gate completed a "zero-install" path: paste a cloud key or start a
- * local runtime, and chat worked because EveryAIOS ran the model itself. `P71.2c`
+ * local runtime, and chat worked because AgentCowork ran the model itself. `P71.2c`
  * removed that loop and `P71.2d` removed the inference path, so the honest
  * first-run step is now the one that was previously optional: install or pick an
  * **external agent** and bind it. Zero-install returns with the post-v1 governed
@@ -13,7 +13,7 @@
  * What this gate must never do is imply chat will work without an agent. The
  * key vault (`Settings → Providers`) and the local-runtime catalogue
  * (`Settings → Local models`) are still real surfaces, but they are
- * **observation**: keys are handed to the agent you bind, and EveryAIOS makes no
+ * **observation**: keys are handed to the agent you bind, and AgentCowork makes no
  * model call of its own.
  */
 
@@ -149,7 +149,7 @@ export function SetupGate() {
 
   // The agent owns its sign-in. Launch it, and if it advertises a URL-based
   // method, open that page; the user finishes there and the row flips to `ready`
-  // on the next probe. Nothing here copies a credential into EveryAIOS.
+  // on the next probe. Nothing here copies a credential into AgentCowork.
   const signIn = async (row: AgentRuntime) => {
     setBusyId(row.id)
     setError(null)
@@ -218,8 +218,8 @@ export function SetupGate() {
                 <h2 className="text-sm font-semibold">{bound.name} is bound</h2>
               </div>
               <p className="text-xs leading-relaxed text-muted-foreground">
-                Your messages now run under that agent — it does the reasoning, and EveryAIOS
-                governs what it may touch. There is no demo reply and no EveryAIOS-owned model
+                Your messages now run under that agent — it does the reasoning, and AgentCowork
+                governs what it may touch. There is no demo reply and no AgentCowork-owned model
                 in front of it.
               </p>
               <Button
@@ -244,8 +244,8 @@ export function SetupGate() {
                 <h2 className="text-sm font-semibold">Give it an agent to think with</h2>
               </div>
               <p className="text-xs leading-relaxed text-muted-foreground">
-                EveryAIOS ships no built-in engine in v1 — the agent you bind does the reasoning and
-                holds its own model and credentials, while EveryAIOS keeps the workspace, the memory
+                AgentCowork ships no built-in engine in v1 — the agent you bind does the reasoning and
+                holds its own model and credentials, while AgentCowork keeps the workspace, the memory
                 and the permission gate. Install or pick one to send your first message.
               </p>
 
@@ -352,7 +352,7 @@ export function SetupGate() {
               {catalog.length === 0 && !discovering && (
                 <div className="rounded-lg border border-dashed border-border/60 bg-card/40 p-3 text-xs text-muted-foreground">
                   {inShell
-                    ? 'No agent discovered yet. Nothing can run a turn until one is installed — EveryAIOS has no built-in engine to fall back to.'
+                    ? 'No agent discovered yet. Nothing can run a turn until one is installed — AgentCowork has no built-in engine to fall back to.'
                     : 'Preview mode — run inside the desktop shell to discover agents on this machine.'}
                 </div>
               )}
@@ -364,7 +364,7 @@ export function SetupGate() {
                 <ShieldCheck className="mt-0.5 h-3 w-3 shrink-0 text-emerald-400" />
                 <span>
                   No API-key step here: provider keys live in your local vault and are handed to the
-                  agent you bind — EveryAIOS makes no model call of its own. Providers and Local
+                  agent you bind — AgentCowork makes no model call of its own. Providers and Local
                   models in Settings are catalogue, vault and usage surfaces.
                 </span>
               </div>

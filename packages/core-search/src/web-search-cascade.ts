@@ -1,4 +1,4 @@
-import type { SearchContext, SearchProvider, SearchResult } from '@everyaios/core-domain';
+import type { SearchContext, SearchProvider, SearchResult } from '@agentcowork/core-domain';
 import type { SearchCache } from './cache/search-cache.js';
 import { rewriteSearchQuery } from './query-rewrite.js';
 import { generateAspectQueries, mergeAndDedupe } from './fan-out.js';
@@ -7,7 +7,7 @@ import { generateAspectQueries, mergeAndDedupe } from './fan-out.js';
  * Provider-agnostic search cascade — no MCP / Node-only imports.
  *
  * P69.D9: not the desktop search path. The kernel owns search
- * (`everyaios-search` + `search.*` tools, Guard-2-routed egress); this class
+ * (`agentcowork-search` + `search.*` tools, Guard-2-routed egress); this class
  * exists for the offline/preview projection and must never be wired into the
  * coordinator's turn loop (CI: LAYER-3 in `scripts/check-arch-invariants.mjs`).
  */

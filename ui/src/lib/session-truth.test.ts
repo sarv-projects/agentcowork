@@ -6,7 +6,7 @@
 //
 // The malformed-row drop happens at the Tauri parse boundary
 // (`filter_map(serde_json::from_str(...).ok())`, Rust-tested in
-// everyaios-vault); the UI contract pinned here is: whatever `session_list`
+// agentcowork-vault); the UI contract pinned here is: whatever `session_list`
 // returns becomes the store's rows verbatim — never a synthesized chat.
 
 import { describe, expect, test } from 'bun:test'

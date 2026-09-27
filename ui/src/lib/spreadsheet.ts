@@ -1,5 +1,5 @@
 // P4.2 — Excel bridge (D2): windowed sheet reads over the Rust calamine
-// reader. Mirrors everyaios-office/src/xlsx/read.rs types. In a plain-browser
+// reader. Mirrors agentcowork-office/src/xlsx/read.rs types. In a plain-browser
 // preview (no shell) the page falls back to a 100K-row demo grid so the
 // virtualization is explorable.
 

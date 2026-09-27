@@ -1,4 +1,4 @@
-import type { SearchContext, SearchProvider, SearchResult } from '@everyaios/core-domain';
+import type { SearchContext, SearchProvider, SearchResult } from '@agentcowork/core-domain';
 import { HfSearxngProvider } from './hf-searxng.js';
 import { HfWhoogleProvider } from './hf-whoogle.js';
 import { HfWebsurfxProvider } from './hf-websurfx.js';

@@ -1,7 +1,7 @@
-//! everyaios-desktop — maintenance commands (audit retention compaction).
+//! agentcowork-desktop — maintenance commands (audit retention compaction).
 //!
 //! Closes the "ledger growth" fault-line gap: ARCH/06 §6.7 promised
-//! configurable audit retention; `everyaios-audit::retention::compact` is the
+//! configurable audit retention; `agentcowork-audit::retention::compact` is the
 //! mechanism, and this module is its call site. The sweep runs in a genuinely
 //! writer-quiescent window: while the `audit_log` mutex is held no append can
 //! run, the writer is dropped (fd closed) before the file is rewritten, then
@@ -26,7 +26,7 @@ const LAST_SWEEP_MARKER: &str = ".audit_last_compact";
 /// Core compaction routine — shared by the command and the startup sweep.
 /// Returns the rollup report JSON. Callers must hold no other AppState locks.
 fn compact_audit(
-    audit_log: &std::sync::Mutex<Option<everyaios_audit::AuditWriter>>,
+    audit_log: &std::sync::Mutex<Option<agentcowork_audit::AuditWriter>>,
     audit_path: &std::path::Path,
     retention_days: u64,
 ) -> Result<serde_json::Value, String> {
@@ -37,12 +37,12 @@ fn compact_audit(
     let writer = slot.take();
     drop(writer);
 
-    let report = everyaios_audit::retention::compact(audit_path, retention_days)
+    let report = agentcowork_audit::retention::compact(audit_path, retention_days)
         .map_err(|e| format!("audit compaction failed: {e}"))?;
 
     // Re-open: AuditWriter resumes seq from the last event (the rollup
     // header at seq 0 is skipped by `last_seq` — it takes the max parsed seq).
-    *slot = everyaios_audit::AuditWriter::open(audit_path).ok();
+    *slot = agentcowork_audit::AuditWriter::open(audit_path).ok();
 
     serde_json::to_value(report).map_err(|e| e.to_string())
 }
@@ -56,7 +56,7 @@ pub fn audit_compact(
     state: State<'_, AppState>,
     retention_days: Option<u64>,
 ) -> Result<serde_json::Value, String> {
-    let days = retention_days.unwrap_or(everyaios_audit::retention::DEFAULT_RETENTION_DAYS);
+    let days = retention_days.unwrap_or(agentcowork_audit::retention::DEFAULT_RETENTION_DAYS);
     compact_audit(
         &state.audit_log,
         &state.replay_dir.join("audit.ndjson"),
@@ -84,7 +84,7 @@ pub fn run_audit_sweep_if_due(state: &AppState) -> Result<Option<serde_json::Val
     let report = compact_audit(
         &state.audit_log,
         &state.replay_dir.join("audit.ndjson"),
-        everyaios_audit::retention::DEFAULT_RETENTION_DAYS,
+        agentcowork_audit::retention::DEFAULT_RETENTION_DAYS,
     )?;
     // Marker write is best-effort (failure just re-runs next boot).
     let _ = std::fs::write(&marker, now.to_string());

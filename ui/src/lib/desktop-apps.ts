@@ -7,7 +7,7 @@
 // in directory mode there — or a Linux binary).
 //
 // The rules here are pure so they are testable without a display, mirroring the
-// Rust side (`crates/everyaios-desktop/src/readiness.rs` + `apps.rs`): the
+// Rust side (`crates/agentcowork-desktop/src/readiness.rs` + `apps.rs`): the
 // backend derives the state and the inventory, the UI only names them.
 
 export type DesktopReadinessState =

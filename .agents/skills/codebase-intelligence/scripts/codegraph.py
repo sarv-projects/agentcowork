@@ -753,7 +753,7 @@ def _cargo_crate_dirs(
     """Map Rust package names to the module root of the crate they declare.
 
     A dependency on another crate is written by package name in code
-    (`everyaios_guard::ticket::…`), never as a path, so the name has to be read
+    (`agentcowork_guard::ticket::…`), never as a path, so the name has to be read
     back from each tracked `Cargo.toml`. Declared names use `-` while code uses
     `_`, so the key is normalised. Member manifests of a virtual workspace root
     are skipped: only a real `[package]` declares a crate.

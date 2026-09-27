@@ -1,8 +1,8 @@
 //! P3.1 — replay/audit Tauri commands. Thin wrappers over the
-//! `everyaios-audit` replay store + the unix control channel; all logic and
+//! `agentcowork-audit` replay store + the unix control channel; all logic and
 //! tests live in the crates, the shell just exposes them to the UI.
 
-use everyaios_audit::replay::{ReplayEvent, ReplayStore, Segment, Timeline};
+use agentcowork_audit::replay::{ReplayEvent, ReplayStore, Segment, Timeline};
 use tauri::State;
 
 use crate::AppState;

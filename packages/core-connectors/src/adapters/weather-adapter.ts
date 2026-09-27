@@ -8,7 +8,7 @@ import type {
   ConnectorResult,
   MemoryFact,
   UserQuery,
-} from '@everyaios/core-domain';
+} from '@agentcowork/core-domain';
 
 /**
  * Weather connector — Open-Meteo (free, no key, Day-0 per spec §12.1).

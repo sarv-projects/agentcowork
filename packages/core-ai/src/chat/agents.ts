@@ -2,17 +2,17 @@
  * UI prompt-overlay catalog for the chat surface.
  *
  * Canonical agent metadata (IDs, capabilities, risk profile, web access, etc.)
- * lives in `@everyaios/core-agents/src/registry.ts` SHIPPED_AGENTS.
+ * lives in `@agentcowork/core-agents/src/registry.ts` SHIPPED_AGENTS.
  * This file layers UI-specific prompt overlays on top of that registry so
  * there is a single source of truth for agent IDs and capabilities.
  */
 
-import { SHIPPED_AGENTS } from '@everyaios/core-agents';
+import { SHIPPED_AGENTS } from '@agentcowork/core-agents';
 // P69.D1/D25 — the sidecar's agent shapes, named for what they are: `core-agents`
 // owns the *profile* (instructions/risk/tool subset), this file owns the *UI
 // persona overlay* it merges over that profile. The canonical agent record
 // (`AgentDefinition`, protocol + auth mode + capabilities) is Rust's.
-import type { AgentProfile as CoreAgentProfile } from '@everyaios/core-agents';
+import type { AgentProfile as CoreAgentProfile } from '@agentcowork/core-agents';
 
 /**
  * UI-facing tool hint for the agent picker. Derived from the canonical toolIds

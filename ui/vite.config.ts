@@ -37,7 +37,7 @@ const dompurifyEntryPath = require.resolve("dompurify", {
 const dompurifyDistPath = dirname(dompurifyEntryPath);
 const dompurifyPackagePath = join(dompurifyDistPath, "..", "package.json");
 const dompurifyEsModulePath = join(dompurifyDistPath, "purify.es.mjs");
-const monacoDompurifyReplacementId = "\0everyaios:monaco-dompurify";
+const monacoDompurifyReplacementId = "\0agentcowork:monaco-dompurify";
 
 function readRequiredFile(path: string, label: string): string {
   if (!existsSync(path)) {
@@ -101,7 +101,7 @@ function monacoDompurifyReplacement(): Plugin {
   let expectedImportSeen = false;
 
   return {
-    name: "everyaios-monaco-dompurify-replacement",
+    name: "agentcowork-monaco-dompurify-replacement",
     enforce: "pre",
     buildStart() {
       expectedImportSeen = false;

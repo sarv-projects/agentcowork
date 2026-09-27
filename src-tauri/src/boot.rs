@@ -17,14 +17,14 @@ use tauri::Manager;
 /// sessions can serve MCP tools (`tools/list` + `tools/call`) to any local
 /// HTTP client. The registry mirrors the 37-tool browser catalog; tool calls
 /// fail honestly until a live browser session is attached (the executor is a
-/// "not attached" stub — the engine itself lives in `everyaios-browser`).
+/// "not attached" stub — the engine itself lives in `agentcowork-browser`).
 pub fn spawn_webmcp_server() {
-    use everyaios_browser::webmcp::{WebMcpExecutor, WebMcpRegistry, WebMcpResult, WebMcpTool};
-    use everyaios_mcp::ArgKind;
+    use agentcowork_browser::webmcp::{WebMcpExecutor, WebMcpRegistry, WebMcpResult, WebMcpTool};
+    use agentcowork_mcp::ArgKind;
     use serde_json::json;
 
     let mut registry = WebMcpRegistry::new();
-    for def in everyaios_mcp::BROWSER_TOOLS {
+    for def in agentcowork_mcp::BROWSER_TOOLS {
         let mut properties = serde_json::Map::new();
         let mut required = Vec::new();
         for a in def.args {
@@ -65,19 +65,19 @@ pub fn spawn_webmcp_server() {
         }
     }
 
-    match everyaios_browser::webmcp_http::McpHttpServer::serve(
+    match agentcowork_browser::webmcp_http::McpHttpServer::serve(
         "127.0.0.1:0",
         registry,
         std::sync::Arc::new(NotAttached),
     ) {
         Ok(server) => match server.local_addr() {
             Ok(addr) => eprintln!(
-                "everyaios-desktop: WebMCP HTTP listening on http://{addr}/mcp (token {})",
+                "agentcowork-desktop: WebMCP HTTP listening on http://{addr}/mcp (token {})",
                 server.token()
             ),
-            Err(e) => eprintln!("everyaios-desktop: WebMCP addr lookup failed: {e}"),
+            Err(e) => eprintln!("agentcowork-desktop: WebMCP addr lookup failed: {e}"),
         },
-        Err(e) => eprintln!("everyaios-desktop: WebMCP server spawn failed (continuing): {e}"),
+        Err(e) => eprintln!("agentcowork-desktop: WebMCP server spawn failed (continuing): {e}"),
     }
 }
 
@@ -88,7 +88,7 @@ pub fn setup_tray(app: &tauri::AppHandle) -> tauri::Result<()> {
     use tauri::menu::{Menu, MenuItem};
     use tauri::tray::TrayIconBuilder;
 
-    let show = MenuItem::with_id(app, "show", "Show EveryAIOS", true, None::<&str>)?;
+    let show = MenuItem::with_id(app, "show", "Show AgentCowork", true, None::<&str>)?;
     let run = MenuItem::with_id(
         app,
         "run-automations",

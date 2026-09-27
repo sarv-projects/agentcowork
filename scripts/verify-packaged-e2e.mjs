@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
-console.log("=== EveryAIOS Packaged Release & E2E Verification Suite ===\n");
+console.log("=== AgentCowork Packaged Release & E2E Verification Suite ===\n");
 
 const suite = {
   timestamp: new Date().toISOString(),
@@ -60,17 +60,17 @@ if (calendarCmds) {
 // 3. Check the tool surface on its live owner.
 // ADR-0005 retired the built-in turn loop, and with it the coordinator's
 // `tools.ts` (`FIRST_CLASS_NATIVE_TOOLS` / `mergeWithNativeTools`). The tool
-// surface now lives in `everyaios-mcp`, which validates its own catalog.
-const mcpLib = readOrFail("P64.1 Tool surface (everyaios-mcp)", "crates/everyaios-mcp/src/lib.rs");
+// surface now lives in `agentcowork-mcp`, which validates its own catalog.
+const mcpLib = readOrFail("P64.1 Tool surface (agentcowork-mcp)", "crates/agentcowork-mcp/src/lib.rs");
 if (mcpLib) {
   const hasToolSurface =
     mcpLib.includes("pub fn all_tools") &&
     mcpLib.includes("pub fn inbuilt_catalog") &&
     mcpLib.includes("pub fn validate_facades");
   recordCheck(
-    "P64.1 Tool surface (everyaios-mcp)",
+    "P64.1 Tool surface (agentcowork-mcp)",
     hasToolSurface,
-    "The inbuilt tool catalog and facade validation are owned by everyaios-mcp"
+    "The inbuilt tool catalog and facade validation are owned by agentcowork-mcp"
   );
 }
 
@@ -83,7 +83,7 @@ const acpCmds = readOrFail("P64.2 / C14 Context passport", "src-tauri/src/acp_cm
 if (acpCmds) {
   const hasPassport =
     acpCmds.includes("fn build_acp_prompt_with_passport") &&
-    acpCmds.includes("everyaios_acp::build_chief_prompt") &&
+    acpCmds.includes("agentcowork_acp::build_chief_prompt") &&
     acpCmds.includes("GovernedSession");
   recordCheck(
     "P64.2 / C14 Context passport",
@@ -93,7 +93,7 @@ if (acpCmds) {
 }
 
 // 5. Check Avoidance Memory Store
-const avoidSrc = readOrFail("P51.34 Negative Failure Memory", "crates/everyaios-memory/src/avoid.rs");
+const avoidSrc = readOrFail("P51.34 Negative Failure Memory", "crates/agentcowork-memory/src/avoid.rs");
 if (avoidSrc) {
   const hasAvoidanceStore =
     avoidSrc.includes("AvoidanceStore") && avoidSrc.includes("record_failure");

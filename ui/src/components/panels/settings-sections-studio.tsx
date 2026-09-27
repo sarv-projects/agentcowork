@@ -486,7 +486,7 @@ export function BrowserNetworkSection() {
         />
       </Row>
 
-      <Row label="Profile Isolation" desc="Isolate a profile per channel in the EveryAIOS data directory">
+      <Row label="Profile Isolation" desc="Isolate a profile per channel in the AgentCowork data directory">
         <Select
           value={browserConfig.profile_mode}
           onValueChange={(v) => updateConfig({ profile_mode: v as 'isolated' | 'paired' })}
@@ -598,7 +598,7 @@ export function IndexingSection() {
   const notify = useAppStore((s) => s.notify)
   return (
     <SectionShell title="Code intelligence & indexing" desc="Grep index, ignore rules, LSP counts, extra docs">
-      <Honest>LSP runner is crate-landed (`everyaios-codeintel`). This panel does not start rust-analyzer/pyright until those binaries are install-gated.</Honest>
+      <Honest>LSP runner is crate-landed (`agentcowork-codeintel`). This panel does not start rust-analyzer/pyright until those binaries are install-gated.</Honest>
       <div className="rounded-md border border-border/50 bg-background/30 px-3 py-2">
         <div className="flex items-center justify-between text-xs">
           <span>Code index</span>
@@ -645,12 +645,16 @@ export function IndexingSection() {
                 notify('Attach a workspace folder first (chat empty state → Open folder)', 'error')
                 return
               }
+              // DEC-053: `.everyaiosignore` stays — it is a user-authored
+              // on-disk filename with no TS read path to attach a fallback
+              // to; renaming the constructed path would orphan existing
+              // files. Any rename + migration belongs to Core (Rust).
               const path = `${folder.replace(/\/+$/, '')}/.everyaiosignore`
               try {
                 const { fsReadFile } = await import('@/lib/fs')
                 const f = await fsReadFile(path).catch(() => ({ content: '' }))
                 window.dispatchEvent(
-                  new CustomEvent('everyaios:open-file', { detail: { path, content: f.content } }),
+                  new CustomEvent('agentcowork:open-file', { detail: { path, content: f.content } }),
                 )
                 st.setActiveView('code')
               } catch (e) {
@@ -1221,10 +1225,10 @@ export function ExpertsSection() {
 export function LaunchCliSection() {
   const notify = useAppStore((s) => s.notify)
   const agents = [
-    { id: 'claude-code', name: 'Claude Code', desc: 'ACP coding agent', cmd: 'everyaios acp launch claude-code' },
-    { id: 'codex', name: 'Codex', desc: 'ACP coding agent', cmd: 'everyaios acp launch codex' },
-    { id: 'grok-build', name: 'Grok Build', desc: 'ACP coding agent', cmd: 'everyaios acp launch grok-build' },
-    { id: 'opencode', name: 'OpenCode', desc: 'ACP coding agent', cmd: 'everyaios acp launch opencode' },
+    { id: 'claude-code', name: 'Claude Code', desc: 'ACP coding agent', cmd: 'agentcowork acp launch claude-code' },
+    { id: 'codex', name: 'Codex', desc: 'ACP coding agent', cmd: 'agentcowork acp launch codex' },
+    { id: 'grok-build', name: 'Grok Build', desc: 'ACP coding agent', cmd: 'agentcowork acp launch grok-build' },
+    { id: 'opencode', name: 'OpenCode', desc: 'ACP coding agent', cmd: 'agentcowork acp launch opencode' },
   ]
   return (
     <SectionShell title="Launch" desc="Copy a command and run it in your terminal. Same ACP agents as the picker — not a second product.">
@@ -1292,7 +1296,7 @@ export function HooksSection() {
 }
 
 export function WorktreeSection() {
-  const [path, setPath] = usePref('worktree.path', '~/.everyaios/worktrees')
+  const [path, setPath] = usePref('worktree.path', '~/.agentcowork/worktrees')
   const [cap, setCap] = usePref('worktree.gb', 20)
   return (
     <SectionShell title="Worktree" desc="Disk for isolated agent checkouts">
@@ -1708,7 +1712,7 @@ export function ComputerUseSection() {
       <Honest>
         These writes go to the Guard-2 policy the driver enforces (<span className="font-mono">&lt;data_dir&gt;/desktop.json</span>): a listed path is launchable without toggling
         computer use per session, and the Background default refuses to raise a window at all. Risky classes (delete · money · install · CAPTCHA · transmit) still reach the
-        human gate, and the hard-deny list (terminal, password managers, UAC, EveryAIOS itself) can never be allow-listed — hidden here and refused by the backend.
+        human gate, and the hard-deny list (terminal, password managers, UAC, AgentCowork itself) can never be allow-listed — hidden here and refused by the backend.
       </Honest>
     </SectionShell>
   )
@@ -1988,7 +1992,7 @@ export function GeneralExtras() {
         <Select value={keymap} onValueChange={setKeymap}>
           <SelectTrigger className="h-8 w-44 text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="default">EveryAIOS</SelectItem>
+            <SelectItem value="default">AgentCowork</SelectItem>
             <SelectItem value="vscode">VS Code</SelectItem>
             <SelectItem value="cursor">Cursor-like</SelectItem>
           </SelectContent>

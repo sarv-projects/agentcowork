@@ -43,7 +43,10 @@ const CONTENT_PATTERNS = [
   { re: /ghp_[A-Za-z0-9]{20,}/, why: 'GitHub token literal' },
   { re: /AKIA[0-9A-Z]{16}/, why: 'AWS access key id literal' },
   { re: /TAURI_SIGNING_PRIVATE_KEY\s*=/, why: 'updater private key assignment' },
-  { re: /EVERYAIOS_VAULT_KEY\s*=\s*\S+/, why: 'vault key assignment' },
+  // Both spellings: the product reads AGENTCOWORK_VAULT_KEY with an
+  // EVERYAIOS_VAULT_KEY legacy fallback (DEC-053) — an artifact leaking
+  // either assignment is a finding.
+  { re: /(?:AGENTCOWORK|EVERYAIOS)_VAULT_KEY\s*=\s*\S+/, why: 'vault key assignment' },
 ];
 
 function walk(dir, out) {

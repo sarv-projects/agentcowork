@@ -65,7 +65,7 @@ export async function routingFeedDecide(req: {
 function demoInventory(): DiscoveryInventory {
   // P71.9g — no built-in agent row. v1's agents are **discovered external
   // agents only** (`ADR-0005`): the demo fallback used to seed an
-  // `id: 'inbuilt'` EveryAIOS card with `capabilitiesVerified: true` and
+  // `id: 'inbuilt'` AgentCowork card with `capabilitiesVerified: true` and
   // `status: 'healthy'`, i.e. a browser preview advertised a runnable engine
   // that no install can produce (I15). It is gone; an empty agent count is the
   // honest preview state.

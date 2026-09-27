@@ -512,7 +512,7 @@ export default function ChatComposer({ budget, centered }: Props) {
 
   // P52.11 — fuzzy subsequence match (typo-tolerant) instead of strict
   // substring: '/mdoe' still surfaces '/mode', '@fl' finds '@files'.
-  // P53.1/53.2 — while an agent is bound, the local EveryAIOS slash table is
+  // P53.1/53.2 — while an agent is bound, the local AgentCowork slash table is
   // hidden: the agent's live vocabulary (from the most recent
   // `available_commands_update`) is the only `/` source, and its items submit
   // as `session/prompt` text (never a local intercept).
@@ -841,7 +841,7 @@ export default function ChatComposer({ budget, centered }: Props) {
                 ? queuedCount > 0
                   ? `Next queued ask will follow… (${queuedCount} pending)`
                   : 'Still working — type to queue your next ask…'
-                : 'Tell EveryAIOS what you need…'
+                : 'Tell AgentCowork what you need…'
           }
           className="max-h-28 min-h-[36px] min-w-0 flex-1 resize-none border-0 bg-transparent px-1 py-1.5 text-[13px] leading-relaxed shadow-none focus-visible:ring-0"
           rows={1}

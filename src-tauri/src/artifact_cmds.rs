@@ -1,10 +1,10 @@
 //! P15-H29 — local dashboard artifact preview server (Tauri bridge).
 //!
-//! Wires `everyaios_script::artifact::serve` (the loopback-only,
+//! Wires `agentcowork_script::artifact::serve` (the loopback-only,
 //! path-floored, GET-only preview transport) to the UI's `startArtifactServer`
 //! / `stopArtifactServer` (`ui/src/lib/artifact.ts`). This is the missing
 //! command bridge: the transport was fully built + tested in
-//! `everyaios-script`, and the UI already invokes `artifact_serve` /
+//! `agentcowork-script`, and the UI already invokes `artifact_serve` /
 //! `artifact_stop` — this module is the wire between them.
 //!
 //! Safety ("Sidecar proposes, Rust disposes"): serving a workspace folder on
@@ -40,7 +40,7 @@ fn serve_args_hash(workspace: &str) -> String {
 /// plain-browser runs outside the shell).
 #[tauri::command]
 pub fn artifact_serve(state: State<'_, AppState>, workspace: String) -> Result<u16, String> {
-    use everyaios_guard::{Operation as GuardOp, RiskLevel};
+    use agentcowork_guard::{Operation as GuardOp, RiskLevel};
 
     // Resolve + validate the workspace up front so a bad path fails before we
     // ever mint a ticket.
@@ -53,7 +53,7 @@ pub fn artifact_serve(state: State<'_, AppState>, workspace: String) -> Result<u
         .display()
         .to_string();
 
-    let decision = everyaios_guard::DecisionPackage::new(format!(
+    let decision = agentcowork_guard::DecisionPackage::new(format!(
         "Serve artifact preview from {}",
         std::path::Path::new(&canonical)
             .file_name()
@@ -79,24 +79,24 @@ pub fn artifact_serve(state: State<'_, AppState>, workspace: String) -> Result<u
             0,
         );
         match verdict {
-            everyaios_core::GuardDecision::Allow { ticket_id } => {
+            agentcowork_core::GuardDecision::Allow { ticket_id } => {
                 guard
                     .use_ticket(&ticket_id, &args_hash)
                     .map_err(|e| e.to_string())?;
             }
-            everyaios_core::GuardDecision::Ask { .. } => {
+            agentcowork_core::GuardDecision::Ask { .. } => {
                 return Err(
                     "artifact preview needs approval — approve it in the Guard window, then retry"
                         .to_string(),
                 );
             }
-            everyaios_core::GuardDecision::Block { reason } => {
+            agentcowork_core::GuardDecision::Block { reason } => {
                 return Err(format!("artifact preview blocked: {reason}"));
             }
         }
     }
 
-    let handle = everyaios_script::artifact::serve(std::path::Path::new(&canonical))
+    let handle = agentcowork_script::artifact::serve(std::path::Path::new(&canonical))
         .map_err(|e| e.to_string())?;
     let port = handle.port();
     state

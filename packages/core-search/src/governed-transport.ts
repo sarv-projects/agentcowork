@@ -6,7 +6,7 @@
  * §2/§6). Instead it hands the *intent* — provider id, endpoint, body without
  * credentials — to the host, which
  *
- *   1. resolves the provider secret from `everyaios-vault` (`keyRef`, never a
+ *   1. resolves the provider secret from `agentcowork-vault` (`keyRef`, never a
  *      plaintext key crossing into JavaScript),
  *   2. validates the destination through Guard-2 `netfloor`, and
  *   3. performs the request, returning the raw response.

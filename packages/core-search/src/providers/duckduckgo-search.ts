@@ -1,4 +1,4 @@
-import type { SearchContext, SearchProvider, SearchResult } from '@everyaios/core-domain';
+import type { SearchContext, SearchProvider, SearchResult } from '@agentcowork/core-domain';
 import * as cheerio from 'cheerio';
 
 const LITE_ENDPOINT = 'https://lite.duckduckgo.com/lite/';

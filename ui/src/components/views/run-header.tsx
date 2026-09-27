@@ -7,7 +7,7 @@
 // Every one of these is a projection. Nothing here is asserted by the panel:
 // an unbound agent says so, a curated catalog row says it has not been probed,
 // and a model the agent never advertised reads "not reported" rather than
-// borrowing EveryAIOS's own catalog (ADR-0005 §2 / ARCH/16 §3).
+// borrowing AgentCowork's own catalog (ADR-0005 §2 / ARCH/16 §3).
 
 import { useState } from 'react'
 import {
@@ -144,7 +144,7 @@ export function RunHeader() {
               </span>
             )
           }
-          title="The value the bound agent advertised over ACP. EveryAIOS does not choose it."
+          title="The value the bound agent advertised over ACP. AgentCowork does not choose it."
         />
         <RunFact
           label="Folder"

@@ -5,14 +5,14 @@
  * endpoint is supplied by the user/configuration. Credentials and egress
  * policy remain host-owned.
  */
-import type { McpSearchClient } from "@everyaios/core-search";
+import type { McpSearchClient } from "@agentcowork/core-search";
 
 const clients = new Map<string, McpSearchClient>();
 
 async function clientFor(endpoint: string): Promise<McpSearchClient> {
   let client = clients.get(endpoint);
   if (!client) {
-    const { McpSearchClient: Client } = await import("@everyaios/core-search");
+    const { McpSearchClient: Client } = await import("@agentcowork/core-search");
     client = new Client(endpoint);
     clients.set(endpoint, client);
   }

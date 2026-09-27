@@ -12,7 +12,7 @@ the anchor and the local keypair in agreement).
 `tauri-action` attaches the signed `latest.json` to the GitHub release. Two
 endpoints are configured, in order:
 
-1. **Hosted:** `https://releases.everyaios.dev/{channel}/{target}/{arch}/{current_version}`
+1. **Hosted:** `https://releases.everyaios.dev/{channel}/{target}/{arch}/{current_version}` — the host still serves the pre-rename name; the endpoint rename to a `releases.agentcowork.dev` host is a pending release/infra decision (it needs the DNS host and the signed manifest base moved together), so the doc states the endpoint the build actually uses rather than the one we intend.
    — the primary. A request answers with the signed static JSON manifest for
    the requested platform/version pair (tauri-plugin-updater's dynamic
    "is there anything newer" shape). See §2 for the channel segment.
@@ -95,12 +95,12 @@ reverting it) is the fastest halting lever that does not touch the manifest.
 
 ## 5. Upgrade data migration (C5)
 
-The durable-store contract is `crates/everyaios-core/src/store_schema.rs`
+The durable-store contract is `crates/agentcowork-core/src/store_schema.rs`
 (P70.A8): every store carries a schema version, stamped at boot; a store
 recorded at a **newer** version refuses the boot (C6); data written before
 stamps existed is **adopted** at the current version, not claimed migrated.
 
-`crates/everyaios-core/tests/acceptance_upgrade_evidence.rs` is the
+`crates/agentcowork-core/tests/acceptance_upgrade_evidence.rs` is the
 compile-time statement of what a v(N-1) → v(N) upgrade must preserve — vault
 hydration, Work/event log, checkpoints, memory, calendar, automations, audit
 chain validity, no orphaned records — and what the boot path does when it
@@ -112,7 +112,7 @@ in TODO.md as such; nothing in this section is "proved" until then.
 
 - **Data:** a build refusing to open data written by a newer schema is
   enforced at boot — `store_schema::ensure_all()` runs before any store
-  opens, and `everyaios-vault` returns `VaultError::NewerSchema` for a newer
+  opens, and `agentcowork-vault` returns `VaultError::NewerSchema` for a newer
   vault database. The refusal names the store and both versions.
 - **Signing prerequisite (C1):** release builds only produce updater
   artifacts when the GitHub secrets `TAURI_SIGNING_PRIVATE_KEY` (and its
@@ -137,7 +137,7 @@ under `P70.E8`):
    store has content.
 2. Install build N over it (upgrade path). Verify: vault unlocks, Work/event
    log intact, checkpoints listed, memory + calendar intact, automations
-   still fire, audit chain verifies (`everyaios-audit` Merkle chain).
+   still fire, audit chain verifies (`agentcowork-audit` Merkle chain).
 3. Uninstall build N, reinstall build N-1 over the same data. **Expected
    honest failure:** if N migrated a store to a newer schema version, the N-1
    binary refuses to boot with the store + versions named — that is the

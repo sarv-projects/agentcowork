@@ -6,7 +6,7 @@ import type {
   RouteDecision,
   RouteHandler,
   UserQuery,
-} from '@everyaios/core-domain';
+} from '@agentcowork/core-domain';
 import { buildRetrievalPlan } from './retrieval-planner.js';
 
 function routeResult(

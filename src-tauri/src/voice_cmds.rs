@@ -1,11 +1,11 @@
-//! P50.4.3 — Tauri surface over `everyaios_core::voice`.
+//! P50.4.3 — Tauri surface over `agentcowork_core::voice`.
 //!
 //! VAD math and the utterance pipeline live in the crate. This module only
 //! exposes them: classify a frame, process an utterance, report whether an
 //! STT engine is actually installed. `NoopStt` is the honest default — an
 //! empty transcript is a gap report, never a fabricated sentence.
 
-use everyaios_core::voice::{NoopStt, VadDetector, VoicePipeline};
+use agentcowork_core::voice::{NoopStt, VadDetector, VoicePipeline};
 use serde_json::{json, Value};
 use std::rc::Rc;
 

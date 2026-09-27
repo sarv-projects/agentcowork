@@ -26,7 +26,7 @@ import type {
   ConnectorName,
   UserQuery,
   MemoryFact,
-} from '@everyaios/core-domain';
+} from '@agentcowork/core-domain';
 
 /**
  * ComposioAdapter — implements ConnectorAdapter interface for Composio-managed toolkits.

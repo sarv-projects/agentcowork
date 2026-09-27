@@ -1,5 +1,5 @@
 // P3.1 — replay & audit bridge. Mirrors the Rust types in
-// everyaios-audit/src/replay.rs; `invoke` proxies the Tauri command bridge,
+// agentcowork-audit/src/replay.rs; `invoke` proxies the Tauri command bridge,
 // and in a plain-browser preview (no shell) the callers fall back to demo
 // data so the page is still explorable.
 

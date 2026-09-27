@@ -44,7 +44,7 @@
 | Capability | new capabilities + executors | Descriptors from `13`; review gate |
 | Skill pack | bundles of skills | Same format as native skills |
 | Provider | adapters (`14` classes) | Protocol code lives here only |
-| Agent runtime | an `AgentEngine` implementation | Same contract as Agent X (DEC-010) |
+| Agent runtime | an `AgentEngine` implementation | Same contract as every other engine (DEC-010, INV-12) |
 | Model adapter | model/endpoint shapes (`18`) | Auth via vault refs |
 | Channel | surfaces (`32`) | Gateway-mediated |
 | UI contribution | panels/commands/questions | Declared slots only; no arbitrary renderer code in v1 |

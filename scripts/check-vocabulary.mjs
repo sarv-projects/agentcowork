@@ -16,7 +16,7 @@
 //   * comments (a comment explaining the vocabulary rule may quote the word);
 //   * protocol-qualified terms: `CDP session`, `ACP session` — those name
 //     *external protocol* objects (Chrome DevTools Protocol / Agent Client
-//     Protocol), not an EveryAIOS Chat;
+//     Protocol), not an AgentCowork Chat;
 //   * PTY terminal-line copy referring to the shell's stream session;
 //   * `nativeCall('<op>')` / `operation: '<op>'` IPC labels — internal/API
 //     vocabulary by the same §2 table;
@@ -58,8 +58,8 @@ const LINE_ALLOW = [
   { re: /['"`][a-z0-9-]*session[a-z0-9-]*['"`]/, reason: 'identifier literal' },
   // Names containing the word (third-party agent names, csv headers…).
   { re: /sessions\s*:/, reason: 'data field name' },
-  // Dotted event namespaces (`everyaios.session-recording`) — wire identifiers.
-  { re: /everyaios\.[a-z.\-]+/, reason: 'event namespace' },
+  // Dotted event namespaces (`agentcowork.session-recording`) — wire identifiers.
+  { re: /agentcowork\.[a-z.\-]+/, reason: 'event namespace' },
   // Agent-facing prompt bundles — the §2 internal/API vocabulary is correct
   // there ("the runtime says 'resume session'"); the user never reads these.
   { re: /Chief handoff — continuing work in session/, reason: 'agent-facing prompt' },

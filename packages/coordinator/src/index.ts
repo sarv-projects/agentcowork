@@ -5,16 +5,16 @@
 // before running any app code (verified 2026-08-17). For Node.js:
 // --max-old-space-size=512. For dev: `bun --smol run src/index.ts`
 /**
- * EveryAIOS coordinator sidecar — hello-world IPC responder (P0.3).
+ * AgentCowork coordinator sidecar — hello-world IPC responder (P0.3).
  *
- * Speaks the exact `everyaios-ipc` wire contract:
+ * Speaks the exact `agentcowork-ipc` wire contract:
  * - JSON-RPC 2.0 over stdio
  * - length-prefix framing `[u32 LE length][JSON payload]`
  * - ACP-style `initialize` handshake (protocolVersion + default-off
  *   capabilities, doc 45) so the contract evolves without breaking peers.
  *
  * P0.3 scope: the loop + handshake + echo. Later phases plug the real
- * `@everyaios/core-*` engine stages (chat, memory, office, connectors)
+ * `@agentcowork/core-*` engine stages (chat, memory, office, connectors)
  * into this same process.
  */
 
@@ -34,7 +34,7 @@ import {
 // P71.2c — the coordinator no longer owns a turn loop: `chat.ts`, `plan.ts` and
 // the native tool catalogue (`tools.ts`) moved to
 // `ARCH/archive/coordinator-loop/` with the built-in engine (ADR-0005 §2), and
-// `@everyaios/core-engine` moved to `ARCH/archive/core-engine/`. A turn is
+// `@agentcowork/core-engine` moved to `ARCH/archive/core-engine/`. A turn is
 // driven by the bound external agent on the ACP channel
 // (`acp_launch` → `acp_prompt`, in the shell), so the `chat/*` and `plan/*`
 // arms below are gone with their producers. What this process still owns is the
@@ -42,6 +42,7 @@ import {
 // ingress, connectors, MCP, catalog and readiness — the services a turn calls
 // into, never the reasoning that decides what to call.
 import { startWebhookIngress } from "./scheduler";
+import { resolveHeartbeatIntervalMs } from "./env";
 import { hydrateObservations, type DurableUsageRow } from "./observations";
 import { connectorCatalog, queryConnectors } from "./connector-bridge";
 import { searchExternalMcp } from "./mcp-bridge";
@@ -54,7 +55,7 @@ import {
   type GovernanceMode,
 } from "./primary-agent";
 
-/** Must stay in lock-step with `everyaios_ipc::PROTOCOL_VERSION` (Rust, = 1). */
+/** Must stay in lock-step with `agentcowork_ipc::PROTOCOL_VERSION` (Rust, = 1). */
 export const PROTOCOL_VERSION = 1;
 
 /** Capabilities this side supports; advertised at handshake (all default-off). */
@@ -129,7 +130,7 @@ export function handleRequest(req: Request): Response | null {
       } else {
         response = ok(id, {
           protocolVersion: PROTOCOL_VERSION,
-          serverName: "@everyaios/coordinator",
+          serverName: "@agentcowork/coordinator",
           serverVersion: VERSION,
           capabilities: DEFAULT_CAPABILITIES,
           status: "ready",
@@ -347,20 +348,19 @@ export function heapUsedMB(): number {
 export function announceReady(): void {
   notify("session/ready", {
     protocolVersion: PROTOCOL_VERSION,
-    serverName: "@everyaios/coordinator",
+    serverName: "@agentcowork/coordinator",
     serverVersion: VERSION,
     status: "ready",
   });
 }
 
 /**
- * Resolve the heartbeat interval from `EVERYAIOS_HEARTBEAT_MS` (tests use a
- * short interval), falling back to [`DEFAULT_HEARTBEAT_MS`].
+ * Resolve the heartbeat interval from `AGENTCOWORK_HEARTBEAT_MS` (tests use a
+ * short interval), falling back to the legacy `EVERYAIOS_HEARTBEAT_MS`
+ * spelling (DEC-053) and then to [`DEFAULT_HEARTBEAT_MS`].
  */
 export function heartbeatIntervalMS(): number {
-  const raw = process.env.EVERYAIOS_HEARTBEAT_MS;
-  const n = raw === undefined ? NaN : Number(raw);
-  return Number.isFinite(n) && n > 0 ? n : DEFAULT_HEARTBEAT_MS;
+  return resolveHeartbeatIntervalMs(process.env, DEFAULT_HEARTBEAT_MS);
 }
 
 /**

@@ -132,7 +132,7 @@ export function TitleBar() {
           <Sparkles className="h-3 w-3 text-brand" />
         </div>
         <span className="text-xs font-semibold tracking-tight">
-          EveryAIOS
+          AgentCowork
         </span>
         <Badge variant="secondary" className="h-4 text-[10px] px-1 py-0 font-mono">
           {ARCH_VERSION}
@@ -148,7 +148,7 @@ export function TitleBar() {
           aria-label="Switch chat (opens the command palette)"
           title="Switch chat — opens the command palette"
         >
-          <span className="font-medium text-foreground">everyaios</span>
+          <span className="font-medium text-foreground">agentcowork</span>
           <span className="text-muted-foreground/60">/</span>
           <span>{taskFolder ? taskFolder.split(/[\\/]/).pop() : 'work'}</span>
           <ChevronDown className="h-3 w-3 opacity-60" />

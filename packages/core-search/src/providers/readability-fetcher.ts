@@ -1,4 +1,4 @@
-import type { SearchContext, SearchProvider } from '@everyaios/core-domain';
+import type { SearchContext, SearchProvider } from '@agentcowork/core-domain';
 import * as cheerio from 'cheerio';
 
 export class ReadabilityFetcherProvider implements SearchProvider {

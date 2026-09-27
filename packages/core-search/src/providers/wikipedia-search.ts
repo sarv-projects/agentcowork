@@ -3,7 +3,7 @@
  * Returns encyclopedia article snippets and page info.
  * https://www.mediawiki.org/wiki/API:Search
  */
-import type { SearchContext, SearchProvider, SearchResult } from '@everyaios/core-domain';
+import type { SearchContext, SearchProvider, SearchResult } from '@agentcowork/core-domain';
 
 type WikiSearchItem = {
   title: string;

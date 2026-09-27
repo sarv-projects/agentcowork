@@ -1,4 +1,4 @@
-// P2.3 / P6.x — the real 42-tool MCP registry (`everyaios-mcp`: 37 browser +
+// P2.3 / P6.x — the real 42-tool MCP registry (`agentcowork-mcp`: 37 browser +
 // 5 storage tools) surfaced to the Connectors panel. Mirrors `mcp_cmds.rs`;
 // in a plain-browser preview it returns a small demo so the tab is explorable.
 
@@ -299,7 +299,7 @@ function demoStore(): StoreEntry[] {
 
 function demoServers(): McpServerRow[] {
   return [
-    { name: "EveryAIOS native (built-in)", status: "connected", transport: "native", tools: 42, desc: "37 browser + 5 storage tools", toolNames: [] },
+    { name: "AgentCowork native (built-in)", status: "connected", transport: "native", tools: 42, desc: "37 browser + 5 storage tools", toolNames: [] },
     { name: "GitHub MCP", status: "connected", transport: "stdio", tools: 18, desc: "Repo, issues, PRs", toolNames: ["list_issues", "create_pr", "get_file"] },
     { name: "Filesystem MCP", status: "connected", transport: "stdio", tools: 7, desc: "Read/write local files", toolNames: ["read_file", "write_file", "list_dir"] },
   ];

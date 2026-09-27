@@ -4,7 +4,7 @@ import { backendLabel, decodeChunk, demoProfiles, terminalProfiles } from '@/lib
 // H36 (P54) — the Shell view trusts three things from this bridge: the raw
 // byte decode (a bad frame must never be written to xterm), the backend label,
 // and the honest preview fallback. Spawning is exercised in Rust
-// (`everyaios-core::terminal` PTY round-trip test) — not faked here.
+// (`agentcowork-core::terminal` PTY round-trip test) — not faked here.
 
 const originalWindow = (globalThis as { window?: unknown }).window
 

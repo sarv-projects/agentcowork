@@ -1,4 +1,4 @@
-# EveryAIOS headless executor node (P40.1 — spec H33).
+# AgentCowork headless executor node (P40.1 — spec H33).
 #
 # Builds the SAME core binary + the Bun-compiled coordinator sidecar and runs
 # them in the headless profile (`--headless`): core + B7 scheduler +
@@ -22,20 +22,23 @@ FROM rust:1-slim AS core
 WORKDIR /src
 COPY crates/Cargo.toml crates/Cargo.lock ./crates/
 COPY crates/ ./crates/
-RUN cargo build --release -p everyaios-core
+RUN cargo build --release -p agentcowork-core
 # The core binary is what `cargo build` emits for the bin target.
-RUN ls target/release/everyaios-core && cp target/release/everyaios-core /out/everyaios-core
+RUN ls target/release/agentcowork-core && cp target/release/agentcowork-core /out/agentcowork-core
 
 # --- stage 3: minimal runtime ---
 FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates tzdata \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=coordinator /src/packages/coordinator/dist/coordinator /app/coordinator
-COPY --from=core /out/everyaios-core /app/everyaios-core
+COPY --from=core /out/agentcowork-core /app/agentcowork-core
 # The node's state lives on a user-mounted volume (never in the image).
+# New data-home first, legacy fallback alongside: the current binary still
+# reads EVERYAIOS_HOME (DEC-053 migration is Core-owned).
+ENV AGENTCOWORK_HOME=/data
 ENV EVERYAIOS_HOME=/data
 VOLUME /data
 EXPOSE 47615 # P8.9 E2E sync transport (LAN/Tailscale/WireGuard mesh)
 # Headless profile: core + coordinator (B7 scheduler inside). Approvals that
 # need Guard-2 park as pending and surface on the control plane.
-ENTRYPOINT ["/app/everyaios-core", "--headless", "--coordinator-bin", "/app/coordinator"]
+ENTRYPOINT ["/app/agentcowork-core", "--headless", "--coordinator-bin", "/app/coordinator"]

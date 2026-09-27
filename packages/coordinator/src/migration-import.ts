@@ -1,7 +1,7 @@
 /**
  * P30.14 — the migration importer (skales pattern, doc 83 §1): import
  * ChatGPT/Claude/OpenClaw exports + agent instructions + editor/MCP config
- * into EveryAIOS. Re-rated from defer to a narrow ship (doc 82 "Migration
+ * into AgentCowork. Re-rated from defer to a narrow ship (doc 82 "Migration
  * Concierge"): parse exports → sessions, agent-instruction files → skills,
  * editor/MCP configs → connector registry entries.
  *

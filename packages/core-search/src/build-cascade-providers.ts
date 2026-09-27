@@ -1,4 +1,4 @@
-import type { SearchContext, SearchProvider } from '@everyaios/core-domain';
+import type { SearchContext, SearchProvider } from '@agentcowork/core-domain';
 import { getSearchCache, SearchCacheProvider } from './cache/search-cache.js';
 import type { SearchCache } from './cache/search-cache.js';
 import { DuckDuckGoSearchProvider } from './providers/duckduckgo-search.js';

@@ -3,7 +3,7 @@
 //! Exposes CRUD operations for persistent calendars and AI-scheduled events
 //! stored securely in the SQLCipher vault (`ui_calendars`, `ui_calendar_events`).
 
-use everyaios_vault::{CalendarEventRow, CalendarRow};
+use agentcowork_vault::{CalendarEventRow, CalendarRow};
 use serde_json::Value;
 use tauri::State;
 

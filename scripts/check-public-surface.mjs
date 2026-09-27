@@ -54,7 +54,7 @@ need(/MIT/.test(declared), `F5: bundle licence "${declared}" no longer names MIT
 // the dependency trees rather than trusting the sentence.
 //
 // "Sender" is the precise word: an *exporter or SDK* that can transmit is a
-// sender; a wire-format type crate is not. `everyaios-core/src/tracing.rs`
+// sender; a wire-format type crate is not. `agentcowork-core/src/tracing.rs`
 // depends on bare `opentelemetry` for the W3C `traceparent` types (TraceId /
 // SpanId / SpanContext) and reports to console + a local log file — OTLP is
 // post-v1 (SPEC J14). That distinction is enforced below instead of waived.
@@ -68,7 +68,7 @@ for (const lock of ['pnpm-lock.yaml', 'crates/Cargo.lock', 'src-tauri/Cargo.lock
 }
 // The one allowed exception must stay an exception: the bare wire-format crate
 // only, never an exporter that could turn it into a sender.
-const tracingRs = read('crates/everyaios-core/src/tracing.rs');
+const tracingRs = read('crates/agentcowork-core/src/tracing.rs');
 need(tracingRs.includes('opentelemetry::trace::{'),
   'F6: tracing.rs no longer uses the opentelemetry wire-format types (if the dependency was dropped, tighten this gate)');
 need(/TraceReporter exports|console \+ log file/i.test(tracingRs),

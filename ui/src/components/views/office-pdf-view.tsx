@@ -21,14 +21,14 @@ type PdfFindHandle = { findText: (query: string) => Promise<number | null> }
 
 const FORM_FIELDS = [
   { label: 'Party A:', value: 'Acme Holdings, Inc.', top: 18 },
-  { label: 'Party B:', value: 'EveryAIOS, LLC', top: 26 },
+  { label: 'Party B:', value: 'AgentCowork, LLC', top: 26 },
   { label: 'Effective Date:', value: '2026-10-01', top: 34 },
   { label: 'Contract Value:', value: '$ 1,800,000.00 USD', top: 42, highlight: true },
 ]
 
 // P4.7 — demo document text for the chat overlay when no PDF is open.
 const DEMO_DOC_TEXT = [
-  'Master Services Agreement between Acme Holdings, Inc. and EveryAIOS, LLC, effective 2026-10-01.',
+  'Master Services Agreement between Acme Holdings, Inc. and AgentCowork, LLC, effective 2026-10-01.',
   '4.2 Payment Schedule: invoices are issued monthly and due net-thirty (30) days from issuance.',
   '4.3 Late Payment: any payment not received within fifteen (15) days of the due date accrues interest at 1.5% per month.',
   'Contract value is $1,800,000.00 USD, payable in twelve installments.',
@@ -387,7 +387,7 @@ export default function OfficePdfView() {
 
               <div className="absolute bottom-8 left-8 right-8 flex justify-between text-[9px] text-zinc-400">
                 <span>Acme Holdings, Inc.</span>
-                <span>EveryAIOS, LLC</span>
+                <span>AgentCowork, LLC</span>
               </div>
               <div className="absolute bottom-2 left-0 right-0 text-center text-[8px] text-zinc-400">
                 Page {page} of 8 · CONFIDENTIAL

@@ -82,7 +82,7 @@ A large tool result is **referenced, never inlined raw**. The bounded preview is
 
 **The required order is: write the artifact, then attach the reference.** The component that must own the write is the **work/capability result path** — the same place a receipt is emitted (§3) and where artifact creation already belongs. It shapes the bounded preview, writes the full bytes through the artifact gateway, and only then sets the reference it received. The order *is* the invariant: a ref set before its artifact exists advertises a version that cannot be opened, which is a worse failure than an oversized result.
 
-**Status: pending.** The helper is landed (`everyaios-mcp/src/preview.rs`, exported from `everyaios-mcp/src/lib.rs:21,40-42`) and unit-tested, but it has **no caller in the tree** — the seam above is unwired. It stays that way deliberately: a writer inside the MCP protocol crate would be a second artifact store, and the protocol layer has no workspace, no store and no work-item identity. The seam is recorded here rather than papered over; nothing in the doc set treats it as wired.
+**Status: pending.** The helper is landed (`agentcowork-mcp/src/preview.rs`, exported from `agentcowork-mcp/src/lib.rs:21,40-42`) and unit-tested, but it has **no caller in the tree** — the seam above is unwired. It stays that way deliberately: a writer inside the MCP protocol crate would be a second artifact store, and the protocol layer has no workspace, no store and no work-item identity. The seam is recorded here rather than papered over; nothing in the doc set treats it as wired.
 
 ## 8. Failure modes
 
@@ -113,7 +113,7 @@ A large tool result is **referenced, never inlined raw**. The bounded preview is
 
 ## 11. Evidence
 
-Product-owner brief (`Artifact`, `ProvenanceChain`, `LibraryItem`; promotion lifecycle; receipts) · `ARCH/06-DATA-MODEL.md` DM-019/020/023 · `ARCH/07-CONTRACTS.md` CTR-018 · DEC-014/022/023/032 · INV-07/18/24 · `ARCH/17-MEMORY.md` (export/import pattern) · `everyaios-mcp/src/preview.rs` (§7.1 bounded preview + ref seam; landed, no caller yet).
+Product-owner brief (`Artifact`, `ProvenanceChain`, `LibraryItem`; promotion lifecycle; receipts) · `ARCH/06-DATA-MODEL.md` DM-019/020/023 · `ARCH/07-CONTRACTS.md` CTR-018 · DEC-014/022/023/032 · INV-07/18/24 · `ARCH/17-MEMORY.md` (export/import pattern) · `agentcowork-mcp/src/preview.rs` (§7.1 bounded preview + ref seam; landed, no caller yet).
 
 ## 12. Requirements (`REQ-ART-*`)
 

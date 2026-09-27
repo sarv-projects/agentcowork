@@ -2,7 +2,7 @@
  * Agent metadata registry (toolIds, maxRisk, webAccess, etc.).
  *
  * UI-specific prompt overlays live in
- * @everyaios/core-ai/src/chat/agents.ts AGENT_CATALOG — this file
+ * @agentcowork/core-ai/src/chat/agents.ts AGENT_CATALOG — this file
  * defines the canonical tool/risk profile. Agent IDs shared between
  * BOTH files (general, research, reader) MUST be kept in sync.
  *

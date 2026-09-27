@@ -3,9 +3,9 @@
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P3).
 > **P7 pass (2026-09-26):** line-checked; requirements seeded (`REQ-CODE-*`, Requirements section).
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
-> **Role:** the coding domain runtime — **repo understanding** (RepoGraph → RepoMap) + **code execution** (shell/tests/worktrees). This module produces structure and executes; Agent X supplies the intelligence that uses it (`15`).
+> **Role:** the coding domain runtime — **repo understanding** (RepoGraph → RepoMap) + **code execution** (shell/tests/worktrees). This module produces structure and executes; the bound engine supplies the intelligence that uses it (`15`).
 > **Dependencies:** `25-FILES` (identity/watchers) · `16-CONTEXT` (budgets/projections) · `19-RUNTIME-ENVIRONMENTS` (processes/worktrees) · `12-TRUST` (exec policy) · `29-ARTIFACTS` (outputs). **Consumers:** `15` (coder profile), `34` (verification).
-> **Evidence:** product-owner brief (RepoGraph/RepoMap; edit→build→test loop) · `agent-harness-verification.md` §A2/§E1 (bounded fragments + baseline), §A3 (worktree session-bound vs per-spawn — DEC-029) · repo guidance (`.agents/skills/codebase-intelligence/SKILL.md`: tree-sitter/SQLite/graph, incremental hashing, “never present inferred edges as certain”) · local `everyaios-codeintel` crate (read-only reference).
+> **Evidence:** product-owner brief (RepoGraph/RepoMap; edit→build→test loop) · `agent-harness-verification.md` §A2/§E1 (bounded fragments + baseline), §A3 (worktree session-bound vs per-spawn — DEC-029) · repo guidance (`.agents/skills/codebase-intelligence/SKILL.md`: tree-sitter/SQLite/graph, incremental hashing, “never present inferred edges as certain”) · local `agentcowork-codeintel` crate (read-only reference).
 
 ## 1. Purpose & rules
 
@@ -88,7 +88,7 @@ Cross-repository graphs · remote devboxes · semantic/embedding retrieval · au
 
 ## 12. Evidence
 
-Product-owner brief (RepoGraph/RepoMap, coding loop) · `agent-harness-verification.md` §A2/§E1 (fragments/baseline), §A3 (worktree models; DEC-029) · `.agents/skills/codebase-intelligence/SKILL.md` (tree-sitter, incremental hashing, SQLite, graph analysis; inference labeling) · local `everyaios-codeintel` (reference only) · `ARCH/16-CONTEXT.md` §2–§5 · `ARCH/25-FILES.md` §2/§6.
+Product-owner brief (RepoGraph/RepoMap, coding loop) · `agent-harness-verification.md` §A2/§E1 (fragments/baseline), §A3 (worktree models; DEC-029) · `.agents/skills/codebase-intelligence/SKILL.md` (tree-sitter, incremental hashing, SQLite, graph analysis; inference labeling) · local `agentcowork-codeintel` (reference only) · `ARCH/16-CONTEXT.md` §2–§5 · `ARCH/25-FILES.md` §2/§6.
 
 ## 13. Requirements (`REQ-CODE-*`)
 

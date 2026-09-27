@@ -28,7 +28,7 @@ v0 grew by accretion: 33 ARCH files, 55 research files, a 355 KB spec, a 606 KB 
 - **module-by-module development** — each module doc must state what it owns, what it depends on, what it exposes, and how it fails (§3).
 
 **Kept from v0 (direction that survived verification):** Work-first runtime; one governed execution path for every effect; Capability ≠ Provider; custody invariants (sidecar proposes / Core disposes; keys never leave the vault); native-first capability resolution for agents.
-**Rebuilt or added in v1:** naming layer (AgentCowork / Core / Agent X); memory architecture (new); world model; workflow engine as Core infrastructure; context split (infrastructure vs control); UI architecture incl. chat rendering; module-by-module interop checks; canonical data-model + contracts as separate shared docs.
+**Rebuilt or added in v1:** naming layer (AgentCowork / Core); memory architecture (new); world model; workflow engine as Core infrastructure; context split (infrastructure vs control); UI architecture incl. chat rendering; module-by-module interop checks; canonical data-model + contracts as separate shared docs.
 
 ---
 
@@ -70,8 +70,8 @@ v0 grew by accretion: 33 ARCH files, 55 research files, a 355 KB spec, a 606 KB 
 | 12 | `ARCH/12-TRUST.md` | Trust/Control | Policy · Guard · approvals · tickets · vault · egress · audit · external-agent projections | Frozen v1 |
 | 13 | `ARCH/13-CAPABILITY.md` | Capability | Registry · catalog · resolver · handles · affordances · guidance · capability graph | Frozen v1 |
 | 14 | `ARCH/14-PROVIDERS.md` | Capability/Execution | Provider adapter contract + native/MCP/ACP/HTTP/CLI/plugin/remote + MCP era policy | Frozen v1 |
-| 15 | `ARCH/15-AGENT-X.md` | Agent runtime | Agent X LLD: loop, planner, delegation, recovery, completion contracts, CLI/ACP surfaces | Frozen v1 |
-| 16 | `ARCH/16-CONTEXT.md` | Context | Context infrastructure (Core) + context control (Agent X) + projections | Frozen v1 |
+| 15 | `ARCH/15-AGENT-PLANE.md` | Agent plane | The `AgentEngine` contract every agent implements, delegation + subagent lifecycle, isolation modes, receipts, CLI/ACP surfaces | Frozen v1 |
+| 16 | `ARCH/16-CONTEXT.md` | Context | Context infrastructure (Core) + context control (the bound engine) + projections | Frozen v1 |
 | 17 | `ARCH/17-MEMORY.md` | Memory | Durable memory: layers, write/read paths, minimal algorithm set, upgrade path | Frozen v1 |
 | 18 | `ARCH/18-MODEL-ROUTING.md` | Model plane | Model registry · router · adapters; local discovery; reasoning-effort mapping | Frozen v1 |
 | 19 | `ARCH/19-RUNTIME-ENVIRONMENTS.md` | Execution | Process manager · environments · sandbox · lifecycle · health | Frozen v1 |
@@ -87,7 +87,7 @@ v0 grew by accretion: 33 ARCH files, 55 research files, a 355 KB spec, a 606 KB 
 | 29 | `ARCH/29-ARTIFACTS.md` | Artifacts | Artifact + Receipt models · versions · provenance · library promotion | Frozen v1 |
 | 30 | `ARCH/30-EVENTS.md` | Events | Event store · bus · replay · subscriptions; usage & cost telemetry | Frozen v1 |
 | 31 | `ARCH/31-SKILLS-PLUGINS.md` | Extensibility | Skill registry/loader/resolver; plugin surfaces | Frozen v1 |
-| 32 | `ARCH/32-CHANNELS.md` | Surfaces | Desktop/CLI/ACP/A2A/API/mobile projections; agent gateway; owns the ACP crate (`everyaios-acp`) | Frozen v1 |
+| 32 | `ARCH/32-CHANNELS.md` | Surfaces | Desktop/CLI/ACP/A2A/API/mobile projections; agent gateway; owns the ACP crate (`agentcowork-acp`) | Frozen v1 |
 | 34 | `ARCH/34-EFFECT-VERIFICATION.md` | Verification | Validate · render · verify · reconcile; receipt policy | Frozen v1 |
 | 40 | `ARCH/40-FLOWS.md` | Cross | End-to-end sequences (`FLOW-*`) | Frozen v1 |
 | 41 | `ARCH/41-EDGE-CASES.md` | Cross | Edge-case catalog (`EDGE-*`) + resolutions | Frozen v1 |
@@ -153,14 +153,14 @@ v0 grew by accretion: 33 ARCH files, 55 research files, a 355 KB spec, a 606 KB 
 - v0 docs: `ARCHIVE/v0/ARCH/` (33 entries incl. ADR/ and the archived coordinator loop).
 - v0 research: `ARCHIVE/v0/RESEARCH/` — `2026-ai-landscape/` (10 files), `desktop_app/` (45 files).
 - Comparator work: `~/business_Dev/REPO-COMPARE/` — `MASTER-COMPARISON.md` (190 items — its §1 “186” line is stale; see `DISPOSITION.md` §a), `DISPOSITION.md`, `LICENSE-LEDGER.md`, `BRIEFS/` (20), `clone2/` (55 full clones), `clone3/` (2).
-- v1 lane research: `ARCHIVE/v1-research/` (nine evidence deliverables) + `ARCHIVE/v1-research/v1-sdd/` (code-state inventory, OpenCode/harness notes, Agent X draft, memory deep-dive, UI proposals, final-review findings).
+- v1 lane research: `ARCHIVE/v1-research/` (nine evidence deliverables) + `ARCHIVE/v1-research/v1-sdd/` (code-state inventory, OpenCode/harness notes, engine-loop draft, memory deep-dive, UI proposals, final-review findings).
 - **Lost:** `/tmp/opencode/recon/` reports 01–29 (temp cleanup, 2026-09-26). Do not cite them; re-verify from surviving sources.
 
 ---
 
 ## 8. Working names
 
-Working product name: **AgentCowork** · Runtime: **Core** · Native agent: **Agent X**. Full map and rename table: `ARCH/01-NAMING.md`.
+Working product name: **AgentCowork** · Runtime: **Core** · Agent engine: external in v1. Full map and rename table: `ARCH/01-NAMING.md`.
 
 ---
 
@@ -170,7 +170,7 @@ Working product name: **AgentCowork** · Runtime: **Core** · Native agent: **Ag
 |---|---|---|
 | OQ-001 | Product shorthand for UI copy (“AC”? “Cowork”? none) | Before UI copy freeze (P5) |
 | OQ-002 | Platform scope for World Model collectors (Windows-first vs cross-platform parity) | Module pass 21 |
-| OQ-003 | Timing + scope of code identifier rename (`everyaios-*` crates/packages, `EveryAIOS` strings) | Post-freeze code phase |
+| OQ-003 | Timing + scope of code identifier rename (`agentcowork-*` crates/packages, `AgentCowork` strings) | Post-freeze code phase |
 | OQ-004 | `docs/` folder v1 review; README/AGENTS sync ✅ done (2026-09-26) | Post-freeze |
 | OQ-005 | CLI final binary name + command surface (`32-CHANNELS.md` §3) | Product owner (branding, `DEC-020`) |
 | OQ-006 | Whether v0 doc removals are committed now or when v1 freezes | ✅ resolved — committed `573fff0` (2026-09-26) |

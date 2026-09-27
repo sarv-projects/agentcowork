@@ -11,7 +11,7 @@
  * On startup, stored patterns are loaded into the in-memory detector.
  */
 
-import type { MemoryRepository, MemoryFact, FactCandidate } from '@everyaios/core-domain';
+import type { MemoryRepository, MemoryFact, FactCandidate } from '@agentcowork/core-domain';
 import type { PromotionCandidate } from './correction-detector.js';
 import { seedCorrectionCounts } from './correction-detector.js';
 

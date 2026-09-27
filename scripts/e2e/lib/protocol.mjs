@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * P50.5 E2E — the everyaios-ipc wire protocol for driving the REAL
+ * P50.5 E2E — the agentcowork-ipc wire protocol for driving the REAL
  * coordinator sidecar over stdio, exactly as the Rust relay does:
  *
  *   [u32 LE length][JSON payload]

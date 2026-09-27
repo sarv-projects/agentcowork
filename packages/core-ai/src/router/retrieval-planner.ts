@@ -1,5 +1,5 @@
-import type { IntentCategory, RetrievalPlan, RouteContext, UserQuery } from '@everyaios/core-domain';
-import { buildMemoryRetrievalHint, attachMemoryScopeToPlan } from '@everyaios/core-memory';
+import type { IntentCategory, RetrievalPlan, RouteContext, UserQuery } from '@agentcowork/core-domain';
+import { buildMemoryRetrievalHint, attachMemoryScopeToPlan } from '@agentcowork/core-memory';
 
 export function buildRetrievalPlan(
   category: IntentCategory,

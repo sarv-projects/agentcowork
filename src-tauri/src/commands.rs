@@ -425,7 +425,7 @@ pub fn handler() -> impl Fn(tauri::ipc::Invoke<tauri::Wry>) -> bool + Send + Syn
         // P15-H29: local artifact preview server (loopback, path-floored).
         artifact_cmds::artifact_serve,
         artifact_cmds::artifact_stop,
-        // P46.2: everyaios doctor — per-subsystem readiness report.
+        // P46.2: agentcowork doctor — per-subsystem readiness report.
         doctor_cmds::doctor_report,
         // P70.D4/D7/D8 — diagnostics: sandbox honesty, support bundle,
         // remove-all-data (typed-confirmed in the UI).

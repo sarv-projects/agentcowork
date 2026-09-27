@@ -34,15 +34,15 @@ use crate::AppState;
 /// report, not a capability claim.
 #[tauri::command]
 pub fn diagnostics_sandbox_posture() -> serde_json::Value {
-    let posture = everyaios_mcp::attach::SandboxPosture::preferred();
+    let posture = agentcowork_mcp::attach::SandboxPosture::preferred();
     let (posture, detail) = match posture {
-        everyaios_mcp::attach::SandboxPosture::Confined => (
+        agentcowork_mcp::attach::SandboxPosture::Confined => (
             "Confined",
             "third-party MCP servers run inside bubblewrap: own mount namespace, no new \
              privileges, no inherited environment — provider keys are reachable only \
              through the vault broker",
         ),
-        everyaios_mcp::attach::SandboxPosture::Ambient => (
+        agentcowork_mcp::attach::SandboxPosture::Ambient => (
             "Ambient",
             "this platform has no native sandbox backend yet (P49.5): third-party MCP \
              servers run with the inherited environment. They are still ticket-gated, \
@@ -71,7 +71,7 @@ const BUNDLE_ALLOWED: &[&str] = &[
     "update_channel.json", // { channel } only
 ];
 
-/// A secret-shaped key name. Mirrors `everyaios_guard::sandbox`'s refusal
+/// A secret-shaped key name. Mirrors `agentcowork_guard::sandbox`'s refusal
 /// list so the two stay honest about what counts as a secret.
 fn secret_shaped(key: &str) -> bool {
     let k = key.to_ascii_lowercase();
@@ -82,6 +82,9 @@ fn secret_shaped(key: &str) -> bool {
         || k.contains("secret")
         || k.contains("password")
         || k.contains("credential")
+        || k.starts_with("agentcowork_")
+        // Retired spellings stay scrubbed too (DEC-053): an old credential
+        // name in a diagnostics bundle is still a credential.
         || k.starts_with("everyaios_")
         || k.ends_with("_api")
         || k == "authorization"
@@ -144,9 +147,9 @@ pub fn diagnostics_support_bundle(state: State<'_, AppState>) -> Result<serde_js
 
     // Doctor: the readiness report (vault ORIGIN string, counts only — the
     // live probe resolves the key but never returns it).
-    let doctor = everyaios_core::doctor::run_doctor(
+    let doctor = agentcowork_core::doctor::run_doctor(
         env!("CARGO_PKG_VERSION"),
-        &everyaios_core::doctor::LiveProbe::new(data_dir.clone()),
+        &agentcowork_core::doctor::LiveProbe::new(data_dir.clone()),
     );
     let doctor_json = serde_json::to_value(&doctor).map_err(|e| e.to_string())?;
 
@@ -238,17 +241,17 @@ pub fn data_remove_all(state: State<'_, AppState>) -> Result<serde_json::Value, 
     // 4. Re-create the shell of the data dir + a fresh ledger.
     std::fs::create_dir_all(&data_dir).map_err(|e| format!("recreate data dir: {e}"))?;
     *state.audit_log.lock().map_err(|e| e.to_string())? =
-        everyaios_audit::AuditWriter::open(&data_dir.join("audit.ndjson")).ok();
+        agentcowork_audit::AuditWriter::open(&data_dir.join("audit.ndjson")).ok();
 
     // The stamp manifest is rebuilt by the next boot; write it now so the
     // wipe itself is auditable by the *next* boot's tooling.
-    let _ = everyaios_core::store_schema::ensure_all(&data_dir);
+    let _ = agentcowork_core::store_schema::ensure_all(&data_dir);
 
     Ok(json!({
         "removed": true,
         "files": removed_files,
         "bytes": removed_bytes,
-        "note": "restart EveryAIOS to re-initialize from a clean profile",
+        "note": "restart AgentCowork to re-initialize from a clean profile",
     }))
 }
 

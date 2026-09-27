@@ -1,0 +1,14 @@
+[package]
+name = "agentcowork-audit"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "AgentCowork audit — NDJSON append-only event log + session-replay ingest/storage (P2.10) + durable event log + idempotency classes (doc 53 §4)"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+rusqlite = { workspace = true }
+sha2 = { workspace = true }

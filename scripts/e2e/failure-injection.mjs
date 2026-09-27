@@ -2,7 +2,7 @@
 /**
  * P50.5.5 — Failure-injection suite (real binary, headless).
  *
- * Drives the REAL `everyaios-core` binary (or EVERYAIOS_E2E_CORE_BIN) with an
+ * Drives the REAL `agentcowork-core` binary (or AGENTCOWORK_E2E_CORE_BIN) with an
  * isolated profile and injects real failures. Every leg asserts the runtime
  * stays truthful — honest failure/fresh state, never demo/synthetic success:
  *
@@ -19,12 +19,13 @@
  *                       markers, no crash-loop, no fake recovery.
  *   L5 deny permissions — the guard deny path (expire ticket, deny
  *                       permissions) runs the crate security suites
- *                       (p10_security + everyaios-guard) as executable
+ *                       (p10_security + agentcowork-guard) as executable
  *                       evidence; the packaged-shell variant is P50.5.7.
  *   L6 break the command — `--version` answers honestly; a bogus flag
  *                       terminates (no hang) with zero demo/seed markers.
- *   L7 disconnect Chrome — no display in CI: without EVERYAIOS_E2E_CHROME=1
- *                       the leg reports the install probe honestly (browser
+ *   L7 disconnect Chrome — no display in CI: without AGENTCOWORK_E2E_CHROME=1
+ *                       (legacy EVERYAIOS_E2E_CHROME is also honoured) the leg
+ *                       reports the install probe honestly (browser
  *                       absent ⇒ UI must show unavailable, never attached);
  *                       with it, the live-Chrome ignored suite must pass.
  *
@@ -40,10 +41,10 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 // scripts/e2e → desktop_app
 const REPO_ROOT = resolve(HERE, "../..");
 const COORDINATOR_BIN = resolve(REPO_ROOT, "packages/coordinator/dist/coordinator");
-const CORE_BIN = process.env.EVERYAIOS_E2E_CORE_BIN ?? resolve(REPO_ROOT, "crates/target/debug/everyaios-core");
+const CORE_BIN = process.env.AGENTCOWORK_E2E_CORE_BIN ?? resolve(REPO_ROOT, "crates/target/debug/agentcowork-core");
 
 if (!existsSync(CORE_BIN)) {
-  console.log(`[P50.5.5] SKIP — no core binary at ${CORE_BIN} (set EVERYAIOS_E2E_CORE_BIN)`);
+  console.log(`[P50.5.5] SKIP — no core binary at ${CORE_BIN} (set AGENTCOWORK_E2E_CORE_BIN)`);
   process.exit(2);
 }
 
@@ -51,7 +52,7 @@ if (!existsSync(CORE_BIN)) {
 // resolve it the same way CI would: explicit env, else the rustup default
 // install location, else PATH. L5/L7 both go through here.
 const CARGO_BIN =
-  process.env.EVERYAIOS_E2E_CARGO_BIN ??
+  process.env.AGENTCOWORK_E2E_CARGO_BIN ??
   (existsSync(join(homedir(), ".cargo/bin/cargo")) ? join(homedir(), ".cargo/bin/cargo") : "cargo");
 
 const failures = [];
@@ -71,7 +72,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /** Run the core binary to completion; returns {code, out} (stderr+stdout). */
 function runCore(profile, args = [], env = {}) {
-  const dataDir = join(profile, ".everyaios");
+  const dataDir = join(profile, ".agentcowork");
   mkdirSync(dataDir, { recursive: true });
   try {
     const out = execFileSync(CORE_BIN, args, {
@@ -79,6 +80,11 @@ function runCore(profile, args = [], env = {}) {
         ...process.env,
         HOME: profile,
         USERPROFILE: profile,
+        // New data-home first, legacy fallback alongside: the current binary
+        // still reads EVERYAIOS_* (DEC-053 migration is Core-owned).
+        AGENTCOWORK_HOME: dataDir,
+        EVERYAIOS_HOME: dataDir,
+        AGENTCOWORK_DATA_DIR: dataDir,
         EVERYAIOS_DATA_DIR: dataDir,
         ...env,
       },
@@ -97,9 +103,11 @@ const NO_DEMO = /mockSessions|demo|seeded/i;
 // ---- L2 lock vault ---------------------------------------------------------
 {
   console.log("L2 — lock vault: boot without a key must fail honestly…");
-  const profile = mkdtempSync(join(tmpdir(), "everyaios-fi-lock-"));
+  const profile = mkdtempSync(join(tmpdir(), "agentcowork-fi-lock-"));
   try {
-    const { code, out } = runCore(profile, [], { EVERYAIOS_VAULT_KEY: "" });
+    // Pin the vault key empty on both spellings so the boot must fail
+    // locked/setup no matter which name the binary reads (DEC-053).
+    const { code, out } = runCore(profile, [], { AGENTCOWORK_VAULT_KEY: "", EVERYAIOS_VAULT_KEY: "" });
     assert(code !== 0, `boot exits non-zero (code ${code})`);
     assert(/vault locked|vault key resolve failed|cannot open/i.test(out),
       `honest vault-locked message (${out.trim().slice(0, 90)})`);
@@ -112,7 +120,7 @@ const NO_DEMO = /mockSessions|demo|seeded/i;
 // ---- L3 remove provider ----------------------------------------------------
 {
   console.log("L3 — remove provider: doctor must not fabricate routes…");
-  const profile = mkdtempSync(join(tmpdir(), "everyaios-fi-noprov-"));
+  const profile = mkdtempSync(join(tmpdir(), "agentcowork-fi-noprov-"));
   try {
     const { code, out } = runCore(profile, ["doctor", "--json"]);
     // Exit 1 is CORRECT here — the locked vault is a v1-required broken
@@ -137,15 +145,15 @@ const NO_DEMO = /mockSessions|demo|seeded/i;
 // ---- L4 corrupt persistence ------------------------------------------------
 {
   console.log("L4 — corrupt persistence: garbage files must not seed or crash-loop…");
-  const profile = mkdtempSync(join(tmpdir(), "everyaios-fi-corrupt-"));
+  const profile = mkdtempSync(join(tmpdir(), "agentcowork-fi-corrupt-"));
   try {
-    const dataDir = join(profile, ".everyaios");
+    const dataDir = join(profile, ".agentcowork");
     mkdirSync(dataDir, { recursive: true });
     writeFileSync(join(dataDir, "vault.db"), "GARBAGE-NOT-A-DB");
     writeFileSync(join(dataDir, "memory.json"), "{broken json");
     writeFileSync(join(dataDir, "tasks.json"), "[broken");
     writeFileSync(join(dataDir, "scheduler.json"), "not-json{{");
-    const { code, out } = runCore(profile, [], { EVERYAIOS_VAULT_KEY: "fi-test-key-000" });
+    const { code, out } = runCore(profile, [], { AGENTCOWORK_VAULT_KEY: "fi-test-key-000", EVERYAIOS_VAULT_KEY: "fi-test-key-000" });
     // A corrupt vault.db is FAIL-CLOSED with an honest sqlite error (never a
     // silent recreate of a vault the user may hold key material in, never a
     // crash-loop, never fabricated demo content).
@@ -162,12 +170,12 @@ if (!existsSync(COORDINATOR_BIN)) {
   skip(`L1 needs the coordinator binary at ${COORDINATOR_BIN} (build it first)`);
 } else {
   console.log("L1 — kill sidecar: the supervisor must restart the coordinator…");
-  const profile = mkdtempSync(join(tmpdir(), "everyaios-fi-kill-"));
+  const profile = mkdtempSync(join(tmpdir(), "agentcowork-fi-kill-"));
   try {
-    const dataDir = join(profile, ".everyaios");
+    const dataDir = join(profile, ".agentcowork");
     mkdirSync(dataDir, { recursive: true });
     const child = spawn(CORE_BIN, ["--headless", "--coordinator-bin", COORDINATOR_BIN], {
-      env: { ...process.env, HOME: profile, USERPROFILE: profile, EVERYAIOS_DATA_DIR: dataDir, EVERYAIOS_VAULT_KEY: "fi-kill-key" },
+      env: { ...process.env, HOME: profile, USERPROFILE: profile, AGENTCOWORK_HOME: dataDir, EVERYAIOS_HOME: dataDir, AGENTCOWORK_DATA_DIR: dataDir, EVERYAIOS_DATA_DIR: dataDir, AGENTCOWORK_VAULT_KEY: "fi-kill-key", EVERYAIOS_VAULT_KEY: "fi-kill-key" },
       stdio: ["ignore", "pipe", "pipe"],
     });
     let log = "";
@@ -233,31 +241,31 @@ if (!existsSync(COORDINATOR_BIN)) {
 // ---- L5 deny permissions (crate security suites as executable evidence) ----
 {
   console.log("L5 — deny permissions: guard security suites…");
-  const cargo = process.env.EVERYAIOS_E2E_CARGO ?? resolve(REPO_ROOT, "crates");
+  const cargo = process.env.AGENTCOWORK_E2E_CARGO ?? resolve(REPO_ROOT, "crates");
   try {
-    const out = execFileSync(CARGO_BIN, ["test", "-p", "everyaios-guard", "--quiet"], {
+    const out = execFileSync(CARGO_BIN, ["test", "-p", "agentcowork-guard", "--quiet"], {
       cwd: cargo,
       encoding: "utf8",
       timeout: 600_000,
       stdio: ["ignore", "pipe", "pipe"],
     });
     const summary = (out.match(/\d+ passed/) ?? ["0 passed"])[0];
-    assert(/[1-9]\d* passed/.test(summary), `everyaios-guard deny/permission suites pass (${summary})`);
+    assert(/[1-9]\d* passed/.test(summary), `agentcowork-guard deny/permission suites pass (${summary})`);
   } catch (e) {
-    assert(false, `everyaios-guard suites run (${(e.message ?? "").slice(0, 100)})`);
+    assert(false, `agentcowork-guard suites run (${(e.message ?? "").slice(0, 100)})`);
   }
 }
 
 // ---- L6 break the command --------------------------------------------------
 {
   console.log("L6 — break the command: --version answers, bogus flags terminate…");
-  const profile = mkdtempSync(join(tmpdir(), "everyaios-fi-cmd-"));
+  const profile = mkdtempSync(join(tmpdir(), "agentcowork-fi-cmd-"));
   try {
-    const ver = runCore(profile, ["--version"], { EVERYAIOS_VAULT_KEY: "fi-ver-key" });
+    const ver = runCore(profile, ["--version"], { AGENTCOWORK_VAULT_KEY: "fi-ver-key", EVERYAIOS_VAULT_KEY: "fi-ver-key" });
     assert(ver.code === 0 && /\d+\.\d+\.\d+/.test(ver.out),
       `--version exits 0 with a version (${ver.out.trim().slice(0, 60)})`);
     assert(!NO_DEMO.test(ver.out), "no demo/seed markers in --version output");
-    const bogus = runCore(profile, ["--definitely-not-a-flag"], { EVERYAIOS_VAULT_KEY: "fi-bogus-key" });
+    const bogus = runCore(profile, ["--definitely-not-a-flag"], { AGENTCOWORK_VAULT_KEY: "fi-bogus-key", EVERYAIOS_VAULT_KEY: "fi-bogus-key" });
     assert(!NO_DEMO.test(bogus.out), "no demo/seed markers after a bogus flag");
     assert(bogus.code !== undefined, `bogus invocation terminated (code ${bogus.code})`);
   } finally {
@@ -277,22 +285,25 @@ if (!existsSync(COORDINATOR_BIN)) {
       break;
     } catch { /* not installed */ }
   }
-  if (process.env.EVERYAIOS_E2E_CHROME === "1" && found) {
+  // Either spelling enables the live leg (the secret itself migrates separately).
+  const liveChrome = process.env.AGENTCOWORK_E2E_CHROME ?? process.env.EVERYAIOS_E2E_CHROME;
+  if (liveChrome === "1" && found) {
     console.log(`  live Chrome leg via ${found}: running the ignored live suite…`);
     try {
-      execFileSync(CARGO_BIN, ["test", "-p", "everyaios-browser", "--lib", "--", "--ignored", "--test-threads=1"], {
+      execFileSync(CARGO_BIN, ["test", "-p", "agentcowork-browser", "--lib", "--", "--ignored", "--test-threads=1"], {
         cwd: resolve(REPO_ROOT, "crates"),
         encoding: "utf8",
         timeout: 600_000,
         stdio: ["ignore", "pipe", "pipe"],
-        env: { ...process.env, EVERYAIOS_LIVE_TEST: "1" },
+        // Both spellings: the current browser harness gates on the legacy name.
+        env: { ...process.env, AGENTCOWORK_LIVE_TEST: "1", EVERYAIOS_LIVE_TEST: "1" },
       });
       assert(true, "live-Chrome ignored suite passes with a display");
     } catch (e) {
       assert(false, `live-Chrome suite failed (${(e.message ?? "").slice(0, 120)})`);
     }
   } else if (found) {
-    skip(`Chrome present (${found}) but EVERYAIOS_E2E_CHROME!=1 — live attach is the P50.5.8 display step`);
+    skip(`Chrome present (${found}) but AGENTCOWORK_E2E_CHROME!=1 — live attach is the P50.5.8 display step`);
   } else {
     console.log("  ok — no browser installed: UI must report unavailable (browse empty state + status dot), never attached");
   }

@@ -6,6 +6,8 @@
 // deliberately excluded). Off by default; ring-buffered in localStorage with
 // a hard cap; exportable as JSON from Settings → Usage.
 
+import { clearWithFallback, readWithFallback } from './storage-compat'
+
 export interface RecordedSessionEvent {
   ts: number
   kind: 'click' | 'navigate'
@@ -13,8 +15,8 @@ export interface RecordedSessionEvent {
   target: string
 }
 
-const PREF_KEY = 'everyaios.session-recording'
-const EVENTS_KEY = 'everyaios.session-recording.events'
+const PREF_KEY = 'agentcowork.session-recording'
+const EVENTS_KEY = 'agentcowork.session-recording.events'
 /** Hard ring-buffer cap — keeps the opt-in recording bounded. */
 export const MAX_RECORDED_EVENTS = 2000
 
@@ -28,7 +30,14 @@ export interface RecordingStorage {
 export const localStorageRecordingStorage: RecordingStorage = {
   get: (key) => {
     try {
-      return localStorage.getItem(key)
+      // DEC-053: legacy `everyaios.*` key honored + promoted once.
+      return readWithFallback(
+        {
+          get: (k) => localStorage.getItem(k),
+          set: (k, v) => localStorage.setItem(k, v),
+        },
+        key,
+      )
     } catch {
       return null
     }
@@ -93,7 +102,9 @@ export function getRecordedEvents(): RecordedSessionEvent[] {
 }
 
 export function clearRecordedEvents(): void {
-  storage.remove(EVENTS_KEY)
+  // DEC-053: an explicit clear must also drop the legacy `everyaios.*` key, or
+  // a pre-rename value is promoted back on the next read.
+  clearWithFallback(storage, EVENTS_KEY)
 }
 
 function loadEvents(): RecordedSessionEvent[] {

@@ -28,8 +28,8 @@ One row per `REQ-*`. Status only from evidence.
 
 | REQ | Module (doc) | Code paths | Design (DEC/DM/CTR) | Flow/Edge | Task (`TODO.md`) | Test | Status |
 |---|---|---|---|---|---|---|---|
-| `REQ-PROD-001` | `12-TRUST`, `13-CAPABILITY` | src-tauri/src/fs_cmds.rs, src-tauri/src/terminal_cmds.rs, src-tauri/src/control.rs, crates/everyaios-core/src/tools.rs | `DEC-002`, `INV-01/03` | — | pending | pending | implemented |
-| `REQ-PROD-002` | `12-TRUST`, `18-MODEL-ROUTING` | crates/everyaios-core/src/connectors/mod.rs, crates/everyaios-core/src/connector_hub.rs, crates/everyaios-vault/src/oauth.rs, scripts/check-secret-corpus.mjs, scripts/e2e/security-gate.mjs | `INV-02` | — | pending | pending | implemented |
+| `REQ-PROD-001` | `12-TRUST`, `13-CAPABILITY` | src-tauri/src/fs_cmds.rs, src-tauri/src/terminal_cmds.rs, src-tauri/src/control.rs, crates/agentcowork-core/src/tools.rs | `DEC-002`, `INV-01/03` | — | pending | pending | implemented |
+| `REQ-PROD-002` | `12-TRUST`, `18-MODEL-ROUTING` | crates/agentcowork-core/src/connectors/mod.rs, crates/agentcowork-core/src/connector_hub.rs, crates/agentcowork-vault/src/oauth.rs, scripts/check-secret-corpus.mjs, scripts/e2e/security-gate.mjs | `INV-02` | — | pending | pending | implemented |
 | `REQ-KERNEL-001` | `10-KERNEL` | none yet — no kernel crate (code-state baseline) | `INV-14` | — | pending | pending | unplanned |
 | `REQ-KERNEL-002` | `10-KERNEL` | pending | `INV-06` | — | pending | pending | unplanned |
 | `REQ-KERNEL-003` | `10-KERNEL` | pending | `INV-11` | — | pending | pending | unplanned |
@@ -45,15 +45,15 @@ One row per `REQ-*`. Status only from evidence.
 | `REQ-WORK-006` | `11-WORK` | pending | `DM-001/002` | — | pending | pending | unplanned |
 | `REQ-WORK-007` | `11-WORK` | pending | `INV-16`, `DM-006` | — | pending | pending | unplanned |
 | `REQ-WORK-008` | `11-WORK` | pending | `DM-005/007` | — | pending | pending | unplanned |
-| `REQ-TRUST-001` | `12-TRUST` | crates/everyaios-guard/src/netfloor.rs, crates/everyaios-core/src/tools.rs, crates/everyaios-core/src/messaging.rs, crates/everyaios-core/src/models/probe.rs, crates/everyaios-vault/src/oauth.rs | `INV-05` | — | pending | pending | implemented |
-| `REQ-TRUST-002` | `12-TRUST` | crates/everyaios-acp/src/permission_bridge.rs, src-tauri/src/acp_cmds.rs | `DEC-021`, `DM-010` | — | pending | pending | implemented |
-| `REQ-TRUST-003` | `12-TRUST` | src-tauri/src/fs_cmds.rs, src-tauri/src/terminal_cmds.rs, crates/everyaios-blueprint/src/confined_fs.rs, crates/everyaios-guard/src/ticket.rs | `INV-04`, `DEC-028` | — | pending | pending | implemented |
-| `REQ-TRUST-004` | `12-TRUST` | crates/everyaios-core/src/connectors/mod.rs, crates/everyaios-vault/src/session.rs, crates/everyaios-vault/src/oauth.rs | `INV-02`, `CTR-013` | — | pending | pending | implemented |
-| `REQ-TRUST-005` | `12-TRUST` | src-tauri/src/fs_cmds.rs, src-tauri/src/terminal_cmds.rs, crates/everyaios-guard/src/ticket.rs | `INV-03`, `DM-009` | — | pending | pending | implemented |
+| `REQ-TRUST-001` | `12-TRUST` | crates/agentcowork-guard/src/netfloor.rs, crates/agentcowork-core/src/tools.rs, crates/agentcowork-core/src/messaging.rs, crates/agentcowork-core/src/models/probe.rs, crates/agentcowork-vault/src/oauth.rs | `INV-05` | — | pending | pending | implemented |
+| `REQ-TRUST-002` | `12-TRUST` | crates/agentcowork-acp/src/permission_bridge.rs, src-tauri/src/acp_cmds.rs | `DEC-021`, `DM-010` | — | pending | pending | implemented |
+| `REQ-TRUST-003` | `12-TRUST` | src-tauri/src/fs_cmds.rs, src-tauri/src/terminal_cmds.rs, crates/agentcowork-blueprint/src/confined_fs.rs, crates/agentcowork-guard/src/ticket.rs | `INV-04`, `DEC-028` | — | pending | pending | implemented |
+| `REQ-TRUST-004` | `12-TRUST` | crates/agentcowork-core/src/connectors/mod.rs, crates/agentcowork-vault/src/session.rs, crates/agentcowork-vault/src/oauth.rs | `INV-02`, `CTR-013` | — | pending | pending | implemented |
+| `REQ-TRUST-005` | `12-TRUST` | src-tauri/src/fs_cmds.rs, src-tauri/src/terminal_cmds.rs, crates/agentcowork-guard/src/ticket.rs | `INV-03`, `DM-009` | — | pending | pending | implemented |
 | `REQ-TRUST-006` | `12-TRUST` | pending | `DEC-028` | — | pending | pending | unplanned |
 | `REQ-TRUST-007` | `12-TRUST` | pending | `INV-24` | — | pending | pending | unplanned |
 | `REQ-TRUST-008` | `12-TRUST` | pending | `DEC-009`, `INV-10/11` | — | pending | pending | unplanned |
-| `REQ-TRUST-009` | `12-TRUST` | crates/everyaios-guard/src/ratelimit.rs, src-tauri/src/lib.rs, crates/everyaios-core/src/tools.rs | `INV-05` | — | pending | pending | implemented |
+| `REQ-TRUST-009` | `12-TRUST` | crates/agentcowork-guard/src/ratelimit.rs, src-tauri/src/lib.rs, crates/agentcowork-core/src/tools.rs | `INV-05` | — | pending | pending | implemented |
 | `REQ-TRUST-010` | `12-TRUST` | pending | `—` | — | pending | pending | unplanned |
 | `REQ-CAP-001` | `13-CAPABILITY` | pending | `INV-13`, `DEC-005`, `DM-011` | — | pending | pending | unplanned |
 | `REQ-CAP-002` | `13-CAPABILITY` | pending | `DM-012`, `13` §4 | — | pending | pending | unplanned |
@@ -66,13 +66,13 @@ One row per `REQ-*`. Status only from evidence.
 | `REQ-CAP-009` | `13-CAPABILITY` | pending | `—` | — | pending | pending | unplanned |
 | `REQ-CAP-010` | `13-CAPABILITY` | pending | `INV-03/19` | — | pending | pending | unplanned |
 | `REQ-PROV-001` | `14-PROVIDERS` | pending | `INV-15`, `DEC-004` | — | pending | pending | unplanned |
-| `REQ-PROV-002` | `14-PROVIDERS` | crates/everyaios-core/src/tools.rs, crates/everyaios-guard/src/ticket.rs, crates/everyaios-audit/src/receipt.rs | `CTR-010`, `INV-03` | — | pending | pending | implemented |
+| `REQ-PROV-002` | `14-PROVIDERS` | crates/agentcowork-core/src/tools.rs, crates/agentcowork-guard/src/ticket.rs, crates/agentcowork-audit/src/receipt.rs | `CTR-010`, `INV-03` | — | pending | pending | implemented |
 | `REQ-PROV-003` | `14-PROVIDERS` | pending | `DEC-025` | — | pending | pending | unplanned |
-| `REQ-PROV-004` | `14-PROVIDERS` | crates/everyaios-mcp/src/remote.rs, crates/everyaios-mcp/src/store.rs, src-tauri/src/mcp_cmds.rs | `DEC-030` | — | pending | pending | implemented |
-| `REQ-PROV-005` | `14-PROVIDERS` | crates/everyaios-mcp/src/server.rs, crates/everyaios-mcp/src/remote.rs | `DEC-030` | — | pending | pending | implemented |
+| `REQ-PROV-004` | `14-PROVIDERS` | crates/agentcowork-mcp/src/remote.rs, crates/agentcowork-mcp/src/store.rs, src-tauri/src/mcp_cmds.rs | `DEC-030` | — | pending | pending | implemented |
+| `REQ-PROV-005` | `14-PROVIDERS` | crates/agentcowork-mcp/src/server.rs, crates/agentcowork-mcp/src/remote.rs | `DEC-030` | — | pending | pending | implemented |
 | `REQ-PROV-006` | `14-PROVIDERS` | pending | `DM-012`, `DM-013`, `13` §4 | — | pending | pending | unplanned |
 | `REQ-PROV-007` | `14-PROVIDERS` | pending | `DM-013`, `CTR-013`, `DEC-047` | — | pending | pending | unplanned |
-| `REQ-PROV-008` | `14-PROVIDERS` | crates/everyaios-guard/src/netfloor.rs, crates/everyaios-core/src/models/, crates/everyaios-vault/src/oauth.rs | `INV-02/05`, `CTR-013` | — | pending | pending | implemented |
+| `REQ-PROV-008` | `14-PROVIDERS` | crates/agentcowork-guard/src/netfloor.rs, crates/agentcowork-core/src/models/, crates/agentcowork-vault/src/oauth.rs | `INV-02/05`, `CTR-013` | — | pending | pending | implemented |
 | `REQ-PROV-009` | `14-PROVIDERS` | pending | `DEC-035` | — | pending | pending | unplanned |
 | `REQ-PROV-010` | `14-PROVIDERS` | pending | `—` | — | pending | pending | unplanned |
 | `REQ-CTX-001` | `16-CONTEXT` | pending | `INV-08` | — | pending | pending | unplanned |
@@ -85,6 +85,10 @@ One row per `REQ-*`. Status only from evidence.
 | `REQ-CTX-008` | `16-CONTEXT` | pending | `—` | — | pending | pending | unplanned |
 | `REQ-CTX-009` | `16-CONTEXT` | pending | `—` | — | pending | pending | unplanned |
 | `REQ-CTX-010` | `16-CONTEXT` | pending | `DEC-009`, `INV-11` | — | pending | pending | unplanned |
+| `REQ-AGENT-001` | `15-AGENT-PLANE` | crates/agentcowork-types/src/delegation.rs, crates/agentcowork-blueprint/src/subagent.rs | `DEC-029`, `DEC-031`, `DEC-036`, `DM-016` | — | pending | pending | unplanned |
+| `REQ-AGENT-002` | `15-AGENT-PLANE` | pending | `DEC-029`, `DEC-036`, `DM-016` | — | pending | pending | unplanned |
+| `REQ-AGENT-003` | `15-AGENT-PLANE` | pending | `DEC-025`, `DEC-029` | — | pending | pending | unplanned |
+| `REQ-AGENT-004` | `15-AGENT-PLANE` | crates/agentcowork-core/src/spool.rs | `DEC-022` | — | pending | pending | unplanned |
 | `REQ-MEM-001` | `17-MEMORY` | pending | `DEC-018/019`, `DM-018` | — | pending | pending | unplanned |
 | `REQ-MEM-002` | `17-MEMORY` | pending | `INV-09` | — | pending | pending | unplanned |
 | `REQ-MEM-003` | `17-MEMORY` | pending | `DEC-019` | — | pending | pending | unplanned |
@@ -148,22 +152,22 @@ One row per `REQ-*`. Status only from evidence.
 | `REQ-WF-011` | `20-WORKFLOW` | pending | `INV-07`, `INV-23` | — | pending | pending | unplanned |
 | `REQ-WORLD-001` | `21-WORLD-MODEL` | pending | `DEC-011` | — | pending | pending | unplanned |
 | `REQ-WORLD-002` | `21-WORLD-MODEL` | pending | `—` | — | pending | pending | unplanned |
-| `REQ-WORLD-003` | `21-WORLD-MODEL` | crates/everyaios-storage/src/identity.rs, crates/everyaios-storage/src/walk.rs | `DM-026` | — | pending | pending | implemented |
-| `REQ-WORLD-004` | `21-WORLD-MODEL` | crates/everyaios-storage/src/usn.rs, crates/everyaios-storage/src/usn_winapi.rs | `INV-20` | — | pending | pending | implemented |
-| `REQ-WORLD-005` | `21-WORLD-MODEL` | crates/everyaios-storage/src/usn.rs, crates/everyaios-storage/src/usn_reader.rs | `INV-20` | — | pending | pending | implemented |
+| `REQ-WORLD-003` | `21-WORLD-MODEL` | crates/agentcowork-storage/src/identity.rs, crates/agentcowork-storage/src/walk.rs | `DM-026` | — | pending | pending | implemented |
+| `REQ-WORLD-004` | `21-WORLD-MODEL` | crates/agentcowork-storage/src/usn.rs, crates/agentcowork-storage/src/usn_winapi.rs | `INV-20` | — | pending | pending | implemented |
+| `REQ-WORLD-005` | `21-WORLD-MODEL` | crates/agentcowork-storage/src/usn.rs, crates/agentcowork-storage/src/usn_reader.rs | `INV-20` | — | pending | pending | implemented |
 | `REQ-WORLD-006` | `21-WORLD-MODEL` | pending | `CTR-017` | — | pending | pending | unplanned |
 | `REQ-WORLD-007` | `21-WORLD-MODEL` | pending | `INV-20` | — | pending | pending | unplanned |
 | `REQ-WORLD-008` | `21-WORLD-MODEL` | pending | `INV-20` | — | pending | pending | unplanned |
 | `REQ-WORLD-009` | `21-WORLD-MODEL` | pending | `INV-20`, `DEC-011` | — | pending | pending | unplanned |
-| `REQ-WORLD-010` | `21-WORLD-MODEL` | crates/everyaios-desktop/src/capture.rs, crates/everyaios-desktop/src/readiness.rs, src-tauri/src/desktop_cmds.rs | `INV-24` | — | pending | pending | implemented |
+| `REQ-WORLD-010` | `21-WORLD-MODEL` | crates/agentcowork-desktop/src/capture.rs, crates/agentcowork-desktop/src/readiness.rs, src-tauri/src/desktop_cmds.rs | `INV-24` | — | pending | pending | implemented |
 | `REQ-WORLD-011` | `21-WORLD-MODEL` | pending | `CTR-017`, `INV-11` | — | pending | pending | unplanned |
 | `REQ-OFFICE-001` | `22-OFFICE` | pending | `CTR-009`, `DEC-013` | — | pending | pending | unplanned |
 | `REQ-OFFICE-002` | `22-OFFICE` | pending | `DEC-013` | — | pending | pending | unplanned |
-| `REQ-OFFICE-003` | `22-OFFICE` | crates/everyaios-office/src/resident.rs, src-tauri/src/office_cmds.rs, src-tauri/src/xlsx_cmds.rs | `DEC-013` | — | pending | pending | implemented |
-| `REQ-OFFICE-004` | `22-OFFICE` | crates/everyaios-office/src/atomic.rs, crates/everyaios-office/src/resident.rs | `DEC-013` | — | pending | pending | implemented |
+| `REQ-OFFICE-003` | `22-OFFICE` | crates/agentcowork-office/src/resident.rs, src-tauri/src/office_cmds.rs, src-tauri/src/xlsx_cmds.rs | `DEC-013` | — | pending | pending | implemented |
+| `REQ-OFFICE-004` | `22-OFFICE` | crates/agentcowork-office/src/atomic.rs, crates/agentcowork-office/src/resident.rs | `DEC-013` | — | pending | pending | implemented |
 | `REQ-OFFICE-005` | `22-OFFICE` | pending | `DEC-023` | — | pending | pending | unplanned |
-| `REQ-OFFICE-006` | `22-OFFICE` | crates/everyaios-office/src/pdf/redact.rs, src-tauri/src/office_cmds.rs | `CTR-009` | — | pending | pending | implemented |
-| `REQ-OFFICE-007` | `22-OFFICE` | crates/everyaios-office/src/pdf/redact.rs, crates/everyaios-office/src/conformance.rs | `DEC-015`, `INV-13` | — | pending | pending | implemented |
+| `REQ-OFFICE-006` | `22-OFFICE` | crates/agentcowork-office/src/pdf/redact.rs, src-tauri/src/office_cmds.rs | `CTR-009` | — | pending | pending | implemented |
+| `REQ-OFFICE-007` | `22-OFFICE` | crates/agentcowork-office/src/pdf/redact.rs, crates/agentcowork-office/src/conformance.rs | `DEC-015`, `INV-13` | — | pending | pending | implemented |
 | `REQ-OFFICE-008` | `22-OFFICE` | pending | `INV-19`, `DEC-022` | — | pending | pending | unplanned |
 | `REQ-OFFICE-009` | `22-OFFICE` | pending | `DEC-023` | — | pending | pending | unplanned |
 | `REQ-OFFICE-010` | `22-OFFICE` | pending | `DEC-023` | — | pending | pending | unplanned |
@@ -182,21 +186,21 @@ One row per `REQ-*`. Status only from evidence.
 | `REQ-BROWSER-012` | `23-BROWSER` | pending | `DEC-016`, `INV-21` | — | pending | pending | unplanned |
 | `REQ-CUA-001` | `24-COMPUTER-USE` | pending | `DEC-011` | — | pending | pending | unplanned |
 | `REQ-CUA-002` | `24-COMPUTER-USE` | pending | `—` | — | pending | pending | unplanned |
-| `REQ-CUA-003` | `24-COMPUTER-USE` | crates/everyaios-desktop/src/uia.rs, crates/everyaios-desktop/src/platform/win.rs | `DM-026` | — | pending | pending | implemented |
-| `REQ-CUA-004` | `24-COMPUTER-USE` | crates/everyaios-desktop/src/uia.rs | `—` | — | pending | pending | implemented |
+| `REQ-CUA-003` | `24-COMPUTER-USE` | crates/agentcowork-desktop/src/uia.rs, crates/agentcowork-desktop/src/platform/win.rs | `DM-026` | — | pending | pending | implemented |
+| `REQ-CUA-004` | `24-COMPUTER-USE` | crates/agentcowork-desktop/src/uia.rs | `—` | — | pending | pending | implemented |
 | `REQ-CUA-005` | `24-COMPUTER-USE` | pending | `—` | — | pending | pending | unplanned |
-| `REQ-CUA-006` | `24-COMPUTER-USE` | crates/everyaios-desktop/src/uia.rs, crates/everyaios-desktop/src/ladder.rs | `—` | — | pending | pending | implemented |
+| `REQ-CUA-006` | `24-COMPUTER-USE` | crates/agentcowork-desktop/src/uia.rs, crates/agentcowork-desktop/src/ladder.rs | `—` | — | pending | pending | implemented |
 | `REQ-CUA-007` | `24-COMPUTER-USE` | pending | `DEC-011` | — | pending | pending | unplanned |
-| `REQ-CUA-008` | `24-COMPUTER-USE` | crates/everyaios-desktop/src/capture.rs, crates/everyaios-desktop/src/platform/win.rs | `DEC-015`, `INV-22` | — | pending | pending | implemented |
+| `REQ-CUA-008` | `24-COMPUTER-USE` | crates/agentcowork-desktop/src/capture.rs, crates/agentcowork-desktop/src/platform/win.rs | `DEC-015`, `INV-22` | — | pending | pending | implemented |
 | `REQ-CUA-009` | `24-COMPUTER-USE` | pending | `DEC-021` | — | pending | pending | unplanned |
 | `REQ-CUA-010` | `24-COMPUTER-USE` | pending | `DEC-016`, `INV-21` | — | pending | pending | unplanned |
 | `REQ-CUA-011` | `24-COMPUTER-USE` | pending | `DEC-021`, `INV-04` | — | pending | pending | unplanned |
 | `REQ-CUA-012` | `24-COMPUTER-USE` | pending | `DEC-022` | — | pending | pending | unplanned |
-| `REQ-FILES-001` | `25-FILES` | crates/everyaios-storage/src/identity.rs, crates/everyaios-storage/src/walk.rs | `DM-026`, `CTR-024`, `INV-20` | — | pending | pending | implemented |
-| `REQ-FILES-002` | `25-FILES` | crates/everyaios-storage/src/identity.rs, crates/everyaios-storage/src/dedup.rs, crates/everyaios-storage/src/cleanup.rs | `DM-026` | — | pending | pending | implemented |
+| `REQ-FILES-001` | `25-FILES` | crates/agentcowork-storage/src/identity.rs, crates/agentcowork-storage/src/walk.rs | `DM-026`, `CTR-024`, `INV-20` | — | pending | pending | implemented |
+| `REQ-FILES-002` | `25-FILES` | crates/agentcowork-storage/src/identity.rs, crates/agentcowork-storage/src/dedup.rs, crates/agentcowork-storage/src/cleanup.rs | `DM-026` | — | pending | pending | implemented |
 | `REQ-FILES-003` | `25-FILES` | pending | `CTR-024`, `INV-20` | — | pending | pending | unplanned |
-| `REQ-FILES-004` | `25-FILES` | crates/everyaios-storage/src/usn.rs, crates/everyaios-storage/src/usn_reader.rs | `CTR-024`, `INV-20` | — | pending | pending | implemented |
-| `REQ-FILES-005` | `25-FILES` | crates/everyaios-storage/src/usn.rs | `INV-20` | — | pending | pending | implemented |
+| `REQ-FILES-004` | `25-FILES` | crates/agentcowork-storage/src/usn.rs, crates/agentcowork-storage/src/usn_reader.rs | `CTR-024`, `INV-20` | — | pending | pending | implemented |
+| `REQ-FILES-005` | `25-FILES` | crates/agentcowork-storage/src/usn.rs | `INV-20` | — | pending | pending | implemented |
 | `REQ-FILES-006` | `25-FILES` | pending | `CTR-024` | — | pending | pending | unplanned |
 | `REQ-FILES-007` | `25-FILES` | pending | `DEC-029`, `CTR-024` | — | pending | pending | unplanned |
 | `REQ-FILES-008` | `25-FILES` | pending | `DEC-029`, `INV-24` | — | pending | pending | unplanned |
@@ -230,7 +234,7 @@ One row per `REQ-*`. Status only from evidence.
 | `REQ-SEARCH-012` | `27-SEARCH` | pending | `—` | — | pending | pending | unplanned |
 | `REQ-COMMS-001` | `28-COMMS` | pending | `CTR-009` | — | pending | pending | unplanned |
 | `REQ-COMMS-002` | `28-COMMS` | pending | `DEC-005`, `CTR-010` | — | pending | pending | unplanned |
-| `REQ-COMMS-003` | `28-COMMS` | crates/everyaios-core/src/connectors/mod.rs, crates/everyaios-core/src/connectors/{graph,gmail,calendar,workspace}.rs | `INV-02`, `CTR-013` | — | pending | pending | implemented |
+| `REQ-COMMS-003` | `28-COMMS` | crates/agentcowork-core/src/connectors/mod.rs, crates/agentcowork-core/src/connectors/{graph,gmail,calendar,workspace}.rs | `INV-02`, `CTR-013` | — | pending | pending | implemented |
 | `REQ-COMMS-004` | `28-COMMS` | pending | `—` | — | pending | pending | unplanned |
 | `REQ-COMMS-005` | `28-COMMS` | pending | `DEC-021`, `INV-07` | — | pending | pending | unplanned |
 | `REQ-COMMS-006` | `28-COMMS` | pending | `DM-011` | — | pending | pending | unplanned |
@@ -240,10 +244,10 @@ One row per `REQ-*`. Status only from evidence.
 | `REQ-COMMS-010` | `28-COMMS` | pending | `—` | — | pending | pending | unplanned |
 | `REQ-COMMS-011` | `28-COMMS` | pending | `DEC-037` | — | pending | pending | unplanned |
 | `REQ-COMMS-012` | `28-COMMS` | pending | `DEC-037` | — | pending | pending | unplanned |
-| `REQ-COMMS-013` | `28-COMMS` | crates/everyaios-core/src/tools.rs, crates/everyaios-guard/src/netfloor.rs | `INV-02/05`, `DEC-016/037` | — | pending | pending | implemented |
+| `REQ-COMMS-013` | `28-COMMS` | crates/agentcowork-core/src/tools.rs, crates/agentcowork-guard/src/netfloor.rs | `INV-02/05`, `DEC-016/037` | — | pending | pending | implemented |
 | `REQ-ART-001` | `29-ARTIFACTS` | pending | `DM-019`, `INV-18` | — | pending | pending | unplanned |
 | `REQ-ART-002` | `29-ARTIFACTS` | pending | `DM-019`, `INV-18` | — | pending | pending | unplanned |
-| `REQ-ART-003` | `29-ARTIFACTS` | crates/everyaios-core/src/tools.rs, crates/everyaios-audit/src/receipt.rs | `DEC-022`, `INV-07`, `CTR-018` | — | pending | pending | implemented |
+| `REQ-ART-003` | `29-ARTIFACTS` | crates/agentcowork-core/src/tools.rs, crates/agentcowork-audit/src/receipt.rs | `DEC-022`, `INV-07`, `CTR-018` | — | pending | pending | implemented |
 | `REQ-ART-004` | `29-ARTIFACTS` | pending | `CTR-018`, `INV-07` | — | pending | pending | unplanned |
 | `REQ-ART-005` | `29-ARTIFACTS` | pending | `INV-23/24` | — | pending | pending | unplanned |
 | `REQ-ART-006` | `29-ARTIFACTS` | pending | `DEC-014`, `DM-023` | — | pending | pending | unplanned |
@@ -252,7 +256,7 @@ One row per `REQ-*`. Status only from evidence.
 | `REQ-ART-009` | `29-ARTIFACTS` | pending | `DEC-032`, `INV-24` | — | pending | pending | unplanned |
 | `REQ-ART-010` | `29-ARTIFACTS` | pending | `DEC-015` | — | pending | pending | unplanned |
 | `REQ-ART-011` | `29-ARTIFACTS` | pending | `INV-18` | `EDGE-101` | pending | pending | unplanned |
-| `REQ-ART-012` | `29-ARTIFACTS` | crates/everyaios-core/src/tools.rs | `INV-07` | `EDGE-104` | pending | pending | implemented |
+| `REQ-ART-012` | `29-ARTIFACTS` | crates/agentcowork-core/src/tools.rs | `INV-07` | `EDGE-104` | pending | pending | implemented |
 | `REQ-EVENTS-001` | `30-EVENTS` | pending | `INV-23`, `DEC-027` | — | pending | pending | unplanned |
 | `REQ-EVENTS-002` | `30-EVENTS` | pending | `DM-008` | — | pending | pending | unplanned |
 | `REQ-EVENTS-003` | `30-EVENTS` | pending | `INV-02`, `DM-008` | — | pending | pending | unplanned |
@@ -274,7 +278,7 @@ One row per `REQ-*`. Status only from evidence.
 | `REQ-SKILL-007` | `31-SKILLS-PLUGINS` | pending | `DEC-028` | — | pending | pending | unplanned |
 | `REQ-SKILL-008` | `31-SKILLS-PLUGINS` | pending | `—` | — | pending | pending | unplanned |
 | `REQ-SKILL-009` | `31-SKILLS-PLUGINS` | pending | `—` | — | pending | pending | unplanned |
-| `REQ-SKILL-010` | `31-SKILLS-PLUGINS` | crates/everyaios-blueprint/src/skill_store.rs, crates/everyaios-blueprint/src/confined_fs.rs, src-tauri/src/skills_cmds.rs | `—` | — | pending | pending | implemented |
+| `REQ-SKILL-010` | `31-SKILLS-PLUGINS` | crates/agentcowork-blueprint/src/skill_store.rs, crates/agentcowork-blueprint/src/confined_fs.rs, src-tauri/src/skills_cmds.rs | `—` | — | pending | pending | implemented |
 | `REQ-SKILL-011` | `31-SKILLS-PLUGINS` | pending | `—` | `EDGE-094` | pending | pending | unplanned |
 | `REQ-SKILL-012` | `31-SKILLS-PLUGINS` | pending | `—` | `EDGE-093` | pending | pending | unplanned |
 | `REQ-SKILL-013` | `31-SKILLS-PLUGINS` | pending | `—` | `EDGE-096` | pending | pending | unplanned |
@@ -305,22 +309,9 @@ One row per `REQ-*`. Status only from evidence.
 | `REQ-VERIFY-012` | `34-EFFECT-VERIFICATION` | pending | `INV-23` | — | pending | pending | unplanned |
 | `REQ-VERIFY-013` | `34-EFFECT-VERIFICATION` | pending | `INV-19` | `EDGE-160` | pending | pending | unplanned |
 | `REQ-PROD-003` | `12-TRUST` | pending | `INV-04`, `DEC-028` | — | pending | pending | unplanned |
-| `REQ-PROD-004` | `15-AGENT-X`, `12-TRUST` | pending | `INV-12`, `DEC-010` | — | pending | pending | unplanned |
+| `REQ-PROD-004` | `15-AGENT-PLANE`, `12-TRUST` | pending | `INV-12`, `DEC-010` | — | pending | pending | unplanned |
 | `REQ-PROD-005` | `AGENTCOWORK-UI`, `22-OFFICE` | pending | `INV-13`, `DEC-015` | — | pending | pending | unplanned |
 | `REQ-PROD-006` | `42-EVIDENCE-MAP` | pending | `—` | — | pending | pending | unplanned |
-| `REQ-AGX-001` | `15-AGENT-X` | pending | `DEC-029`, `DEC-031` | — | pending | pending | unplanned |
-| `REQ-AGX-002` | `15-AGENT-X` | pending | `DEC-022/027`, `CTR-001/002` | — | pending | pending | unplanned |
-| `REQ-AGX-003` | `15-AGENT-X` | pending | `DEC-021`, `INV-17` | — | pending | pending | unplanned |
-| `REQ-AGX-004` | `15-AGENT-X` | pending | `DEC-028`, `INV-01/03`, `CTR-009` | `EDGE-153` | pending | pending | unplanned |
-| `REQ-AGX-005` | `15-AGENT-X` | pending | `DEC-032`, `INV-07/22` | — | pending | pending | unplanned |
-| `REQ-AGX-006` | `15-AGENT-X` | pending | `DEC-029/031/036`, `CTR-021` | `EDGE-153/154` | pending | pending | unplanned |
-| `REQ-AGX-007` | `15-AGENT-X` | pending | `DEC-025/029`, `CTR-010/022` | `EDGE-153` | pending | pending | unplanned |
-| `REQ-AGX-008` | `15-AGENT-X` | pending | `DEC-029/036`, `DM-016` | — | pending | pending | unplanned |
-| `REQ-AGX-009` | `15-AGENT-X` | pending | `DEC-007/027`, `INV-08/22`, `CTR-007` | — | pending | pending | unplanned |
-| `REQ-AGX-010` | `15-AGENT-X` | pending | `DEC-004/034`, `CTR-014` | — | pending | pending | unplanned |
-| `REQ-AGX-011` | `15-AGENT-X` | pending | `CTR-009`, `DEC-005`, `DEC-030`, `INV-15` | — | pending | pending | unplanned |
-| `REQ-AGX-012` | `15-AGENT-X` | pending | `DEC-009/010`, `CTR-022` | `EDGE-155` | pending | pending | unplanned |
-| `REQ-AGX-013` | `15-AGENT-X` | pending | `DEC-022`, `INV-16/19`, `CTR-003/004` | — | pending | pending | unplanned |
 | `REQ-UI-001` | `AGENTCOWORK-UI` | pending | `—` | — | pending | pending | unplanned |
 | `REQ-UI-002` | `AGENTCOWORK-UI` | pending | `DEC-015`, `INV-13` | — | pending | pending | unplanned |
 | `REQ-UI-003` | `AGENTCOWORK-UI` | pending | `—` | — | pending | pending | unplanned |

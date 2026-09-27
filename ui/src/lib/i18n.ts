@@ -6,14 +6,15 @@
 // regresses while the migration is in flight.
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { getLocalItem } from './storage-compat'
 
 export type Locale = 'en' | 'ar' | 'he'
 export type LocaleDict = Record<string, string>
 
-const PREFIX = 'everyaios.settings.'
+const PREFIX = 'agentcowork.settings.'
 
 const en: LocaleDict = {
-  'app.name': 'EveryAIOS',
+  'app.name': 'AgentCowork',
   'common.open': 'Open',
   'common.save': 'Save',
   'common.cancel': 'Cancel',
@@ -33,21 +34,21 @@ const en: LocaleDict = {
   'common.browse': 'Browse',
   'common.live': 'Live',
   'common.paused': 'Paused',
-  'chat.placeholder': 'Message EveryAIOS…',
+  'chat.placeholder': 'Message AgentCowork…',
   'chat.send': 'Send',
   'chat.thinking': 'Thinking…',
   'chat.newSession': 'New chat',
-  'onboarding.welcome': 'Welcome to EveryAIOS',
+  'onboarding.welcome': 'Welcome to AgentCowork',
   'onboarding.subtitle': 'Your local AI copilot — keys stay on this device.',
   'onboarding.addKey': 'Add your first API key',
   'onboarding.addKeyDesc': 'Bring your own key — OpenAI, Anthropic, DeepSeek, NVIDIA and more.',
   'onboarding.startChat': 'Start your first chat',
   'onboarding.success': "You're all set",
-  'onboarding.successDesc': 'Ask anything — EveryAIOS plans, browses, edits files and automates.',
+  'onboarding.successDesc': 'Ask anything — AgentCowork plans, browses, edits files and automates.',
   'empty.messages': 'No messages yet — ask something to get started.',
   'empty.keys': 'No API keys yet — add one to start chatting.',
   'empty.files': 'No files open — browse the folder view to pick one.',
-  'empty.memory': 'No memories yet — EveryAIOS learns as you work.',
+  'empty.memory': 'No memories yet — AgentCowork learns as you work.',
   'empty.automations': 'No automations yet — create one or pick a template.',
   'error.network': 'Network unreachable — check your connection and retry.',
   'error.keyRevoked': 'This API key was revoked — add another key or fix the credential.',
@@ -122,7 +123,8 @@ const RTL: Locale[] = ['ar', 'he']
 function readLocale(): Locale {
   if (typeof window === 'undefined') return 'en'
   try {
-    const raw = window.localStorage.getItem(PREFIX + 'locale')
+    // DEC-053: legacy `everyaios.*` key honored + promoted once.
+    const raw = getLocalItem(PREFIX + 'locale')
     if (raw === 'ar' || raw === 'he' || raw === 'en') return raw
   } catch {
     /* ignore */

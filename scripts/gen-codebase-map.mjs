@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// EveryAIOS — CODEBASE-MAP.md generator.
+// AgentCowork — CODEBASE-MAP.md generator.
 //
 // Regenerates ONLY the region between the two markers in CODEBASE-MAP.md
 // (everything under `BEGIN-GENERATED-INVENTORY`). The narrative in sections
@@ -376,7 +376,7 @@ function resolveSpec(fromFile, spec) {
   const candidates = [];
   if (spec.startsWith("@/")) candidates.push(join("ui/src", spec.slice(2)));
   else if (spec.startsWith(".")) candidates.push(join(dirname(fromFile), spec));
-  else if (spec.startsWith("@everyaios/")) candidates.push(join("packages", spec.split("/")[1], "src/index"));
+  else if (spec.startsWith("@agentcowork/")) candidates.push(join("packages", spec.split("/")[1], "src/index"));
   else return null;
 
   for (const c of candidates) {
@@ -589,7 +589,7 @@ function cargoDeps() {
       crate: f.split("/")[1],
       deps,
       devDeps: section("dev-dependencies"),
-      internal: deps.filter((d) => d.startsWith("everyaios-")),
+      internal: deps.filter((d) => d.startsWith("agentcowork-")),
     });
   }
   return out.sort((a, b) => a.crate.localeCompare(b.crate));
@@ -969,7 +969,7 @@ function renderDepsSection() {
   lines.push("### 12.1 Rust — per-crate declarations");
   lines.push("");
   for (const c of cargoDeps()) {
-    const external = c.deps.filter((d) => !d.startsWith("everyaios-"));
+    const external = c.deps.filter((d) => !d.startsWith("agentcowork-"));
     lines.push(`#### \`${c.crate}\``);
     lines.push("");
     lines.push(`- **external (${external.length}):** ${external.join(", ") || "_none_"}`);
@@ -1212,7 +1212,7 @@ function describeAsset(f) {
       );
     } else {
       const deps = tomlSection(t, "dependencies");
-      const internal = [...new Set(deps.match(/everyaios-[a-z]+/g) ?? [])];
+      const internal = [...new Set(deps.match(/agentcowork-[a-z]+/g) ?? [])];
       const name = g(/^\s*name\s*=\s*"([^"]+)"/m) ?? "?";
       b.push(
         `package \`${name}\` · edition \`${inherit(t, "edition", wsPkg().edition)}\` · rust-version \`${inherit(t, "rust-version", wsPkg().rustVersion)}\``,
@@ -1252,13 +1252,13 @@ function describeAsset(f) {
   } else if (/^deploy\/Dockerfile$/.test(f)) {
     const stages = [...t.matchAll(/^FROM\s+(\S+)(?:\s+AS\s+(\S+))?/gm)].map((m) => `${m[1]}${m[2] ? ` (${m[2]})` : ""}`);
     b.push(`${stages.length} build stages: ${stages.map((s) => `\`${s}\``).join(" → ")}`);
-    b.push(`\`RUN\` steps: ${cm(/^RUN /gm)} · base image is a slim Debian runtime; the coordinator is Bun-compiled, the core is \`cargo build --release -p everyaios-core\``);
+    b.push(`\`RUN\` steps: ${cm(/^RUN /gm)} · base image is a slim Debian runtime; the coordinator is Bun-compiled, the core is \`cargo build --release -p agentcowork-core\``);
     b.push(`runtime user/permissions hardening: ${/^USER /m.test(t) ? "explicit \`USER\`" : "none — container runs as root unless overridden"}`);
   } else if (/^deploy\/docker-compose\.yml$/.test(f)) {
     const svcIdx = t.indexOf("\nservices:");
     const svcs = svcIdx < 0 ? [] : (t.slice(svcIdx).match(/^ {2}([a-zA-Z0-9_-]+):/gm) ?? []).map((s) => s.trim().replace(":", ""));
     b.push(`services (${svcs.length}): \`${svcs.join("`, `")}\` · published ports: ${cm(/^\s+- "\d+:\d+\/tcp"/gm)}`);
-    b.push(`vault key is fail-fast (\`\${EVERYAIOS_VAULT_KEY:?…}\`), so the stack refuses to start without it — never hardcoded`);
+    b.push(`vault key is fail-fast (\`\${AGENTCOWORK_VAULT_KEY:?…}\`), so the stack refuses to start without it — never hardcoded`);
   } else if (/^deploy\/fly\.toml$/.test(f)) {
     b.push(`app \`${g(/^app\s*=\s*"([^"]+)"/m) ?? "?"}\` · internal_port \`${g(/internal_port\s*=\s*(\d+)/m) ?? "?"}\` · health check \`${g(/^\s*type\s*=\s*"([^"]+)"/m) ?? "?"}\``);
   } else if (/\.service$/.test(f)) {

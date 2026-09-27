@@ -1,5 +1,5 @@
 /**
- * @everyaios/core-connectors
+ * @agentcowork/core-connectors
  *
  * Connector adapters for all supported services.
  *
@@ -8,7 +8,7 @@
  * package receives only an opaque handle and non-secret provider data.
  */
 
-export type { ConnectorAdapter } from '@everyaios/core-domain';
+export type { ConnectorAdapter } from '@agentcowork/core-domain';
 export {
   ConnectorOrchestrator,
   type ConnectorPlan,

@@ -1,11 +1,12 @@
-// P31.10 — agent-registry bridge. The Rust `everyaios-agents` crate owns the
-// durable store (`~/.everyaios/agents/<id>/agent.toml`); these wrappers call
+// P31.10 — agent-registry bridge. The Rust `agentcowork-agents` crate owns the
+// durable store (`~/.agentcowork/agents/<id>/agent.toml`); these wrappers call
 // the Tauri commands so the builder panel reads/writes the real registry.
 // Outside the Tauri webview (`inTauri()` false) they fall back to the
 // browser-local mirror (same shape, demo state only).
 
 import { inTauri, invoke } from "./tauri";
 import { nativeCall } from './runtime';
+import { getLocalItem } from './storage-compat';
 
 /** One registry row (light meta — never the full bundle). */
 export interface RegisteredAgent {
@@ -82,7 +83,8 @@ interface DemoAgent {
 
 function demoLoad(): DemoAgent[] {
   try {
-    const raw = localStorage.getItem("everyaios.agents.demo")
+    // DEC-053: legacy `everyaios.*` key honored + promoted once.
+    const raw = getLocalItem("agentcowork.agents.demo")
     return raw ? (JSON.parse(raw) as DemoAgent[]) : []
   } catch {
     return []
@@ -90,5 +92,5 @@ function demoLoad(): DemoAgent[] {
 }
 
 async function demoList(): Promise<RegistryList> {
-  return { agents: demoLoad(), root: "~/.everyaios/agents (demo)" }
+  return { agents: demoLoad(), root: "~/.agentcowork/agents (demo)" }
 }

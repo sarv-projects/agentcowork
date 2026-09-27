@@ -1,16 +1,18 @@
 #!/usr/bin/env node
 /**
  * P50.5 E2E — real provider resolution. NO mocks: the provider HTTP call is
- * a real request to a real endpoint. The environment decides which provider:
+ * a real request to a real endpoint. The environment decides which provider
+ * (AGENTCOWORK_E2E_* preferred; the EVERYAIOS_E2E_* legacy spellings are
+ * honoured as a fallback until the secret/operator migration lands):
  *
- *   EVERYAIOS_E2E_PROVIDER   "nvidia" (default when NVIDIA_API_KEY is set) |
+ *   AGENTCOWORK_E2E_PROVIDER   "nvidia" (default when NVIDIA_API_KEY is set) |
  *                            "openai" | "ollama"
- *   EVERYAIOS_E2E_BASE_URL   override base URL (default per provider)
- *   EVERYAIOS_E2E_MODEL      preferred model id (may be a comma-separated
+ *   AGENTCOWORK_E2E_BASE_URL   override base URL (default per provider)
+ *   AGENTCOWORK_E2E_MODEL      preferred model id (may be a comma-separated
  *                            fallback chain — the first that yields a token)
- *   EVERYAIOS_E2E_KEY        override key (default: NVIDIA_API_KEY /
+ *   AGENTCOWORK_E2E_KEY        override key (default: NVIDIA_API_KEY /
  *                            OPENAI_API_KEY)
- *   EVERYAIOS_E2E_TTFT_MS    first-token timeout (default 90_000)
+ *   AGENTCOWORK_E2E_TTFT_MS    first-token timeout (default 90_000)
  *
  * When no usable provider is configured, `resolveProvider()` returns null and
  * the gate exits 2 (SKIP) — an honest "not run here", never a fake pass.
@@ -33,19 +35,22 @@ const DEFAULTS = {
   },
 };
 
+/** Read an E2E knob on the new name first, legacy fallback second (DEC-053). */
+const e2eEnv = (name) => process.env[`AGENTCOWORK_${name}`] ?? process.env[`EVERYAIOS_${name}`] ?? null;
+
 export function resolveProvider() {
-  const wanted = process.env.EVERYAIOS_E2E_PROVIDER ?? null;
+  const wanted = e2eEnv("E2E_PROVIDER");
   const candidates = wanted
     ? [wanted]
-    : process.env.EVERYAIOS_E2E_BASE_URL
+    : e2eEnv("E2E_BASE_URL")
       ? ["ollama", "openai", "nvidia"]
       : ["nvidia", "openai"];
   for (const name of candidates) {
     const def = DEFAULTS[name];
     if (!def) continue;
-    const baseUrl = (process.env.EVERYAIOS_E2E_BASE_URL ?? def.baseUrl).replace(/\/+$/, "");
-    const key = process.env.EVERYAIOS_E2E_KEY ?? process.env[def.keyEnv] ?? null;
-    const models = (process.env.EVERYAIOS_E2E_MODEL ?? def.models.join(","))
+    const baseUrl = (e2eEnv("E2E_BASE_URL") ?? def.baseUrl).replace(/\/+$/, "");
+    const key = e2eEnv("E2E_KEY") ?? (def.keyEnv ? process.env[def.keyEnv] : null);
+    const models = (e2eEnv("E2E_MODEL") ?? def.models.join(","))
       .split(",")
       .map((m) => m.trim())
       .filter(Boolean);
@@ -55,7 +60,7 @@ export function resolveProvider() {
       baseUrl,
       key,
       models: models.length > 0 ? models : def.models,
-      firstTokenMs: Number(process.env.EVERYAIOS_E2E_TTFT_MS ?? 90_000),
+      firstTokenMs: Number(e2eEnv("E2E_TTFT_MS") ?? 90_000),
     };
   }
   return null;

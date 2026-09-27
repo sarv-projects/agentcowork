@@ -7,7 +7,7 @@ import type {
   ConnectorResult,
   UserQuery,
   MemoryFact,
-} from '@everyaios/core-domain';
+} from '@agentcowork/core-domain';
 
 /**
  * OpenLibrary adapter — book/author metadata search, no auth, free.

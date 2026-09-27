@@ -43,17 +43,17 @@ pub fn fs_home() -> Result<String, String> {
 /// The audit kind a scope refusal is recorded under.
 ///
 /// `guard.blocked` is the guard's own denial kind — the one
-/// `everyaios-audit` documents for guard denials and the one
-/// `everyaios_guard::deflection::DEFLECTION_AUDIT_KIND` already uses. A read
+/// `agentcowork-audit` documents for guard denials and the one
+/// `agentcowork_guard::deflection::DEFLECTION_AUDIT_KIND` already uses. A read
 /// refused at the scope boundary lands on that existing trail instead of a
 /// parallel one, so `ARCH/12-TRUST.md` §9 ("denials … are first-class audit
 /// entries") holds without a new kind.
-pub const READ_DENIED_AUDIT_KIND: &str = everyaios_guard::deflection::DEFLECTION_AUDIT_KIND;
+pub const READ_DENIED_AUDIT_KIND: &str = agentcowork_guard::deflection::DEFLECTION_AUDIT_KIND;
 
 /// The read scopes a renderer-chosen path is resolved against.
 ///
 /// **No session scope is wired yet, so this is the unconfigured set** and the
-/// documented default applies (see [`everyaios_guard::pathfloor::ReadScopes`]):
+/// documented default applies (see [`agentcowork_guard::pathfloor::ReadScopes`]):
 /// the requested path's own parent directory is the floor root — the same root
 /// `control::floor_user_file` already hands to `enforce_floor` on every write,
 /// for the same documented reason (users open documents under home and mounts,
@@ -66,8 +66,8 @@ pub const READ_DENIED_AUDIT_KIND: &str = everyaios_guard::deflection::DEFLECTION
 /// `ReadScopes::from_permission_strings`, expressed in the existing
 /// `PathGrant` vocabulary); *where a session's scopes come from* is
 /// decision-needed and is deliberately not invented here.
-fn read_scopes() -> everyaios_guard::pathfloor::ReadScopes {
-    everyaios_guard::pathfloor::ReadScopes::default()
+fn read_scopes() -> agentcowork_guard::pathfloor::ReadScopes {
+    agentcowork_guard::pathfloor::ReadScopes::default()
 }
 
 /// Resolve, then decide, then re-check at the point of use — the whole read
@@ -83,8 +83,8 @@ fn read_scopes() -> everyaios_guard::pathfloor::ReadScopes {
 /// rather than read (`REQ-FILES-009`).
 fn resolve_read(
     path: &str,
-    op: everyaios_guard::pathfloor::FsOp,
-) -> Result<everyaios_guard::pathfloor::ReadTarget, everyaios_guard::pathfloor::ReadScopeDenied> {
+    op: agentcowork_guard::pathfloor::FsOp,
+) -> Result<agentcowork_guard::pathfloor::ReadTarget, agentcowork_guard::pathfloor::ReadScopeDenied> {
     let scopes = read_scopes();
     let target = scopes.resolve(op, path)?;
     scopes.reverify(&target)?;
@@ -113,7 +113,7 @@ impl ReadRefusal {
     /// and `netfloor`'s denials return. No new code, and no internal detail
     /// (INV-11): the caller learns the decision and the path, nothing about the
     /// scope set.
-    fn new(command: &str, d: &everyaios_guard::pathfloor::ReadScopeDenied) -> Self {
+    fn new(command: &str, d: &agentcowork_guard::pathfloor::ReadScopeDenied) -> Self {
         Self {
             message: format!("{} ({}): {}", d.code(), d.reason, d.path),
             kind: READ_DENIED_AUDIT_KIND,
@@ -145,7 +145,7 @@ impl ReadRefusal {
 fn deny_read(
     state: &AppState,
     command: &str,
-    d: everyaios_guard::pathfloor::ReadScopeDenied,
+    d: agentcowork_guard::pathfloor::ReadScopeDenied,
 ) -> String {
     let refusal = ReadRefusal::new(command, &d);
     crate::control::record_mutation(
@@ -167,7 +167,7 @@ fn deny_read(
 /// control, it is what would break the tree.
 #[tauri::command]
 pub fn fs_list_dir(state: State<'_, AppState>, path: String) -> Result<serde_json::Value, String> {
-    let dir = match resolve_read(&path, everyaios_guard::pathfloor::FsOp::List) {
+    let dir = match resolve_read(&path, agentcowork_guard::pathfloor::FsOp::List) {
         Ok(t) => PathBuf::from(&t.canonical),
         Err(d) => return Err(deny_read(&state, "fs.list_dir", d)),
     };
@@ -235,7 +235,7 @@ pub fn fs_list_dir(state: State<'_, AppState>, path: String) -> Result<serde_jso
 /// mutates nothing but the filesystem it was already allowed to read.
 #[tauri::command]
 pub fn fs_read_file(state: State<'_, AppState>, path: String) -> Result<serde_json::Value, String> {
-    let p = match resolve_read(&path, everyaios_guard::pathfloor::FsOp::Read) {
+    let p = match resolve_read(&path, agentcowork_guard::pathfloor::FsOp::Read) {
         Ok(t) => PathBuf::from(&t.canonical),
         Err(d) => return Err(deny_read(&state, "fs.read_file", d)),
     };
@@ -328,7 +328,7 @@ pub fn fs_write_ticket(
     path: String,
     content: String,
 ) -> Result<serde_json::Value, String> {
-    use everyaios_guard::{Operation as GuardOp, RiskLevel};
+    use agentcowork_guard::{Operation as GuardOp, RiskLevel};
     use std::hash::{Hash, Hasher};
 
     // The before-image (for the diff card); missing file = creation.
@@ -338,7 +338,7 @@ pub fn fs_write_ticket(
     let before = std::fs::read_to_string(&path).unwrap_or_default();
     let preview = diff_preview(&before, &content);
 
-    let decision = everyaios_guard::DecisionPackage::new(format!(
+    let decision = agentcowork_guard::DecisionPackage::new(format!(
         "Write {}",
         std::path::Path::new(&path)
             .file_name()
@@ -365,7 +365,7 @@ pub fn fs_write_ticket(
         0,
     );
     match verdict {
-        everyaios_core::GuardDecision::Allow { ticket_id } => {
+        agentcowork_core::GuardDecision::Allow { ticket_id } => {
             let approval_nonce = guard.approval_nonce(&ticket_id).unwrap_or("").to_string();
             Ok(serde_json::json!({
                 "action": "allow",
@@ -374,7 +374,7 @@ pub fn fs_write_ticket(
                 "preview": preview,
             }))
         }
-        everyaios_core::GuardDecision::Ask { ticket_id } => {
+        agentcowork_core::GuardDecision::Ask { ticket_id } => {
             let approval_nonce = guard.approval_nonce(&ticket_id).unwrap_or("").to_string();
             Ok(serde_json::json!({
                 "action": "ask",
@@ -383,7 +383,7 @@ pub fn fs_write_ticket(
                 "preview": preview,
             }))
         }
-        everyaios_core::GuardDecision::Block { reason } => Err(format!("write blocked: {reason}")),
+        agentcowork_core::GuardDecision::Block { reason } => Err(format!("write blocked: {reason}")),
     }
 }
 
@@ -494,7 +494,7 @@ pub fn fs_undo_restore(
     let undo_session = undo.session_id.clone();
     drop(undos);
 
-    everyaios_core::restore_file_to_bytes(&p, undo.before.as_deref())
+    agentcowork_core::restore_file_to_bytes(&p, undo.before.as_deref())
         .map_err(|e| format!("{path}: {e}"))?;
     let seq = crate::control::record_mutation(
         &state,
@@ -559,7 +559,7 @@ mod read_scope_tests {
     /// message plus the row it would append to the Merkle chain.
     struct Denial {
         refusal: ReadRefusal,
-        chain: everyaios_audit::merkle::MerkleChain,
+        chain: agentcowork_audit::merkle::MerkleChain,
     }
 
     /// The real command-path denial: gate → refusal → the audit append.
@@ -571,12 +571,12 @@ mod read_scope_tests {
     /// exercised for real: `resolve_read` is the production gate and
     /// `ReadRefusal::new` builds the production message and payload.
     fn deny(command: &str, path: &str) -> Denial {
-        let denial = resolve_read(path, everyaios_guard::pathfloor::FsOp::Read)
+        let denial = resolve_read(path, agentcowork_guard::pathfloor::FsOp::Read)
             .expect_err("the read scopes must refuse this path");
         let refusal = ReadRefusal::new(command, &denial);
-        let mut chain = everyaios_audit::merkle::MerkleChain::new();
+        let mut chain = agentcowork_audit::merkle::MerkleChain::new();
         let seq = (chain.len() as u64) + 1;
-        chain.push(everyaios_audit::AuditEvent {
+        chain.push(agentcowork_audit::AuditEvent {
             seq,
             ts_ms: 0,
             kind: refusal.kind.to_string(),
@@ -591,7 +591,7 @@ mod read_scope_tests {
     /// a protected subpath inside the workspace.
     fn scratch(tag: &str) -> PathBuf {
         let base = std::env::temp_dir().join(format!(
-            "everyaios_fsread_{tag}_{}_{:?}",
+            "agentcowork_fsread_{tag}_{}_{:?}",
             std::process::id(),
             std::thread::current().id()
         ));
@@ -611,7 +611,7 @@ mod read_scope_tests {
         let path = base.join("workspace/src/a.rs");
         let t = resolve_read(
             &path.to_string_lossy(),
-            everyaios_guard::pathfloor::FsOp::Read,
+            agentcowork_guard::pathfloor::FsOp::Read,
         )
         .expect("an in-scope read proceeds");
         // The gate hands back the canonical path, and the disk is readable.
@@ -628,7 +628,7 @@ mod read_scope_tests {
         let base = scratch("listing");
         let t = resolve_read(
             &base.join("workspace").to_string_lossy(),
-            everyaios_guard::pathfloor::FsOp::List,
+            agentcowork_guard::pathfloor::FsOp::List,
         )
         .expect("an in-scope listing proceeds");
         assert!(std::path::Path::new(&t.canonical).is_dir());
@@ -689,7 +689,7 @@ mod read_scope_tests {
         // no approval store.
         let t = resolve_read(
             &path.to_string_lossy(),
-            everyaios_guard::pathfloor::FsOp::Read,
+            agentcowork_guard::pathfloor::FsOp::Read,
         )
         .expect("an in-scope read proceeds");
         assert!(t.canonical.ends_with("/workspace/src/a.rs"), "{t:?}");
@@ -709,13 +709,13 @@ mod read_scope_tests {
             symlink(base.join("outside/secret.txt"), &link).unwrap();
             let err = resolve_read(
                 &link.to_string_lossy(),
-                everyaios_guard::pathfloor::FsOp::Read,
+                agentcowork_guard::pathfloor::FsOp::Read,
             )
             .expect_err("a link out of the floor must be refused");
             assert_eq!(err.code(), "AuthorizationDenied");
             assert_eq!(
                 err.denial,
-                everyaios_guard::pathfloor::ScopeDenial::SymlinkEscape
+                agentcowork_guard::pathfloor::ScopeDenial::SymlinkEscape
             );
         }
         #[cfg(not(unix))]
@@ -735,25 +735,25 @@ mod read_scope_tests {
         // read-only-for-protected-subpaths rule is asserted where it is
         // implemented: the scope model. Read stands, write is refused.
         let base = scratch("protected");
-        let scopes = everyaios_guard::pathfloor::ReadScopes::new(vec![
-            everyaios_guard::pathfloor::PathGrant {
-                axis: everyaios_guard::pathfloor::GrantAxis::ReadWriteCreate,
+        let scopes = agentcowork_guard::pathfloor::ReadScopes::new(vec![
+            agentcowork_guard::pathfloor::PathGrant {
+                axis: agentcowork_guard::pathfloor::GrantAxis::ReadWriteCreate,
                 prefix: base.to_string_lossy().into_owned(),
             },
         ]);
         let p = base.join("workspace/.everyaios/permissions.toml");
         assert!(scopes
-            .resolve(everyaios_guard::pathfloor::FsOp::Read, &p.to_string_lossy())
+            .resolve(agentcowork_guard::pathfloor::FsOp::Read, &p.to_string_lossy())
             .is_ok());
         assert_eq!(
             scopes
                 .resolve(
-                    everyaios_guard::pathfloor::FsOp::Write,
+                    agentcowork_guard::pathfloor::FsOp::Write,
                     &p.to_string_lossy()
                 )
                 .unwrap_err()
                 .denial,
-            everyaios_guard::pathfloor::ScopeDenial::ProtectedSubpath
+            agentcowork_guard::pathfloor::ScopeDenial::ProtectedSubpath
         );
         let _ = std::fs::remove_dir_all(&base);
     }
@@ -762,7 +762,7 @@ mod read_scope_tests {
     fn a_path_swapped_between_resolution_and_use_is_caught_by_the_recheck() {
         // `resolve_read` resolves *and* re-checks, so a swap landing between
         // the two is refused. The window itself is exercised at the model level
-        // (`everyaios-guard`'s `a_path_swapped_between_resolution_and_use_is_caught`);
+        // (`agentcowork-guard`'s `a_path_swapped_between_resolution_and_use_is_caught`);
         // here the same refusal is observed on the command path.
         let base = scratch("toctou");
         #[cfg(unix)]
@@ -771,7 +771,7 @@ mod read_scope_tests {
             let a = base.join("workspace/src/a.rs");
             let outside = base.join("outside/secret.txt");
             let t = read_scopes()
-                .resolve(everyaios_guard::pathfloor::FsOp::Read, &a.to_string_lossy())
+                .resolve(agentcowork_guard::pathfloor::FsOp::Read, &a.to_string_lossy())
                 .unwrap();
             // The swap: the resolved leaf becomes a link out of the root.
             std::fs::remove_file(&a).unwrap();
@@ -783,11 +783,11 @@ mod read_scope_tests {
             assert_eq!(err.code(), "AuthorizationDenied");
             assert_eq!(
                 err.denial,
-                everyaios_guard::pathfloor::ScopeDenial::SymlinkEscape
+                agentcowork_guard::pathfloor::ScopeDenial::SymlinkEscape
             );
             // And the command gate refuses the same path outright.
             assert!(
-                resolve_read(&a.to_string_lossy(), everyaios_guard::pathfloor::FsOp::Read).is_err()
+                resolve_read(&a.to_string_lossy(), agentcowork_guard::pathfloor::FsOp::Read).is_err()
             );
         }
         #[cfg(not(unix))]

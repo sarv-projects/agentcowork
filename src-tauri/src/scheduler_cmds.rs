@@ -1,12 +1,12 @@
 //! P6.4 (B7) / P71.3d — scheduled-task commands over the **trigger plane**.
-//! Thin wrappers over the shared `everyaios-core::SchedulerService` (job
+//! Thin wrappers over the shared `agentcowork-core::SchedulerService` (job
 //! registry, cron/interval/event/webhook/window triggers, battery/misfire/
 //! admission policy, nudge sentinels). The shell exposes the job list,
 //! create/delete/enable/pause/resume/run-now, battery state, event fires and
 //! nudge suggestions to the UI; execution is the Work kernel's business
 //! (`ARCH/AUTOMATION.md` §9) — no leases, retries or run ledger live here.
 
-use everyaios_core::SchedulerService;
+use agentcowork_core::SchedulerService;
 use serde_json::Value;
 use std::sync::{Arc, Mutex};
 use tauri::{AppHandle, State};
@@ -411,16 +411,20 @@ fn bound_agent_for(state: &AppState, session_id: &str) -> Option<String> {
         .and_then(Value::as_str)
     {
         let id = id.trim();
-        if !id.is_empty() && id != "inbuilt" && id != "everyaios" && id != "everyaios-native" {
+        // NOTE (DEC-053 Step 4): `everyaios` stays excluded here on purpose —
+        // the retired agent id, recognized so already-retired rows are never
+        // resurrected.
+        if !id.is_empty() && id != "inbuilt" && id != "everyaios" && id != "agentcowork-native" {
             return Some(id.to_string());
         }
     }
-    let cfg = everyaios_core::Config::load().ok()?;
+    let cfg = agentcowork_core::Config::load().ok()?;
     let pinned = cfg.primary_chief.trim().to_string();
+    // NOTE (DEC-053 Step 4): same retired-id exclusion as above.
     if pinned.is_empty()
         || pinned == "inbuilt"
         || pinned == "everyaios"
-        || pinned == "everyaios-native"
+        || pinned == "agentcowork-native"
     {
         None
     } else {
@@ -455,7 +459,7 @@ pub fn scheduler_runs(state: State<'_, AppState>, job_id: String) -> Result<Valu
     let mut runs: Vec<Value> = k
         .all()
         .filter(|ex| {
-            if ex.trigger != everyaios_core::execution::ExecutionTrigger::Scheduler {
+            if ex.trigger != agentcowork_core::execution::ExecutionTrigger::Scheduler {
                 return false;
             }
             if let Some(automation_id) = automation_id.as_deref() {
@@ -483,7 +487,7 @@ pub fn scheduler_runs(state: State<'_, AppState>, job_id: String) -> Result<Valu
                 "sessionId": ex.session_id,
                 "objective": ex.objective,
                 "phase": ex.state,
-                "waitingApproval": matches!(ex.state, everyaios_core::execution::ExecutionPhase::WaitingApproval),
+                "waitingApproval": matches!(ex.state, agentcowork_core::execution::ExecutionPhase::WaitingApproval),
                 "createdAtMs": ex.created_at_ms,
                 "context": ex.context_snapshot,
                 "automationId": context.get("automationId").cloned().unwrap_or(Value::Null),
@@ -553,6 +557,9 @@ pub fn scheduler_export(state: State<'_, AppState>, id: String) -> Result<Value,
         .ok_or_else(|| format!("unknown automation {id}"))?;
     let bound = bound_agent_for(&state, &src.session_id);
     Ok(serde_json::json!({
+        // NOTE (DEC-053 Step 4): `"everyaios.automation"` is a wire value the
+        // sidecar parses — its spelling stays so existing automations keep
+        // matching.
         "kind": "everyaios.automation",
         "version": 1,
         "automation": {
@@ -573,7 +580,7 @@ pub fn scheduler_export(state: State<'_, AppState>, id: String) -> Result<Value,
 #[cfg(test)]
 mod tests {
     use super::*;
-    use everyaios_core::scheduler_service::{EventKind, TriggerSpec};
+    use agentcowork_core::scheduler_service::{EventKind, TriggerSpec};
     use serde_json::json;
 
     fn add_job(service: &mut SchedulerService, id: &str, trigger: TriggerSpec) {

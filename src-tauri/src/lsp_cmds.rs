@@ -1,5 +1,5 @@
 //! P11.5.3 — LSP diagnostics for the IDE Problems panel. Wraps the existing
-//! `everyaios-codeintel::LspRunner` (already integration-tested against a
+//! `agentcowork-codeintel::LspRunner` (already integration-tested against a
 //! mock LSP server): spawn the configured server, initialize against the
 //! workspace root, open the file, and return the first publishDiagnostics
 //! batch. The UI shows real errors/warnings, not mock rows.
@@ -9,7 +9,7 @@
 //! session-based follow-up); the server binary must be installed on the
 //! user's machine (rust-analyzer / typescript-language-server / pyright).
 
-use everyaios_codeintel::{LspRunner, LspServerConfig};
+use agentcowork_codeintel::{LspRunner, LspServerConfig};
 
 /// Language → server config for the built-in LSP mapping.
 fn server_for(language: &str) -> Option<LspServerConfig> {

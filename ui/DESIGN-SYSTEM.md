@@ -1,4 +1,4 @@
-# EveryAIOS Design System (P11.1)
+# AgentCowork Design System (P11.1)
 
 > **What this is:** the implementable surrogate of the "Figma/design file with
 > all components + layouts" item. A real Figma file is a design-tool artifact
@@ -8,7 +8,7 @@
 >
 > **Status:** Current UI design reference. The three-control composer and honest office-viewer behavior are defined by the normative product spec; historical changes belong in `../SPEC-CHANGELOG.md`.
 
-> **Current provider/model behavior (2026-09-12, re-scoped 2026-09-21 by [`ARCH/ADR/0005`](ARCH/ADR/0005-external-agents-are-the-v1-engines.md)):** the agent-model picker and status bar use reachable live catalog rows, preserve provider-qualified selections through routing, and label curated seed rows as fallback. **Ownership is per-agent:** an external ACP agent owns the provider/model surface, so it shows its own ACP `configOptions`/`available_commands`; the EveryAIOS catalogue/BYOK/local rows belong to the **post-v1 built-in binding**, which does not exist in v1 — where an agent reports no model surface of its own, the picker says “managed by &lt;agent&gt;”. Runtime rows are installed-only selectable, and Settings keeps a single agent surface — the Native model catalog is a collapsed disclosure on the EveryAIOS Native card rather than a peer Models tab.
+> **Current provider/model behavior (2026-09-12, re-scoped 2026-09-21 by [`ARCH/ADR/0005`](ARCH/ADR/0005-external-agents-are-the-v1-engines.md)):** the agent-model picker and status bar use reachable live catalog rows, preserve provider-qualified selections through routing, and label curated seed rows as fallback. **Ownership is per-agent:** an external ACP agent owns the provider/model surface, so it shows its own ACP `configOptions`/`available_commands`; the AgentCowork catalogue/BYOK/local rows belong to the **post-v1 built-in binding**, which does not exist in v1 — where an agent reports no model surface of its own, the picker says “managed by &lt;agent&gt;”. Runtime rows are installed-only selectable, and Settings keeps a single agent surface — the Native model catalog is a collapsed disclosure on the AgentCowork Native card rather than a peer Models tab.
 
 ## 1. Tokens (code: `src/globals.css` `:root` / `.dark`)
 

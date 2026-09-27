@@ -7,7 +7,7 @@ import type {
   ConnectorResult,
   UserQuery,
   MemoryFact,
-} from '@everyaios/core-domain';
+} from '@agentcowork/core-domain';
 
 /**
  * GitHub connector (anonymous public read access).
@@ -44,7 +44,7 @@ export class GitHubAdapter implements ConnectorAdapter {
 
     const headers: Record<string, string> = {
       'Accept': 'application/vnd.github+json',
-      'User-Agent': 'everyaios-connectors',
+      'User-Agent': 'agentcowork-connectors',
     };
 
     try {

@@ -1,7 +1,7 @@
 # 06 — Data Model (canonical entity registry)
 
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P1). This is the **entity registry**: one canonical identity per shared entity, with one owner doc each. Module docs carry detailed schemas; this doc owns identity strategy, shared field rules, state-machine naming, and cross-entity constraints. Where this doc and a module doc disagree on naming/identity, **this doc wins**; on field detail, the owner doc wins.
-> **Evidence:** product-owner brief schemas · `ARCH/15-AGENT-X.md`, `ARCH/16-CONTEXT.md`, `ARCH/17-MEMORY.md` · `ARCHIVE/v1-research/agent-harness-verification.md` (receipt/limit shapes) · entity shapes cross-checked against `ARCH/12-TRUST.md`/`13`/`14`/`20` during the P7 module passes.
+> **Evidence:** product-owner brief schemas · `ARCH/15-AGENT-PLANE.md`, `ARCH/16-CONTEXT.md`, `ARCH/17-MEMORY.md` · `ARCHIVE/v1-research/agent-harness-verification.md` (receipt/limit shapes) · entity shapes cross-checked against `ARCH/12-TRUST.md`/`13`/`14`/`20` during the P7 module passes.
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
 
 ## 0. Conventions
@@ -75,7 +75,7 @@ erDiagram
 > Detailed SQL/TS lives in owner docs; these are the load-bearing shared fields.
 
 **DM-001 `Work`** — `id` · `kind` (`session_turn` | `job` | `workflow_run` | `subagent_task` | `automation`) · `status` · `parent_work_id?` · `session_id?` · `agent_id?` · `workspace_id` · `objective` · `priority` · `completion_contract_ref?` · `budget {tokens, cost, time}` · `checkpoint_ref?` · `created/started/finished`.
-**DM-004 `Session`** — `id` · `workspace_id` · `agent_binding` (Agent X or external) · `status` · `title` · `log_range` (SessionEvent span) · `retention_class` · `last_active`.
+**DM-004 `Session`** — `id` · `workspace_id` · `agent_binding` (the bound engine, of any kind) · `status` · `title` · `log_range` (SessionEvent span) · `retention_class` · `last_active`.
 **DM-005 `Run`** — `id` · `session_id` · `work_id` · `agent_id` · `model` · `reasoning_level` · `status` · `usage {in,out,cost}` · `receipt_refs[]`.
 **DM-006 `Checkpoint`** — `id` · `scope` · `kind` (`work` | `context` | `workflow` | `session`) · `content_ref` · `reconstructable` (produced deterministically vs model-written) · `version`.
 **DM-009 `Ticket`** — `id` · `capability_id` · `provider_id` · `environment_id` · `provider_epoch` · `scope` (paths/targets/resource patterns) · `issued_at` · `expires_at` · `uses` · `approval_ref?`.
@@ -121,7 +121,7 @@ erDiagram
 
 ## 5. Evidence
 
-Owner brief schemas (Work/Workflow/Artifact/AgentProfile/DelegationPolicy/WorkerReceipt/CapabilityDescriptor/CapabilityHandle/ProviderAdapter) · `ARCH/15-AGENT-X.md` §2/§7 · `ARCH/16-CONTEXT.md` §2/§3 · `ARCH/17-MEMORY.md` §3 · `ARCHIVE/v1-research/agent-harness-verification.md` §A1–A2 (budgets), §A3–B3 (subagent model), §C1–C2 (log/projection), §D1 (handle/registry/inbox).
+Owner brief schemas (Work/Workflow/Artifact/AgentProfile/DelegationPolicy/WorkerReceipt/CapabilityDescriptor/CapabilityHandle/ProviderAdapter) · `ARCH/15-AGENT-PLANE.md` §2/§7 · `ARCH/16-CONTEXT.md` §2/§3 · `ARCH/17-MEMORY.md` §3 · `ARCHIVE/v1-research/agent-harness-verification.md` §A1–A2 (budgets), §A3–B3 (subagent model), §C1–C2 (log/projection), §D1 (handle/registry/inbox).
 
 ## 6. Related
 

@@ -22,7 +22,7 @@
 | Node kind | Meaning |
 |---|---|
 | `action` | capability invocation (`capability_id` + input) |
-| `agent` | Agent X (or any `AgentEngine`) node: task + `context_refs` |
+| `agent` | any `AgentEngine` node: task + `context_refs` |
 | `workflow` | sub-workflow call (nested run, parent-close policy) |
 | `if` · `switch` · `for_each` · `while` · `parallel` · `join` | control flow |
 | `approval` | human decision (`approve · reject · edit · provide-data`) |
@@ -127,7 +127,7 @@ Pinned per run (Temporal Pinned / n8n published snapshot / OpenWork `revisionId`
 
 - **workflow → agent node:** node passes task + bounded context refs; agent returns a result/receipt; the run never sees the agent's transcript.
 - **agent → workflow:** the workflow registry is exposed through the capability catalog (`generate_weekly_report()`, `prepare_release(version)`) — the LLM reasons, the workflow executes deterministically.
-- **Agent authors workflows:** Agent X emits a `WorkflowDefinition` → validation (IR + policy + capability census) → “Save as Workflow” → publish gate. **The engine owns the journal, not the authoring script** (DeepSeek’s un-journaled scripts are the falsifier: they cannot resume).
+- **Agent authors workflows:** the bound engine emits a `WorkflowDefinition` → validation (IR + policy + capability census) → “Save as Workflow” → publish gate. **The engine owns the journal, not the authoring script** (DeepSeek’s un-journaled scripts are the falsifier: they cannot resume).
 
 ## 10. Observability
 

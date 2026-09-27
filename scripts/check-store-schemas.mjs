@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // P70.A8 — durable-store schema stamps, statically enforced.
 //
-// The Rust registry (`crates/everyaios-core/src/store_schema.rs`) is what runs
+// The Rust registry (`crates/agentcowork-core/src/store_schema.rs`) is what runs
 // at boot; this gate keeps it true. It fails when:
 //
 //   1. a `join("….db" | "….jsonl" | "….ndjson" | "….sqlite" | "….json")`
@@ -13,7 +13,7 @@
 //      have to preserve this?";
 //   2. a registered store is missing from the published table in
 //      `PACKAGING.md` §6, or the two disagree on a version;
-//   3. the registry's `vault` row disagrees with `everyaios-vault`'s own
+//   3. the registry's `vault` row disagrees with `agentcowork-vault`'s own
 //      `SCHEMA_VERSION` constant (the authority for that store), or the vault
 //      crate has lost its refuse-a-newer-schema path;
 //   4. the registry's boot wiring is gone (the module is not exported, or
@@ -29,8 +29,8 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const failures = [];
 const fail = (msg) => failures.push(msg);
 
-const REGISTRY = 'crates/everyaios-core/src/store_schema.rs';
-const VAULT = 'crates/everyaios-vault/src/lib.rs';
+const REGISTRY = 'crates/agentcowork-core/src/store_schema.rs';
+const VAULT = 'crates/agentcowork-vault/src/lib.rs';
 
 // Derived artifacts: rebuildable from a source of truth, so losing one costs a
 // rebuild rather than data. Each entry states the source it derives from.
@@ -38,7 +38,7 @@ const DERIVED = new Map([
   ['index.sqlite', 'audit session-replay index — rebuilt from audit.ndjson'],
   ['fts.sqlite', 'filename/full-text search index — rebuilt by re-indexing'],
   ['idx.sqlite', 'code-intelligence index — rebuilt by re-indexing'],
-  ['.everyaios-fclones.sqlite', 'dedup hash cache — recomputed from the filesystem'],
+  ['.agentcowork-fclones.sqlite', 'dedup hash cache — recomputed from the filesystem'],
   ['registry.json', 'available-agent registry snapshot — refetched from the registry'],
   ['registry.meta.json', 'registry snapshot metadata — refetched with the snapshot'],
   ['tool_log.jsonl', 'per-session ACP tool log — diagnostic output, never read back into context'],
@@ -125,7 +125,7 @@ const crateDir = join(root, 'crates');
 const sources = [
   ...rustFiles(join(root, 'src-tauri/src')),
   ...readdirSync(crateDir, { withFileTypes: true })
-    .filter((e) => e.isDirectory() && e.name.startsWith('everyaios-'))
+    .filter((e) => e.isDirectory() && e.name.startsWith('agentcowork-'))
     .flatMap((e) => rustFiles(join(crateDir, e.name, 'src'))),
 ];
 
@@ -176,7 +176,7 @@ if (!existsSync(join(root, VAULT))) {
     fail(`${REGISTRY}: the vault has no registry row`);
   } else if (row.version !== constant) {
     fail(
-      `${REGISTRY}: the vault row claims v${row.version} but everyaios-vault's SCHEMA_VERSION is ` +
+      `${REGISTRY}: the vault row claims v${row.version} but agentcowork-vault's SCHEMA_VERSION is ` +
         `v${constant} — the two must move together`,
     );
   }
@@ -193,14 +193,14 @@ if (!existsSync(join(root, VAULT))) {
 // ---------------------------------------------------------------------------
 // 4. Boot wiring + the published table.
 // ---------------------------------------------------------------------------
-const coreLib = join(root, 'crates/everyaios-core/src/lib.rs');
+const coreLib = join(root, 'crates/agentcowork-core/src/lib.rs');
 const coreSrc = existsSync(coreLib) ? readFileSync(coreLib, 'utf8') : '';
 if (!/pub mod store_schema;/.test(coreSrc)) {
-  fail('crates/everyaios-core/src/lib.rs: the store_schema module is not exported');
+  fail('crates/agentcowork-core/src/lib.rs: the store_schema module is not exported');
 }
 if (!/store_schema::ensure_all\(/.test(coreSrc)) {
   fail(
-    'crates/everyaios-core/src/lib.rs: `boot()` no longer calls `store_schema::ensure_all(..)` — the stamps ' +
+    'crates/agentcowork-core/src/lib.rs: `boot()` no longer calls `store_schema::ensure_all(..)` — the stamps ' +
       'would never be written or checked on a real install',
   );
 }

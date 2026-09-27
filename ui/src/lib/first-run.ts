@@ -13,12 +13,14 @@
 //
 // Nothing here touches the network, the store, or the guard.
 
+import { readWithFallback } from './storage-compat'
+
 export const DAY_MS = 86_400_000
 /** Nudge once the user has had the app open this long without starting work. */
 export const FIRST_TASK_NUDGE_AFTER_MS = DAY_MS
 
-export const FIRST_SEEN_KEY = 'everyaios.first-task.first-seen'
-export const NUDGE_SHOWN_KEY = 'everyaios.first-task.nudge-shown'
+export const FIRST_SEEN_KEY = 'agentcowork.first-task.first-seen'
+export const NUDGE_SHOWN_KEY = 'agentcowork.first-task.nudge-shown'
 
 /** A pre-scoped starter: what it is, what will actually happen, and the ask. */
 export interface FirstTask {
@@ -86,7 +88,14 @@ export interface FirstRunStorage {
 export const localStorageFirstRunStorage: FirstRunStorage = {
   get: (key) => {
     try {
-      return localStorage.getItem(key)
+      // DEC-053: legacy `everyaios.*` key honored + promoted once.
+      return readWithFallback(
+        {
+          get: (k) => localStorage.getItem(k),
+          set: (k, v) => localStorage.setItem(k, v),
+        },
+        key,
+      )
     } catch {
       return null
     }

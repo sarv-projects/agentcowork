@@ -1,4 +1,4 @@
-# EveryAIOS capability index — MACHINE-READABLE SOURCE OF TRUTH (Fix 2).
+# AgentCowork capability index — MACHINE-READABLE SOURCE OF TRUTH (Fix 2).
 #
 # Extracted from ARCH/09-FEATURE-MATRIX.md on 2026-08-30. This file is the
 # canonical row list for the doc-sync CI check (scripts/check-doc-sync.mjs).
@@ -120,7 +120,7 @@
   layer: B
   name: Scheduled tasks
   post_v1: false
-  source: **✅ P6.4 landed (2026-08-18): `everyaios-core::scheduler_service`** — 5-field `CronExpr` + `TriggerSpec::{Cron,Interval,Event,Webhook}`, `EventKind` (Gartner: CI-fail/test-regression/repo-change/ticket-assign/telemetry-threshold) w/ filter+scope+rolling-1h frequency cap, battery suppression, HITL `Paused{resume_deadline}` state, retry backoff+jitter+clamp, **heartbeat lease (30s) + missed-heartbeat reassignment + checkpoint resume** (non-determinism guard = completed steps never re-executed), nudge sentinels (3-day rule → `NudgeSuggestion` cron); coordinator `scheduler.ts` (due-ticker, lease heartbeats, `Bun.serve` loopback webhook, session reawakening via `surface:'automation'`); tray 'Run automations now' (`tick_scheduler`); Tauri `scheduler_*` commands; H14 UI (AutomationsPanel live + nudge cards in composer). 17 scheduler tests + relay dispatch + 5 coordinator executor tests
+  source: **✅ P6.4 landed (2026-08-18): `agentcowork-core::scheduler_service`** — 5-field `CronExpr` + `TriggerSpec::{Cron,Interval,Event,Webhook}`, `EventKind` (Gartner: CI-fail/test-regression/repo-change/ticket-assign/telemetry-threshold) w/ filter+scope+rolling-1h frequency cap, battery suppression, HITL `Paused{resume_deadline}` state, retry backoff+jitter+clamp, **heartbeat lease (30s) + missed-heartbeat reassignment + checkpoint resume** (non-determinism guard = completed steps never re-executed), nudge sentinels (3-day rule → `NudgeSuggestion` cron); coordinator `scheduler.ts` (due-ticker, lease heartbeats, `Bun.serve` loopback webhook, session reawakening via `surface:'automation'`); tray 'Run automations now' (`tick_scheduler`); Tauri `scheduler_*` commands; H14 UI (AutomationsPanel live + nudge cards in composer). 17 scheduler tests + relay dispatch + 5 coordinator executor tests
 
 - id: B8
   layer: B
@@ -162,7 +162,7 @@
   layer: C
   name: Multi-signal retrieval
   post_v1: false
-  source: **✅ P5.1: `everyaios-memory::fusion` — weighted RRF (`rrf_fuse`), dedupe, smart snippets, per-type budget caps, chunk-min-size merge. Cross-encoder rerank (#19) still open.**
+  source: **✅ P5.1: `agentcowork-memory::fusion` — weighted RRF (`rrf_fuse`), dedupe, smart snippets, per-type budget caps, chunk-min-size merge. Cross-encoder rerank (#19) still open.**
 
 - id: C4
   layer: C
@@ -192,13 +192,13 @@
   layer: C
   name: Sync/export/wipe
   post_v1: false
-  source: **✅ P8.9 landed 2026-08-22: `everyaios-core::export` — `render_markdown_export`/`render_json_export`, `MemoryMirror` Obsidian `[[wiki-link]]` notes (view surface, not a second store), `WipeScope` + `wipe_facts`/`wipe_messages` per-scope wipe (no-silent-nuke). E2E sync now **landed, not just a seam**: `everyaios-core::sync` — ChaCha20-Poly1305 AEAD envelope (header-as-AAD), X25519 `KeyPair`/`KeyExchange` + confirm handshake, version vectors + tombstones, 3-way `reconcile` → `SyncDiff`, **F2 conflict policy landed 2026-08-25** (`ConflictPolicy` Manual/LWW/KeepBoth + `resolve_conflicts` + `reconcile_with_policy` + `SyncItem::ts_ms`, 6 tests — 25 total), `SyncBundle` export/import, `SyncTransport` seam (25 tests) — + `sync_transport.rs` live TCP transport (length-prefixed framing, ECDH handshake, `SyncServer` on 47615, `sync_with_peer`, LAN/Tailscale) + 8 Tauri commands + Settings → Connections UI.**
+  source: **✅ P8.9 landed 2026-08-22: `agentcowork-core::export` — `render_markdown_export`/`render_json_export`, `MemoryMirror` Obsidian `[[wiki-link]]` notes (view surface, not a second store), `WipeScope` + `wipe_facts`/`wipe_messages` per-scope wipe (no-silent-nuke). E2E sync now **landed, not just a seam**: `agentcowork-core::sync` — ChaCha20-Poly1305 AEAD envelope (header-as-AAD), X25519 `KeyPair`/`KeyExchange` + confirm handshake, version vectors + tombstones, 3-way `reconcile` → `SyncDiff`, **F2 conflict policy landed 2026-08-25** (`ConflictPolicy` Manual/LWW/KeepBoth + `resolve_conflicts` + `reconcile_with_policy` + `SyncItem::ts_ms`, 6 tests — 25 total), `SyncBundle` export/import, `SyncTransport` seam (25 tests) — + `sync_transport.rs` live TCP transport (length-prefixed framing, ECDH handshake, `SyncServer` on 47615, `sync_with_peer`, LAN/Tailscale) + 8 Tauri commands + Settings → Connections UI.**
 
 - id: C9
   layer: C
   name: Taste profile
   post_v1: false
-  source: **✅ P5.6: `everyaios-memory::taste` — `TasteStore` (confidence-scored rules, `observe_accept/reject/edit`, `inject_stable_prefix`, markdown round-trip, dir save/load).**
+  source: **✅ P5.6: `agentcowork-memory::taste` — `TasteStore` (confidence-scored rules, `observe_accept/reject/edit`, `inject_stable_prefix`, markdown round-trip, dir save/load).**
 
 - id: C10
   layer: C
@@ -222,7 +222,7 @@
   layer: C
   name: Spaced-repetition (FSRS)
   post_v1: false
-  source: **✅ landed: `everyaios-memory::fsrs` (state prediction + next-interval scheduling) + simulator; `reinforce` (candidate extraction + due-review queue) + `bm25` signal + `planner` (C7) + `janus` structural passes + `cognee` graph API + `rtk` output compression + `usage` ledger; numbered **Algorithm #34** (v3.51); FSRS-7 upstream line (2025) tracked as adopt-when-shipped watch item (permissive fsrs-rs v6.x doesn't carry it yet)**
+  source: **✅ landed: `agentcowork-memory::fsrs` (state prediction + next-interval scheduling) + simulator; `reinforce` (candidate extraction + due-review queue) + `bm25` signal + `planner` (C7) + `janus` structural passes + `cognee` graph API + `rtk` output compression + `usage` ledger; numbered **Algorithm #34** (v3.51); FSRS-7 upstream line (2025) tracked as adopt-when-shipped watch item (permissive fsrs-rs v6.x doesn't carry it yet)**
 
 - id: C14
   layer: C
@@ -240,19 +240,19 @@
   layer: D
   name: Word open+edit
   post_v1: false
-  source: **✅ P4.1 landed: `crates/everyaios-office` — `OoxmlArchive` (ZIP open, parts index, `save` with `raw_copy_file` verbatim untouched entries — byte-stability proven by raw compressed-payload comparison) + `docx/` block-patch engine (anchored block tree w/ addresses `p1`/`t1:r1c2:p1`/`hdr1:p1`/`sec1` over body+headers/footers, plain-text render, minimal `w:t` prefix/suffix patch via byte-surgery with entity/UTF-8-aware splits, safety fallbacks NoTextAnchor/StaleEdit/PatchAcrossMarker). 30 tests — 393 ws tests (363 + 30), clippy 0, fmt clean. LibreOffice headless oracle → P4.5.**
+  source: **✅ P4.1 landed: `crates/agentcowork-office` — `OoxmlArchive` (ZIP open, parts index, `save` with `raw_copy_file` verbatim untouched entries — byte-stability proven by raw compressed-payload comparison) + `docx/` block-patch engine (anchored block tree w/ addresses `p1`/`t1:r1c2:p1`/`hdr1:p1`/`sec1` over body+headers/footers, plain-text render, minimal `w:t` prefix/suffix patch via byte-surgery with entity/UTF-8-aware splits, safety fallbacks NoTextAnchor/StaleEdit/PatchAcrossMarker). 30 tests — 393 ws tests (363 + 30), clippy 0, fmt clean. LibreOffice headless oracle → P4.5.**
 
 - id: D2
   layer: D
   name: Excel open+edit
   post_v1: false
-  source: **✅ P4.2 landed: `crates/everyaios-office/src/xlsx/` — `read.rs` (calamine 0.30 windowed reads), `recalc.rs` (ironcalc 0.8.3 truth engine — every computed number engine-made (deterministic recalc, never LLM-invented)), `dsl.rs` (WorkbookCommandBatch + Excel-accurate formula-shift: `$` doesn't pin, deleted→`#REF!`, shrink, LOG10/string/sheet-prefix protection), `planner.rs` (regex NLP → DSL, zero-LLM; `NeedsLlm` fallback), `patch.rs` (surgical sheetN.xml/sharedStrings.xml + workbook rename, byte-stable); `src-tauri xlsx_open` (windowed) + `ui/pages/Spreadsheet.tsx` virtualized 100K+ row grid. 64 office tests (+34), 427 ws tests, clippy 0, fmt clean. Univer = H5 view (P4.7), IronCalc = the one calc truth engine (doc 58).**
+  source: **✅ P4.2 landed: `crates/agentcowork-office/src/xlsx/` — `read.rs` (calamine 0.30 windowed reads), `recalc.rs` (ironcalc 0.8.3 truth engine — every computed number engine-made (deterministic recalc, never LLM-invented)), `dsl.rs` (WorkbookCommandBatch + Excel-accurate formula-shift: `$` doesn't pin, deleted→`#REF!`, shrink, LOG10/string/sheet-prefix protection), `planner.rs` (regex NLP → DSL, zero-LLM; `NeedsLlm` fallback), `patch.rs` (surgical sheetN.xml/sharedStrings.xml + workbook rename, byte-stable); `src-tauri xlsx_open` (windowed) + `ui/pages/Spreadsheet.tsx` virtualized 100K+ row grid. 64 office tests (+34), 427 ws tests, clippy 0, fmt clean. Univer = H5 view (P4.7), IronCalc = the one calc truth engine (doc 58).**
 
 - id: D3
   layer: D
   name: PPT open+edit
   post_v1: false
-  source: **✅ P4.3 landed: `crates/everyaios-office/src/pptx/` — `parts.rs` (content types + presentation rels + `<p:sldIdLst>` slide order), `text.rs` (addressable `<p:sp>` shapes → `<a:p>` → `<a:r>` → `<a:t>`; render + minimal `<a:t>` byte-surgery patch, bullets `<a:buChar>`/`<a:buAutoNum>` as read-only markers, multi-byte/entity-aware; NoTextAnchor/PatchAcrossMarker fallbacks), `mod.rs` `PptxEngine` (render/patch + `add_slide` clone part+rels+`[Content_Types].xml` registration + `remove_slide` deregistration; `zip::save_changes(modified, added, deleted)` so untouched parts stay verbatim). 80 office tests (+16), 443 ws tests, clippy 0, fmt clean.**
+  source: **✅ P4.3 landed: `crates/agentcowork-office/src/pptx/` — `parts.rs` (content types + presentation rels + `<p:sldIdLst>` slide order), `text.rs` (addressable `<p:sp>` shapes → `<a:p>` → `<a:r>` → `<a:t>`; render + minimal `<a:t>` byte-surgery patch, bullets `<a:buChar>`/`<a:buAutoNum>` as read-only markers, multi-byte/entity-aware; NoTextAnchor/PatchAcrossMarker fallbacks), `mod.rs` `PptxEngine` (render/patch + `add_slide` clone part+rels+`[Content_Types].xml` registration + `remove_slide` deregistration; `zip::save_changes(modified, added, deleted)` so untouched parts stay verbatim). 80 office tests (+16), 443 ws tests, clippy 0, fmt clean.**
 
 - id: D4
   layer: D
@@ -288,7 +288,7 @@
   layer: D
   name: Storage intelligence
   post_v1: false
-  source: **✅ P4.8 landed: `everyaios-storage` — `walk` (per-thread `crossbeam_deque::Worker` + steal loop, symlink-skip + `same_filesystem` device guard, `build_arena` u32-indexed `FileNode` arena w/ bottom-up aggregation), `snapshot` (arc_swap store + zstd round-trip), `treemap` (Bruls–van Wijk `squarify` + `treemap_for_dir` + xxHash3→HSL `color_for`), `dedup` (7-stage size→xxHash3→BLAKE3, hardlink-aware, reflink-eligible), `finder` (top-N size/age + ext filters), `cleanup` (Guard-2 decision-package proposals — crate never deletes), `search` (FTS5 prefix index + debounced notify watcher), `health` (90% threshold + sysinfo `Disks`). 15 tests, 479 ws tests, clippy 0, fmt clean.**
+  source: **✅ P4.8 landed: `agentcowork-storage` — `walk` (per-thread `crossbeam_deque::Worker` + steal loop, symlink-skip + `same_filesystem` device guard, `build_arena` u32-indexed `FileNode` arena w/ bottom-up aggregation), `snapshot` (arc_swap store + zstd round-trip), `treemap` (Bruls–van Wijk `squarify` + `treemap_for_dir` + xxHash3→HSL `color_for`), `dedup` (7-stage size→xxHash3→BLAKE3, hardlink-aware, reflink-eligible), `finder` (top-N size/age + ext filters), `cleanup` (Guard-2 decision-package proposals — crate never deletes), `search` (FTS5 prefix index + debounced notify watcher), `health` (90% threshold + sysinfo `Disks`). 15 tests, 479 ws tests, clippy 0, fmt clean.**
 
 - id: D10
   layer: D
@@ -330,13 +330,13 @@
   layer: E
   name: Script-eval (run)
   post_v1: false
-  source: **✅ P7.8 FS syscall broker for E4: `everyaios-guard::fs_broker` (BrokerHost + BrokerOp over BrokerTransport — path floor → profile rule → create-parent; `InProcessBroker`; IPC wiring = runtime)**
+  source: **✅ P7.8 FS syscall broker for E4: `agentcowork-guard::fs_broker` (BrokerHost + BrokerOp over BrokerTransport — path floor → profile rule → create-parent; `InProcessBroker`; IPC wiring = runtime)**
 
 - id: E5
   layer: E
   name: Session replay
   post_v1: false
-  source: **✅ P2.10 landed: `everyaios-browser/src/replay.rs` injected recorder (CDP `Page.addScriptToEvaluateOnNewDocument`; click/input/keydown/scroll/mutation capture; `x-recording-*` header contract; failed flush → sticky gap) + `everyaios-audit/src/replay.rs` ingest (`ingest_ndjson`/`ingest_batch`, chrome doc-id validation, dedupe-stable receipts, sticky `has_gap`, SQLite index one-tx commit with file-rollback, `ReplayStore` NDJSON + screenshot JPEGs, 7-day `retention_sweep` + `wipe`) + `session_log.rs` durable event log (10 §4.2 types) + idempotency classes (safe/unsafe/same-key/confirm) + `recovery_plan`. 16 audit + 5 browser tests; scrubber/audit UI = P3.1 landed.**
+  source: **✅ P2.10 landed: `agentcowork-browser/src/replay.rs` injected recorder (CDP `Page.addScriptToEvaluateOnNewDocument`; click/input/keydown/scroll/mutation capture; `x-recording-*` header contract; failed flush → sticky gap) + `agentcowork-audit/src/replay.rs` ingest (`ingest_ndjson`/`ingest_batch`, chrome doc-id validation, dedupe-stable receipts, sticky `has_gap`, SQLite index one-tx commit with file-rollback, `ReplayStore` NDJSON + screenshot JPEGs, 7-day `retention_sweep` + `wipe`) + `session_log.rs` durable event log (10 §4.2 types) + idempotency classes (safe/unsafe/same-key/confirm) + `recovery_plan`. 16 audit + 5 browser tests; scrubber/audit UI = P3.1 landed.**
 
 - id: E6
   layer: E
@@ -366,49 +366,49 @@
   layer: E
   name: Lightweight engine tier
   post_v1: false
-  source: **✅ P2.4 landed: `everyaios-browser/src/tiers.rs` — `TieredEngine` (tier 0 `read_http`+`html2md` with SSRF/file://domain guards; tier 1 Lightpanda/Obscura `serve` spawn with `--block-private-networks`/`--disable-workers`/bounded connections; tier 2 Chrome `--disable-features=WebRTC`), E8 escalation loop. LIVE-verified: static→Lightpanda→Chrome against example.com; Obscura binary absent → clean BinaryNotFound → escalates. 355 ws tests (246 at P2.4 + 24 P2.5/P2.6 + 44 P2.7/P2.8 + 12 P2.9 + 18 P2.10 + 3 P3.1 + 8 P3.3), 5/5 live, clippy 0.**
+  source: **✅ P2.4 landed: `agentcowork-browser/src/tiers.rs` — `TieredEngine` (tier 0 `read_http`+`html2md` with SSRF/file://domain guards; tier 1 Lightpanda/Obscura `serve` spawn with `--block-private-networks`/`--disable-workers`/bounded connections; tier 2 Chrome `--disable-features=WebRTC`), E8 escalation loop. LIVE-verified: static→Lightpanda→Chrome against example.com; Obscura binary absent → clean BinaryNotFound → escalates. 355 ws tests (246 at P2.4 + 24 P2.5/P2.6 + 44 P2.7/P2.8 + 12 P2.9 + 18 P2.10 + 3 P3.1 + 8 P3.3), 5/5 live, clippy 0.**
 
 - id: E11
   layer: E
   name: Session Vault
   post_v1: false
-  source: **✅ P2.7 landed: `everyaios-vault/src/session.rs` `SessionVault` (schema v5, capture/grant/inject/rotate/expiry/audit) + `everyaios-browser/src/session.rs` cookie glue (`get_cookies`/`set_cookies`, `seal_session`/`inject_session`, `inherit_cookies_from_chrome` + `group_cookies_by_site`) — 11 vault + 10 browser tests, agent-never-sees-cookies + inject-without-grant-denied + E13 LIVE-verified. localStorage/IndexedDB capture is the CDP `DOMStorage`/`IndexedDB` follow-on.**
+  source: **✅ P2.7 landed: `agentcowork-vault/src/session.rs` `SessionVault` (schema v5, capture/grant/inject/rotate/expiry/audit) + `agentcowork-browser/src/session.rs` cookie glue (`get_cookies`/`set_cookies`, `seal_session`/`inject_session`, `inherit_cookies_from_chrome` + `group_cookies_by_site`) — 11 vault + 10 browser tests, agent-never-sees-cookies + inject-without-grant-denied + E13 LIVE-verified. localStorage/IndexedDB capture is the CDP `DOMStorage`/`IndexedDB` follow-on.**
 
 - id: E12
   layer: E
   name: Challenge handler
   post_v1: false
-  source: **✅ P2.8 landed: `everyaios-core/src/challenge.rs` — PoW `solve_pow`/`verify_pow`, human-in-loop single-use registry (`surface`/`resolve_human`/`pending`), visual-grounding contract (`route_visual` + `grounding_request` + `parse_grounding_choice`), BYO solver HTTP (`solve_captcha`/`create_task`/`poll_task`, `UreqHttp` transport, key via A2/A3 keyring) + 23 tests. Turnstile (incl. hidden) is Cloudflare-managed → NOT locally solvable (honest route). The sidecar makes the actual LLM grounding call; the UI consumes `resolve_human`.**
+  source: **✅ P2.8 landed: `agentcowork-core/src/challenge.rs` — PoW `solve_pow`/`verify_pow`, human-in-loop single-use registry (`surface`/`resolve_human`/`pending`), visual-grounding contract (`route_visual` + `grounding_request` + `parse_grounding_choice`), BYO solver HTTP (`solve_captcha`/`create_task`/`poll_task`, `UreqHttp` transport, key via A2/A3 keyring) + 23 tests. Turnstile (incl. hidden) is Cloudflare-managed → NOT locally solvable (honest route). The sidecar makes the actual LLM grounding call; the UI consumes `resolve_human`.**
 
 - id: E13
   layer: E
   name: Session inheritance
   post_v1: false
-  source: **P2.7 landed: `everyaios-browser/src/session.rs` `inherit_cookies_from_chrome(port)` — `probe_browser` (loopback-guarded) → `connect_to_browser` → `Storage.getCookies` (modern browser-target method; `Browser.getCookies` is gone in current Chrome) → `group_cookies_by_site`. Unit-tested via mock CDP transport (round-trip/normalization/malformed-cookie) — **a real Chrome debug-port attach is a manual live-verification step, not yet in the test suite (annotation corrected 2026-08-18; previous 'LIVE-verified' overclaimed)**.**
+  source: **P2.7 landed: `agentcowork-browser/src/session.rs` `inherit_cookies_from_chrome(port)` — `probe_browser` (loopback-guarded) → `connect_to_browser` → `Storage.getCookies` (modern browser-target method; `Browser.getCookies` is gone in current Chrome) → `group_cookies_by_site`. Unit-tested via mock CDP transport (round-trip/normalization/malformed-cookie) — **a real Chrome debug-port attach is a manual live-verification step, not yet in the test suite (annotation corrected 2026-08-18; previous 'LIVE-verified' overclaimed)**.**
 
 - id: E14
   layer: E
   name: Behavioral realism
   post_v1: false
-  source: **✅ P2.9 landed: `everyaios-browser/src/humanize.rs` — `BehaviorProfile` (Bézier `mouse_path` + per-key `typing_delays`, host allow-list, seeded RNG) wired into `BrowserActions::with_behavior`; off by default, per-site gated via `site_enabled(url)`; click/hover/drag take real `mouseMoved` paths (drag releases exactly), typing emits per-char `dispatchKeyEvent` with cadence. 12 tests: deterministic path, jittered endpoint, word pauses, host gating, plain-click has 0 moves, per-key sequence, exact drag target — 355 ws tests (246 + 24 + 44 + 12 + 18 + 3 + 8), clippy 0, fmt clean.**
+  source: **✅ P2.9 landed: `agentcowork-browser/src/humanize.rs` — `BehaviorProfile` (Bézier `mouse_path` + per-key `typing_delays`, host allow-list, seeded RNG) wired into `BrowserActions::with_behavior`; off by default, per-site gated via `site_enabled(url)`; click/hover/drag take real `mouseMoved` paths (drag releases exactly), typing emits per-char `dispatchKeyEvent` with cadence. 12 tests: deterministic path, jittered endpoint, word pauses, host gating, plain-click has 0 moves, per-key sequence, exact drag target — 355 ws tests (246 + 24 + 44 + 12 + 18 + 3 + 8), clippy 0, fmt clean.**
 
 - id: E15
   layer: E
   name: Electron-app CDP automation
   post_v1: false
-  source: **✅ landed: `everyaios-cdp::discovery` (probe_electron/discover_electron_apps/is_electron_version, loopback-guarded) + `everyaios-browser::electron` (`ElectronHandle::attach(port)` → snapshot/click/fill/read/screenshot)**
+  source: **✅ landed: `agentcowork-cdp::discovery` (probe_electron/discover_electron_apps/is_electron_version, loopback-guarded) + `agentcowork-browser::electron` (`ElectronHandle::attach(port)` → snapshot/click/fill/read/screenshot)**
 
 - id: E16
   layer: E
   name: Slim snapshots + WebMCP
   post_v1: false
-  source: **✅ landed: slim = `tree.rs` `SnapshotMode::Interactive` (~90% token cut) + `everyaios-browser::webmcp` (handshake) + `webmcp_http` (HTTP transport, tools/list + tools/call)**
+  source: **✅ landed: slim = `tree.rs` `SnapshotMode::Interactive` (~90% token cut) + `agentcowork-browser::webmcp` (handshake) + `webmcp_http` (HTTP transport, tools/list + tools/call)**
 
 - id: E17
   layer: E
   name: Multi-protocol action parsing
   post_v1: false
-  source: **✅ landed (Rust half): `everyaios-browser::protocol` — `parse_action` for Native/Anthropic CUA/OpenAI CUA/UI-TARS → canonical `ParsedAction` → `to_act_kind`**
+  source: **✅ landed (Rust half): `agentcowork-browser::protocol` — `parse_action` for Native/Anthropic CUA/OpenAI CUA/UI-TARS → canonical `ParsedAction` → `to_act_kind`**
 
 - id: F1
   layer: F
@@ -432,7 +432,7 @@
   layer: F
   name: Local Auth Bridge
   post_v1: false
-  source: **✅ `everyaios-vault::auth_bridge` — S256 PKCE + single-use state + loopback token manager → key ring (loopback mock-token E2E); live Google OAuth round-trip remains account-gated.**
+  source: **✅ `agentcowork-vault::auth_bridge` — S256 PKCE + single-use state + loopback token manager → key ring (loopback mock-token E2E); live Google OAuth round-trip remains account-gated.**
 
 - id: F5
   layer: F
@@ -468,7 +468,7 @@
   layer: F
   name: WSL/POSIX bridge
   post_v1: false
-  source: **✅ P8.6: `everyaios-core::wsl` — `translate_windows_to_linux`/`translate_linux_to_windows` (+ legacy `\\wsl$\`, drive→`/mnt`), `ExecEnvironment` + `detect_environment`, `WslRunner` over the injected `CommandRunner` seam, `WslFrame` length-prefixed loopback IPC framing. Transport + real `wsl.exe` stay runtime wiring.**
+  source: **✅ P8.6: `agentcowork-core::wsl` — `translate_windows_to_linux`/`translate_linux_to_windows` (+ legacy `\\wsl$\`, drive→`/mnt`), `ExecEnvironment` + `detect_environment`, `WslRunner` over the injected `CommandRunner` seam, `WslFrame` length-prefixed loopback IPC framing. Transport + real `wsl.exe` stay runtime wiring.**
 
 - id: F11
   layer: F
@@ -480,7 +480,7 @@
   layer: F
   name: Harness-driving
   post_v1: false
-  source: doc 35 §C, 45, 52, 56, 57 + 65 §11 + 68 §4 + 2026-08-23 live-verified repos + **P63 (2026-09-14) per-agent provider binding injected at spawn (`everyaios_acp::agent_backend` contract matrix + env planner · `KeyRing::reveal_for_spawn` · `acp_launch` env merge · the install-tab card)**
+  source: doc 35 §C, 45, 52, 56, 57 + 65 §11 + 68 §4 + 2026-08-23 live-verified repos + **P63 (2026-09-14) per-agent provider binding injected at spawn (`agentcowork_acp::agent_backend` contract matrix + env planner · `KeyRing::reveal_for_spawn` · `acp_launch` env merge · the install-tab card)**
 
 - id: F13
   layer: F
@@ -546,13 +546,13 @@
   layer: G
   name: Instant filename/content search
   post_v1: false
-  source: **✅ P4.8: `search::SearchIndex` (FTS5 prefix query) + `Debouncer`/`watch` (notify thread); OS-native hooks stay optional accelerators. 2026-08-24: USN raw WinAPI reader landed (`everyaios-storage::usn_reader` pure `USN_RECORD_V2` parse + `usn_winapi` CreateFileW→FSCTL_QUERY/READ/ENUM_USN_*, FRN→path cache; compile-verified x86_64-pc-windows-msvc; live kernel read = Windows-CI work).**
+  source: **✅ P4.8: `search::SearchIndex` (FTS5 prefix query) + `Debouncer`/`watch` (notify thread); OS-native hooks stay optional accelerators. 2026-08-24: USN raw WinAPI reader landed (`agentcowork-storage::usn_reader` pure `USN_RECORD_V2` parse + `usn_winapi` CreateFileW→FSCTL_QUERY/READ/ENUM_USN_*, FRN→path cache; compile-verified x86_64-pc-windows-msvc; live kernel read = Windows-CI work).**
 
 - id: G8
   layer: G
   name: Tiered search cascade & cache
   post_v1: false
-  source: **✅ LIVE on the ticket path (2026-08-25):** `search.query` dispatches `everyaios-search::G8Cascade` (TTL cache → health-gated SearXNG with failure-threshold + cooldown → DDG circuit-breaker fallback) through the Stage-0 executor (`tools.rs` `g8_search_dispatch_returns_hits`); WebSurfx Rust fast tier + live `searx.space`/SQLite-cache runtime wiring remain transport seams (P8.4) — **G1 is its no-key user surface**
+  source: **✅ LIVE on the ticket path (2026-08-25):** `search.query` dispatches `agentcowork-search::G8Cascade` (TTL cache → health-gated SearXNG with failure-threshold + cooldown → DDG circuit-breaker fallback) through the Stage-0 executor (`tools.rs` `g8_search_dispatch_returns_hits`); WebSurfx Rust fast tier + live `searx.space`/SQLite-cache runtime wiring remain transport seams (P8.4) — **G1 is its no-key user surface**
 
 - id: G9
   layer: G
@@ -570,13 +570,13 @@
   layer: H
   name: Cockpit dashboard
   post_v1: false
-  source: **✅ P3.2 landed: `everyaios-audit/src/cockpit.rs` — `CockpitState`/`AgentCard`/`InterruptCard` (status/model/provider, token counters, capped action trail, `quiet_status()` single-sentence line, MCQ interrupt lifecycle, stop/undo; +8 tests) + Tauri `cockpit_cmds.rs` (`cockpit_snapshot`/`activity`/`tokens`/`upsert_agent` feed seams, `cockpit_quiet` → tray tooltip + window hide, `agent_undo` + `interrupt_respond` JSON-RPC over the unix control channel) + `ui/src/pages/Cockpit.tsx` flight deck (Running-now cards w/ LIVE chip + STOP/UNDO, slide-over panel w/ action cards + token totals, MCQ interrupt cards, quiet toggle, 2s poll). 393 ws tests (355 + 8 + 30 office), clippy 0, fmt clean.**
+  source: **✅ P3.2 landed: `agentcowork-audit/src/cockpit.rs` — `CockpitState`/`AgentCard`/`InterruptCard` (status/model/provider, token counters, capped action trail, `quiet_status()` single-sentence line, MCQ interrupt lifecycle, stop/undo; +8 tests) + Tauri `cockpit_cmds.rs` (`cockpit_snapshot`/`activity`/`tokens`/`upsert_agent` feed seams, `cockpit_quiet` → tray tooltip + window hide, `agent_undo` + `interrupt_respond` JSON-RPC over the unix control channel) + `ui/src/pages/Cockpit.tsx` flight deck (Running-now cards w/ LIVE chip + STOP/UNDO, slide-over panel w/ action cards + token totals, MCQ interrupt cards, quiet toggle, 2s poll). 393 ws tests (355 + 8 + 30 office), clippy 0, fmt clean.**
 
 - id: H3
   layer: H
   name: Audit + replay UI
   post_v1: false
-  source: **✅ P3.1 landed: `everyaios-audit` replay query layer (`search_sessions` substring filter, `timeline` = segment+events+screenshot steps, `screenshot_steps`/`screenshot_path`, `events_since` watch tail; +3 tests) + Tauri commands (`replay_sessions`/`replay_timeline`/`replay_screenshot` base64 data-URL/`watch_events`/`agent_stop` JSON-RPC over unix control channel) + `ui/src/pages/Audit.tsx` (scrubber bar, screenshot strip, searchable sessions, 2s watch poll, Stop button). 393 ws tests, clippy 0, fmt clean.**
+  source: **✅ P3.1 landed: `agentcowork-audit` replay query layer (`search_sessions` substring filter, `timeline` = segment+events+screenshot steps, `screenshot_steps`/`screenshot_path`, `events_since` watch tail; +3 tests) + Tauri commands (`replay_sessions`/`replay_timeline`/`replay_screenshot` base64 data-URL/`watch_events`/`agent_stop` JSON-RPC over unix control channel) + `ui/src/pages/Audit.tsx` (scrubber bar, screenshot strip, searchable sessions, 2s watch poll, Stop button). 393 ws tests, clippy 0, fmt clean.**
 
 - id: H4
   layer: H
@@ -594,7 +594,7 @@
   layer: H
   name: Reader
   post_v1: false
-  source: **✅ P8.1: `everyaios-core::reader` — `extract_text` (markdown/plain/html zero-dep; PDF/EPUB explicit seams) + `ReaderIndex` chunked RAG with `chat_overlay` citations. UI surface stays open.**
+  source: **✅ P8.1: `agentcowork-core::reader` — `extract_text` (markdown/plain/html zero-dep; PDF/EPUB explicit seams) + `ReaderIndex` chunked RAG with `chat_overlay` citations. UI surface stays open.**
 
 - id: H7
   layer: H
@@ -618,7 +618,7 @@
   layer: H
   name: Personality
   post_v1: false
-  source: **✅ P8.3: `everyaios-blueprint::persona` — `load_persona` SOUL.md parsing, `TonePreset` + `PersonaConfig::custom_override`, `CORE_RULES` always emitted first + fail-closed override-scan.**
+  source: **✅ P8.3: `agentcowork-blueprint::persona` — `load_persona` SOUL.md parsing, `TonePreset` + `PersonaConfig::custom_override`, `CORE_RULES` always emitted first + fail-closed override-scan.**
 
 - id: H11
   layer: H
@@ -630,7 +630,7 @@
   layer: H
   name: Telemetry
   post_v1: false
-  source: **✅ P8.7: `everyaios-core::telemetry` — `Telemetry` single choke point, `TelemetryEventKind` enumerated buckets only, `TelemetrySample` has no content-bearing field, off-by-default + cold-boot no-request tests.**
+  source: **✅ P8.7: `agentcowork-core::telemetry` — `Telemetry` single choke point, `TelemetryEventKind` enumerated buckets only, `TelemetrySample` has no content-bearing field, off-by-default + cold-boot no-request tests.**
 
 - id: H13
   layer: H
@@ -660,7 +660,7 @@
   layer: H
   name: Widget cards
   post_v1: false
-  source: **✅ P8.2: `everyaios-core::widgets` — `MathWidget` safe calculator, `LookupWidget`, `WeatherWidget`/`StockWidget` cards + TTL cache (live APIs as seams). Inline UI render stays open.**
+  source: **✅ P8.2: `agentcowork-core::widgets` — `MathWidget` safe calculator, `LookupWidget`, `WeatherWidget`/`StockWidget` cards + TTL cache (live APIs as seams). Inline UI render stays open.**
 
 - id: H18
   layer: H
@@ -780,13 +780,13 @@
   layer: I
   name: Code synthesis loop
   post_v1: false
-  source: **✅ P7.1: `everyaios-core::forge::ForgeRuntime` — `iterate` (write→test→rewrite, SHA-256 loop guard + budget) + `tdd_loop` (RED→GREEN) + `run_js` (rquickjs `everyaios-script`) + `DockerSandbox` (mounts/network/limits → `docker run`); live execution stays executor-bound.**
+  source: **✅ P7.1: `agentcowork-core::forge::ForgeRuntime` — `iterate` (write→test→rewrite, SHA-256 loop guard + budget) + `tdd_loop` (RED→GREEN) + `run_js` (rquickjs `agentcowork-script`) + `DockerSandbox` (mounts/network/limits → `docker run`); live execution stays executor-bound.**
 
 - id: I2
   layer: I
   name: Skill registry
   post_v1: false
-  source: **✅ P7.2: `everyaios-blueprint::skill_store` — scanner, SKILL.md manifest + ownership, `SkillIndex` (scoring + MAX_ACTIVE_SKILLS=20 + planner-tier render), restart-survival, `taste_skill`, `grow_from_task`.**
+  source: **✅ P7.2: `agentcowork-blueprint::skill_store` — scanner, SKILL.md manifest + ownership, `SkillIndex` (scoring + MAX_ACTIVE_SKILLS=20 + planner-tier render), restart-survival, `taste_skill`, `grow_from_task`.**
 
 - id: I3
   layer: I
@@ -810,7 +810,7 @@
   layer: I
   name: Extension/plugin ABI
   post_v1: false
-  source: **✅ P7.3: `everyaios-guard::granter` (`CapabilityGranter` — manifest allow-list ∧ host grant, `wildcard_match` `*`/`**`, fail-closed `TrustFlags` + sandbox/approval required for dangerous powers, agent-binding, deny-narrows-allow refinement) + `everyaios-blueprint::plugin` (`PluginManifest` manifest.toml schema + validation, `PluginRegistry` scan + lazy activation, `HostFacades` ctx.llm/files/approval, `first_party_catalog` + `dogfood_rule`).**
+  source: **✅ P7.3: `agentcowork-guard::granter` (`CapabilityGranter` — manifest allow-list ∧ host grant, `wildcard_match` `*`/`**`, fail-closed `TrustFlags` + sandbox/approval required for dangerous powers, agent-binding, deny-narrows-allow refinement) + `agentcowork-blueprint::plugin` (`PluginManifest` manifest.toml schema + validation, `PluginRegistry` scan + lazy activation, `HostFacades` ctx.llm/files/approval, `first_party_catalog` + `dogfood_rule`).**
 
 - id: I7
   layer: I
@@ -840,7 +840,7 @@
   layer: I
   name: LSP code-intel
   post_v1: false
-  source: **✅ landed: `everyaios-codeintel` — `lsp` framing/types + `session` (transport trait, stdio spawn + keep-alive, initialize lifecycle) + `semantic` (symbol_where/callers/unused_exports) + `scip` (protobuf wire reader) + `repomap` (PageRank + budget fit, TagSource plug-in) + **P7.1 live diagnostics: `lsp_runner::LspRunner` spawns a configured server (`lsp-config.json`) and collects `publishDiagnostics` (process E2E via `mock-lsp-server`);guard ticket call-site = harness wiring**
+  source: **✅ landed: `agentcowork-codeintel` — `lsp` framing/types + `session` (transport trait, stdio spawn + keep-alive, initialize lifecycle) + `semantic` (symbol_where/callers/unused_exports) + `scip` (protobuf wire reader) + `repomap` (PageRank + budget fit, TagSource plug-in) + **P7.1 live diagnostics: `lsp_runner::LspRunner` spawns a configured server (`lsp-config.json`) and collects `publishDiagnostics` (process E2E via `mock-lsp-server`);guard ticket call-site = harness wiring**
 
 - id: I12
   layer: I
@@ -888,19 +888,19 @@
   layer: J
   name: Guard-1 regex interceptors
   post_v1: false
-  source: **✅ P7.4 landed: `everyaios-guard` — `blocklist` (40+ patterns / 8 categories) + `prescan` (`scan_shell`/`scan_path`/`scan_url`/`scan_all`) + `urlfloor` (file:// inside granted roots, scheme guard) + `redteam` gate (35/35 blocked)**
+  source: **✅ P7.4 landed: `agentcowork-guard` — `blocklist` (40+ patterns / 8 categories) + `prescan` (`scan_shell`/`scan_path`/`scan_url`/`scan_all`) + `urlfloor` (file:// inside granted roots, scheme guard) + `redteam` gate (35/35 blocked)**
 
 - id: J3
   layer: J
   name: Guard-2 diff cards
   post_v1: false
-  source: **✅ P7.5 + P10.2 nonce hardening + F1 landed:** `DecisionPackage` → `PendingGuardCard` over Tauri IPC; `guard_respond` requires the rendered card nonce **and the `guard` window label** — the main webview (browser views / generative UI / plugin content) is refused outright, so a compromised main renderer can no longer draw a fake card over a real ticket. The consent surface is now the dedicated always-on-top `guard` window (`src-tauri/src/guard_window.rs` + `ui/guard.html`, a minimal dependency-free page that only ever renders tickets from Rust IPC; `guard_open_window` brings it up from cards/panels/Excel). `everyaios-guard::diffcard::NativeCard` is a Rust-owned serializable card shape, not an OS-native dialog; the true OS-native card remains a hardening item.**
+  source: **✅ P7.5 + P10.2 nonce hardening + F1 landed:** `DecisionPackage` → `PendingGuardCard` over Tauri IPC; `guard_respond` requires the rendered card nonce **and the `guard` window label** — the main webview (browser views / generative UI / plugin content) is refused outright, so a compromised main renderer can no longer draw a fake card over a real ticket. The consent surface is now the dedicated always-on-top `guard` window (`src-tauri/src/guard_window.rs` + `ui/guard.html`, a minimal dependency-free page that only ever renders tickets from Rust IPC; `guard_open_window` brings it up from cards/panels/Excel). `agentcowork-guard::diffcard::NativeCard` is a Rust-owned serializable card shape, not an OS-native dialog; the true OS-native card remains a hardening item.**
 
 - id: J4
   layer: J
   name: Path/scope hard-floors
   post_v1: false
-  source: **✅ P7.7 landed: `pathfloor` — `normalize_lexical` + `canonicalize_no_follow`, `enforce_floor` (Allowed/ParentEscape/SymlinkEscape/OutsideRoot), adversarial fuzz gate (Allowed ⟹ inside) + P7.8 6-axis `PathGrant`/`GrantAxis` (read_only_recursive/read_write_create/… feeding permissions.toml, 0-escape invariant) + ✅ P62.1/P62.3 (2026-09-13) the network-destination floor is now ONE classifier, `everyaios-guard::netfloor` (`NetClass`/`NetPolicy`): cloud-metadata/link-local/multicast/unspecified/reserved space is refused under every policy and cannot be opted into, private/LAN/CGNAT/ULA/discovery names need the explicit opt-in, loopback is the local-desktop default but strict for agent-chosen URLs; `urlfloor` (check_url_strict/block_reason), `egress` (plan_with_policy), `toctou::is_blocked_ip` and the browser tier engine all call it, replacing three partial copies. Other harnesses' settings surfaces (`.claude/`, `.codex/`, `.cursor/`, `.mcp.json`, …) are protected floors while `AGENTS.md`/`CLAUDE.md` stay editable + ✅ P62.2/P62.4 (v3.74) the live MCP attach path runs the confined posture with an explicit credential-free env allow-list and fails closed, and a user-configured provider endpoint is granted through the floor (`ChatRelay::with_endpoint` → `EgressEngine::grant_url`) while the unconditional classes stay refused — RESEARCH doc 89**
+  source: **✅ P7.7 landed: `pathfloor` — `normalize_lexical` + `canonicalize_no_follow`, `enforce_floor` (Allowed/ParentEscape/SymlinkEscape/OutsideRoot), adversarial fuzz gate (Allowed ⟹ inside) + P7.8 6-axis `PathGrant`/`GrantAxis` (read_only_recursive/read_write_create/… feeding permissions.toml, 0-escape invariant) + ✅ P62.1/P62.3 (2026-09-13) the network-destination floor is now ONE classifier, `agentcowork-guard::netfloor` (`NetClass`/`NetPolicy`): cloud-metadata/link-local/multicast/unspecified/reserved space is refused under every policy and cannot be opted into, private/LAN/CGNAT/ULA/discovery names need the explicit opt-in, loopback is the local-desktop default but strict for agent-chosen URLs; `urlfloor` (check_url_strict/block_reason), `egress` (plan_with_policy), `toctou::is_blocked_ip` and the browser tier engine all call it, replacing three partial copies. Other harnesses' settings surfaces (`.claude/`, `.codex/`, `.cursor/`, `.mcp.json`, …) are protected floors while `AGENTS.md`/`CLAUDE.md` stay editable + ✅ P62.2/P62.4 (v3.74) the live MCP attach path runs the confined posture with an explicit credential-free env allow-list and fails closed, and a user-configured provider endpoint is granted through the floor (`ChatRelay::with_endpoint` → `EgressEngine::grant_url`) while the unconditional classes stay refused — RESEARCH doc 89**
 
 - id: J5
   layer: J
@@ -912,7 +912,7 @@
   layer: J
   name: Prompt-injection defense
   post_v1: false
-  source: **✅ P7.6 landed (Rust half): `everyaios-guard::injection` — `scan_context`, `wrap_user_document`, `sanitize_tool_result`, `Estop`; sidecar ingest call-site remains P7 wiring**
+  source: **✅ P7.6 landed (Rust half): `agentcowork-guard::injection` — `scan_context`, `wrap_user_document`, `sanitize_tool_result`, `Estop`; sidecar ingest call-site remains P7 wiring**
 
 - id: J7
   layer: J
@@ -960,7 +960,7 @@
   layer: J
   name: Distributed tracing
   post_v1: false
-  source: **✅ P3.3 landed: `everyaios-core/src/tracing.rs` — `TraceContext` (root/child spans, opentelemetry 0.27 `TraceId`/`SpanId`/`TraceFlags`), W3C `traceparent` wire format (the header `@opentelemetry/sdk-node` reads) + `inject_headers`/`extract_headers` for the Rust→sidecar→provider→sandbox boundaries, `SpanRecord`/`SpanAttrs` (all doc-43 fields), `TraceReporter` (console + `<data_dir>/traces/traces.ndjson` NDJSON; not-sampled dropped; OTLP/Jaeger post-v1) + `AuditEvent`/`SessionEvent` `trace_id`+`span_id` columns (`write_traced`, serde-default legacy compat). 8 tests — 393 ws tests, clippy 0, fmt clean.**
+  source: **✅ P3.3 landed: `agentcowork-core/src/tracing.rs` — `TraceContext` (root/child spans, opentelemetry 0.27 `TraceId`/`SpanId`/`TraceFlags`), W3C `traceparent` wire format (the header `@opentelemetry/sdk-node` reads) + `inject_headers`/`extract_headers` for the Rust→sidecar→provider→sandbox boundaries, `SpanRecord`/`SpanAttrs` (all doc-43 fields), `TraceReporter` (console + `<data_dir>/traces/traces.ndjson` NDJSON; not-sampled dropped; OTLP/Jaeger post-v1) + `AuditEvent`/`SessionEvent` `trace_id`+`span_id` columns (`write_traced`, serde-default legacy compat). 8 tests — 393 ws tests, clippy 0, fmt clean.**
 
 - id: J15
   layer: J
@@ -984,25 +984,25 @@
   layer: J
   name: Profile-gated security profiles
   post_v1: false
-  source: **✅ P7.7 landed: `everyaios-guard::profiles` — `Profile` (minimal/standard/strict, approval thresholds Strict<Standard<Minimal) + `gate(profile, hook)` over 7 profile gates (Allow/Ask/Block)**
+  source: **✅ P7.7 landed: `agentcowork-guard::profiles` — `Profile` (minimal/standard/strict, approval thresholds Strict<Standard<Minimal) + `gate(profile, hook)` over 7 profile gates (Allow/Ask/Block)**
 
 - id: J19
   layer: J
   name: Merkle hash-chain audit
   post_v1: false
-  source: **✅ P7.7 landed: `everyaios-audit::merkle` — SHA-256 chained rows, `verify` → first-bad-row, `verify_against_head` catches truncation**
+  source: **✅ P7.7 landed: `agentcowork-audit::merkle` — SHA-256 chained rows, `verify` → first-bad-row, `verify_against_head` catches truncation**
 
 - id: J20
   layer: J
   name: AgentShield config scanning
   post_v1: false
-  source: **✅ P7.7 landed: `everyaios-guard::configscan` — guard-disable keys, destructive config, callbacks, injection markers, malformed-TOML finding + ✅ P62.3 (2026-09-13) the write side is floored too: an agent may not silently rewrite another harness's settings (the prompt-injection → auto-approve class), enforced in `everyaios-guard::protected_paths`/`rm_critical`, with instruction files deliberately left editable — RESEARCH doc 89**
+  source: **✅ P7.7 landed: `agentcowork-guard::configscan` — guard-disable keys, destructive config, callbacks, injection markers, malformed-TOML finding + ✅ P62.3 (2026-09-13) the write side is floored too: an agent may not silently rewrite another harness's settings (the prompt-injection → auto-approve class), enforced in `agentcowork-guard::protected_paths`/`rm_critical`, with instruction files deliberately left editable — RESEARCH doc 89**
 
 - id: J21
   layer: J
   name: Escalation rules & decision packages
   post_v1: false
-  source: **✅ landed: `everyaios-guard::permissions::PermissionsPolicy` (`parse` TOML → `Rule::{AlwaysAsk,AlwaysAllow,Block,AskIfGt,AskIfNewDomain,AskIfDestructive}` + `evaluate(Operation)` + `min_confidence_for_auto`/`user_feedback_learning`) + `everyaios-guard::decision::DecisionPackage` + `everyaios-core::guard_service::GuardService` (estop→policy→profile→ticket; `evaluate` + `use_ticket` executor call-site; `guard/*` JSON-RPC into `ChatRelay::spawn`) + coordinator `guard.ts` + Cockpit diff card/estop strip/receipts; the live tool-executor invocation is now wired (Stage 0 landed 2026-08-20 — `tool/exec` → evaluate → ticket → `tool/commit` → Merkle audit)**
+  source: **✅ landed: `agentcowork-guard::permissions::PermissionsPolicy` (`parse` TOML → `Rule::{AlwaysAsk,AlwaysAllow,Block,AskIfGt,AskIfNewDomain,AskIfDestructive}` + `evaluate(Operation)` + `min_confidence_for_auto`/`user_feedback_learning`) + `agentcowork-guard::decision::DecisionPackage` + `agentcowork-core::guard_service::GuardService` (estop→policy→profile→ticket; `evaluate` + `use_ticket` executor call-site; `guard/*` JSON-RPC into `ChatRelay::spawn`) + coordinator `guard.ts` + Cockpit diff card/estop strip/receipts; the live tool-executor invocation is now wired (Stage 0 landed 2026-08-20 — `tool/exec` → evaluate → ticket → `tool/commit` → Merkle audit)**
 
 - id: J24
   layer: J

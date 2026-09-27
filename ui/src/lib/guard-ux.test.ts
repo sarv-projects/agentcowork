@@ -1,7 +1,7 @@
 // P52.x (guard-UX wave) — `guard-event` push contract, TTL math, extend
 // payload shape, and block-explanation mapping. All run outside the Tauri
 // shell (preview bridge), so they prove the UI contract, not the Rust gate
-// (covered by `cargo test -p everyaios-core --lib guard`).
+// (covered by `cargo test -p agentcowork-core --lib guard`).
 
 import { describe, expect, test } from "bun:test";
 import {

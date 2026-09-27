@@ -68,7 +68,7 @@ export interface BackendBindingView {
   /** Credential-free launch inputs, such as model or base URL. */
   injectedEnvNames: string[]
   unexpressed: string[]
-  /** Always `false` — EveryAIOS never writes an external agent's own config. */
+  /** Always `false` — AgentCowork never writes an external agent's own config. */
   writesToAgentConfig: boolean
   /**
    * @deprecated Historical compatibility only. It is not authentication or
@@ -99,7 +99,7 @@ export interface SessionLoadoutRow {
 }
 
 /** P71.9g — the **canonical** `AgentProtocol` union, mirroring
- * `everyaios_types::AgentProtocol` (`Acp` · `ModelOnly`). The previous spelling
+ * `agentcowork_types::AgentProtocol` (`Acp` · `ModelOnly`). The previous spelling
  * (`'inbuilt' | 'acp' | 'mcp'`) was a hand-maintained duplicate that agreed
  * with neither serializer and named a built-in engine v1 does not ship
  * (`ADR-0005`); `model_only` is the variant the shell actually emits
@@ -108,7 +108,7 @@ export interface SessionLoadoutRow {
 export type AgentProtocol = 'acp' | 'model_only'
 /** P69.C11 — the auth-mode contract has exactly one declaration: the
  * canonical `AuthMode` union in `./acp` (a projection of
- * `everyaios_types::AuthMode`). This name is kept for call sites. */
+ * `agentcowork_types::AuthMode`). This name is kept for call sites. */
 export type AgentAuthMode = AuthMode
 export type ModelOwner = 'native' | 'agent' | 'managed'
 export type AgentReadiness =
@@ -307,10 +307,10 @@ export function chooseAfterMutation<T>(
   return mutationLooksLive(envelope) ? optimistic : previous
 }
 
-/** P65.7 — EveryAIOS never writes an external agent's own config file. */
+/** P65.7 — AgentCowork never writes an external agent's own config file. */
 export function assertNoAgentConfigWrite(binding: BackendBindingView): void {
   if (binding.writesToAgentConfig) {
-    throw new Error('EveryAIOS never writes an external agent config')
+    throw new Error('AgentCowork never writes an external agent config')
   }
 }
 
@@ -354,7 +354,7 @@ export function agentAuthenticationLabel(authMode: AgentAuthMode | undefined): s
 /**
  * P65.2 — an external agent's native model/tools stay its own. Shared
  * cowork grants are additional; they must not replace native occupancy
- * or flip the effective `modelOwner` to EveryAIOS-managed.
+ * or flip the effective `modelOwner` to AgentCowork-managed.
  */
 export function nativeSurfaceNotReplaced(
   row: Pick<AgentSettings, 'protocol' | 'modelOwner' | 'backendBinding'> & {

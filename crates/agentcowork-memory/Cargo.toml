@@ -1,0 +1,27 @@
+[package]
+name = "agentcowork-memory"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "P5 — memory fusion + token economy (C1–C10): weighted RRF multi-signal fusion + smart snippets + budget caps + chunk-min-size merge (Alg #18/#29), ACT-R activation + spontaneous recall (Alg #32), taste profile (Alg #31), compaction pipeline (Alg #21), FSRS scheduler (C13), BM25 signal, context planner (C7), Janus structural passes, RTK output compression, Cognee graph API, usage ledger (P8). Plus the v1 durable memory store (SQLite + FTS5 + suppression-based forget) and the context controller (named budget terms, pre-turn feasibility, prune→checkpoint→compact, cache stability)."
+
+[dependencies]
+thiserror = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+# v1 store: whole-DB encrypted SQLite + FTS5 (DEC-039). Already a workspace
+# dependency (audit/storage/vault/codeintel) — this is the same pinned build,
+# not a new one.
+rusqlite = { workspace = true }
+sha2 = { workspace = true }
+
+# P20-1 — SeekStorm embedded hybrid index (doc 72 §1). Optional + default-off:
+# the vectorless default stays BM25+RRF and the heavy tokio/hyper tree is
+# never pulled unless the feature is enabled.
+seekstorm = { version = "3", optional = true }
+tokio = { workspace = true, optional = true }
+
+[features]
+default = []
+hybrid-seekstorm = ["dep:seekstorm", "dep:tokio"]

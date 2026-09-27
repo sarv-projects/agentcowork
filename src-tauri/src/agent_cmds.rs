@@ -1,5 +1,5 @@
-//! P31 — agent-registry Tauri commands. The `everyaios-agents` crate owns
-//! the durable store (`~/.everyaios/agents/<id>/agent.toml`); these commands
+//! P31 — agent-registry Tauri commands. The `agentcowork-agents` crate owns
+//! the durable store (`<data_dir>/agents/<id>/agent.toml`); these commands
 //! expose list / save / get / remove / disable / duplicate so the P31
 //! builder UI talks to the real registry instead of browser-local state.
 //!
@@ -9,27 +9,27 @@
 //!
 //! P69.D1 — `agent_directory_list` is the single read façade. The ACP launch
 //! registry, the bundled registry index and the local bundle store are all
-//! *sources*; `everyaios_agents::AgentDirectory` composes them into one
+//! *sources*; `agentcowork_agents::AgentDirectory` composes them into one
 //! canonical record set so the UI never keeps a parallel agent map.
 
 use std::sync::Arc;
 
-use everyaios_agents::{AgentDirectory, AgentDirectoryEntry, AgentSource};
-use everyaios_core::tools::AgentReadinessSource;
-use everyaios_types::{AgentDefinition, AgentId, AgentProtocol, AuthMode};
+use agentcowork_agents::{AgentDirectory, AgentDirectoryEntry, AgentSource};
+use agentcowork_core::tools::AgentReadinessSource;
+use agentcowork_types::{AgentDefinition, AgentId, AgentProtocol, AuthMode};
 use serde_json::json;
 use tauri::State;
 
 use crate::AppState;
 
-/// The registry root — `~/.everyaios/agents` (honors `EVERYAIOS_HOME`).
-fn registry() -> everyaios_agents::registry::AgentRegistry {
-    everyaios_agents::registry::AgentRegistry::new(
-        everyaios_agents::registry::AgentRegistry::default_home(),
+/// The registry root — `<data_dir>/agents` (honors `AGENTCOWORK_HOME`).
+fn registry() -> agentcowork_agents::registry::AgentRegistry {
+    agentcowork_agents::registry::AgentRegistry::new(
+        agentcowork_agents::registry::AgentRegistry::default_home(),
     )
 }
 
-fn meta_json(m: &everyaios_agents::registry::AgentMeta) -> serde_json::Value {
+fn meta_json(m: &agentcowork_agents::registry::AgentMeta) -> serde_json::Value {
     json!({
         "id": m.id,
         "name": m.name,
@@ -52,11 +52,11 @@ pub fn agent_registry_list() -> Result<serde_json::Value, String> {
 /// id. Unknown engine bindings / malformed TOML fail closed.
 #[tauri::command]
 pub fn agent_registry_save(agent_toml: String) -> Result<String, String> {
-    let bundle = everyaios_agents::bundle::AgentBundle::from_toml(&agent_toml)
+    let bundle = agentcowork_agents::bundle::AgentBundle::from_toml(&agent_toml)
         .map_err(|e| format!("invalid agent.toml: {e}"))?;
     let reg = registry();
     reg.save(&bundle).map_err(|e| e.to_string())?;
-    Ok(everyaios_agents::registry::slug(&bundle.name))
+    Ok(agentcowork_agents::registry::slug(&bundle.name))
 }
 
 /// Fetch one bundle as agent.toml (the "edit / export" path).
@@ -88,9 +88,9 @@ pub fn agent_registry_set_disabled(id: String, disabled: bool) -> Result<(), Str
 }
 
 /// Project a launch manifest onto the canonical `AgentDefinition`.
-fn definition_from_manifest(m: &everyaios_acp::HarnessManifest) -> AgentDefinition {
+fn definition_from_manifest(m: &agentcowork_acp::HarnessManifest) -> AgentDefinition {
     let protocol = match m.protocol {
-        everyaios_acp::HarnessProtocol::Acp => AgentProtocol::Acp,
+        agentcowork_acp::HarnessProtocol::Acp => AgentProtocol::Acp,
     };
     AgentDefinition {
         id: AgentId::new(m.id.clone()),
@@ -101,11 +101,11 @@ fn definition_from_manifest(m: &everyaios_acp::HarnessManifest) -> AgentDefiniti
         // that has never been probed says `unknown` rather than guessing
         // (`ARCH/03-BYOK-KEYRINGS.md` §3.0, P69.C7).
         auth_mode: match m.auth_mode {
-            everyaios_acp::AuthMode::Subscription => AuthMode::Subscription,
-            everyaios_acp::AuthMode::ApiKey => AuthMode::ApiKey,
-            everyaios_acp::AuthMode::Local => AuthMode::Local,
-            everyaios_acp::AuthMode::Keyless => AuthMode::Keyless,
-            everyaios_acp::AuthMode::Unknown => AuthMode::Unknown,
+            agentcowork_acp::AuthMode::Subscription => AuthMode::Subscription,
+            agentcowork_acp::AuthMode::ApiKey => AuthMode::ApiKey,
+            agentcowork_acp::AuthMode::Local => AuthMode::Local,
+            agentcowork_acp::AuthMode::Keyless => AuthMode::Keyless,
+            agentcowork_acp::AuthMode::Unknown => AuthMode::Unknown,
         },
         capabilities: Vec::new(),
         extension_mechanisms: Vec::new(),
@@ -114,11 +114,11 @@ fn definition_from_manifest(m: &everyaios_acp::HarnessManifest) -> AgentDefiniti
 
 /// Human-readable distribution label (the `locator` shown in the picker's
 /// "why can't I run this?" affordance).
-fn distribution_label(d: &everyaios_acp::Distribution) -> String {
+fn distribution_label(d: &agentcowork_acp::Distribution) -> String {
     match d {
-        everyaios_acp::Distribution::Binary { command, .. } => format!("binary: {command}"),
-        everyaios_acp::Distribution::Npx { package, .. } => format!("npx: {package}"),
-        everyaios_acp::Distribution::Uvx { package, .. } => format!("uvx: {package}"),
+        agentcowork_acp::Distribution::Binary { command, .. } => format!("binary: {command}"),
+        agentcowork_acp::Distribution::Npx { package, .. } => format!("npx: {package}"),
+        agentcowork_acp::Distribution::Uvx { package, .. } => format!("uvx: {package}"),
     }
 }
 

@@ -11,7 +11,7 @@
 const MODEL = process.argv[2] || "ling-3.0-flash-fin-free";
 const SESSION =
   process.env.OPENCODE_SESSION || `ses_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
-const UA = "EveryAIOS/0.7.2";
+const UA = "AgentCowork/0.7.2";
 
 const body = JSON.stringify({
   model: MODEL,

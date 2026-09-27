@@ -1,0 +1,16 @@
+[package]
+name = "agentcowork-agents"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "P31 — custom agent bundles: agent.toml manifest, registry, templates, per-agent scoping, engine binding, workflow attachment."
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+toml = { workspace = true }
+# P69.D1 — the canonical `AgentDefinition` record lives in the schema crate so
+# the directory, the ACP registry and the TS façade share one shape.
+agentcowork-types = { path = "../agentcowork-types" }

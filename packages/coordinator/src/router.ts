@@ -18,7 +18,7 @@
  * retained as a **pure, tested** function and as the migration note for the
  * post-v1 governed binding (`P71.7`), never as a v1 execution authority:
  * `ARCH/ROUTING.md` §1/§10 — an external agent owns its own model and provider
- * fallback, and EveryAIOS no longer selects one. `P71.4` decides whether the
+ * fallback, and AgentCowork no longer selects one. `P71.4` decides whether the
  * route-observation half is re-homed onto agent reports or retired with this.
  */
 
@@ -223,7 +223,7 @@ export function selectModelForTask(opts: RouterOptions): ModelSelection {
   }
 
   // 2. Rank. With P36 observations, the deterministic RouteDecision consensus
-  // scorer decides (same algorithm as `everyaios-core::routing::Scorer`);
+  // scorer decides (same algorithm as `agentcowork-core::routing::Scorer`);
   // without observations we fall back to capability-filter + cost-sort.
   if (opts.observations) {
     const scored = pass.map((p) => ({
@@ -379,7 +379,7 @@ function describeReason(
 // P36/RouteDecision — the deterministic consensus scorer.
 //
 // The scorer lives in `./scorer` (dependency-free) so the coordinator and the
-// Rust crate (`everyaios-core::routing::Scorer`) can be locked against each
+// Rust crate (`agentcowork-core::routing::Scorer`) can be locked against each
 // other by pure unit tests. Imported above and re-exported for callers of
 // `router.ts`.
 // ---------------------------------------------------------------------------

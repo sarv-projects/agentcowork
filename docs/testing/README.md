@@ -11,7 +11,7 @@ not a release qualification record.
 - [`../../scripts/run-windows-v1-validation.ps1`](../../scripts/run-windows-v1-validation.ps1)
   — a fail-closed PowerShell runner. It requires an explicit `-Repo`, copies the
   current working tree to the fixed path
-  `C:\Users\sonali\Desktop\tests\EveryAIOS`, and writes a timestamped evidence
+  `C:\Users\sonali\Desktop\tests\AgentCowork`, and writes a timestamped evidence
   directory under `C:\Users\sonali\Desktop\tests\evidence`.
 
 ## Safety contract

@@ -7,7 +7,7 @@
  * 3. Invokes an optional callback for event emission
  */
 
-import type { MemoryRepository, MemoryFact } from '@everyaios/core-domain';
+import type { MemoryRepository, MemoryFact } from '@agentcowork/core-domain';
 import type { PromotionCandidate } from './correction-detector.js';
 import { removeTrackingRow } from './correction-store.js';
 import { correctionConfidenceFromCount } from './correction-store.js';

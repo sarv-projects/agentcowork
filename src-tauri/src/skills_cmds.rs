@@ -1,8 +1,8 @@
 //! P9.7 — skills-store install flow (ARCH/15 tier 3, "skills = MCP + SKILL.md").
 //!
-//! Closes the loop on `everyaios-guard::skillstore` (the single Ed25519-signed
-//! skills index) + `everyaios-blueprint::SkillStore` (the on-disk `SKILL.md`
-//! registry at `~/.everyaios/skills/`):
+//! Closes the loop on `agentcowork-guard::skillstore` (the single Ed25519-signed
+//! skills index) + `agentcowork-blueprint::SkillStore` (the on-disk `SKILL.md`
+//! registry at `<skill-store home>`):
 //!
 //!   1. `skills_catalog()` — verify the bundled signed index against the pinned
 //!      public key; return the rows for the UI (with per-skill capability
@@ -25,7 +25,7 @@ use crate::AppState;
 
 /// Pinned verifying public key for the bundled skills store index (the store
 /// operator's public half; the private signing key never ships in the app).
-/// Regenerated with `cargo run -p everyaios-guard --example gen_skillstore_seed`.
+/// Regenerated with `cargo run -p agentcowork-guard --example gen_skillstore_seed`.
 pub const STORE_PUBLIC_KEY_B64: &str = "lvI3luTatntgPJAIeBRIFHJsYv3CQRUCMZg97OYZrT0=";
 
 /// The bundled signed index body (canonical JSON array of `SkillRow`).
@@ -36,16 +36,16 @@ pub const STORE_INDEX_SIGNATURE_B64: &str =
     "9qWu8UH8qeraWOutHfGpbYfU1LaD3x5F4mMeIIqOCm82Gi+vYW5+HhUo0QQYgeTcC0aaUJaSKVpzEXzGoX0dAA==";
 
 /// The capability floor a skill may not exceed (mirrors
-/// `everyaios_guard::skillstore::RUNTIME_CAPABILITY_ALLOWLIST`).
+/// `agentcowork_guard::skillstore::RUNTIME_CAPABILITY_ALLOWLIST`).
 pub const RUNTIME_CAPABILITY_ALLOWLIST: &[&str] =
     &["fs.read", "fs.write", "tool.mcp", "tool.connector"];
 
-/// Resolve the skill-store root. Prefer `EVERYAIOS_SKILLS_DIR`; fall back to
-/// the blueprint default home (`~/.everyaios/skills`).
+/// Resolve the skill-store root. Prefer `AGENTCOWORK_SKILLS_DIR` (retired
+/// `EVERYAIOS_SKILLS_DIR` honored); fall back to the blueprint default home.
 fn skills_root() -> std::path::PathBuf {
-    std::env::var_os("EVERYAIOS_SKILLS_DIR")
+    agentcowork_types::env_compat::get_os("SKILLS_DIR")
         .map(std::path::PathBuf::from)
-        .unwrap_or_else(everyaios_blueprint::SkillStore::default_home)
+        .unwrap_or_else(agentcowork_blueprint::SkillStore::default_home)
 }
 
 /// One skill row rendered to the UI (with install state).
@@ -69,12 +69,12 @@ pub struct SkillRowView {
 }
 
 /// Verify the bundled signed index against the pinned key and return the rows.
-fn verify_bundled() -> Result<Vec<everyaios_guard::skillstore::SkillRow>, String> {
-    let signed = everyaios_guard::skillstore::SignedSkillIndex {
+fn verify_bundled() -> Result<Vec<agentcowork_guard::skillstore::SkillRow>, String> {
+    let signed = agentcowork_guard::skillstore::SignedSkillIndex {
         body: STORE_INDEX_BODY.to_string(),
         signature_b64: STORE_INDEX_SIGNATURE_B64.to_string(),
     };
-    everyaios_guard::skillstore::verify_and_validate(
+    agentcowork_guard::skillstore::verify_and_validate(
         &signed,
         STORE_PUBLIC_KEY_B64,
         RUNTIME_CAPABILITY_ALLOWLIST,
@@ -89,13 +89,13 @@ fn verify_bundled() -> Result<Vec<everyaios_guard::skillstore::SkillRow>, String
 /// be in the runtime capability allow-list, and `/learn` never attaches
 /// scripts (the blueprint is instruction+references; execution stays in the
 /// existing sandboxed tool paths). This check runs BEFORE any save — the
-/// `everyaios-blueprint::learn::LearnGate` boundary refuses the write.
+/// `agentcowork-blueprint::learn::LearnGate` boundary refuses the write.
 struct LearnStructuralGate;
 
-impl everyaios_blueprint::LearnGate for LearnStructuralGate {
+impl agentcowork_blueprint::LearnGate for LearnStructuralGate {
     fn verify(
         &self,
-        skill: &everyaios_blueprint::Skill,
+        skill: &agentcowork_blueprint::Skill,
         _evidence_sha256: &str,
     ) -> Result<(), String> {
         // No new powers: tools ⊆ runtime allow-list.
@@ -132,19 +132,19 @@ pub fn skills_learn(
     if evidence.trim().is_empty() {
         return Err("nothing to learn — evidence is empty".into());
     }
-    let store = everyaios_blueprint::SkillStore::new(skills_root());
-    let req = everyaios_blueprint::LearnRequest {
+    let store = agentcowork_blueprint::SkillStore::new(skills_root());
+    let req = agentcowork_blueprint::LearnRequest {
         evidence,
         title,
-        author: author.unwrap_or_else(|| "everyaios-user".into()),
+        author: author.unwrap_or_else(|| "agentcowork-user".into()),
         name,
         tools: tools.unwrap_or_default(),
     };
     let gate = LearnStructuralGate;
     let path =
-        everyaios_blueprint::learn_and_save(&store, &req, &gate).map_err(|e| e.to_string())?;
+        agentcowork_blueprint::learn_and_save(&store, &req, &gate).map_err(|e| e.to_string())?;
     // Reload the saved skill (learn_and_save wrote it under its derived name).
-    let id = everyaios_blueprint::derive_name(&req);
+    let id = agentcowork_blueprint::derive_name(&req);
     let skill = store.load(&id).map_err(|e| e.to_string())?;
     Ok(serde_json::json!({
         "id": id,
@@ -160,7 +160,7 @@ pub fn skills_learn(
 /// Read the set of installed skill names from the on-disk registry (skipping
 /// malformed entries — same policy as `SkillStore::scan`).
 fn installed_names() -> std::collections::BTreeSet<String> {
-    let store = everyaios_blueprint::SkillStore::new(skills_root());
+    let store = agentcowork_blueprint::SkillStore::new(skills_root());
     match store.scan() {
         Ok(skills) => skills.into_iter().map(|s| s.manifest.name).collect(),
         Err(_) => std::collections::BTreeSet::new(),
@@ -169,7 +169,7 @@ fn installed_names() -> std::collections::BTreeSet<String> {
 
 /// doc-75 sha-pin integrity check: has the installed skill's on-disk bytes
 /// drifted from its install-time pin? `None` = not present on disk / no pin.
-fn skill_tampered(store: &everyaios_blueprint::SkillStore, id: &str) -> Option<bool> {
+fn skill_tampered(store: &agentcowork_blueprint::SkillStore, id: &str) -> Option<bool> {
     let path = store.root().join(id).join("SKILL.md");
     let bytes = std::fs::read(&path).ok()?;
     store.is_tampered(id, &bytes)
@@ -182,7 +182,7 @@ pub fn skills_catalog(
 ) -> Result<Vec<SkillRowView>, String> {
     let rows = verify_bundled()?;
     let installed = installed_names();
-    let store = everyaios_blueprint::SkillStore::new(skills_root());
+    let store = agentcowork_blueprint::SkillStore::new(skills_root());
     Ok(rows
         .into_iter()
         .map(|r| {
@@ -202,7 +202,7 @@ pub fn skills_catalog(
                 tampered: skill_tampered(&store, &r.id),
                 user_invocable: on_disk
                     .as_ref()
-                    .map(|s| everyaios_blueprint::may_user_slash_invoke(&s.manifest))
+                    .map(|s| agentcowork_blueprint::may_user_slash_invoke(&s.manifest))
                     .unwrap_or(false),
                 disable_model_invocation: on_disk
                     .as_ref()
@@ -228,8 +228,8 @@ pub fn skills_install(id: String) -> Result<serde_json::Value, String> {
     // Build a blueprint Skill (manifest + body) from the verified row. The
     // registry keys skills by their slug `id` (SkillStore::save validates
     // `[a-z0-9-]+`), so the manifest name is the row id, not the display name.
-    let skill = everyaios_blueprint::Skill {
-        manifest: everyaios_blueprint::SkillManifest {
+    let skill = agentcowork_blueprint::Skill {
+        manifest: agentcowork_blueprint::SkillManifest {
             name: row.id.clone(),
             description: row.description.clone(),
             tools: row.permissions.clone(),
@@ -238,7 +238,7 @@ pub fn skills_install(id: String) -> Result<serde_json::Value, String> {
             scripts: Vec::new(),
             references: Vec::new(),
             assets: Vec::new(),
-            author: "everyaios-store".into(),
+            author: "agentcowork-store".into(),
             created: chrono_like_now(),
             version: row.version.clone(),
             user_invocable: false,
@@ -252,13 +252,13 @@ pub fn skills_install(id: String) -> Result<serde_json::Value, String> {
         ),
     };
 
-    let store = everyaios_blueprint::SkillStore::new(skills_root());
+    let store = agentcowork_blueprint::SkillStore::new(skills_root());
     let path = store.save(&skill, true).map_err(|e| e.to_string())?;
     // doc-75 sha-pinned marketplace model: pin the skill to the exact bytes we
     // wrote, so any later on-disk mutation is detected (never silently trusted).
     store.pin(
         row.id.as_str(),
-        "everyaios-store",
+        "agentcowork-store",
         row.version.as_str(),
         skill.to_skill_md().as_bytes(),
     );
@@ -285,7 +285,7 @@ pub fn skills_uninstall(
     #[allow(unused)] state: State<'_, AppState>,
     name: String,
 ) -> Result<serde_json::Value, String> {
-    let store = everyaios_blueprint::SkillStore::new(skills_root());
+    let store = agentcowork_blueprint::SkillStore::new(skills_root());
     // Every delete outcome is a first-class audit entry (`ARCH/12-TRUST.md`
     // §9, INV-24: denials and delete are logged, never swallowed).
     match store.delete(&name) {
@@ -378,11 +378,11 @@ mod tests {
     /// reaches a recursive delete, so the shell asserts the refusals against
     /// the same store construction `skills_uninstall` uses (`skills_root()` +
     /// `SkillStore::new`). The command itself is a thin audited wrapper around
-    /// [`everyaios_blueprint::SkillStore::delete`].
+    /// [`agentcowork_blueprint::SkillStore::delete`].
     #[test]
     fn uninstall_refuses_paths_and_only_removes_a_registered_skill() {
         let base =
-            std::env::temp_dir().join(format!("everyaios-skills-cmds-{}", std::process::id()));
+            std::env::temp_dir().join(format!("agentcowork-skills-cmds-{}", std::process::id()));
         let root = base.join("skills");
         let outside = base.join("outside");
         let _ = std::fs::remove_dir_all(&base);
@@ -390,8 +390,8 @@ mod tests {
         std::fs::create_dir_all(&outside).unwrap();
         std::fs::write(outside.join("precious.txt"), "keep").unwrap();
 
-        let skill = everyaios_blueprint::Skill {
-            manifest: everyaios_blueprint::SkillManifest {
+        let skill = agentcowork_blueprint::Skill {
+            manifest: agentcowork_blueprint::SkillManifest {
                 name: "note-taker".into(),
                 description: "A skill that lives in the store".into(),
                 author: "tester".into(),
@@ -401,7 +401,7 @@ mod tests {
             },
             body: "body".into(),
         };
-        let store = everyaios_blueprint::SkillStore::new(&root);
+        let store = agentcowork_blueprint::SkillStore::new(&root);
         store.save(&skill, false).unwrap();
 
         // Traversal and absolute paths are refused, and the decoy survives.
@@ -428,13 +428,13 @@ mod tests {
     #[test]
     fn tampered_seed_rejected() {
         // A signature that no longer matches the body must reject.
-        let bad = everyaios_guard::skillstore::SignedSkillIndex {
+        let bad = agentcowork_guard::skillstore::SignedSkillIndex {
             body: r#"[{"id":"evi","name":"Evi","version":"1.0.0","description":"x","permissions":["shell.exec"],"manifest":""}]"#
                 .to_string(),
             signature_b64: STORE_INDEX_SIGNATURE_B64.to_string(),
         };
         assert!(
-            everyaios_guard::skillstore::verify_skill_index(&bad, STORE_PUBLIC_KEY_B64).is_err()
+            agentcowork_guard::skillstore::verify_skill_index(&bad, STORE_PUBLIC_KEY_B64).is_err()
         );
     }
 }

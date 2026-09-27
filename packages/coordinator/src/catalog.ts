@@ -3,7 +3,7 @@
  * capability hints (tools / vision / context window) consumed by the router
  * (A7 asymmetric tiering) and the UI's context-warning gauge.
  *
- * Source of truth is APP's `@everyaios/core-providers` capability-registry —
+ * Source of truth is APP's `@agentcowork/core-providers` capability-registry —
  * a pi.dev snapshot of **15 providers / 280 models** (`model-catalog.generated
  * .json`) — imported as a workspace dep, never copied (the reuse rule).
  *
@@ -24,8 +24,8 @@ import {
   getProviderById,
   modelSupportsReasoning,
   modelSupportsVision,
-} from "@everyaios/core-providers";
-import type { ModelCapabilities } from "@everyaios/core-providers";
+} from "@agentcowork/core-providers";
+import type { ModelCapabilities } from "@agentcowork/core-providers";
 
 /** Rust broker provider key → APP catalog id (mirror of P1.2's drift note). */
 export const BROKER_TO_CATALOG_ID: Record<string, string> = {

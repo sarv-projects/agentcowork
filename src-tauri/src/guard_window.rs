@@ -36,7 +36,7 @@ pub fn ensure_guard_window(app: &AppHandle) -> tauri::Result<WebviewWindow> {
         GUARD_WINDOW_LABEL,
         WebviewUrl::App("guard.html".into()),
     )
-    .title("EveryAIOS — Approval")
+    .title("AgentCowork — Approval")
     .inner_size(600.0, 720.0)
     .min_inner_size(480.0, 560.0)
     .always_on_top(true)

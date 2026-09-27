@@ -11,7 +11,7 @@ const META = {
     icon: AlertTriangle,
   },
   booting: {
-    label: 'Starting EveryAIOS…',
+    label: 'Starting AgentCowork…',
     className: 'border-blue-500/30 bg-blue-500/10 text-blue-200',
     icon: Loader2,
   },

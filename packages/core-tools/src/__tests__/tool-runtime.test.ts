@@ -29,5 +29,5 @@ describe('ToolRuntime', () => {
 });
 
 // Permission classification (permission gate, trust ladder) now lives in
-// `@everyaios/core-engine` (`src/policy/`) and is covered there. This package
+// `@agentcowork/core-engine` (`src/policy/`) and is covered there. This package
 // declares tools; it does not decide whether an effect may run — Guard does.

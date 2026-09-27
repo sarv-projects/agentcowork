@@ -610,7 +610,7 @@ export function RightViewport({ narrow = false }: { narrow?: boolean } = {}) {
         const { fsWriteFile } = await import('@/lib/fs')
         await fsWriteFile(path, '')
         window.dispatchEvent(
-          new CustomEvent('everyaios:open-file', { detail: { path, content: '' } }),
+          new CustomEvent('agentcowork:open-file', { detail: { path, content: '' } }),
         )
         st.setActiveView('code')
         st.notify(`Created ${name}`)

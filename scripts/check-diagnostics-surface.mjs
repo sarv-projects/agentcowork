@@ -54,7 +54,7 @@ if (!existsSync('docs/install-layout.md')) {
   // D1 — the per-user decision, the paths, and the no-orphans statement.
   need(/per-user/i.test(doc), 'D1: the doc no longer states the per-user install model');
   need(doc.includes('currentUser'), 'D1: the doc no longer names the NSIS currentUser setting');
-  need(/EVERYAIOS_HOME/.test(doc), 'D1: the doc no longer names the data-dir override');
+  need(/EVERYAIOS_HOME|AGENTCOWORK_HOME/.test(doc), 'D1: the doc no longer names the data-dir override');
   need(/%LOCALAPPDATA%/.test(doc), 'D1: the doc no longer states the install path');
   need(/no\*\* services|no\*\* services,|no services, no scheduled tasks/i.test(doc) || /services/i.test(doc),
     'D1: the doc no longer states the no-services/no-tasks/no-autostart contract');

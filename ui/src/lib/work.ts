@@ -211,7 +211,7 @@ export function presenceLabel(state: string | undefined): string {
 }
 
 /** P71.3g — the canonical Work lifecycle states (`ARCH/WORK.md` §4); Rust's
- * `everyaios_types::WorkState` is the authority, this is the wire projection. */
+ * `agentcowork_types::WorkState` is the authority, this is the wire projection. */
 export type WorkLifecycleState =
   | 'created' | 'planning' | 'ready' | 'running'
   | 'waiting_tool' | 'waiting_approval' | 'waiting_user' | 'checkpointed'

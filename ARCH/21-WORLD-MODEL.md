@@ -5,7 +5,7 @@
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
 > **Thesis:** *“Don't make the AI look at the computer. Make the computer explain itself to the AI.”* — structural state first; vision is a fallback rung (`24-COMPUTER-USE`).
 > **Dependencies:** `30-EVENTS` (stream), `25-FILES` (file identity), `23-BROWSER` (browser world), `12-TRUST` (consent/guard), `19-RUNTIME-ENVIRONMENTS` (collector hosts/helpers), `16-CONTEXT` (primary consumer).
-> **Evidence:** `ARCHIVE/v1-research/world-model-verification.md` (359 lines, citations per claim) · clones `agent-browser` · `rustwright` · `obscura` · `open-codex-computer-use` · `Agent-S` · `UI-TARS-desktop` · `open-computer-use` · MS docs (UIA, MFT/USN, `FILE_ID_INFO`) · arXiv 2511.19477 · local code (`crates/everyaios-desktop`, `everyaios-storage`).
+> **Evidence:** `ARCHIVE/v1-research/world-model-verification.md` (359 lines, citations per claim) · clones `agent-browser` · `rustwright` · `obscura` · `open-codex-computer-use` · `Agent-S` · `UI-TARS-desktop` · `open-computer-use` · MS docs (UIA, MFT/USN, `FILE_ID_INFO`) · arXiv 2511.19477 · local code (`crates/agentcowork-desktop`, `agentcowork-storage`).
 
 ## 1. Purpose & honest framing
 
@@ -44,7 +44,7 @@ Rules: no full rescan per query · event delivery never triggers unbounded work 
 | UI element (desktop) | **not persistent** — epoch-scoped observation handle `(runtime_id | role+name+automationId+bounds)` valid for one observation/action | `AutomationId` is optional and not build-stable; re-read per action |
 | Content hash | content identity, kept **separate** from file identity | Many files → one blob |
 
-**Code-phase fix identified (frozen code):** `crates/everyaios-storage/src/walk.rs:131-157` zeroes `dev`/`ino` on Windows, corrupting dedup (`dedup.rs:106-118`). Fix = MFT-based `(volume, fileId)` identity per this model.
+**Code-phase fix identified (frozen code):** `crates/agentcowork-storage/src/walk.rs:131-157` zeroes `dev`/`ino` on Windows, corrupting dedup (`dedup.rs:106-118`). Fix = MFT-based `(volume, fileId)` identity per this model.
 
 ## 4. Incremental updates, epochs, gaps
 
@@ -100,9 +100,9 @@ W6 devices/registry/network shares · W7 content index/OCR · continuous UIA eve
 
 ## 10. Code-phase fixes identified (frozen code, do not touch now)
 
-1. `everyaios-storage/src/walk.rs:131-157` — dev/ino zeroing on Windows corrupts dedup (`dedup.rs:106-118`); replace with `(VolumeSerial, FILE_ID_128)` + incarnation.
+1. `agentcowork-storage/src/walk.rs:131-157` — dev/ino zeroing on Windows corrupts dedup (`dedup.rs:106-118`); replace with `(VolumeSerial, FILE_ID_128)` + incarnation.
 2. `usn_winapi.rs` is present but unwired — wire it as W1's delta source.
-3. `everyaios-desktop` ladder caveats: accessibility rung not uniform per platform (`ladder.rs:16-24`); WGC readiness (`platform/wgc.rs`) needs a Windows acceptance record.
+3. `agentcowork-desktop` ladder caveats: accessibility rung not uniform per platform (`ladder.rs:16-24`); WGC readiness (`platform/wgc.rs`) needs a Windows acceptance record.
 4. UIA collector must treat `AutomationId` as a hint, handle UIAccess elevation limits, and use CDP for browser content (Chromium UIA is opt-in).
 
 ## 11. Open questions (`OQ-WM-*`)

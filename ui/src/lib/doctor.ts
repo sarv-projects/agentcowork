@@ -1,4 +1,4 @@
-// P46.2 — `everyaios doctor` bridge (doctor_cmds.rs / everyaios_core::doctor).
+// P46.2 — `agentcowork doctor` bridge (doctor_cmds.rs / agentcowork_core::doctor).
 // Per-subsystem readiness report for the Settings → Doctor panel. Read-only;
 // never contains secret values (credentials are reported as a count only). In
 // a plain-browser preview it returns a representative demo report so the panel
@@ -32,7 +32,7 @@ function demoReport(): DoctorReport {
     checks: [
       { name: 'Core', status: 'ok', detail: 'orchestrator booted' },
       { name: 'Vault', status: 'ok', detail: 'SQLCipher open (key: generated)' },
-      { name: 'Database', status: 'ok', detail: 'writable at ~/.everyaios' },
+      { name: 'Database', status: 'ok', detail: 'writable at ~/.agentcowork' },
       { name: 'Disk', status: 'ok', detail: '42% used' },
       { name: 'Chrome/CDP', status: 'ok', detail: 'a Chromium binary is discoverable' },
       { name: 'Local runtimes', status: 'warn', detail: 'no Ollama / llamafile detected', hint: 'install Ollama or drop a llamafile (optional)' },

@@ -3,7 +3,7 @@ import {
   buildMemoryRetrievalHint,
   attachMemoryScopeToPlan,
 } from '../router-integration.js';
-import type { IntentCategory, RetrievalPlan, RouteContext, UserQuery } from '@everyaios/core-domain';
+import type { IntentCategory, RetrievalPlan, RouteContext, UserQuery } from '@agentcowork/core-domain';
 
 describe('buildMemoryRetrievalHint', () => {
   it('returns books category and sourceId when openDocumentId is present in context', () => {

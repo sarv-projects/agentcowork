@@ -540,7 +540,7 @@ describe('run surface — disclosure is keyboard operable and persisted', () => 
     expect(steps?.getAttribute('aria-expanded')).toBe('false')
     expect(mounted.container.querySelector(`#${CSS.escape(panelId)}`)).toBeNull()
 
-    const stored = window.localStorage.getItem('everyaios.settings.runCollapsedSections')
+    const stored = window.localStorage.getItem('agentcowork.settings.runCollapsedSections')
     expect(stored).toContain('trace')
 
     // A remount reads the persisted state back.

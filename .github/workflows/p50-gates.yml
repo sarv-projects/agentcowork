@@ -1,15 +1,15 @@
-# EveryAIOS — P50.5 release-gates matrix (P50.5.2 / .4 / .5 / .6 / .7 / .8).
+# AgentCowork — P50.5 release-gates matrix (P50.5.2 / .4 / .5 / .6 / .7 / .8).
 #
 # What this runs, per OS (ubuntu / windows / macos), on push to main, PRs,
 # nightly, and manual dispatch:
-#   - P50.5.2 search E2E      — everyaios-search p50_search_e2e (live legs run
-#     only when EVERYAIOS_E2E_SEARXNG_URL is set; outage/offline legs always).
-#   - P50.5.4 connector E2E   — everyaios-mcp p50_mcp_e2e (local binaries).
-#   - P50.5.5 failure inject  — everyaios-core p50_gates (crate legs) plus
+#   - P50.5.2 search E2E      — agentcowork-search p50_search_e2e (live legs run
+#     only when the SearXNG URL is set; outage/offline legs always).
+#   - P50.5.4 connector E2E   — agentcowork-mcp p50_mcp_e2e (local binaries).
+#   - P50.5.5 failure inject  — agentcowork-core p50_gates (crate legs) plus
 #     scripts/e2e/failure-injection.mjs L1–L7 against the debug core binary
 #     (L1 needs the coordinator binary; L7 live-Chrome needs
-#     EVERYAIOS_E2E_CHROME=1 — both report SKIP legs, never fake passes).
-#   - P50.5.6 crash recovery  — everyaios-core p50_gates (ledger / scheduler
+#     AGENTCOWORK_E2E_CHROME=1 — both report SKIP legs, never fake passes).
+#   - P50.5.6 crash recovery  — agentcowork-core p50_gates (ledger / scheduler
 #     lease / kernel / audit-chain legs, all hermetic).
 #   - P50.5.7 security gate   — scripts/e2e/security-gate.mjs (guard +
 #     p10_security + audit + mcp suites, IPC parity, approval-provenance).
@@ -68,30 +68,40 @@ jobs:
           echo "RUSTFLAGS=-D warnings $libs" >> $env:GITHUB_ENV
 
       # P50.5.2 — live search legs run only with a SearXNG service; the
-      # outage/offline legs always run.
+      # outage/offline legs always run. Both secret spellings are wired: the
+      # current Rust harness reads the legacy name, the scripts prefer the new
+      # one — the step below merges them so either secret enables the leg.
       - name: P50.5.2 search E2E
         shell: bash
         run: |
+          if [ -n "${AGENTCOWORK_E2E_SEARXNG_URL:-}" ] && [ -z "${EVERYAIOS_E2E_SEARXNG_URL:-}" ]; then
+            export EVERYAIOS_E2E_SEARXNG_URL="$AGENTCOWORK_E2E_SEARXNG_URL"
+          fi
+          if [ -n "${EVERYAIOS_E2E_SEARXNG_URL:-}" ] && [ -z "${AGENTCOWORK_E2E_SEARXNG_URL:-}" ]; then
+            export AGENTCOWORK_E2E_SEARXNG_URL="$EVERYAIOS_E2E_SEARXNG_URL"
+          fi
           if [ -z "${EVERYAIOS_E2E_SEARXNG_URL:-}" ]; then
             unset EVERYAIOS_E2E_SEARXNG_URL
-            echo "EVERYAIOS_E2E_SEARXNG_URL is empty; running with it unset so the live leg reports SKIP"
+            unset AGENTCOWORK_E2E_SEARXNG_URL
+            echo "no SearXNG URL secret; running with it unset so the live leg reports SKIP"
           fi
-          cargo test -p everyaios-search --test p50_search_e2e
+          cargo test -p agentcowork-search --test p50_search_e2e
         env:
+          AGENTCOWORK_E2E_SEARXNG_URL: ${{ secrets.AGENTCOWORK_E2E_SEARXNG_URL }}
           EVERYAIOS_E2E_SEARXNG_URL: ${{ secrets.EVERYAIOS_E2E_SEARXNG_URL }}
 
       # P50.5.4 — local mock-server binaries, no env needed.
       - name: P50.5.4 connector/MCP E2E
-        run: cargo test -p everyaios-mcp --test p50_mcp_e2e
+        run: cargo test -p agentcowork-mcp --test p50_mcp_e2e
 
       # P50.5.5 (crate legs) + P50.5.6 (crash composition) — hermetic.
       - name: P50.5.5/5.6 crash + failure gates
-        run: cargo test -p everyaios-core --test p50_gates
+        run: cargo test -p agentcowork-core --test p50_gates
 
       # P71.2c — the P50.5.1/5.3 "real chat vertical" suites drove the vault
       # broker through `ChatRelay::start_stream` and were deleted with the
-      # built-in engine (ADR-0005 §2): EveryAIOS no longer owns provider
-      # transport, so there is no EveryAIOS turn to point at a real endpoint.
+      # built-in engine (ADR-0005 §2): AgentCowork no longer owns provider
+      # transport, so there is no AgentCowork turn to point at a real endpoint.
       # The live equivalent is the external-agent gate (P70.E5 — real ACP
       # handshake/prompt/permission against an installed agent).
 
@@ -107,13 +117,16 @@ jobs:
 
       # P50.5.8 — clean-profile boot + doc-sync + parity on every OS.
       - name: Build debug core binary (for binary-level legs)
-        run: cargo build -p everyaios-core
+        run: cargo build -p agentcowork-core
 
       - name: P50.5.5 binary legs (failure-injection L1-L7)
         working-directory: .
         run: node scripts/e2e/failure-injection.mjs
         env:
-          EVERYAIOS_E2E_CORE_BIN: ${{ github.workspace }}/crates/target/debug/everyaios-core${{ runner.os == 'Windows' && '.exe' || '' }}
+          # Both spellings: the harness prefers the new name, the legacy is
+          # honoured alongside until the secret migration lands.
+          AGENTCOWORK_E2E_CORE_BIN: ${{ github.workspace }}/crates/target/debug/agentcowork-core${{ runner.os == 'Windows' && '.exe' || '' }}
+          AGENTCOWORK_E2E_CHROME: ${{ secrets.AGENTCOWORK_E2E_CHROME }}
           EVERYAIOS_E2E_CHROME: ${{ secrets.EVERYAIOS_E2E_CHROME }}
 
       - name: P50.5.8 clean-profile boot check

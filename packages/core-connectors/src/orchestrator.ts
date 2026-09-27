@@ -6,7 +6,7 @@ import type {
   ConnectorResult,
   UserQuery,
   MemoryFact,
-} from '@everyaios/core-domain';
+} from '@agentcowork/core-domain';
 import { hasConnectorHostTransport } from './connection-manager.js';
 
 /**

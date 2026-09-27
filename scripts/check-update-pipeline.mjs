@@ -5,7 +5,7 @@
 //   * src-tauri/src/updater_cmds.rs  — channels, endpoints, event name
 //   * src-tauri/tauri.conf.json      — plugin config, pubkey, endpoints
 //   * docs/updating.md               — the published contract
-//   * crates/everyaios-core/src/store_schema.rs — update_channel.json stamp
+//   * crates/agentcowork-core/src/store_schema.rs — update_channel.json stamp
 //
 // This gate fails the build when any of those drift apart, so the published
 // `docs/updating.md` cannot silently stop describing the shipping binary.
@@ -85,7 +85,7 @@ if (!doc.includes('update_channel.json')) fail('docs/updating.md no longer names
 if (!doc.includes('TAURI_SIGNING_PRIVATE_KEY')) fail('docs/updating.md no longer documents the signing secret requirement');
 
 // ---------------------------------------------------------------- store registry
-const schema = read('crates/everyaios-core/src/store_schema.rs');
+const schema = read('crates/agentcowork-core/src/store_schema.rs');
 if (!/name:\s*"update_channel"/.test(schema))
   fail('store_schema.rs no longer stamps update_channel.json (P70.C2 persistence must be a registered durable store)');
 

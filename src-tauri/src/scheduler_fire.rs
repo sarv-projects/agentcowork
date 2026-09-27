@@ -10,13 +10,13 @@ use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use everyaios_core::automation_runtime::{compile_work, WorkSpec};
-use everyaios_core::execution::{ExecutionPhase, ExecutionTrigger};
-use everyaios_core::scheduler_service::{
+use agentcowork_core::automation_runtime::{compile_work, WorkSpec};
+use agentcowork_core::execution::{ExecutionPhase, ExecutionTrigger};
+use agentcowork_core::scheduler_service::{
     AutomationOccurrence, SchedulerService, WorkRunAdmissionReceipt,
 };
-use everyaios_core::work_gateway::{DomainEvent, WorkEvent};
-use everyaios_types::{SessionKind, WorkState};
+use agentcowork_core::work_gateway::{DomainEvent, WorkEvent};
+use agentcowork_types::{SessionKind, WorkState};
 use serde_json::{json, Value};
 use tauri::{AppHandle, Manager, State};
 
@@ -152,7 +152,7 @@ fn provenance_patch(occurrence: &AutomationOccurrence, spec: &WorkSpec) -> Value
 }
 
 fn has_provenance_event(
-    gateway: &everyaios_core::WorkGateway,
+    gateway: &agentcowork_core::WorkGateway,
     work_id: &str,
     occurrence: &AutomationOccurrence,
     spec: &WorkSpec,
@@ -195,14 +195,17 @@ fn bound_agent(state: &State<'_, AppState>, session_id: &str) -> Option<String> 
         .and_then(|value| value.get("chiefId"))
         .and_then(Value::as_str)
         .map(str::trim)
+        // NOTE (DEC-053 Step 4): `everyaios` stays filtered here on purpose —
+        // it is the retired agent id; rows already carrying it are recognized
+        // and refused, never resurrected.
         .filter(|id| {
-            !id.is_empty() && *id != "inbuilt" && *id != "everyaios" && *id != "everyaios-native"
+            !id.is_empty() && *id != "inbuilt" && *id != "everyaios" && *id != "agentcowork-native"
         })
         .map(str::to_string)
         .or_else(|| {
-            let config = everyaios_core::Config::load().ok()?;
+            let config = agentcowork_core::Config::load().ok()?;
             let id = config.primary_chief.trim();
-            (!id.is_empty() && id != "inbuilt" && id != "everyaios" && id != "everyaios-native")
+            (!id.is_empty() && id != "inbuilt" && id != "everyaios" && id != "agentcowork-native")
                 .then(|| id.to_string())
         })
 }
@@ -545,7 +548,7 @@ pub fn fire_due(app: &AppHandle) -> Vec<String> {
 pub fn spawn_loop(app: &AppHandle) {
     let app = app.clone();
     std::thread::Builder::new()
-        .name("everyaios-automation-firing".to_string())
+        .name("agentcowork-automation-firing".to_string())
         .spawn(move || loop {
             std::thread::sleep(std::time::Duration::from_secs(TICK_SECS));
             let _ = fire_due(&app);
@@ -556,9 +559,9 @@ pub fn spawn_loop(app: &AppHandle) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use everyaios_blueprint::AutomationStep;
-    use everyaios_core::automation_runtime::content_addressed_revision_id;
-    use everyaios_core::scheduler_service::{
+    use agentcowork_blueprint::AutomationStep;
+    use agentcowork_core::automation_runtime::content_addressed_revision_id;
+    use agentcowork_core::scheduler_service::{
         AutomationRevision, OccurrenceState, OccurrenceTrigger,
     };
 
@@ -569,7 +572,7 @@ mod tests {
             revision_id: "1:revision".into(),
             name: "test".into(),
             session_id: "source".into(),
-            trigger: everyaios_core::scheduler_service::TriggerSpec::Manual,
+            trigger: agentcowork_core::scheduler_service::TriggerSpec::Manual,
             steps: vec![AutomationStep::RunCode {
                 language: "js".into(),
                 code: "return 1".into(),

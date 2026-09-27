@@ -368,6 +368,7 @@ export async function schedulerDuplicate(id: string): Promise<string> {
 /** The `*.automation.json` export body — the definition + session binding
  * only; no secrets ever ride this file (`AUTOMATION.md` §11). */
 export interface AutomationExport {
+  // DEC-053: wire value emitted by Rust (`scheduler_cmds.rs`, `scheduler_service.rs`) — the legacy spelling stays so both sides keep agreeing.
   kind: "everyaios.automation";
   version: number;
   automation: {
@@ -385,6 +386,7 @@ export async function schedulerExport(id: string): Promise<AutomationExport> {
   return bridgeCall({
     operation: 'automation export',
     live: () => invoke<AutomationExport>('scheduler_export', { id }),
+    // DEC-053: same wire value as above — renaming one side would break the export contract.
     preview: () => ({ kind: "everyaios.automation", version: 1, automation: { name: "", sessionId: "", boundAgent: null, trigger: { type: "cron", expr: "0 9 * * *" }, steps: [], policy: { suppressOnBattery: true } } }),
   });
 }

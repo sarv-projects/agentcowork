@@ -9,7 +9,7 @@ import { nativeCall } from './runtime';
 
 /**
  * Auth-mode badge (F12). **Canonical spelling** (P69.C11) — a projection of
- * `everyaios_types::AuthMode`; one union for the whole stack, never a second
+ * `agentcowork_types::AuthMode`; one union for the whole stack, never a second
  * hand-maintained variant list.
  *
  * `local` means local inference on this machine (Ollama / llamafile /
@@ -56,7 +56,7 @@ export interface HarnessManifest {
   governance?: GovernanceInfo;
 }
 
-/** P50.3.9 — how much of an agent's effects EveryAIOS actually governs.
+/** P50.3.9 — how much of an agent's effects AgentCowork actually governs.
  * Never imply audit coverage that does not exist. */
 export type GovernanceClass =
   | "GovernedMediated"
@@ -65,7 +65,7 @@ export type GovernanceClass =
 
 export interface GovernanceInfo {
   class: GovernanceClass;
-  /** True only when every effect lands on the EveryAIOS audit trail. */
+  /** True only when every effect lands on the AgentCowork audit trail. */
   auditedEffects: boolean;
   note: string;
 }
@@ -78,7 +78,7 @@ export function governanceLabel(g: GovernanceInfo | undefined): string {
     case "SelfContained":
       return "Self-contained — approvals mediated; agent's own effects unaudited";
     case "NotGoverned":
-      return "Not governed — no EveryAIOS audit coverage";
+      return "Not governed — no AgentCowork audit coverage";
     default:
       return "Governance unknown";
   }
@@ -108,7 +108,7 @@ export interface AcpHandleInfo {
   sessionId: string;
   /** Provider-native ACP session id, explicit in the current shell projection. */
   providerSessionId: string;
-  /** EveryAIOS application Session that owns the turn, once claimed. */
+  /** AgentCowork application Session that owns the turn, once claimed. */
   applicationSessionId: string;
   /** Canonical Work id for the owning Session. */
   workId: string;
@@ -277,6 +277,7 @@ export interface AcpPromptResult {
 }
 
 /** P66 — non-secret runtime provenance. Catalog membership is not occupancy. */
+// DEC-053: `everyaios_install` is a persisted source enum — the spelling stays so stored runtimes keep matching (parsed in `agent-model-picker.tsx`, `local-models.ts`).
 export type RuntimeLocation =
   | { kind: 'managed'; source: 'everyaios_install'; executable?: string; version?: string | null; verifiedAt?: string | null }
   | { kind: 'path' | 'windows_path'; source: 'path_probe' | 'app_paths' | 'user_selected'; executable: string; version?: string | null; verifiedAt?: string | null }
@@ -289,7 +290,7 @@ export interface InstallState {
   /** P71.3f — the canonical readiness state; the booleans below are its
    * projections (kept for surfaces that still read them). */
   readiness?: AgentReadiness;
-  /** EveryAIOS-managed install or package-manager-ready launch path. */
+  /** AgentCowork-managed install or package-manager-ready launch path. */
   installed: boolean;
   /** A catalog entry has a verified runtime location, including WSL-only. */
   discovered?: boolean;
@@ -360,6 +361,7 @@ export function acpIdFor(catalogId: string): string {
  * whether a spelling still names an agent.
  */
 export function isRetiredBinding(agentId: string): boolean {
+  // DEC-053: the legacy spellings stay so already-retired bindings keep being recognized, never resurrected.
   return agentId === "everyaios-native" || agentId === "everyaios" || agentId === "inbuilt";
 }
 
@@ -372,7 +374,7 @@ export function currentBinding(agentId: string | undefined): string | null {
 }
 
 /** P69.D1 — one directory entry, composed server-side by
- * `everyaios_agents::AgentDirectory`. The UI renders these rows; it never
+ * `agentcowork_agents::AgentDirectory`. The UI renders these rows; it never
  * merges agent lists of its own (the ACP registry and the local bundle store
  * meet in one place, in Rust). ADR-0005: there is no built-in row and no
  * default agent. */
@@ -396,7 +398,7 @@ export interface AgentDirectoryEntry {
   locator: string | null;
 }
 
-/// P71.3f — the canonical readiness vocabulary (`everyaios_types::AgentReadiness`
+/// P71.3f — the canonical readiness vocabulary (`agentcowork_types::AgentReadiness`
 /// is the authority; this is the wire projection). `installed` is not `ready`:
 /// an installed agent can still be unauthenticated, unnegotiated or degraded,
 /// and the UI must say which.

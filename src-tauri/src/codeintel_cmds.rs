@@ -1,11 +1,11 @@
 //! P11.5.9 — code-intel Tauri commands: repo-map (I7 RepoMap library wired to
 //! the UI), DeepWiki-style file outline, MODEL_ALIASES resolution from
-//! `everyaios.toml`, and the `// ai!` marker scan (I10 watcher feed).
+//! `agentcowork.toml`, and the `// ai!` marker scan (I10 watcher feed).
 
 use std::collections::BTreeMap;
 use std::path::Path;
 
-use everyaios_codeintel::repomap::{ranked_tags, RankedTag, TagKind};
+use agentcowork_codeintel::repomap::{ranked_tags, RankedTag, TagKind};
 use serde::Serialize;
 use tauri::State;
 
@@ -23,7 +23,7 @@ pub fn repomap_build(
 ) -> Result<Vec<RankedTag>, String> {
     let max_files = max_files.unwrap_or(200).min(2000);
     // One implementation, two façades: the walk + PageRank + stable sort lives
-    // in `everyaios-codeintel::repomap`, and the coordinator's
+    // in `agentcowork-codeintel::repomap`, and the coordinator's
     // `codeintel/repomap` method calls the same function, so the UI command and
     // the agent-facing method cannot drift apart.
     Ok(ranked_tags(Path::new(&dir), max_files))
@@ -51,7 +51,7 @@ pub fn file_outline(
         .file_name()
         .map(|f| f.to_string_lossy().into_owned())
         .unwrap_or_else(|| path.clone());
-    let tags = everyaios_codeintel::repomap::extract_tags(&content, &file);
+    let tags = agentcowork_codeintel::repomap::extract_tags(&content, &file);
     let mut entries: Vec<OutlineEntry> = tags
         .into_iter()
         .map(|t| OutlineEntry {
@@ -70,13 +70,13 @@ pub fn file_outline(
     Ok(entries)
 }
 
-/// P11.5.9 — resolve a MODEL_ALIASES short name from `everyaios.toml`.
+/// P11.5.9 — resolve a MODEL_ALIASES short name from `agentcowork.toml`.
 #[tauri::command]
 pub fn model_aliases_resolve(
     _state: State<'_, AppState>,
     reference: String,
 ) -> Result<serde_json::Value, String> {
-    let cfg = everyaios_core::config::Config::load().map_err(|e| e.to_string())?;
+    let cfg = agentcowork_core::config::Config::load().map_err(|e| e.to_string())?;
     let (provider, model) = cfg.resolve_model_alias(&reference, "openai");
     Ok(serde_json::json!({
         "alias": reference,
@@ -94,13 +94,13 @@ pub fn model_aliases_resolve(
 pub fn ai_markers_scan(
     _state: State<'_, AppState>,
     path: String,
-) -> Result<Vec<everyaios_core::ai_marker::AutoSubmitPayload>, String> {
+) -> Result<Vec<agentcowork_core::ai_marker::AutoSubmitPayload>, String> {
     let p = Path::new(&path);
     let files: Vec<String> = if p.is_dir() {
-        // The shared walker (`everyaios-codeintel`) rather than a local copy,
+        // The shared walker (`agentcowork-codeintel`) rather than a local copy,
         // so the marker scan, the UI command, and the coordinator's repo-map
         // method all walk a tree the same way.
-        everyaios_codeintel::repomap::read_source_files(p, 50)
+        agentcowork_codeintel::repomap::read_source_files(p, 50)
             .into_iter()
             .map(|(f, _)| f)
             .collect()
@@ -113,8 +113,8 @@ pub fn ai_markers_scan(
             continue;
         };
         let lines: Vec<&str> = content.lines().collect();
-        for m in everyaios_core::ai_marker::scan_markers(&lines, 5, 10) {
-            out.push(everyaios_core::ai_marker::AutoSubmitPayload {
+        for m in agentcowork_core::ai_marker::scan_markers(&lines, 5, 10) {
+            out.push(agentcowork_core::ai_marker::AutoSubmitPayload {
                 file: f.clone(),
                 marker: m,
             });

@@ -1,7 +1,7 @@
 /**
  * Mobile entry — lightweight HTML parser without cheerio (avoids node:stream).
  */
-import type { SearchContext, SearchProvider, SearchResult } from '@everyaios/core-domain';
+import type { SearchContext, SearchProvider, SearchResult } from '@agentcowork/core-domain';
 
 /**
  * Parse DuckDuckGo lite HTML result rows using regex (no DOM library needed).

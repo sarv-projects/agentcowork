@@ -40,7 +40,7 @@ const COLUMNS: { status: KanbanStatus; label: string }[] = [
 
 const DEMO: KanbanCard[] = [
   { id: 't1', title: 'Add auth to API', status: 'in_progress', agent: 'coder-1', model: 'gpt-5-codex', branch: 'worktree/agent-1', verify: 'tests/auth.test.ts passes', progress: 62, iterations: { used: 31, total: 50 } },
-  { id: 't2', title: 'Migrate search index', status: 'pending', agent: 'coder-2', model: 'claude-sonnet-4', branch: 'worktree/agent-2', verify: 'cargo test -p everyaios-memory', iterations: { used: 0, total: 50 } },
+  { id: 't2', title: 'Migrate search index', status: 'pending', agent: 'coder-2', model: 'claude-sonnet-4', branch: 'worktree/agent-2', verify: 'cargo test -p agentcowork-memory', iterations: { used: 0, total: 50 } },
   { id: 't3', title: 'Design review of planner', status: 'review', agent: 'reviewer', model: 'claude-opus', branch: 'worktree/reviewer', verify: 'oracle gate passed', progress: 90, iterations: { used: 12, total: 500 } },
   { id: 't4', title: 'Docs: architecture chapter', status: 'done', agent: 'writer-1', model: 'gpt-5', branch: 'worktree/agent-3', verify: 'markdown links resolve', iterations: { used: 8, total: 50 } },
 ]

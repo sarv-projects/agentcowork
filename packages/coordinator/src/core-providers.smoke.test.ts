@@ -1,12 +1,12 @@
 /**
- * P1.2 — smoke-import of `@everyaios/core-providers` into the coordinator
+ * P1.2 — smoke-import of `@agentcowork/core-providers` into the coordinator
  * sidecar. Proves the workspace dep resolves, its **observability** surface is
  * intact, and its synchronous catalog functions behave — without any network
  * call.
  *
  * P71.2d (ADR-0005): the inference clients (`streamCompletion`,
  * `streamAnthropicCompletion`, the key probes) are **deleted** — v1 has no
- * EveryAIOS-owned model call, because the bound external agent owns its own
+ * AgentCowork-owned model call, because the bound external agent owns its own
  * model. The catalogue, pricing, capability and credential-façade surface is
  * what remains, and the test now asserts the removal too.
  *
@@ -26,7 +26,7 @@ import {
   getRecommendedProviders,
   modelSupportsReasoning,
   modelSupportsVision,
-} from "@everyaios/core-providers";
+} from "@agentcowork/core-providers";
 
 describe("core-providers smoke-import (APP workspace dep)", () => {
   test("module resolves and the catalog is populated", () => {
@@ -35,7 +35,7 @@ describe("core-providers smoke-import (APP workspace dep)", () => {
   });
 
   test("every provider the desktop broker targets is in the catalog", () => {
-    // Mirror of everyaios-vault broker.rs DEFAULT_BASE_URLS. Known id drift
+    // Mirror of agentcowork-vault broker.rs DEFAULT_BASE_URLS. Known id drift
     // (documented 2026-08-10): the broker's provider key is "nvidia" while
     // the APP catalog id is "nvidia-nim" — SAME base URL
     // (https://integrate.api.nvidia.com/v1), different identifiers. If the
@@ -64,7 +64,7 @@ describe("core-providers smoke-import (APP workspace dep)", () => {
     expect(getRecommendedProviders().length).toBeGreaterThan(0);
     const openai = getProviderById("openai");
     expect(openai).toBeDefined();
-    // ProviderGroup is a string-literal union from @everyaios/core-domain;
+    // ProviderGroup is a string-literal union from @agentcowork/core-domain;
     // the entry's group must be a member of the AI groups array.
     expect(AI_PROVIDER_GROUPS.includes(openai!.group)).toBe(true);
     expect(openai!.groupLabel.length).toBeGreaterThan(0);
@@ -84,8 +84,8 @@ describe("core-providers smoke-import (APP workspace dep)", () => {
     expect(typeof ProviderVault).toBe("function");
   });
 
-  test("no EveryAIOS-owned inference path is exported (P71.2d, ADR-0005)", async () => {
-    const mod = (await import("@everyaios/core-providers")) as Record<string, unknown>;
+  test("no AgentCowork-owned inference path is exported (P71.2d, ADR-0005)", async () => {
+    const mod = (await import("@agentcowork/core-providers")) as Record<string, unknown>;
     for (const gone of [
       "streamCompletion",
       "fetchAvailableModels",

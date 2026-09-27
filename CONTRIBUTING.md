@@ -36,7 +36,7 @@ Every gate named above runs in CI; a PR that turns one red is not mergeable.
 
 - A new file, moved module or renamed crate: re-run
   `node scripts/check-doc-refs.mjs`.
-- A new durable store: register it in `crates/everyaios-core/src/store_schema.rs`
+- A new durable store: register it in `crates/agentcowork-core/src/store_schema.rs`
   and add its row to `PACKAGING.md` §6 (`check-store-schemas.mjs` enforces both).
 - A new version number: change it **once** in
   `src-tauri/tauri.conf.json` — `check-versions.mjs` fails if the lockstep

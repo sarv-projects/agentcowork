@@ -5,7 +5,7 @@
  * could carry a model selection because it owned model routing, while ACP agents
  * owned theirs and never received a per-agent model over the transport.
  *
- * `P71.2c` removed the built-in engine and `P71.2d` removed EveryAIOS's own
+ * `P71.2c` removed the built-in engine and `P71.2d` removed AgentCowork's own
  * inference path, so **the second case is the only case**: every agent owns its
  * model, and no request the sidecar builds may carry a per-agent model pin.
  * The functions keep their names because they are the policy seam a future
@@ -16,6 +16,7 @@
 /** Ids that name no runtime: blank, or a retired built-in spelling. Kept as one
  * list so the next retirement extends the predicate instead of silently passing
  * through it — `everyaios-native` was exactly that omission. */
+// DEC-053: the legacy spellings stay so already-retired agents keep being recognized, never resurrected.
 const RETIRED_AGENT_IDS = new Set(["", "inbuilt", "everyaios", "everyaios-native"]);
 
 /** Every runtime is an ACP agent now. Kept as a predicate so callers read the

@@ -30,6 +30,330 @@ dependencies = [
 ]
 
 [[package]]
+name = "agentcowork-acp"
+version = "0.1.0"
+dependencies = [
+ "agentcowork-guard",
+ "agentcowork-types",
+ "flate2",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tar",
+ "thiserror 2.0.20",
+ "ureq",
+ "url",
+ "zip 2.4.2",
+]
+
+[[package]]
+name = "agentcowork-agents"
+version = "0.1.0"
+dependencies = [
+ "agentcowork-types",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+ "toml 0.8.23",
+]
+
+[[package]]
+name = "agentcowork-audit"
+version = "0.1.0"
+dependencies = [
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror 2.0.20",
+]
+
+[[package]]
+name = "agentcowork-blueprint"
+version = "0.1.0"
+dependencies = [
+ "agentcowork-guard",
+ "agentcowork-types",
+ "serde",
+ "serde_json",
+ "sha1",
+ "sha2",
+ "thiserror 2.0.20",
+ "toml 0.8.23",
+]
+
+[[package]]
+name = "agentcowork-browser"
+version = "0.1.0"
+dependencies = [
+ "agentcowork-audit",
+ "agentcowork-cdp",
+ "agentcowork-guard",
+ "agentcowork-vault",
+ "regex",
+ "serde",
+ "serde_json",
+ "similar",
+ "thiserror 2.0.20",
+ "ureq",
+ "url",
+]
+
+[[package]]
+name = "agentcowork-catalog"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+ "ureq",
+]
+
+[[package]]
+name = "agentcowork-cdp"
+version = "0.1.0"
+dependencies = [
+ "base64 0.22.1",
+ "futures-util",
+ "serde",
+ "serde_json",
+ "sha1",
+ "sha2",
+ "thiserror 2.0.20",
+ "tokio",
+ "tokio-tungstenite",
+ "ureq",
+ "url",
+ "zip 2.4.2",
+]
+
+[[package]]
+name = "agentcowork-codeintel"
+version = "0.1.0"
+dependencies = [
+ "regex",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror 2.0.20",
+]
+
+[[package]]
+name = "agentcowork-computeruse"
+version = "0.1.0"
+dependencies = [
+ "image",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+ "windows 0.58.0",
+ "x11rb",
+]
+
+[[package]]
+name = "agentcowork-core"
+version = "0.1.0"
+dependencies = [
+ "agentcowork-audit",
+ "agentcowork-blueprint",
+ "agentcowork-catalog",
+ "agentcowork-codeintel",
+ "agentcowork-guard",
+ "agentcowork-ipc",
+ "agentcowork-mcp",
+ "agentcowork-memory",
+ "agentcowork-office",
+ "agentcowork-script",
+ "agentcowork-search",
+ "agentcowork-storage",
+ "agentcowork-types",
+ "agentcowork-vault",
+ "argon2",
+ "base64 0.22.1",
+ "chacha20poly1305",
+ "libc",
+ "opentelemetry",
+ "portable-pty",
+ "rand 0.8.7",
+ "serde",
+ "serde_json",
+ "sha2",
+ "sysinfo",
+ "thiserror 2.0.20",
+ "toml 0.8.23",
+ "ureq",
+ "urlencoding",
+ "windows-sys 0.61.2",
+ "x25519-dalek",
+]
+
+[[package]]
+name = "agentcowork-desktop"
+version = "0.1.0"
+dependencies = [
+ "agentcowork-acp",
+ "agentcowork-agents",
+ "agentcowork-audit",
+ "agentcowork-blueprint",
+ "agentcowork-browser",
+ "agentcowork-catalog",
+ "agentcowork-cdp",
+ "agentcowork-codeintel",
+ "agentcowork-computeruse",
+ "agentcowork-core",
+ "agentcowork-guard",
+ "agentcowork-ipc",
+ "agentcowork-mcp",
+ "agentcowork-office",
+ "agentcowork-script",
+ "agentcowork-storage",
+ "agentcowork-types",
+ "agentcowork-vault",
+ "base64 0.22.1",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-updater",
+ "tempfile",
+ "tokio",
+ "url",
+ "zeroize",
+]
+
+[[package]]
+name = "agentcowork-guard"
+version = "0.1.0"
+dependencies = [
+ "agentcowork-types",
+ "base64 0.22.1",
+ "ed25519-dalek",
+ "rand 0.8.7",
+ "regex",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror 2.0.20",
+ "toml 0.8.23",
+ "url",
+]
+
+[[package]]
+name = "agentcowork-ipc"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+]
+
+[[package]]
+name = "agentcowork-mcp"
+version = "0.1.0"
+dependencies = [
+ "agentcowork-guard",
+ "base64 0.22.1",
+ "rand 0.8.7",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror 2.0.20",
+ "ureq",
+]
+
+[[package]]
+name = "agentcowork-memory"
+version = "0.1.0"
+dependencies = [
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror 2.0.20",
+]
+
+[[package]]
+name = "agentcowork-office"
+version = "0.1.0"
+dependencies = [
+ "calamine",
+ "ironcalc",
+ "lopdf",
+ "regex",
+ "roxmltree 0.20.0",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+ "zip 2.4.2",
+]
+
+[[package]]
+name = "agentcowork-script"
+version = "0.1.0"
+dependencies = [
+ "agentcowork-audit",
+ "rquickjs",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+ "tokio",
+]
+
+[[package]]
+name = "agentcowork-search"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror 2.0.20",
+]
+
+[[package]]
+name = "agentcowork-storage"
+version = "0.1.0"
+dependencies = [
+ "arc-swap",
+ "blake3",
+ "crossbeam-deque",
+ "notify",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "sysinfo",
+ "thiserror 2.0.20",
+ "twox-hash",
+ "windows-sys 0.61.2",
+ "zstd 0.13.3",
+]
+
+[[package]]
+name = "agentcowork-types"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "toml 0.8.23",
+]
+
+[[package]]
+name = "agentcowork-vault"
+version = "0.1.0"
+dependencies = [
+ "agentcowork-guard",
+ "base64 0.22.1",
+ "rand 0.8.7",
+ "rusqlite",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror 2.0.20",
+ "ureq",
+ "zeroize",
+]
+
+[[package]]
 name = "ahash"
 version = "0.8.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1283,327 +1607,6 @@ checksum = "8be9f3dfaaffdae2972880079a491a1a8bb7cbed0b8dd7a347f668b4150a3b93"
 dependencies = [
  "event-listener",
  "pin-project-lite",
-]
-
-[[package]]
-name = "everyaios-acp"
-version = "0.1.0"
-dependencies = [
- "everyaios-guard",
- "everyaios-types",
- "flate2",
- "serde",
- "serde_json",
- "sha2",
- "tar",
- "thiserror 2.0.20",
- "ureq",
- "url",
- "zip 2.4.2",
-]
-
-[[package]]
-name = "everyaios-agents"
-version = "0.1.0"
-dependencies = [
- "everyaios-types",
- "serde",
- "serde_json",
- "thiserror 2.0.20",
- "toml 0.8.23",
-]
-
-[[package]]
-name = "everyaios-audit"
-version = "0.1.0"
-dependencies = [
- "rusqlite",
- "serde",
- "serde_json",
- "sha2",
- "thiserror 2.0.20",
-]
-
-[[package]]
-name = "everyaios-blueprint"
-version = "0.1.0"
-dependencies = [
- "everyaios-guard",
- "everyaios-types",
- "serde",
- "serde_json",
- "sha1",
- "sha2",
- "thiserror 2.0.20",
- "toml 0.8.23",
-]
-
-[[package]]
-name = "everyaios-browser"
-version = "0.1.0"
-dependencies = [
- "everyaios-audit",
- "everyaios-cdp",
- "everyaios-guard",
- "everyaios-vault",
- "regex",
- "serde",
- "serde_json",
- "similar",
- "thiserror 2.0.20",
- "ureq",
- "url",
-]
-
-[[package]]
-name = "everyaios-catalog"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
- "thiserror 2.0.20",
- "ureq",
-]
-
-[[package]]
-name = "everyaios-cdp"
-version = "0.1.0"
-dependencies = [
- "base64 0.22.1",
- "futures-util",
- "serde",
- "serde_json",
- "sha1",
- "sha2",
- "thiserror 2.0.20",
- "tokio",
- "tokio-tungstenite",
- "ureq",
- "url",
- "zip 2.4.2",
-]
-
-[[package]]
-name = "everyaios-codeintel"
-version = "0.1.0"
-dependencies = [
- "regex",
- "rusqlite",
- "serde",
- "serde_json",
- "sha2",
- "thiserror 2.0.20",
-]
-
-[[package]]
-name = "everyaios-computeruse"
-version = "0.1.0"
-dependencies = [
- "image",
- "serde",
- "serde_json",
- "thiserror 2.0.20",
- "windows 0.58.0",
- "x11rb",
-]
-
-[[package]]
-name = "everyaios-core"
-version = "0.1.0"
-dependencies = [
- "argon2",
- "base64 0.22.1",
- "chacha20poly1305",
- "everyaios-audit",
- "everyaios-blueprint",
- "everyaios-catalog",
- "everyaios-codeintel",
- "everyaios-guard",
- "everyaios-ipc",
- "everyaios-mcp",
- "everyaios-memory",
- "everyaios-office",
- "everyaios-script",
- "everyaios-search",
- "everyaios-storage",
- "everyaios-types",
- "everyaios-vault",
- "libc",
- "opentelemetry",
- "portable-pty",
- "rand 0.8.7",
- "serde",
- "serde_json",
- "sha2",
- "sysinfo",
- "thiserror 2.0.20",
- "toml 0.8.23",
- "ureq",
- "urlencoding",
- "windows-sys 0.61.2",
- "x25519-dalek",
-]
-
-[[package]]
-name = "everyaios-desktop"
-version = "0.1.0"
-dependencies = [
- "base64 0.22.1",
- "everyaios-acp",
- "everyaios-agents",
- "everyaios-audit",
- "everyaios-blueprint",
- "everyaios-browser",
- "everyaios-catalog",
- "everyaios-cdp",
- "everyaios-codeintel",
- "everyaios-computeruse",
- "everyaios-core",
- "everyaios-guard",
- "everyaios-ipc",
- "everyaios-mcp",
- "everyaios-office",
- "everyaios-script",
- "everyaios-storage",
- "everyaios-types",
- "everyaios-vault",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tauri-plugin-updater",
- "tempfile",
- "tokio",
- "url",
- "zeroize",
-]
-
-[[package]]
-name = "everyaios-guard"
-version = "0.1.0"
-dependencies = [
- "base64 0.22.1",
- "ed25519-dalek",
- "everyaios-types",
- "rand 0.8.7",
- "regex",
- "serde",
- "serde_json",
- "sha2",
- "thiserror 2.0.20",
- "toml 0.8.23",
- "url",
-]
-
-[[package]]
-name = "everyaios-ipc"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
- "thiserror 2.0.20",
-]
-
-[[package]]
-name = "everyaios-mcp"
-version = "0.1.0"
-dependencies = [
- "base64 0.22.1",
- "everyaios-guard",
- "rand 0.8.7",
- "serde",
- "serde_json",
- "sha2",
- "thiserror 2.0.20",
- "ureq",
-]
-
-[[package]]
-name = "everyaios-memory"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
- "thiserror 2.0.20",
-]
-
-[[package]]
-name = "everyaios-office"
-version = "0.1.0"
-dependencies = [
- "calamine",
- "ironcalc",
- "lopdf",
- "regex",
- "roxmltree 0.20.0",
- "serde",
- "serde_json",
- "thiserror 2.0.20",
- "zip 2.4.2",
-]
-
-[[package]]
-name = "everyaios-script"
-version = "0.1.0"
-dependencies = [
- "everyaios-audit",
- "rquickjs",
- "serde",
- "serde_json",
- "thiserror 2.0.20",
- "tokio",
-]
-
-[[package]]
-name = "everyaios-search"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
- "thiserror 2.0.20",
-]
-
-[[package]]
-name = "everyaios-storage"
-version = "0.1.0"
-dependencies = [
- "arc-swap",
- "blake3",
- "crossbeam-deque",
- "notify",
- "rusqlite",
- "serde",
- "serde_json",
- "sysinfo",
- "thiserror 2.0.20",
- "twox-hash",
- "windows-sys 0.61.2",
- "zstd 0.13.3",
-]
-
-[[package]]
-name = "everyaios-types"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "everyaios-vault"
-version = "0.1.0"
-dependencies = [
- "base64 0.22.1",
- "everyaios-guard",
- "rand 0.8.7",
- "rusqlite",
- "serde",
- "serde_json",
- "sha2",
- "thiserror 2.0.20",
- "ureq",
- "zeroize",
 ]
 
 [[package]]

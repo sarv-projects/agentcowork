@@ -162,7 +162,7 @@ export default function AnalyticsPanel() {
                 )}
                 {live.costKind === 'estimated' && (
                   <Badge className="bg-muted text-[9px] text-muted-foreground"
-                    title="No producer reported a cost — this is EveryAIOS's estimate from configured prices">
+                    title="No producer reported a cost — this is AgentCowork's estimate from configured prices">
                     cost estimated
                   </Badge>
                 )}

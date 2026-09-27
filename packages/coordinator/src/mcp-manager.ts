@@ -3,7 +3,7 @@
  * `mcp_servers` / `mcp_install` / `mcp_run` / `mcp_tools` command bodies +
  * the data the "MCP Servers" tab renders.
  *
- * The Rust `everyaios-mcp::manager` owns the registry/allow-list/sha256
+ * The Rust `agentcowork-mcp::manager` owns the registry/allow-list/sha256
  * contract; this module is the host-side surface: it serves the P18 seed
  * (user-supplied, hosted), turns an install into an `AttachPlan` the Rust
  * `AttachedServer::spawn` executes (reusing P37 validation), tracks managed

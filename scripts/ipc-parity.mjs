@@ -362,9 +362,9 @@ for (const [name, sites] of [...invocations.entries()].sort(([a], [b]) => a.loca
 // indirect-inventory path.
 const workRpcSurface = new Set();
 for (const ownerPath of [
-  "crates/everyaios-core/src/work_gateway.rs",
-  "crates/everyaios-core/src/chat.rs",
-  "crates/everyaios-core/src/execution.rs",
+  "crates/agentcowork-core/src/work_gateway.rs",
+  "crates/agentcowork-core/src/chat.rs",
+  "crates/agentcowork-core/src/execution.rs",
 ]) {
   const ownerCode = productionRustCode(read(ownerPath));
   for (const match of ownerCode.matchAll(/["'`]((?:work|execution)\/[a-z0-9_-]+(?:\/[a-z0-9_-]+)*)["'`]/g)) {

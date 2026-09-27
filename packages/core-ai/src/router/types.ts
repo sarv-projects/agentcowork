@@ -4,7 +4,7 @@ import type {
   RouteContext,
   RouteDecision,
   UserQuery,
-} from '@everyaios/core-domain';
+} from '@agentcowork/core-domain';
 
 export type { IntentCategory, IntentClassification, RouteContext, RouteDecision, UserQuery };
 

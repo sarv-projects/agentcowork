@@ -2,7 +2,7 @@
 /**
  * P50.1.7 — clean-profile boot verification (setup/offline states, no seeds).
  *
- * Boots a REAL binary with an isolated profile (fresh HOME + EVERYAIOS_HOME,
+ * Boots a REAL binary with an isolated profile (fresh HOME + AGENTCOWORK_HOME,
  * no vault key, no provider keys, no coordinator) and asserts:
  *   (a) the boot fails honestly locked/setup (never silently ready),
  *   (b) `doctor --json` reports Credentials with zero keys (count-only),
@@ -10,8 +10,8 @@
  *   (d) no sidecar-liveness is ever claimed while the coordinator is absent,
  *   (e) zero demo/seed markers in any output.
  *
- * Binary selection: `argv[2]`, else EVERYAIOS_CLEAN_BOOT_BIN, else the debug
- * `everyaios-core` binary (built by CI before this gate). Expectations adapt
+ * Binary selection: `argv[2]`, else AGENTCOWORK_CLEAN_BOOT_BIN, else the debug
+ * `agentcowork-core` binary (built by CI before this gate). Expectations adapt
  * to the binary kind: the headless core binary never spawns a supervisor
  * without `--coordinator-bin`, so (d) is "no live-sidecar claim"; a packaged
  * Tauri shell instead must print its pre-spawn skip line.
@@ -28,14 +28,15 @@ const HERE = dirname(fileURLToPath(import.meta.url))
 // This script lives directly in scripts/ (one level below the repo root).
 const REPO_ROOT = resolve(HERE, '..')
 const EXE_SUFFIX = process.platform === 'win32' ? '.exe' : ''
-const DEFAULT_CORE_BIN = resolve(REPO_ROOT, `crates/target/debug/everyaios-core${EXE_SUFFIX}`)
+const DEFAULT_CORE_BIN = resolve(REPO_ROOT, `crates/target/debug/agentcowork-core${EXE_SUFFIX}`)
 
-const executable = process.argv[2] || process.env.EVERYAIOS_CLEAN_BOOT_BIN || DEFAULT_CORE_BIN
+// The binary override is read on either spelling (DEC-053 legacy fallback).
+const executable = process.argv[2] || process.env.AGENTCOWORK_CLEAN_BOOT_BIN || process.env.EVERYAIOS_CLEAN_BOOT_BIN || DEFAULT_CORE_BIN
 if (!existsSync(executable)) {
-  console.log(`[P50.1.7] SKIP — no binary at ${executable} (pass one, set EVERYAIOS_CLEAN_BOOT_BIN, or build the debug core binary)`)
+  console.log(`[P50.1.7] SKIP — no binary at ${executable} (pass one, set AGENTCOWORK_CLEAN_BOOT_BIN, or build the debug core binary)`)
   process.exit(2)
 }
-const isCoreBinary = basename(executable).startsWith('everyaios-core')
+const isCoreBinary = basename(executable).startsWith('agentcowork-core')
 
 const failures = []
 function pass(label) {
@@ -48,24 +49,36 @@ function fail(label) {
 
 const NO_SEED = /mockSessions|DEMO_TASKS|demoCockpit|seeded/i
 
-// Isolated profile. EVERYAIOS_HOME is the real isolation switch (Rust
-// default_data_dir); HOME/USERPROFILE cover the fallback chain. The vault
-// key is explicitly absent so the boot must report locked/setup.
-const profile = mkdtempSync(join(tmpdir(), 'everyaios-clean-profile-'))
-const dataDir = join(profile, '.everyaios')
+// Isolated profile. AGENTCOWORK_HOME is the real isolation switch (Rust
+// default_data_dir, with EVERYAIOS_HOME as the legacy fallback the current
+// binary still reads — both are pinned to the profile); HOME/USERPROFILE
+// cover the fallback chain. The vault key is explicitly absent so the boot
+// must report locked/setup.
+const profile = mkdtempSync(join(tmpdir(), 'agentcowork-clean-profile-'))
+const dataDir = join(profile, '.agentcowork')
 const env = {
   ...process.env,
   HOME: profile,
   USERPROFILE: profile,
+  AGENTCOWORK_HOME: dataDir,
   EVERYAIOS_HOME: dataDir,
+  AGENTCOWORK_DATA_DIR: dataDir,
   EVERYAIOS_DATA_DIR: dataDir,
 }
+// Scrub key material on BOTH spellings: a clean profile must resolve to
+// NeedsSetup even on runners that export the legacy names, and the future
+// binary must not inherit the new ones either.
+delete env.AGENTCOWORK_VAULT_KEY
 delete env.EVERYAIOS_VAULT_KEY
 // Never inherit key material or key-generation permission: a clean profile
 // must resolve to NeedsSetup even on CI runners that export these.
+delete env.AGENTCOWORK_ALLOW_GENERATED_KEY
 delete env.EVERYAIOS_ALLOW_GENERATED_KEY
+delete env.AGENTCOWORK_VAULT_KEYFILE
 delete env.EVERYAIOS_VAULT_KEYFILE
+delete env.AGENTCOWORK_VAULT_PASSPHRASE
 delete env.EVERYAIOS_VAULT_PASSPHRASE
+delete env.AGENTCOWORK_E2E_BASE_URL
 delete env.EVERYAIOS_E2E_BASE_URL
 
 function run(args, timeoutMs = 20_000) {

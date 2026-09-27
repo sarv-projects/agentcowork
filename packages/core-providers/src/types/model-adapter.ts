@@ -3,7 +3,7 @@
  * Part of the model-agnostic prompt orchestration system (spec §6.5-6.6).
  */
 
-import type { AssistantRequestPlan } from '@everyaios/core-domain';
+import type { AssistantRequestPlan } from '@agentcowork/core-domain';
 
 export type CapabilityProfile = {
   provider: string;

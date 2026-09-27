@@ -1,10 +1,10 @@
 //! P7.5 (Guard-2) / J21 — the human-in-the-loop approval-card commands. Thin
-//! wrappers over the shared `everyaios-core::GuardService` (tickets + J21
+//! wrappers over the shared `agentcowork-core::GuardService` (tickets + J21
 //! policy + estop + profile); the ticket lifecycle + single-use enforcement +
 //! policy evaluation are tested in the crates, the shell just exposes the
 //! cards, receipts, policy summary and estop to the UI.
 
-use everyaios_core::PendingGuardCard;
+use agentcowork_core::PendingGuardCard;
 use tauri::{AppHandle, State};
 
 use crate::guard_window::{open_guard_window, GUARD_WINDOW_LABEL};
@@ -77,7 +77,7 @@ pub fn guard_open_window(app: AppHandle) -> Result<(), String> {
 #[tauri::command]
 pub fn guard_receipts(
     state: State<'_, AppState>,
-) -> Result<Vec<everyaios_guard::GuardReceipt>, String> {
+) -> Result<Vec<agentcowork_guard::GuardReceipt>, String> {
     let svc = state.guard_service.lock().map_err(|e| e.to_string())?;
     Ok(svc.receipts())
 }
@@ -121,7 +121,7 @@ pub fn guard_extend_ttl(
 /// no policy change, no authority.
 #[tauri::command]
 pub fn guard_explain_block(reason: String) -> Result<serde_json::Value, String> {
-    let exp = everyaios_core::GuardService::explain_block(&reason);
+    let exp = agentcowork_core::GuardService::explain_block(&reason);
     Ok(serde_json::json!({ "class": exp.class, "hint": exp.hint }))
 }
 
@@ -220,13 +220,13 @@ pub fn guard_activity(
     state: State<'_, AppState>,
     limit: Option<usize>,
 ) -> Result<Vec<RecentAction>, String> {
-    use everyaios_audit::session_log::{list_session_ids, EventType, SessionLog};
+    use agentcowork_audit::session_log::{list_session_ids, EventType, SessionLog};
     let limit = limit.unwrap_or(12).min(50);
     let mut rows: Vec<RecentAction> = Vec::new();
 
     // 1) The append-only NDJSON session logs (J5) are the source of truth
     //    when present — newest sessions first, newest events first.
-    let base = everyaios_core::default_data_dir().join("audit");
+    let base = agentcowork_core::default_data_dir().join("audit");
     if let Ok(mut sessions) = list_session_ids(&base) {
         sessions.sort();
         'sessions: for sess in sessions.iter().rev() {
@@ -263,7 +263,7 @@ pub fn guard_activity(
     // 2) Fallback: the in-memory approve/reject receipt trail (guard_receipts).
     if rows.is_empty() {
         let svc = state.guard_service.lock().map_err(|e| e.to_string())?;
-        use everyaios_guard::ReceiptAction;
+        use agentcowork_guard::ReceiptAction;
         for r in svc.receipts().iter().rev().take(limit) {
             let approved = r.action == ReceiptAction::Approve;
             rows.push(RecentAction {
@@ -288,12 +288,12 @@ pub struct MatrixCell {
 }
 
 /// P11.5.7 — the live 5×5 permissions matrix from the loaded
-/// `~/.everyaios/permissions.toml` (`PermissionsPolicy::evaluate` over the
+/// `<data_dir>/permissions.toml` (`PermissionsPolicy::evaluate` over the
 /// canonical capability×scope grid). Replaces the hardcoded `MATRIX` array in
 /// guard-panel.tsx.
 #[tauri::command]
 pub fn guard_permissions_matrix(state: State<'_, AppState>) -> Result<Vec<MatrixCell>, String> {
-    use everyaios_guard::{Operation, PolicyAction};
+    use agentcowork_guard::{Operation, PolicyAction};
     let svc = state.guard_service.lock().map_err(|e| e.to_string())?;
     let policy = svc.policy();
 

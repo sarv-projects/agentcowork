@@ -1,5 +1,5 @@
 {
-  "name": "@everyaios/core-search",
+  "name": "@agentcowork/core-search",
   "version": "0.1.0",
   "license": "MIT OR Apache-2.0",
   "private": true,
@@ -27,7 +27,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "@everyaios/core-domain": "workspace:*",
+    "@agentcowork/core-domain": "workspace:*",
     "cheerio": "^1.2.0"
   }
 }

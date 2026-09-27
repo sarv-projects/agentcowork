@@ -7,13 +7,13 @@
  * shell, not only crate/unit fixtures". The packaged shell needs a display
  * and installers (P50.5.8); this gate runs everything below that line:
  *
- *   S1 guard deny suites    — everyaios-guard: blocklist/deny, tickets
+ *   S1 guard deny suites    — agentcowork-guard: blocklist/deny, tickets
  *      (single-use/expiry/nonce), path floors, injection, egress, redteam.
- *   S2 adversarial boundary — everyaios-core p10_security (two-path
+ *   S2 adversarial boundary — agentcowork-core p10_security (two-path
  *      anti-impersonation, renderer-compromise rejection).
- *   S3 audit integrity      — everyaios-audit: Merkle chain, retention,
+ *   S3 audit integrity      — agentcowork-audit: Merkle chain, retention,
  *      repair classification (started-unknown, never fabricated).
- *   S4 MCP containment      — everyaios-mcp: hijack validation + attach
+ *   S4 MCP containment      — agentcowork-mcp: hijack validation + attach
  *      reconciliation (external tools cannot smuggle native names).
  *   S5 IPC parity           — scripts/ipc-parity.mjs: zero broken commands,
  *      zero unregistered definitions (no shadow command surface).
@@ -101,7 +101,7 @@ if (!have("node")) {
 // resolve it like failure-injection.mjs does: explicit env, else the rustup
 // default install location, else PATH.
 const CARGO_BIN =
-  process.env.EVERYAIOS_E2E_CARGO_BIN ??
+  process.env.AGENTCOWORK_E2E_CARGO_BIN ??
   (existsSync(join(homedir(), ".cargo/bin/cargo")) ? join(homedir(), ".cargo/bin/cargo") : "cargo");
 
 if (!have(CARGO_BIN)) {
@@ -133,19 +133,19 @@ function cargo(args, label, cwd = CRATES) {
 
 // ---- S1 guard suites -------------------------------------------------------
 console.log("S1 — guard deny/permission/ticket/floor suites…");
-cargo(["test", "-p", "everyaios-guard", "--quiet"], "everyaios-guard suites");
+cargo(["test", "-p", "agentcowork-guard", "--quiet"], "agentcowork-guard suites");
 
 // ---- S2 adversarial boundary ----------------------------------------------
 console.log("S2 — adversarial two-path boundary (p10_security)…");
-cargo(["test", "-p", "everyaios-core", "--test", "p10_security", "--quiet"], "p10_security suite");
+cargo(["test", "-p", "agentcowork-core", "--test", "p10_security", "--quiet"], "p10_security suite");
 
 // ---- S3 audit integrity ----------------------------------------------------
 console.log("S3 — audit Merkle/retention/repair suites…");
-cargo(["test", "-p", "everyaios-audit", "--quiet"], "everyaios-audit suites");
+cargo(["test", "-p", "agentcowork-audit", "--quiet"], "agentcowork-audit suites");
 
 // ---- S4 MCP containment ----------------------------------------------------
 console.log("S4 — MCP hijack + attach suites…");
-cargo(["test", "-p", "everyaios-mcp", "--quiet"], "everyaios-mcp suites");
+cargo(["test", "-p", "agentcowork-mcp", "--quiet"], "agentcowork-mcp suites");
 
 // ---- S5 IPC parity ----------------------------------------------------------
 console.log("S5 — IPC parity (no shadow command surface)…");
@@ -207,7 +207,7 @@ console.log("S6 — approval provenance (guard-window-only approve)…");
   else fail(`unexpected guard_respond callers: ${bad.join(", ")}`);
 
   // (d) the nonce rule: approvals bind ticket + card nonce (no bare approve).
-  const ticketSrc = read("crates/everyaios-guard/src/ticket.rs");
+  const ticketSrc = read("crates/agentcowork-guard/src/ticket.rs");
   if (/approve_with_nonce/.test(ticketSrc) && /approval_nonce/.test(ticketSrc)) {
     pass("ticket approval is nonce-bound (no bare id-only approve path bypass)");
   } else fail("nonce-bound approval missing in ticket.rs");

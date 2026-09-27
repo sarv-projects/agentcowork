@@ -19,6 +19,7 @@ import {
   slug,
 } from '@/lib/agent-builder'
 import { suggestAgentNames } from '@/lib/plain-language'
+import { getLocalItem } from '@/lib/storage-compat'
 import {
   Bot,
   Brain,
@@ -59,7 +60,7 @@ export default function AgentBuilderPanel() {
   const [copied, setCopied] = useState(false)
 
   // The Tauri-backed registry (P31.10): `agent_registry_list` reads the Rust
-  // AgentRegistry (`~/.everyaios/agents/`). Outside Tauri we mirror the same
+  // AgentRegistry (`~/.agentcowork/agents/`). Outside Tauri we mirror the same
   // shape in localStorage (demo state).
   const [registryAgents, setRegistryAgents] = useState<RegisteredAgent[]>([])
   const [registryErr, setRegistryErr] = useState<string | null>(null)
@@ -84,7 +85,8 @@ export default function AgentBuilderPanel() {
   // Demo mirror (browser preview): full bundles, localStorage-backed.
   const [localBundles, setLocalBundles] = useState<AgentBundle[]>(() => {
     try {
-      const raw = localStorage.getItem('everyaios.agents')
+      // DEC-053: legacy `everyaios.*` key honored + promoted once.
+      const raw = getLocalItem('agentcowork.agents')
       return raw ? (JSON.parse(raw) as AgentBundle[]) : []
     } catch {
       return []
@@ -94,7 +96,7 @@ export default function AgentBuilderPanel() {
   const persistBundles = (list: AgentBundle[]) => {
     setLocalBundles(list)
     try {
-      localStorage.setItem('everyaios.agents', JSON.stringify(list))
+      localStorage.setItem('agentcowork.agents', JSON.stringify(list))
     } catch {
       /* storage unavailable — demo state only */
     }
@@ -307,7 +309,7 @@ export default function AgentBuilderPanel() {
           <div className="rounded-lg border border-border bg-card p-3">
             <div className="mb-2 text-xs font-medium text-foreground">Engine binding (P31.8)</div>
             <div className="mb-2 text-[11px] text-muted-foreground">
-              Your agent runs an installed external agent (ADR-0005). EveryAIOS has no built-in engine in v1.
+              Your agent runs an installed external agent (ADR-0005). AgentCowork has no built-in engine in v1.
             </div>
             {(
               [

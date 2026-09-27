@@ -19,16 +19,16 @@ importers:
 
   packages/coordinator:
     dependencies:
-      '@everyaios/core-ai':
+      '@agentcowork/core-ai':
         specifier: workspace:*
         version: link:../core-ai
-      '@everyaios/core-connectors':
+      '@agentcowork/core-connectors':
         specifier: workspace:*
         version: link:../core-connectors
-      '@everyaios/core-providers':
+      '@agentcowork/core-providers':
         specifier: workspace:*
         version: link:../core-providers
-      '@everyaios/core-search':
+      '@agentcowork/core-search':
         specifier: workspace:*
         version: link:../core-search
     devDependencies:
@@ -44,7 +44,7 @@ importers:
 
   packages/core-agents:
     dependencies:
-      '@everyaios/core-tools':
+      '@agentcowork/core-tools':
         specifier: workspace:*
         version: link:../core-tools
     devDependencies:
@@ -57,13 +57,13 @@ importers:
 
   packages/core-ai:
     dependencies:
-      '@everyaios/core-agents':
+      '@agentcowork/core-agents':
         specifier: workspace:*
         version: link:../core-agents
-      '@everyaios/core-domain':
+      '@agentcowork/core-domain':
         specifier: workspace:*
         version: link:../core-domain
-      '@everyaios/core-memory':
+      '@agentcowork/core-memory':
         specifier: workspace:*
         version: link:../core-memory
     devDependencies:
@@ -76,7 +76,7 @@ importers:
 
   packages/core-connectors:
     dependencies:
-      '@everyaios/core-domain':
+      '@agentcowork/core-domain':
         specifier: workspace:*
         version: link:../core-domain
     devDependencies:
@@ -98,7 +98,7 @@ importers:
 
   packages/core-memory:
     dependencies:
-      '@everyaios/core-domain':
+      '@agentcowork/core-domain':
         specifier: workspace:*
         version: link:../core-domain
     devDependencies:
@@ -111,7 +111,7 @@ importers:
 
   packages/core-providers:
     dependencies:
-      '@everyaios/core-domain':
+      '@agentcowork/core-domain':
         specifier: workspace:*
         version: link:../core-domain
     devDependencies:
@@ -124,7 +124,7 @@ importers:
 
   packages/core-search:
     dependencies:
-      '@everyaios/core-domain':
+      '@agentcowork/core-domain':
         specifier: workspace:*
         version: link:../core-domain
       '@modelcontextprotocol/sdk':
@@ -162,7 +162,7 @@ importers:
 
   packages/core-tools:
     dependencies:
-      '@everyaios/core-domain':
+      '@agentcowork/core-domain':
         specifier: workspace:*
         version: link:../core-domain
       zod:

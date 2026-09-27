@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { SearchContext } from '@everyaios/core-domain';
+import type { SearchContext } from '@agentcowork/core-domain';
 import { HfSearxngProvider } from '../providers/hf-searxng.js';
 import { HfWhoogleProvider } from '../providers/hf-whoogle.js';
 import { HfWebsurfxProvider } from '../providers/hf-websurfx.js';

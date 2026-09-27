@@ -330,7 +330,7 @@ export function CommandPalette() {
           setOpen(false)
         },
       })),
-      // P71.2d — no desktop model entries and no model cycle: EveryAIOS owns no
+      // P71.2d — no desktop model entries and no model cycle: AgentCowork owns no
       // model surface to switch. A bound agent's model is changed through that
       // agent's own ACP config options, which the composer picker renders; a
       // palette row that pinned a desktop model would name something no agent
@@ -474,7 +474,7 @@ export function CommandPalette() {
               <Command className="h-2.5 w-2.5" /> K
             </span>
             <span>·</span>
-            <span>EveryAIOS</span>
+            <span>AgentCowork</span>
           </div>
           <div className="flex items-center gap-3">
             <span>↑↓ navigate</span>

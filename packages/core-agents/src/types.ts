@@ -4,12 +4,12 @@
  *
  * Naming matters here (P69.D1/D25): the canonical **agent record**
  * (`AgentDefinition` — protocol, auth mode, capabilities, provenance) is owned
- * by Rust (`everyaios_types::AgentDefinition`) and read through
+ * by Rust (`agentcowork_types::AgentDefinition`) and read through
  * `agent_directory_list`; this is the sandbox/profile half that never travels
  * on the registry wire. Keeping one name per concept is what stops a second
  * "the agent" type from appearing at a boundary.
  */
-import type { RiskLevel } from '@everyaios/core-tools';
+import type { RiskLevel } from '@agentcowork/core-tools';
 
 export type MemoryScope = 'full' | 'project' | 'none';
 

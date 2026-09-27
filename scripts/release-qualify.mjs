@@ -43,7 +43,9 @@ const EXECUTE = flag('--execute');
 const JSON_OUT = flag('--json');
 const RECORD = opt('--record');
 
-const LIVE = process.env.EVERYAIOS_LIVE_TEST === '1';
+// The live switch is read on either spelling: CI sets AGENTCOWORK_LIVE_TEST;
+// the pre-rename Rust harness still gates on EVERYAIOS_LIVE_TEST.
+const LIVE = (process.env.AGENTCOWORK_LIVE_TEST ?? process.env.EVERYAIOS_LIVE_TEST) === '1';
 const read = (p) => readFileSync(resolve(ROOT, p), 'utf8');
 const has = (p) => existsSync(resolve(ROOT, p));
 
@@ -84,8 +86,8 @@ function e2_suites() {
     ["pnpm --filter './packages/core-*' run build", '.'],
     ["pnpm --filter './packages/core-*' run test", '.'],
     ['bun run type-check', 'packages/coordinator'],
-    ['pnpm --filter @everyaios/coordinator test', '.'],
-    ['pnpm --filter @everyaios/coordinator build', '.'],
+    ['pnpm --filter @agentcowork/coordinator test', '.'],
+    ['pnpm --filter @agentcowork/coordinator build', '.'],
   ];
   if (!EXECUTE) {
     record('P70.E2', 'all suites green', 'RUNNABLE',
@@ -154,7 +156,7 @@ function e5_liveIntegration() {
   ];
   if (!LIVE) {
     record('P70.E5', 'live integration gates', 'BLOCKED',
-      `set EVERYAIOS_LIVE_TEST=1 and provide: ${needs.join('; ')}`);
+      `set AGENTCOWORK_LIVE_TEST=1 (legacy EVERYAIOS_LIVE_TEST is also honoured) and provide: ${needs.join('; ')}`);
     return;
   }
   record('P70.E5', 'live integration gates', EXECUTE ? 'RUNNABLE' : 'RUNNABLE',
@@ -170,7 +172,7 @@ function e6_liveSoak() {
 // ---------------------------------------------------------------- E7
 function e7_crashSoak() {
   const wired = has('.github/workflows/p50-gates.yml') && /failure-injection\.mjs/.test(read('.github/workflows/p50-gates.yml'));
-  const bin = resolve(ROOT, `crates/target/debug/everyaios-core${process.platform === 'win32' ? '.exe' : ''}`);
+  const bin = resolve(ROOT, `crates/target/debug/agentcowork-core${process.platform === 'win32' ? '.exe' : ''}`);
   if (!wired) {
     record('P70.E7', 'crash-free session soak', 'FAIL', 'failure-injection L1–L7 is no longer wired into p50-gates.yml');
     return;
@@ -190,13 +192,13 @@ function e7_crashSoak() {
 
 // ---------------------------------------------------------------- E8
 function e8_upgradeEvidence() {
-  const driver = has('crates/everyaios-core/tests/acceptance_upgrade_evidence.rs');
+  const driver = has('crates/agentcowork-core/tests/acceptance_upgrade_evidence.rs');
   if (!driver) {
     record('P70.E8', 'upgrade/downgrade/rollback evidence', 'FAIL', 'the upgrade-evidence harness is gone');
     return;
   }
   record('P70.E8', 'upgrade/downgrade/rollback evidence', 'BLOCKED',
-    'needs two sequential Windows builds (install N-1, upgrade to N, reinstall N-1); the driver checklist and the honest failure modes are in crates/everyaios-core/tests/acceptance_upgrade_evidence.rs + docs/updating.md §7');
+    'needs two sequential Windows builds (install N-1, upgrade to N, reinstall N-1); the driver checklist and the honest failure modes are in crates/agentcowork-core/tests/acceptance_upgrade_evidence.rs + docs/updating.md §7');
 }
 
 // ---------------------------------------------------------------- E9

@@ -10,10 +10,10 @@ use std::io::{Read, Write};
 use std::net::{SocketAddr, TcpStream};
 use std::time::Duration;
 
-use everyaios_core::models::discover_runtime_inventory;
-use everyaios_core::GuardDecision;
-use everyaios_guard::{DecisionPackage, Operation, RiskLevel};
-use everyaios_types::{RuntimeHealthState, RuntimeInventoryEntry, RuntimeOwnership};
+use agentcowork_core::models::discover_runtime_inventory;
+use agentcowork_core::GuardDecision;
+use agentcowork_guard::{DecisionPackage, Operation, RiskLevel};
+use agentcowork_types::{RuntimeHealthState, RuntimeInventoryEntry, RuntimeOwnership};
 use serde::Serialize;
 use tauri::State;
 use url::Url;
@@ -480,7 +480,7 @@ fn runtime_start_response(start: &ModelServeStart) -> serde_json::Value {
     })
 }
 
-/// Start a runtime EveryAIOS can retain and stop. External inventory rows are
+/// Start a runtime AgentCowork can retain and stop. External inventory rows are
 /// always refused before any effect.
 #[tauri::command]
 pub fn runtime_start(
@@ -598,7 +598,7 @@ pub(crate) fn stop_managed_serve(
     authorize_runtime_effect(
         state,
         "runtime.stop",
-        &format!("stop EveryAIOS-managed runtime {runtime_id}"),
+        &format!("stop AgentCowork-managed runtime {runtime_id}"),
         port,
         &args_hash,
     )?;

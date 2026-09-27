@@ -1,6 +1,6 @@
 // P5.9 (J5) — Trajectory bridge. Inspect, by source, which context blocks
 // (persona / user_document / memory / tool_result / blueprint) were injected
-// into the prompt each turn. Mirrors `everyaios-audit::session_log` types; in
+// into the prompt each turn. Mirrors `agentcowork-audit::session_log` types; in
 // a plain-browser preview the callers fall back to demo data.
 
 import { inTauri, invoke } from "./tauri";

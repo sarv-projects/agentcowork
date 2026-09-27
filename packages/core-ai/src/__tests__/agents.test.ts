@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SHIPPED_AGENTS } from '@everyaios/core-agents';
+import { SHIPPED_AGENTS } from '@agentcowork/core-agents';
 import { AGENT_CATALOG, AGENT_ORDER, agentSystemBlock, getAgentById, UI_EXTENSIONS } from '../chat/agents.js';
 import { assembleChatPrompt } from '../chat/system-prompt.js';
 

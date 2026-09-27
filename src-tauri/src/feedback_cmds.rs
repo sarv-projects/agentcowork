@@ -18,7 +18,7 @@ pub fn feedback_submit(
     body: String,
     category: Option<String>,
 ) -> Result<String, String> {
-    let base = everyaios_core::default_data_dir().join("feedback");
+    let base = agentcowork_core::default_data_dir().join("feedback");
     write_feedback(&base, &kind, &title, &body, category.as_deref())
 }
 
@@ -81,7 +81,7 @@ mod tests {
 
     fn temp_dir(tag: &str) -> std::path::PathBuf {
         let d = std::env::temp_dir().join(format!(
-            "everyaios-feedback-test-{tag}-{}",
+            "agentcowork-feedback-test-{tag}-{}",
             std::process::id()
         ));
         let _ = std::fs::remove_dir_all(&d);

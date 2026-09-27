@@ -24,7 +24,7 @@ describe('npsShouldPrompt', () => {
   test('stamps first-seen and does not prompt before 7 days', () => {
     const s = memStorage()
     expect(npsShouldPrompt(0, s)).toBe(false)
-    expect(s.get('everyaios.nps.first-seen')).toBe('0')
+    expect(s.get('agentcowork.nps.first-seen')).toBe('0')
     // 6 days later: still too early.
     expect(npsShouldPrompt(6 * DAY, s)).toBe(false)
   })

@@ -1,9 +1,11 @@
-# EveryAIOS — nightly E2E + cross-platform full-flow gate (P10.4/P10.5).
+# AgentCowork — nightly E2E + cross-platform full-flow gate (P10.4/P10.5).
 #
 # Runs every night (UTC) and on manual dispatch:
 #   - the full Rust workspace test suite with the long-running perf/stability
-#     gates enabled (EVERYAIOS_LONG_TESTS=1: 30-min heap, battery, 4-hr
-#     stability, stress benches) — on all 3 desktop platforms,
+#     gates enabled (AGENTCOWORK_LONG_TESTS=1 — legacy EVERYAIOS_LONG_TESTS=1
+#     is set alongside until Core lands the DEC-053 env migration: 30-min
+#     heap, battery, 4-hr stability, stress benches) — on all 3 desktop
+#     platforms,
 #   - the P10 E2E suites (journey/memory/browser/office/sub-agent/ACP/MCP)
 #     with the office conformance oracle, on Linux,
 #   - the coordinator (sidecar) bun test + typecheck (packages vendored
@@ -26,6 +28,8 @@ env:
   RUSTFLAGS: -D warnings
   # P10.3 long-running gates (30-min heap / battery / 4-hr stability / 100-task
   # stress) are excluded from the fast CI matrix and only run here.
+  # Both spellings are set: the current Rust harness reads the legacy name.
+  AGENTCOWORK_LONG_TESTS: "1"
   EVERYAIOS_LONG_TESTS: "1"
 
 jobs:
@@ -69,18 +73,18 @@ jobs:
       # Windows runner (tests are platform-agnostic; the module's own
       # cfg(windows) branch is exercised there).
       - name: WSL bridge module tests
-        run: cargo test -p everyaios-core wsl
+        run: cargo test -p agentcowork-core wsl
 
       # Ollama/llamafile local-runtime protocol tests (P10.4: connect/chat on
       # all 3 platforms — mock endpoints, no daemon required).
       - name: Local-runtime (Ollama/llamafile) tests
-        run: cargo test -p everyaios-vault local_
+        run: cargo test -p agentcowork-vault local_
 
       # SQLCipher vault portable-bytes gate (P10.4: copy vault.db between OS —
       # the file format is portable; this asserts the file is self-contained,
       # encrypted at rest, and reopens with only the key on every OS).
       - name: Vault cross-OS portable-bytes tests
-        run: cargo test -p everyaios-vault portable
+        run: cargo test -p agentcowork-vault portable
 
   office-oracle:
     name: office oracle + E2E (Linux)
@@ -106,15 +110,17 @@ jobs:
 
       - name: LibreOffice conformance oracle
         run: >-
-          cargo test -p everyaios-office --lib
+          cargo test -p agentcowork-office --lib
           conformance::tests::live_oracle_opens_clean
           -- --ignored --test-threads=1
         env:
+          AGENTCOWORK_LIVE_TEST: "1"
           EVERYAIOS_LIVE_TEST: "1"
 
       - name: P10 E2E suites
         run: cargo test --workspace --test p10_e2e --test p10_pipeline -- --test-threads=4
         env:
+          AGENTCOWORK_LIVE_TEST: "1"
           EVERYAIOS_LIVE_TEST: "1"
 
   sidecar:

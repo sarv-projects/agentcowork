@@ -1,4 +1,4 @@
-import type { SearchContext, SearchProvider, SearchResult } from '@everyaios/core-domain';
+import type { SearchContext, SearchProvider, SearchResult } from '@agentcowork/core-domain';
 
 const REQUEST_TIMEOUT_MS = 6_000;
 const MAX_RESULTS = 15;

@@ -305,7 +305,7 @@ export function RunTrace({ steps }: { steps: readonly RunStep[] }) {
                 if (!link) return
                 if (link.target === 'code') {
                   window.dispatchEvent(
-                    new CustomEvent('everyaios:open-file', {
+                    new CustomEvent('agentcowork:open-file', {
                       detail: { path: link.path, content: '' },
                     }),
                   )

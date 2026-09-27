@@ -1,4 +1,4 @@
-// EveryAIOS cockpit — one project, one session, one ticket, one timeline.
+// AgentCowork cockpit — one project, one session, one ticket, one timeline.
 // Left = which job · center = talk + now-doing + approve · right = one lens.
 // Never 9 peer tabs; never Chat/Cowork/Code as three apps.
 

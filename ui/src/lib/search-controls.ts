@@ -7,7 +7,7 @@
 //
 //   1. read the *existing* search surface — `search_config` / `search_instances`
 //      (`src-tauri/src/search_cmds.rs`), which is the same persisted file the
-//      live cascade reads (`everyaios_core::search_config`), so the composer
+//      live cascade reads (`agentcowork_core::search_config`), so the composer
 //      can never describe a different cascade than the one that will run;
 //   2. derive one honest summary of it (what is configured, what the upstream
 //      feed reports) with an explicit "not reported" for anything the desktop

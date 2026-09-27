@@ -3,15 +3,17 @@
 // the user has been around FIRST_PROMPT_AFTER_MS (7 days), then at most once
 // per RE_PROMPT_AFTER_MS (90 days).
 
+import { readWithFallback } from './storage-compat'
+
 export const DAY_MS = 86_400_000
 /** Prompt once the user has been around this long. */
 export const FIRST_PROMPT_AFTER_MS = 7 * DAY_MS
 /** Don't ask again for this long after the previous prompt. */
 export const RE_PROMPT_AFTER_MS = 90 * DAY_MS
 
-export const FIRST_SEEN_KEY = 'everyaios.nps.first-seen'
-export const LAST_PROMPT_KEY = 'everyaios.nps.last-prompt'
-export const SCORES_KEY = 'everyaios.nps.scores'
+export const FIRST_SEEN_KEY = 'agentcowork.nps.first-seen'
+export const LAST_PROMPT_KEY = 'agentcowork.nps.last-prompt'
+export const SCORES_KEY = 'agentcowork.nps.scores'
 
 /** Storage surface — localStorage in the app, a shim in tests. */
 export interface NpsStorage {
@@ -23,7 +25,14 @@ export interface NpsStorage {
 export const localStorageNpsStorage: NpsStorage = {
   get: (key) => {
     try {
-      return localStorage.getItem(key)
+      // DEC-053: legacy `everyaios.*` key honored + promoted once.
+      return readWithFallback(
+        {
+          get: (k) => localStorage.getItem(k),
+          set: (k, v) => localStorage.setItem(k, v),
+        },
+        key,
+      )
     } catch {
       return null
     }

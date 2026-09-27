@@ -62,10 +62,10 @@
 **Enforcement:** `12-TRUST`, `16-CONTEXT`, `32-CHANNELS`.
 **Verification:** projection tests (7-item contract); deny-outside-path tests.
 
-### INV-12 — Native parity
-**Invariant:** Agent X uses the same contracts and governance as external agents. No privileged shortcut may be added, even temporarily.
-**Enforcement:** `15-AGENT-X`, `32-CHANNELS`.
-**Verification:** Agent X runs through the same guard/ticket path in tests as an external adapter.
+### INV-12 — Engine parity
+**Invariant:** every agent engine is governed identically, whichever codebase it comes from and however it is bound. No engine gets a privileged shortcut, even temporarily.
+**Enforcement:** `15-AGENT-PLANE`, `32-CHANNELS`.
+**Verification:** an in-process engine runs through the same guard/ticket path in tests as an external adapter; no binding kind is exempt from the parity test.
 
 ### INV-13 — Token discipline
 **Invariant:** Deterministic operations (render, browse, list, open, preview, navigate, index search, deterministic user-triggered domain ops) never require an LLM call.

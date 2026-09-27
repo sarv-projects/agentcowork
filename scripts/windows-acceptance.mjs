@@ -40,7 +40,7 @@ const report = {
   reason:
     'Presence of a binary is not acceptance. ConPTY resize, an Office round-trip, UI Automation, restart hydration, and a clean install still need a recorded run on a Windows machine.',
 }
-const out = process.env.EVERYAIOS_WINDOWS_ACCEPTANCE_REPORT
+const out = process.env.AGENTCOWORK_WINDOWS_ACCEPTANCE_REPORT
 if (out) writeFileSync(out, JSON.stringify(report, null, 2))
 console.log(JSON.stringify(report, null, 2))
 process.exit(2)

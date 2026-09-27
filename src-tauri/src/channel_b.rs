@@ -6,9 +6,9 @@
 
 use std::sync::{Arc, Mutex};
 
-use everyaios_acp::McpServer;
-use everyaios_core::ToolService;
-use everyaios_mcp::{McpHttpLease, ToolCallHandler};
+use agentcowork_acp::McpServer;
+use agentcowork_core::ToolService;
+use agentcowork_mcp::{McpHttpLease, ToolCallHandler};
 use serde_json::{json, Value};
 
 /// Tools the Channel B handler may call. Empty until the relay is live.
@@ -49,7 +49,7 @@ impl ChannelBSlot {
     pub fn start(tools: SharedTools) -> Result<Self, String> {
         let lease = McpHttpLease::start(FacadeHandler(tools))
             .map_err(|err| format!("channel B lease failed: {err}"))?;
-        let server = McpServer::http_with_lease_values("everyaios", lease.url(), lease.token())
+        let server = McpServer::http_with_lease_values("agentcowork", lease.url(), lease.token())
             .map_err(|err| format!("channel B descriptor failed: {err}"))?;
         Ok(Self { lease, server })
     }

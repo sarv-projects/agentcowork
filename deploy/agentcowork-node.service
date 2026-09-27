@@ -1,0 +1,41 @@
+# AgentCowork headless executor node — systemd unit (P40.1).
+#
+# Install:
+#   sudo cp deploy/agentcowork-node.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now agentcowork-node
+#
+# The node runs the same binary in the headless profile: core + B7 scheduler
+# (inside the Bun-compiled coordinator) + browser/script/office engines. The
+# coordinator binary must be built first:
+#   cd packages/coordinator && bun build --compile ./src/index.ts --external canvas --outfile dist/coordinator
+
+[Unit]
+Description=AgentCowork always-on executor node (headless, user-operated)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# The node's state lives here — create it and set permissions for the
+# service user (never run as root if you can avoid it).
+# New data-home first, legacy fallback alongside: the current binary still
+# reads EVERYAIOS_HOME (DEC-053 migration is Core-owned).
+Environment=AGENTCOWORK_HOME=/var/lib/agentcowork
+Environment=EVERYAIOS_HOME=/var/lib/agentcowork
+# The SQLCipher vault key (node identity + P8.9 mesh key material). Provide
+# it via an EnvironmentFile, never inline. Either spelling is honoured; the
+# binary reads the legacy name until Core lands DEC-053:
+#   EnvironmentFile=-/etc/agentcowork-node.env
+EnvironmentFile=-/etc/agentcowork-node.env
+EnvironmentFile=-/etc/everyaios-node.env
+ExecStart=/usr/local/bin/agentcowork-core --headless --coordinator-bin /usr/local/bin/coordinator
+Restart=on-failure
+RestartSec=5
+# Guard-2 never leaves the control plane: approval-required steps park here.
+# Keep the node's disk bounded (audit NDJSON retention is 7 days by default).
+User=agentcowork
+Group=agentcowork
+
+[Install]
+WantedBy=multi-user.target

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// EveryAIOS doc-sync check (Fix 2) — run in CI and pre-commit.
+// AgentCowork doc-sync check (Fix 2) — run in CI and pre-commit.
 //
 // Validates the three places that enumerate the capability surface agree:
 //   1. capabilities.yaml          — the MACHINE-READABLE source of truth

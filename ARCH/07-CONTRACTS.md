@@ -24,7 +24,7 @@
 | CTR-004 | `SessionLog` + projections (ui · prompt · pending) | 11 | 15, 16, UI | Provisional |
 | CTR-005 | `CheckpointService` (produce · rebuild) | 16 | 11, 15, 20 | Draft (16) |
 | CTR-006 | `ContextProvider` | 16 | 15, 20, 32 | Draft (16) |
-| CTR-007 | `ContextController` | 15 | Agent X; reference for external agents | Draft (15/16) |
+| CTR-007 | `ContextController` | 15 | the bound engine; reference for external agents | Draft (15/16) |
 | CTR-008 | `MemoryService` | 17 | 15, 16, 32, UI | Draft (17) |
 | CTR-009 | `CapabilityBroker` | 13 | 15, 20, 32 | Provisional |
 | CTR-010 | `ProviderAdapter` | 14 | 13 | Provisional |
@@ -60,7 +60,7 @@ cancel(run) → void                  // terminate the work; children cascade
 spawnSubagent(options: SubagentOptions) → SubagentRef   // immediate spawn (DEC-036); full delegation contract: CTR-021
 dispose(session) → void
 ```
-**Guarantees:** input is admitted only at turn/step boundaries (inbox); `steer` never lands mid-tool; `interrupt` is cooperative and bounded; `cancel` is terminal for the work, cascades parent→child, and never rebuffers a completion (DEC-036); `dispose` releases environment resources; Agent X and every external adapter are interchangeable behind this contract (DEC-010).
+**Guarantees:** input is admitted only at turn/step boundaries (inbox); `steer` never lands mid-tool; `interrupt` is cooperative and bounded; `cancel` is terminal for the work, cascades parent→child, and never rebuffers a completion (DEC-036); `dispose` releases environment resources; Every engine, first-party or not, is interchangeable behind this contract (DEC-010, DEC-052).
 
 ### CTR-002 `AgentSession` + `AgentHandle` + `Inbox` (15)
 - `AgentHandle` is a **capability** (`dispose()` only) returned to the owner; the registry keeps factories, not live internals.
@@ -153,4 +153,4 @@ policies() → DelegationPolicyEntry[]
 
 ## 7. Evidence
 
-Product-owner brief (“six core contracts”, `AgentEngine`, `ContextProvider`/`ContextController`, `ProviderAdapter`, `CapabilityDescriptor/Result/Handle`) · `ARCH/15-AGENT-X.md` §2 · `ARCH/16-CONTEXT.md` §1 · `ARCH/17-MEMORY.md` §4 · `ARCHIVE/v1-research/agent-harness-verification.md` §D1 (handle/factory/inbox), §A4 (guard layers), §C1–C2 (log/projection).
+Product-owner brief (“six core contracts”, `AgentEngine`, `ContextProvider`/`ContextController`, `ProviderAdapter`, `CapabilityDescriptor/Result/Handle`) · `ARCH/15-AGENT-PLANE.md` §2 · `ARCH/16-CONTEXT.md` §1 · `ARCH/17-MEMORY.md` §4 · `ARCHIVE/v1-research/agent-harness-verification.md` §D1 (handle/factory/inbox), §A4 (guard layers), §C1–C2 (log/projection).

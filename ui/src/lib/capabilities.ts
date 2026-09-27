@@ -26,7 +26,7 @@ export interface SessionCapabilityLoadout {
   updatedAt: number
 }
 
-/** Standard EveryAIOS Shared Cowork capabilities available across all agents. */
+/** Standard AgentCowork Shared Cowork capabilities available across all agents. */
 export const STANDARD_SHARED_CAPABILITIES: SessionCapabilityItem[] = [
   {
     id: 'shared:office',

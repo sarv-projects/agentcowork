@@ -154,7 +154,7 @@ export async function sidecarProbe(): Promise<SidecarProbe> {
 // P3.2 — cockpit / ambient flight-deck (H2, doc 33 §9.5).
 // ---------------------------------------------------------------------------
 
-/** One live agent card (mirrors `everyaios_audit::cockpit::AgentCard`). */
+/** One live agent card (mirrors `agentcowork_audit::cockpit::AgentCard`). */
 export interface AgentCard {
   agent_id: string;
   display_name: string;

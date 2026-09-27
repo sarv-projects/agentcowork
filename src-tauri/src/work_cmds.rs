@@ -5,7 +5,7 @@ use crate::AppState;
 
 fn gateway(
     state: &AppState,
-) -> Result<std::sync::Arc<std::sync::Mutex<everyaios_core::WorkGateway>>, String> {
+) -> Result<std::sync::Arc<std::sync::Mutex<agentcowork_core::WorkGateway>>, String> {
     crate::ensure_sidecar(state);
     let relay = state.chat_relay.lock().map_err(|e| e.to_string())?;
     relay
@@ -209,7 +209,7 @@ pub fn work_agent_spawn(
     pty_id: Option<String>,
     worktree_id: Option<String>,
 ) -> Result<Value, String> {
-    use everyaios_core::AgentLifetime;
+    use agentcowork_core::AgentLifetime;
     let lt = match lifetime.as_str() {
         "persistent" | "persistent_attached_session" => AgentLifetime::PersistentAttachedSession,
         _ => AgentLifetime::EphemeralChild,
@@ -337,7 +337,7 @@ pub fn work_node_register(
     network_policy: String,
     sandbox_class: String,
 ) -> Result<Value, String> {
-    use everyaios_core::ExecutionNode;
+    use agentcowork_core::ExecutionNode;
     let node = ExecutionNode {
         node_id,
         owner,
@@ -454,7 +454,7 @@ pub fn work_client_detach(state: State<'_, AppState>, client_id: String) -> Resu
 /// P49.7 — the brokered capability set.
 #[tauri::command]
 pub fn work_capabilities(state: State<'_, AppState>) -> Result<Value, String> {
-    use everyaios_core::CapabilityBroker;
+    use agentcowork_core::CapabilityBroker;
     let gateway = gateway(&state)?;
     let g = gateway.lock().map_err(|e| e.to_string())?;
     serde_json::to_value(g.broker().list_capabilities()).map_err(|e| e.to_string())
@@ -469,7 +469,7 @@ pub fn work_capability_grant(
     run_id: String,
     consumer: String,
 ) -> Result<Value, String> {
-    use everyaios_core::{BrokerRequest, CapabilityBroker};
+    use agentcowork_core::{BrokerRequest, CapabilityBroker};
     let gateway = gateway(&state)?;
     let g = gateway.lock().map_err(|e| e.to_string())?;
     let request = BrokerRequest {
@@ -489,7 +489,7 @@ pub fn work_capability_resolve(
     intent: String,
     candidates: Value,
 ) -> Result<Value, String> {
-    use everyaios_core::CapabilityCandidate;
+    use agentcowork_core::CapabilityCandidate;
     let candidates: Vec<CapabilityCandidate> =
         serde_json::from_value(candidates).map_err(|e| e.to_string())?;
     let gateway = gateway(&state)?;
@@ -529,7 +529,7 @@ pub fn work_steer(
     run_id: Option<String>,
     priority: Option<u8>,
 ) -> Result<Value, String> {
-    use everyaios_core::SteeringInstruction;
+    use agentcowork_core::SteeringInstruction;
     let steering = SteeringInstruction {
         work_id: work_id.clone(),
         run_id,
@@ -573,7 +573,7 @@ pub fn work_manifest_create(
     autonomy: String,
     node_id: String,
 ) -> Result<Value, String> {
-    use everyaios_core::{AutonomyLevel, GatewayRuntimeManifest};
+    use agentcowork_core::{AutonomyLevel, GatewayRuntimeManifest};
     let mut manifest = GatewayRuntimeManifest::new(work_id.clone(), chief, model);
     manifest.capabilities = capabilities;
     manifest.network_policy = network_policy;
@@ -637,7 +637,7 @@ pub fn work_attachment_add(
     allowed_consumers: Vec<String>,
     retention: String,
 ) -> Result<Value, String> {
-    use everyaios_core::AttachmentRef;
+    use agentcowork_core::AttachmentRef;
     let source_path = std::path::PathBuf::from(&path);
     let attachment = AttachmentRef {
         attachment_id,

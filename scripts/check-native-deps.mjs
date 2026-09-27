@@ -55,7 +55,7 @@ function rustFiles(dir, out = []) {
 const sources = [
   ...rustFiles(join(root, 'src-tauri/src')),
   ...readdirSync(join(root, 'crates'), { withFileTypes: true })
-    .filter((e) => e.isDirectory() && e.name.startsWith('everyaios-'))
+    .filter((e) => e.isDirectory() && e.name.startsWith('agentcowork-'))
     .flatMap((e) => rustFiles(join(root, 'crates', e.name, 'src'))),
 ];
 

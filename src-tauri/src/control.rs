@@ -131,9 +131,9 @@ pub fn undo_session(app: &AppHandle, session_id: &str) -> Result<(), String> {
 /// Path-floor a user-chosen office/FS path: refuse `..` and symlink jumps
 /// out of the file's parent directory. Does not jail to the workspace —
 /// users open documents under home / mounts — but it closes the
-/// self-documented xlsx/office bypass of `everyaios-guard::pathfloor`.
+/// self-documented xlsx/office bypass of `agentcowork-guard::pathfloor`.
 pub fn floor_user_file(path: &str) -> Result<PathBuf, String> {
-    use everyaios_guard::pathfloor::{enforce_floor, FloorVerdict};
+    use agentcowork_guard::pathfloor::{enforce_floor, FloorVerdict};
     let p = PathBuf::from(path);
     let parent = p
         .parent()
@@ -186,7 +186,7 @@ pub enum AuthKind {
     AgentTicket,
     /// Scheduler/automation-initiated (lease + ticket). Reserved until the
     /// automation trigger plane is wired live to the funnel. Provenance is
-    /// stamped by the Work factory (`everyaios-core::automation_runtime::
+    /// stamped by the Work factory (`agentcowork-core::automation_runtime::
     /// compile_work` — `AutomationProvenance`, P71.3c); attribution on the
     /// audit chain rides this class (spec §4.3).
     /// Not dead code: it is part of the provenance vocabulary contract.
@@ -228,7 +228,7 @@ pub fn record_mutation(
     let seq = {
         let mut chain = state.audit.lock().unwrap_or_else(|e| e.into_inner());
         let seq = (chain.len() as u64) + 1;
-        let event = everyaios_audit::AuditEvent {
+        let event = agentcowork_audit::AuditEvent {
             seq,
             ts_ms: std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
@@ -271,7 +271,7 @@ pub fn record_turn(
         let mut chain = state.audit.lock().unwrap_or_else(|e| e.into_inner());
         for (kind, payload) in &prepared {
             let seq = (chain.len() as u64) + 1;
-            chain.push(everyaios_audit::AuditEvent {
+            chain.push(agentcowork_audit::AuditEvent {
                 seq,
                 ts_ms: std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)

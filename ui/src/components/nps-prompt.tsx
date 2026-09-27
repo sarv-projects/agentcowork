@@ -40,7 +40,7 @@ export default function NpsPrompt() {
       >
         <X className="h-3 w-3" />
       </button>
-      <p className="text-xs font-medium text-foreground">How likely are you to recommend EveryAIOS to a friend or colleague?</p>
+      <p className="text-xs font-medium text-foreground">How likely are you to recommend AgentCowork to a friend or colleague?</p>
       {score === null ? (
         <div className="mt-3 flex justify-between gap-1">
           {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
@@ -70,7 +70,7 @@ export default function NpsPrompt() {
           </button>
         </div>
       )}
-      <p className="mt-2 text-[9px] text-muted-foreground">Stored locally only. Thanks for making EveryAIOS better.</p>
+      <p className="mt-2 text-[9px] text-muted-foreground">Stored locally only. Thanks for making AgentCowork better.</p>
     </div>
   )
 }

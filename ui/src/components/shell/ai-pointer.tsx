@@ -63,7 +63,7 @@ export function AiPointer() {
           <div className="overflow-hidden rounded-xl border border-border/80 bg-zinc-950/85 shadow-2xl backdrop-blur-xl">
             <div className="flex items-center gap-2 border-b border-border/60 px-3 py-1.5">
               <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">
-                Ask EveryAIOS anywhere
+                Ask AgentCowork anywhere
               </span>
               <span className="ml-auto font-mono text-[9px] text-muted-foreground/50">⌥Space</span>
               <button

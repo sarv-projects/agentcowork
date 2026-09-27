@@ -4,7 +4,7 @@
 //! The privacy default is **local-first**: your own SearXNG on the default
 //! ports, then the DDG fallback. Public instances are only appended when the
 //! user turns them on, and the decision is persisted by
-//! [`everyaios_core::search_config`] so the live cascade and this surface can
+//! [`agentcowork_core::search_config`] so the live cascade and this surface can
 //! never disagree.
 //!
 //! Failure honesty: a feed that cannot be fetched is an error here (never an
@@ -17,11 +17,11 @@ use crate::AppState;
 /// Read the resolved search configuration without any network access.
 #[tauri::command]
 pub fn search_config() -> Result<serde_json::Value, String> {
-    let config = everyaios_core::search_config::load();
+    let config = agentcowork_core::search_config::load();
     Ok(serde_json::json!({
         "usePublic": config.use_public_instances,
-        "endpoints": everyaios_core::search_config::resolved_endpoints_for(&config),
-        "localEndpoints": everyaios_core::search_config::LOCAL_ENDPOINTS,
+        "endpoints": agentcowork_core::search_config::resolved_endpoints_for(&config),
+        "localEndpoints": agentcowork_core::search_config::LOCAL_ENDPOINTS,
         "publicEndpoints": config.public_endpoints,
     }))
 }
@@ -31,7 +31,7 @@ pub fn search_config() -> Result<serde_json::Value, String> {
 /// fresh cache costs no network call. `source` says where the list came from.
 #[tauri::command]
 pub fn search_instances(refresh: bool) -> Result<serde_json::Value, String> {
-    let (instances, source) = everyaios_core::search_config::discover_instances(refresh)
+    let (instances, source) = agentcowork_core::search_config::discover_instances(refresh)
         .map_err(|e| format!("instance feed: {e}"))?;
     Ok(serde_json::json!({
         "source": source,
@@ -49,11 +49,11 @@ pub fn search_instances_apply(
     state: State<'_, AppState>,
     use_public: bool,
 ) -> Result<serde_json::Value, String> {
-    let mut config = everyaios_core::search_config::load();
+    let mut config = agentcowork_core::search_config::load();
     let mut discovered = 0usize;
-    let mut source: Option<everyaios_core::search_config::FeedSource> = None;
+    let mut source: Option<agentcowork_core::search_config::FeedSource> = None;
     if use_public {
-        let (instances, src) = everyaios_core::search_config::discover_instances(false)
+        let (instances, src) = agentcowork_core::search_config::discover_instances(false)
             .map_err(|e| format!("cannot enable public instances: {e}"))?;
         let urls: Vec<String> = instances
             .iter()
@@ -67,8 +67,8 @@ pub fn search_instances_apply(
         config.public_endpoints = urls;
     }
     config.use_public_instances = use_public;
-    everyaios_core::search_config::save(&config)?;
-    let endpoints = everyaios_core::search_config::resolved_endpoints_for(&config);
+    agentcowork_core::search_config::save(&config)?;
+    let endpoints = agentcowork_core::search_config::resolved_endpoints_for(&config);
 
     // Apply to the live executor when the sidecar relay exists. When it does
     // not, the persisted config is what the next `ToolService` construction

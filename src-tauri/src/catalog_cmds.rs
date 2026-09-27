@@ -2,9 +2,9 @@
 //!
 //! Three owners, each doing one job:
 //!
-//! * `everyaios-catalog::{live, store, fetch}` — parse/validate/persist the
+//! * `agentcowork-catalog::{live, store, fetch}` — parse/validate/persist the
 //!   models.dev snapshot (pure + durable).
-//! * `everyaios-catalog::{profiles, provider}` — the user-config profiles and
+//! * `agentcowork-catalog::{profiles, provider}` — the user-config profiles and
 //!   the vendored provider registry (identity + aliases).
 //! * this module — the shell's runtime surface: the 4h refresh job, the
 //!   Settings → Providers list, the per-provider model table, the activate
@@ -20,13 +20,13 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use everyaios_catalog::{
+use agentcowork_catalog::{
     apply_observations, base_registry, endpoint_probe_result, refresh_now, Auth, CatalogSnapshot,
     CatalogStore, EndpointProbe, HttpFetch, ObservationStore, ProfileFormat, ProfileModel,
     ProfileSource, ProfileStore, ProviderObservation, ProviderObservationsFile, ProviderProfile,
     ProviderProfilesFile, ProviderRegistry, RefreshDecision, RefreshOutcome, DEFAULT_REFRESH_SECS,
 };
-use everyaios_vault::{Broker, KeyRing, ProviderEndpoint, WireTransport};
+use agentcowork_vault::{Broker, KeyRing, ProviderEndpoint, WireTransport};
 use serde_json::{json, Value};
 use tauri::{Manager, State};
 
@@ -56,7 +56,7 @@ impl CatalogState {
             let fresh = meta
                 .as_ref()
                 .map(|m| {
-                    !everyaios_catalog::is_stale(
+                    !agentcowork_catalog::is_stale(
                         m.fetched_at,
                         now,
                         self.store.refresh_interval_secs(),
@@ -102,10 +102,10 @@ impl CatalogState {
             None => (0, 0, 0, None, false, self.store.load().is_some()),
         };
         json!({
-            "source": everyaios_catalog::MODELS_DEV_API_URL,
+            "source": agentcowork_catalog::MODELS_DEV_API_URL,
             "hasSnapshot": has_snapshot,
             "fetchedAt": fetched_at,
-            "stale": everyaios_catalog::is_stale(fetched_at, now, interval),
+            "stale": agentcowork_catalog::is_stale(fetched_at, now, interval),
             "intervalHours": interval / 3600,
             "providers": providers,
             "models": models,
@@ -124,7 +124,7 @@ fn now_ms() -> i64 {
 }
 
 fn profile_store() -> ProfileStore {
-    ProfileStore::in_dir(everyaios_core::default_data_dir())
+    ProfileStore::in_dir(agentcowork_core::default_data_dir())
 }
 
 /// A registry carrying **runtime truth**: the vendored identity layer with any
@@ -135,12 +135,12 @@ fn profile_store() -> ProfileStore {
 /// A registry built with bare `base_registry()` has no observation history by
 /// construction, which is how `verifiedAt` and the routing feed stayed empty.
 pub fn observed_registry() -> ProviderRegistry {
-    observed_registry_in(&everyaios_core::default_data_dir())
+    observed_registry_in(&agentcowork_core::default_data_dir())
 }
 
 /// The recorded provider observations, as read from disk.
 pub fn observation_file() -> ProviderObservationsFile {
-    observation_file_in(&everyaios_core::default_data_dir())
+    observation_file_in(&agentcowork_core::default_data_dir())
 }
 
 // The `_in` forms take the data dir explicitly so the write-back → replay path
@@ -201,14 +201,14 @@ pub fn provider_rows(state: &AppState) -> Vec<Value> {
                 "baseUrl": rec.base_url.clone().unwrap_or_default(),
                 "docUrl": Value::Null,
                 "npm": Value::Null,
-                "logoUrl": everyaios_catalog::logo_url(&rec.id),
+                "logoUrl": agentcowork_catalog::logo_url(&rec.id),
                 "source": format!("{:?}", rec.source).to_lowercase(),
                 "modelIds": Vec::<String>::new(),
                 "modelCount": 0,
                 "keyConfigured": keyed.contains(&rec.id),
                 "profileSource": Value::Null,
                 "format": Value::Null,
-                "keyless": matches!(rec.auth, everyaios_catalog::Auth::Keyless),
+                "keyless": matches!(rec.auth, agentcowork_catalog::Auth::Keyless),
                 "sessionHeaders": false,
                 "verifiedAt": rec.capabilities_verified_at.clone(),
                 // Runtime truth, kept separate from the verification stamp:
@@ -264,7 +264,7 @@ pub fn provider_rows(state: &AppState) -> Vec<Value> {
     }
 
     // Shipped overlays (P56.5/P56.6) then user profiles (P55.6/P56.4).
-    let overlays = everyaios_catalog::opencode_overlay_profiles();
+    let overlays = agentcowork_catalog::opencode_overlay_profiles();
     for profile in overlays.iter().chain(profiles.list().iter()) {
         let entry = rows.entry(profile.id.clone()).or_insert_with(|| {
             json!({
@@ -276,7 +276,7 @@ pub fn provider_rows(state: &AppState) -> Vec<Value> {
                 "transport": Value::Null,
                 "docUrl": Value::Null,
                 "npm": Value::Null,
-                "logoUrl": everyaios_catalog::logo_url(&profile.id),
+                "logoUrl": agentcowork_catalog::logo_url(&profile.id),
                 "source": "overlay",
                 "modelIds": Vec::<String>::new(),
                 "modelCount": 0,
@@ -395,17 +395,17 @@ impl ResolveCtx {
                     // Only the dialects the broker can actually speak get an
                     // endpoint; anything else keeps the legacy path rather
                     // than being pointed at a wrong URL.
-                    Some(everyaios_catalog::Transport::AnthropicMessages) => {
+                    Some(agentcowork_catalog::Transport::AnthropicMessages) => {
                         (WireTransport::AnthropicMessages, Vec::new(), false, false)
                     }
-                    Some(everyaios_catalog::Transport::OpenaiChat) | None => {
+                    Some(agentcowork_catalog::Transport::OpenaiChat) | None => {
                         (WireTransport::OpenaiChat, Vec::new(), false, false)
                     }
                     Some(_) => return None,
                 }
             }
         };
-        let overlay_session = everyaios_catalog::opencode_overlay_profiles()
+        let overlay_session = agentcowork_catalog::opencode_overlay_profiles()
             .iter()
             .find(|p| p.id == provider)
             .map(|p| p.session_headers)
@@ -453,7 +453,7 @@ impl ResolveCtx {
             .filter(|r| matches!(r.auth, Auth::Keyless))
             .map(|r| r.id.clone())
             .chain(
-                everyaios_catalog::opencode_overlay_profiles()
+                agentcowork_catalog::opencode_overlay_profiles()
                     .iter()
                     .filter(|p| !p.api_key_required)
                     .map(|p| p.id.clone()),
@@ -527,11 +527,11 @@ pub fn catalog_refresh(state: State<'_, AppState>, force: Option<bool>) -> Value
 /// P56.1 — the configurable cadence (clamped to 1–24h by the store).
 #[tauri::command]
 pub fn catalog_set_interval(state: State<'_, AppState>, hours: u64) -> Result<Value, String> {
-    let clamped = everyaios_catalog::refresh_interval_secs(Some(hours));
+    let clamped = agentcowork_catalog::refresh_interval_secs(Some(hours));
     state
         .catalog
         .store
-        .save_settings(&everyaios_catalog::CatalogSettings {
+        .save_settings(&agentcowork_catalog::CatalogSettings {
             refresh_hours: Some(clamped / 3600),
         })?;
     Ok(json!({
@@ -673,7 +673,7 @@ pub fn probe_provider(state: &AppState, provider: &str, key: Option<&str>) -> Va
         .as_ref()
         .map(|e| e.headers.clone())
         .unwrap_or_default();
-    let probe = everyaios_catalog::probe_models_endpoint(&base, is_anthropic, &headers, key);
+    let probe = agentcowork_catalog::probe_models_endpoint(&base, is_anthropic, &headers, key);
     // P44.4 write-back — this is the observation, and it used to be dropped
     // here. Recording it durably (keyed by canonical id) is what lets the
     // registry, the routing feed and the UI report *observed* truth instead of
@@ -703,7 +703,7 @@ pub fn probe_provider(state: &AppState, provider: &str, key: Option<&str>) -> Va
 /// failure is reported on stderr (never swallowed silently) and does not turn a
 /// successful probe into an error.
 fn record_observation(provider: &str, probe: &EndpointProbe) {
-    let dir = everyaios_core::default_data_dir();
+    let dir = agentcowork_core::default_data_dir();
     // Canonicalize against the same observed registry the reads use.
     let registry = observed_registry_in(&dir);
     record_observation_in(&dir, &registry, provider, probe, now_ms().to_string());
@@ -790,7 +790,7 @@ pub fn probe_provider_vault(
 /// observation. "We could not check" must not become a claim about the provider.
 fn observation_from_probe(
     provider: &str,
-    result: Result<everyaios_vault::ModelsProbe, everyaios_vault::BrokerError>,
+    result: Result<agentcowork_vault::ModelsProbe, agentcowork_vault::BrokerError>,
 ) -> Option<EndpointProbe> {
     match result {
         Ok(p) => Some(endpoint_probe_result(
@@ -800,7 +800,7 @@ fn observation_from_probe(
             p.error.as_deref(),
         )),
         Err(e) => {
-            eprintln!("everyaios-catalog: not observing {provider}: {e}");
+            eprintln!("agentcowork-catalog: not observing {provider}: {e}");
             None
         }
     }
@@ -826,7 +826,7 @@ fn sweep_connected_providers(state: &AppState) -> usize {
     for (id, endpoint) in targets {
         if let Some(probe) = probe_provider_vault(state, &id, endpoint) {
             record_observation_in(
-                &everyaios_core::default_data_dir(),
+                &agentcowork_core::default_data_dir(),
                 &ctx.registry,
                 &id,
                 &probe,
@@ -863,7 +863,7 @@ pub fn spawn_observation_sweep(app: tauri::AppHandle) {
         let _guard = SweepGuard;
         let state = app.state::<AppState>();
         let observed = sweep_connected_providers(&state);
-        eprintln!("everyaios-catalog: observed {observed} connected provider(s)");
+        eprintln!("agentcowork-catalog: observed {observed} connected provider(s)");
     });
 }
 
@@ -979,7 +979,7 @@ pub fn provider_profile_remove(_state: State<'_, AppState>, id: String) -> Resul
 /// P56.5 — the shipped NVIDIA NIM overlay as a one-click profile.
 #[tauri::command]
 pub fn provider_nim_profile(base_url: Option<String>) -> Value {
-    let mut p = everyaios_catalog::nvidia_nim_profile();
+    let mut p = agentcowork_catalog::nvidia_nim_profile();
     if let Some(url) = base_url {
         if !url.trim().is_empty() {
             p.base_url = url;
@@ -995,7 +995,7 @@ pub fn provider_nim_profile(base_url: Option<String>) -> Value {
 /// The documented refresh plan — what one per-provider sync run would do.
 #[tauri::command]
 pub fn catalog_sync_plan() -> Value {
-    let modules: Vec<Value> = everyaios_catalog::SYNC_MODULES
+    let modules: Vec<Value> = agentcowork_catalog::SYNC_MODULES
         .iter()
         .map(|s| {
             json!({
@@ -1007,8 +1007,8 @@ pub fn catalog_sync_plan() -> Value {
         .collect();
     json!({
         "modules": modules,
-        "plan": everyaios_catalog::refresh_plan(),
-        "liveSource": everyaios_catalog::MODELS_DEV_API_URL,
+        "plan": agentcowork_catalog::refresh_plan(),
+        "liveSource": agentcowork_catalog::MODELS_DEV_API_URL,
         "defaultIntervalHours": DEFAULT_REFRESH_SECS / 3600,
     })
 }
@@ -1020,12 +1020,12 @@ pub fn catalog_sync_refresh(
     fetched_json: String,
     known_labs: Vec<String>,
 ) -> Result<Value, String> {
-    let baseline: Vec<everyaios_catalog::ModelEntry> = serde_json::from_str(&baseline_json)
+    let baseline: Vec<agentcowork_catalog::ModelEntry> = serde_json::from_str(&baseline_json)
         .map_err(|e| format!("catalog refresh: bad baseline JSON: {e}"))?;
-    let fetched: Vec<everyaios_catalog::ModelEntry> = serde_json::from_str(&fetched_json)
+    let fetched: Vec<agentcowork_catalog::ModelEntry> = serde_json::from_str(&fetched_json)
         .map_err(|e| format!("catalog refresh: bad fetched JSON: {e}"))?;
     let labs: Vec<&str> = known_labs.iter().map(String::as_str).collect();
-    let report = everyaios_catalog::merge_refresh(&baseline, &fetched, &labs);
+    let report = agentcowork_catalog::merge_refresh(&baseline, &fetched, &labs);
     Ok(json!({
         "accepted": report.accepted,
         "fetchedProviders": report.fetched_providers,
@@ -1036,8 +1036,8 @@ pub fn catalog_sync_refresh(
             .iter()
             .map(|f| json!({
                 "severity": match f.severity {
-                    everyaios_catalog::Severity::Error => "error",
-                    everyaios_catalog::Severity::Warning => "warning",
+                    agentcowork_catalog::Severity::Error => "error",
+                    agentcowork_catalog::Severity::Warning => "warning",
                 },
                 "message": f.message,
             }))
@@ -1058,7 +1058,7 @@ pub fn spawn_refresh_job(catalog: Arc<CatalogState>) {
             let interval = catalog.store.refresh_interval_secs();
             let stale = meta
                 .as_ref()
-                .map(|m| everyaios_catalog::is_stale(m.fetched_at, now_ms(), interval))
+                .map(|m| agentcowork_catalog::is_stale(m.fetched_at, now_ms(), interval))
                 .unwrap_or(true);
             if stale {
                 let _ = catalog.refresh(false);
@@ -1071,14 +1071,14 @@ pub fn spawn_refresh_job(catalog: Arc<CatalogState>) {
 mod tests {
     // P71.2c — the P63 endpoint-lifecycle tests (`endpoint_action` /
     // `EndpointAction`) are deleted with the relay's endpoint map they decided
-    // on: EveryAIOS no longer holds a provider dial plan, so there is nothing to
+    // on: AgentCowork no longer holds a provider dial plan, so there is nothing to
     // register or retire. `connected_ids_from` below is still tested because the
     // **observation** sweep keys on the connected set.
     use super::{
         connected_ids_from, observation_file_in, observation_from_probe, observed_registry_in,
         record_observation_in,
     };
-    use everyaios_catalog::{endpoint_probe_result, ProviderObservation};
+    use agentcowork_catalog::{endpoint_probe_result, ProviderObservation};
 
     /// P63.2 — the relay resolves only the connected set. A provider is
     /// dialable if it is vault-keyed, keyless, or the user profiled it; a
@@ -1126,15 +1126,15 @@ mod tests {
 
     fn temp_dir(tag: &str) -> std::path::PathBuf {
         let d = std::env::temp_dir().join(format!(
-            "everyaios-catalog-cmds-{tag}-{}",
+            "agentcowork-catalog-cmds-{tag}-{}",
             std::process::id()
         ));
         let _ = std::fs::remove_dir_all(&d);
         d
     }
 
-    fn probe(ok: bool, status: u16, models: usize) -> everyaios_catalog::EndpointProbe {
-        everyaios_catalog::EndpointProbe {
+    fn probe(ok: bool, status: u16, models: usize) -> agentcowork_catalog::EndpointProbe {
+        agentcowork_catalog::EndpointProbe {
             ok,
             status,
             message: if ok { "ok".into() } else { "nope".into() },
@@ -1274,10 +1274,10 @@ mod tests {
     /// provider nobody asked.
     #[test]
     fn a_broker_error_produces_no_observation_rather_than_a_failed_one() {
-        let err = everyaios_vault::BrokerError::InsecureEndpoint("openai".into());
+        let err = agentcowork_vault::BrokerError::InsecureEndpoint("openai".into());
         assert!(observation_from_probe("openai", Err(err)).is_none());
 
-        let no_keys = everyaios_vault::BrokerError::AllKeysExhausted("openai".into());
+        let no_keys = agentcowork_vault::BrokerError::AllKeysExhausted("openai".into());
         assert!(observation_from_probe("openai", Err(no_keys)).is_none());
     }
 
@@ -1287,7 +1287,7 @@ mod tests {
     fn a_successful_broker_probe_becomes_the_observation() {
         let probe = observation_from_probe(
             "claude",
-            Ok(everyaios_vault::ModelsProbe {
+            Ok(agentcowork_vault::ModelsProbe {
                 ok: true,
                 status: 200,
                 url: "https://api.anthropic.com/v1/models".into(),
@@ -1319,7 +1319,7 @@ mod tests {
         assert_eq!(rec.name, "Anthropic");
         assert_eq!(
             rec.transport,
-            Some(everyaios_catalog::Transport::AnthropicMessages)
+            Some(agentcowork_catalog::Transport::AnthropicMessages)
         );
         assert!(rec.aliases.iter().any(|a| a == "claude"));
         let _ = std::fs::remove_dir_all(&dir);

@@ -1,8 +1,8 @@
 // Model ownership boundary — restated for v1 (`P71.2a`/`P71.2d`, ADR-0005 §1/§2).
 //
-// The P60 boundary used to read "EveryAIOS Native owns the provider/model
+// The P60 boundary used to read "AgentCowork Native owns the provider/model
 // catalog; every *other* runtime owns its own". v1 removes the first half: there
-// is **no** built-in runtime, and EveryAIOS owns no model surface for any agent.
+// is **no** built-in runtime, and AgentCowork owns no model surface for any agent.
 // The catalogue, the key vault and the usage ledger are *observation*; the model
 // a turn runs on belongs to the bound agent, exposed (if at all) through that
 // agent's own ACP config options.
@@ -42,6 +42,7 @@ function installed(a: AgentRuntime): AgentRuntime {
 }
 
 describe('P71.2a — no built-in runtime exists', () => {
+  // DEC-053: the legacy spellings below stay verbatim so retirement recognition keeps working.
   test('the catalog carries no built-in row', () => {
     expect(AGENTS.some((a) => a.id === 'everyaios-native')).toBe(false)
     expect(AGENTS.some((a) => a.id === 'everyaios')).toBe(false)
@@ -61,7 +62,7 @@ describe('P71.2a — no built-in runtime exists', () => {
   })
 })
 
-describe('P71.2d — EveryAIOS owns no model surface for any runtime', () => {
+describe('P71.2d — AgentCowork owns no model surface for any runtime', () => {
   test('no curated model list is offered, installed or not', () => {
     expect(getModelsForAgentLive('claude-code', [installed(EXTERNAL)])).toEqual([])
     expect(getModelsForAgentLive('claude-code', [EXTERNAL])).toEqual([])

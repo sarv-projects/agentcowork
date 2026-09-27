@@ -7,6 +7,7 @@
 
 import { inTauri, invoke } from './tauri'
 import { nativeCall } from './runtime'
+import { getLocalItem } from './storage-compat'
 
 export type FeedbackKind = 'bug' | 'feature'
 
@@ -17,7 +18,7 @@ export interface FeedbackReport {
   category?: string
 }
 
-const LOCAL_KEY = 'everyaios.feedback.drafts'
+const LOCAL_KEY = 'agentcowork.feedback.drafts'
 
 export async function submitFeedback(report: FeedbackReport): Promise<{ path?: string }> {
   if (inTauri()) {
@@ -31,7 +32,8 @@ export async function submitFeedback(report: FeedbackReport): Promise<{ path?: s
   }
   // Preview fallback: persist locally so the report isn't lost.
   try {
-    const drafts = JSON.parse(localStorage.getItem(LOCAL_KEY) ?? '[]') as FeedbackReport[]
+    // DEC-053: legacy `everyaios.*` key honored + promoted once.
+    const drafts = JSON.parse(getLocalItem(LOCAL_KEY) ?? '[]') as FeedbackReport[]
     drafts.push({ ...report, category: report.category || undefined })
     localStorage.setItem(LOCAL_KEY, JSON.stringify(drafts.slice(-50)))
   } catch {
@@ -42,7 +44,8 @@ export async function submitFeedback(report: FeedbackReport): Promise<{ path?: s
 
 export function localFeedbackDrafts(): FeedbackReport[] {
   try {
-    return JSON.parse(localStorage.getItem(LOCAL_KEY) ?? '[]') as FeedbackReport[]
+    // DEC-053: legacy `everyaios.*` key honored + promoted once.
+    return JSON.parse(getLocalItem(LOCAL_KEY) ?? '[]') as FeedbackReport[]
   } catch {
     return []
   }

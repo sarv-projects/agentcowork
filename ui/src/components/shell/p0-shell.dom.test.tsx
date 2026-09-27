@@ -58,7 +58,7 @@ function resetState() {
     workItems: [],
     workEvents: [],
   } as never)
-  window.localStorage.removeItem('everyaios.settings.onboardingDone')
+  window.localStorage.removeItem('agentcowork.settings.onboardingDone')
 }
 
 function shellHandlers(overrides: Record<string, (args?: Record<string, unknown>) => unknown> = {}) {

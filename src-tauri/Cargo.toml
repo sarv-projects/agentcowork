@@ -1,13 +1,13 @@
 [package]
-name = "everyaios-desktop"
+name = "agentcowork-desktop"
 version = "0.1.0"
-description = "EveryAIOS — agentic desktop OS shell (Tauri v2)"
+description = "AgentCowork — agentic desktop OS shell (Tauri v2)"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 rust-version = "1.80"
 
 [lib]
-name = "everyaios_desktop_lib"
+name = "agentcowork_desktop_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
@@ -29,28 +29,28 @@ tokio = { version = "1", features = ["time"] }
 # the shell's own copy of the value from lingering in the heap.
 zeroize = "1"
 
-# EveryAIOS Rust core — path deps into the crates workspace. The core owns
+# AgentCowork Rust core — path deps into the crates workspace. The core owns
 # config, vault, guard, audit and IPC; the shell just exposes it to the UI.
-everyaios-core = { path = "../crates/everyaios-core" }
-everyaios-ipc = { path = "../crates/everyaios-ipc" }
-everyaios-vault = { path = "../crates/everyaios-vault" }
-everyaios-audit = { path = "../crates/everyaios-audit" }
-everyaios-guard = { path = "../crates/everyaios-guard" }
-everyaios-office = { path = "../crates/everyaios-office" }
-everyaios-catalog = { path = "../crates/everyaios-catalog" }
-everyaios-acp = { path = "../crates/everyaios-acp" }
-everyaios-mcp = { path = "../crates/everyaios-mcp" }
-everyaios-storage = { path = "../crates/everyaios-storage" }
-everyaios-browser = { path = "../crates/everyaios-browser" }
-everyaios-cdp = { path = "../crates/everyaios-cdp" }
-everyaios-codeintel = { path = "../crates/everyaios-codeintel" }
-everyaios-agents = { path = "../crates/everyaios-agents" }
-# P69.D1/D25 — the canonical agent/element schema lives in `everyaios-types`;
+agentcowork-core = { path = "../crates/agentcowork-core" }
+agentcowork-ipc = { path = "../crates/agentcowork-ipc" }
+agentcowork-vault = { path = "../crates/agentcowork-vault" }
+agentcowork-audit = { path = "../crates/agentcowork-audit" }
+agentcowork-guard = { path = "../crates/agentcowork-guard" }
+agentcowork-office = { path = "../crates/agentcowork-office" }
+agentcowork-catalog = { path = "../crates/agentcowork-catalog" }
+agentcowork-acp = { path = "../crates/agentcowork-acp" }
+agentcowork-mcp = { path = "../crates/agentcowork-mcp" }
+agentcowork-storage = { path = "../crates/agentcowork-storage" }
+agentcowork-browser = { path = "../crates/agentcowork-browser" }
+agentcowork-cdp = { path = "../crates/agentcowork-cdp" }
+agentcowork-codeintel = { path = "../crates/agentcowork-codeintel" }
+agentcowork-agents = { path = "../crates/agentcowork-agents" }
+# P69.D1/D25 — the canonical agent/element schema lives in `agentcowork-types`;
 # the shell reads the same record shape the crates and the TS façade use.
-everyaios-types = { path = "../crates/everyaios-types" }
-everyaios-blueprint = { path = "../crates/everyaios-blueprint" }
-everyaios-script = { path = "../crates/everyaios-script" }
-everyaios-computeruse = { path = "../crates/everyaios-desktop", package = "everyaios-computeruse" }
+agentcowork-types = { path = "../crates/agentcowork-types" }
+agentcowork-blueprint = { path = "../crates/agentcowork-blueprint" }
+agentcowork-script = { path = "../crates/agentcowork-script" }
+agentcowork-computeruse = { path = "../crates/agentcowork-desktop", package = "agentcowork-computeruse" }
 
 [dev-dependencies]
 # P70.D8 — diagnostics_cmds tests write a temp audit ledger.

@@ -1,6 +1,6 @@
 /**
- * EveryAIOS IPC JSON-RPC message types — the TS mirror of
- * `everyaios-ipc/src/message.rs`. Wire shape is camelCase and must match
+ * AgentCowork IPC JSON-RPC message types — the TS mirror of
+ * `agentcowork-ipc/src/message.rs`. Wire shape is camelCase and must match
  * the Rust `serde(rename_all = "camelCase")` structs byte-for-byte.
  */
 

@@ -1,4 +1,4 @@
-# EveryAIOS — release build matrix (P8.8; P70.A1/A6/B7 platform scope).
+# AgentCowork — release build matrix (P8.8; P70.A1/A6/B7 platform scope).
 #
 # v1 ships **Windows only** (`SUPPORT-MATRIX.md` §1): `.exe` (NSIS) + `.msi`
 # (WiX) for x64 **and** arm64. macOS and native Linux desktop are out of v1
@@ -17,7 +17,7 @@
 #                                       (the same one .tauri/ holds locally;
 #                                       base64 -d the .key file if re-adding)
 #   TAURI_SIGNING_PRIVATE_KEY_PASSWORD — the key's passphrase ('' if none)
-#   (the @everyaios/core-* coordinator deps are vendored in-repo under
+#   (the @agentcowork/core-* coordinator deps are vendored in-repo under
 #    packages/core-* — no private-repo token is required anymore).
 #
 # The sidecar (packages/coordinator) is compiled with bun and shipped inside
@@ -71,7 +71,7 @@ jobs:
         run: |
           pnpm --filter './packages/core-*' run build
           pnpm --filter './packages/core-*' run test
-          pnpm --filter @everyaios/coordinator test
+          pnpm --filter @agentcowork/coordinator test
       - name: Security release gate (P50.5.7)
         run: node scripts/e2e/security-gate.mjs
       # P70.E12 is a publication gate, not a report. `--record` makes any
@@ -133,8 +133,8 @@ jobs:
           if ($installed -notcontains $target) {
             throw "Rust target '$target' is not installed; refusing to build this release leg."
           }
-          $probeSource = Join-Path $env:RUNNER_TEMP "everyaios-target-probe.rs"
-          $probeBinary = Join-Path $env:RUNNER_TEMP "everyaios-target-probe.exe"
+          $probeSource = Join-Path $env:RUNNER_TEMP "agentcowork-target-probe.rs"
+          $probeBinary = Join-Path $env:RUNNER_TEMP "agentcowork-target-probe.exe"
           Set-Content -LiteralPath $probeSource -Value "fn main() {}"
           & rustc --target $target $probeSource -o $probeBinary
           if ($LASTEXITCODE -ne 0) {
@@ -236,7 +236,7 @@ jobs:
         run: pnpm --filter './packages/core-*' run build
 
       - name: Build coordinator sidecar (bun --compile)
-        run: pnpm --filter @everyaios/coordinator build
+        run: pnpm --filter @agentcowork/coordinator build
 
       # Inject the compiled sidecar into the bundle as a resource
       # (`bin/coordinator.exe`) via TAURI_CONFIG. The shell's
@@ -264,9 +264,9 @@ jobs:
           # Updater signing: only the release-private key can sign artifacts.
           args: --target ${{ matrix.target }} --bundles nsis,msi
           tagName: v__VERSION__
-          releaseName: 'EveryAIOS v__VERSION__'
+          releaseName: 'AgentCowork v__VERSION__'
           releaseBody: |
-            **EveryAIOS v__VERSION__** — local-first, BYOK, on-device agentic workspace.
+            **AgentCowork v__VERSION__** — local-first, BYOK, on-device agentic workspace.
 
             **Platform scope (v1):** Windows x64 + arm64 only (`SUPPORT-MATRIX.md`).
             No macOS or Linux artifact is published — see the support matrix for

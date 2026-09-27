@@ -1,11 +1,11 @@
 // === P31 — Custom agent builder (B9) ==========================================
-// Mirrors the Rust everyaios-agents crate surface: bundle manifest, the 8
+// Mirrors the Rust agentcowork-agents crate surface: bundle manifest, the 8
 // wizard templates, engine binding, model pin, per-agent scopes.
 // The Rust registry (AgentRegistry) is the durable store; this module is the
 // browser-side builder state + template catalog + TOML export.
 
 /**
- * The bundle's brain (P31.8) — mirrors `everyaios_agents::bundle::EngineBinding`.
+ * The bundle's brain (P31.8) — mirrors `agentcowork_agents::bundle::EngineBinding`.
  * ADR-0005: v1 binds an external ACP agent; the built-in engine is post-v1 and
  * is deliberately not a choice here. A bundle with no binding is a draft: it
  * saves, but it is not an agent and never joins the runnable directory.

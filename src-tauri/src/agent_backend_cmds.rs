@@ -2,7 +2,7 @@
 //!
 //! External agents own their model, account, authentication, and config under
 //! ADR-0005. The persisted file remains readable so an older host binding is
-//! reported honestly, but this module never reveals an EveryAIOS vault-held
+//! reported honestly, but this module never reveals an AgentCowork vault-held
 //! provider key into a child environment. A legacy request that depends on
 //! that key is a typed, explicit unavailability: the agent must authenticate or
 //! configure itself until an ADR-approved delegated-bearer mechanism exists.
@@ -65,7 +65,7 @@ type Store = BTreeMap<String, AgentBackendConfig>;
 
 /// `<data_dir>/agent_backend.json` — the one owner of the per-agent choice.
 pub fn config_path() -> std::path::PathBuf {
-    everyaios_core::default_data_dir().join("agent_backend.json")
+    agentcowork_core::default_data_dir().join("agent_backend.json")
 }
 
 fn load() -> Store {
@@ -80,10 +80,10 @@ fn load() -> Store {
         .into_iter()
         .filter(|(_, config)| {
             let model_ok =
-                config.model.is_empty() || everyaios_acp::validate_model_id(&config.model).is_ok();
+                config.model.is_empty() || agentcowork_acp::validate_model_id(&config.model).is_ok();
             let base_url_ok = match config.base_url.as_deref() {
                 None => true,
-                Some(raw) => everyaios_acp::validate_base_url(raw).is_ok(),
+                Some(raw) => agentcowork_acp::validate_base_url(raw).is_ok(),
             };
             model_ok && base_url_ok
         })
@@ -117,7 +117,7 @@ fn provider_env_name(state: &AppState, provider: &str) -> Option<String> {
         .and_then(|v| v.as_str())
         .map(str::to_string)
         .or_else(|| {
-            everyaios_catalog::base_registry()
+            agentcowork_catalog::base_registry()
                 .get(provider)
                 .and_then(|r| r.api_key_env.first().cloned())
         })
@@ -126,7 +126,7 @@ fn provider_env_name(state: &AppState, provider: &str) -> Option<String> {
 /// The provider's own base-URL override variable (declared by the catalog),
 /// used only for `ProviderEnv` agents.
 fn provider_base_url_env(provider: &str) -> Option<String> {
-    everyaios_catalog::base_registry()
+    agentcowork_catalog::base_registry()
         .get(provider)
         .and_then(|r| r.base_url_env.clone())
 }
@@ -150,7 +150,7 @@ fn binding_parts(state: &AppState, cfg: &AgentBackendConfig) -> Result<BindingPa
     });
     let base_url = candidate
         .map(|raw| {
-            everyaios_acp::validate_base_url(raw)
+            agentcowork_acp::validate_base_url(raw)
                 .map_err(|reason| format!("base URL rejected by Guard/netfloor: {reason}"))
         })
         .transpose()?;
@@ -165,7 +165,7 @@ fn binding_parts(state: &AppState, cfg: &AgentBackendConfig) -> Result<BindingPa
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum SpawnEnvError {
-    /// A legacy host binding asked EveryAIOS to reveal its own vault-held
+    /// A legacy host binding asked AgentCowork to reveal its own vault-held
     /// credential. No value is accepted as input here, so this decision cannot
     /// manufacture a secret-bearing env pair.
     VaultCredentialUnavailable {
@@ -173,7 +173,7 @@ enum SpawnEnvError {
         credential_env: String,
     },
     /// The non-secret compatibility binding is not expressible.
-    Backend(everyaios_acp::BackendError),
+    Backend(agentcowork_acp::BackendError),
 }
 
 impl std::fmt::Display for SpawnEnvError {
@@ -184,7 +184,7 @@ impl std::fmt::Display for SpawnEnvError {
                 credential_env,
             } => write!(
                 f,
-                "host provider binding unavailable: EveryAIOS will not reveal a vault-held \
+                "host provider binding unavailable: AgentCowork will not reveal a vault-held \
                  provider key as {credential_env} to {agent_id}; authenticate or configure the \
                  external agent in its own store (no delegated-bearer mechanism is approved)"
             ),
@@ -194,11 +194,11 @@ impl std::fmt::Display for SpawnEnvError {
 }
 
 /// Plan only credential-free launch variables. A legacy vault-key request is
-/// refused before [`everyaios_acp::plan_env`] is called, and the planner has no
+/// refused before [`agentcowork_acp::plan_env`] is called, and the planner has no
 /// secret-bearing input at all.
 fn plan_spawn_env(
     agent_id: &str,
-    spec: &everyaios_acp::AgentBackendSpec,
+    spec: &agentcowork_acp::AgentBackendSpec,
     cfg: &AgentBackendConfig,
     parts: &BindingParts,
 ) -> Result<Vec<(String, String)>, SpawnEnvError> {
@@ -209,14 +209,14 @@ fn plan_spawn_env(
         });
     }
 
-    let binding = everyaios_acp::ProviderBinding {
+    let binding = agentcowork_acp::ProviderBinding {
         provider: &cfg.provider,
         model: &cfg.model,
         key_env: &parts.key_env,
         base_url: parts.base_url.as_deref(),
         base_url_env: parts.base_url_env.as_deref(),
     };
-    everyaios_acp::plan_env(spec, &binding).map_err(SpawnEnvError::Backend)
+    agentcowork_acp::plan_env(spec, &binding).map_err(SpawnEnvError::Backend)
 }
 
 /// Names-only view of what a launch would inject (safe for IPC).
@@ -225,7 +225,7 @@ fn inject_view(
     agent_id: &str,
     cfg: &AgentBackendConfig,
 ) -> (Vec<String>, Vec<String>, bool, Option<String>) {
-    let spec = everyaios_acp::backend_spec(agent_id);
+    let spec = agentcowork_acp::backend_spec(agent_id);
     if !spec.channel.is_env_injectable() {
         return (Vec::new(), Vec::new(), false, None);
     }
@@ -240,14 +240,14 @@ fn inject_view(
             )),
         );
     };
-    let binding = everyaios_acp::ProviderBinding {
+    let binding = agentcowork_acp::ProviderBinding {
         provider: &cfg.provider,
         model: &cfg.model,
         key_env: &parts.key_env,
         base_url: parts.base_url.as_deref(),
         base_url_env: parts.base_url_env.as_deref(),
     };
-    let gaps = everyaios_acp::unexpressed(&spec, &binding)
+    let gaps = agentcowork_acp::unexpressed(&spec, &binding)
         .into_iter()
         .map(str::to_string)
         .collect();
@@ -301,7 +301,7 @@ pub(crate) fn has_managed_binding(state: &AppState, agent_id: &str) -> bool {
     let Some(cfg) = config_for(agent_id) else {
         return false;
     };
-    let spec = everyaios_acp::backend_spec(agent_id);
+    let spec = agentcowork_acp::backend_spec(agent_id);
     if !spec.channel.is_env_injectable() {
         return false;
     }
@@ -329,7 +329,7 @@ pub(crate) fn spawn_env_for(state: &AppState, agent_id: &str) -> Vec<(String, St
     let Some(cfg) = config_for(agent_id) else {
         return Vec::new();
     };
-    let spec = everyaios_acp::backend_spec(agent_id);
+    let spec = agentcowork_acp::backend_spec(agent_id);
     if !spec.channel.is_env_injectable() {
         return Vec::new();
     }
@@ -342,13 +342,13 @@ pub(crate) fn spawn_env_for(state: &AppState, agent_id: &str) -> Vec<(String, St
 fn base_url_status(raw: Option<&str>) -> &'static str {
     match raw {
         None => "absent",
-        Some(value) if everyaios_acp::validate_base_url(value).is_ok() => "validated",
+        Some(value) if agentcowork_acp::validate_base_url(value).is_ok() => "validated",
         Some(_) => "redacted",
     }
 }
 
 fn backend_status(
-    channel: everyaios_acp::BackendChannel,
+    channel: agentcowork_acp::BackendChannel,
     configured: bool,
     refusal: Option<&str>,
 ) -> (&'static str, bool) {
@@ -367,7 +367,7 @@ fn backend_status(
 /// names-only injection view.
 #[tauri::command]
 pub fn agent_backend_get(state: State<'_, AppState>, agent_id: String) -> Value {
-    let spec = everyaios_acp::backend_spec(&agent_id);
+    let spec = agentcowork_acp::backend_spec(&agent_id);
     let cfg = config_for(&agent_id);
     let (injected, unexpressed, key_present, refusal) = match &cfg {
         Some(c) => inject_view(&state, &agent_id, c),
@@ -393,7 +393,7 @@ pub fn agent_backend_get(state: State<'_, AppState>, agent_id: String) -> Value 
             "baseUrl": c
                 .base_url
                 .as_deref()
-                .map(everyaios_acp::redact_base_url),
+                .map(agentcowork_acp::redact_base_url),
             "baseUrlStatus": base_url_status,
         })),
         "injectedEnv": injected,
@@ -411,7 +411,7 @@ pub fn agent_backend_get(state: State<'_, AppState>, agent_id: String) -> Value 
 pub fn agent_backend_providers(state: State<'_, AppState>, _agent_id: String) -> Value {
     let vaulted: Vec<String> = {
         match state.vault.lock() {
-            Ok(v) => everyaios_vault::KeyRing::new(&v)
+            Ok(v) => agentcowork_vault::KeyRing::new(&v)
                 .providers_with_keys()
                 .unwrap_or_default(),
             Err(_) => Vec::new(),
@@ -435,7 +435,7 @@ pub fn agent_backend_providers(state: State<'_, AppState>, _agent_id: String) ->
             let base_url = if base_url_raw.is_empty() {
                 String::new()
             } else {
-                everyaios_acp::redact_base_url(base_url_raw)
+                agentcowork_acp::redact_base_url(base_url_raw)
             };
             Some(json!({
                 "id": id,
@@ -465,13 +465,13 @@ pub fn agent_backend_set(
     if provider.trim().is_empty() {
         return Err("provider must not be empty".to_string());
     }
-    let spec = everyaios_acp::backend_spec(&agent_id);
-    if spec.channel == everyaios_acp::BackendChannel::Subscription {
+    let spec = agentcowork_acp::backend_spec(&agent_id);
+    if spec.channel == agentcowork_acp::BackendChannel::Subscription {
         return Err(format!(
-            "{agent_id} signs in with its own subscription — EveryAIOS does not configure its credentials"
+            "{agent_id} signs in with its own subscription — AgentCowork does not configure its credentials"
         ));
     }
-    if spec.channel == everyaios_acp::BackendChannel::Unknown {
+    if spec.channel == agentcowork_acp::BackendChannel::Unknown {
         return Err(format!(
             "{agent_id} has no verified model-backend contract — refusing to guess"
         ));
@@ -479,19 +479,19 @@ pub fn agent_backend_set(
 
     let model = model.unwrap_or_default();
     if !model.is_empty() {
-        everyaios_acp::validate_model_id(&model).map_err(|error| error.to_string())?;
+        agentcowork_acp::validate_model_id(&model).map_err(|error| error.to_string())?;
     }
     let use_vault_key = use_vault_key.unwrap_or(true);
     if use_vault_key {
         return Err(format!(
-            "host provider binding unavailable: EveryAIOS will not reveal a vault-held provider \
+            "host provider binding unavailable: AgentCowork will not reveal a vault-held provider \
              key to {agent_id}; authenticate or configure the external agent in its own store \
              (no delegated-bearer mechanism is approved)"
         ));
     }
     let base_url = match base_url.filter(|u| !u.trim().is_empty()) {
         Some(raw) => Some(
-            everyaios_acp::validate_base_url(&raw)
+            agentcowork_acp::validate_base_url(&raw)
                 .map_err(|reason| format!("base URL rejected by Guard/netfloor: {reason}"))?,
         ),
         None => None,
@@ -584,7 +584,7 @@ mod tests {
     fn legacy_vault_key_request_is_typed_unavailable_without_an_env_pair() {
         let error = plan_spawn_env(
             "claude",
-            &everyaios_acp::backend_spec("claude"),
+            &agentcowork_acp::backend_spec("claude"),
             &cfg(true),
             &parts(false),
         )
@@ -607,7 +607,7 @@ mod tests {
     fn production_plan_spawn_env_has_no_secret_pair() {
         let pairs = plan_spawn_env(
             "claude",
-            &everyaios_acp::backend_spec("claude"),
+            &agentcowork_acp::backend_spec("claude"),
             &cfg(false),
             &parts(false),
         )
@@ -630,7 +630,7 @@ mod tests {
     fn keyless_legacy_request_needs_no_credential_and_plans_no_key_pair() {
         let pairs = plan_spawn_env(
             "claude",
-            &everyaios_acp::backend_spec("claude"),
+            &agentcowork_acp::backend_spec("claude"),
             &cfg(true),
             &parts(true),
         )
@@ -643,47 +643,47 @@ mod tests {
         for (raw, expected) in [
             (
                 "https://user:password@example.invalid/v1",
-                everyaios_acp::BaseUrlError::UserInfo,
+                agentcowork_acp::BaseUrlError::UserInfo,
             ),
             (
                 "https://example.invalid/v1?token=exfiltrate",
-                everyaios_acp::BaseUrlError::QueryOrFragment,
+                agentcowork_acp::BaseUrlError::QueryOrFragment,
             ),
             (
                 "https://example.invalid/v1#token=exfiltrate",
-                everyaios_acp::BaseUrlError::QueryOrFragment,
+                agentcowork_acp::BaseUrlError::QueryOrFragment,
             ),
             (
                 "http://169.254.169.254/latest/meta-data/",
-                everyaios_acp::BaseUrlError::PrivateDestination,
+                agentcowork_acp::BaseUrlError::PrivateDestination,
             ),
             (
                 "http://192.168.1.10/v1",
-                everyaios_acp::BaseUrlError::PrivateDestination,
+                agentcowork_acp::BaseUrlError::PrivateDestination,
             ),
         ] {
-            let error = everyaios_acp::validate_base_url(raw).expect_err("unsafe URL");
+            let error = agentcowork_acp::validate_base_url(raw).expect_err("unsafe URL");
             assert_eq!(error, expected);
             let rendered = error.to_string();
             assert!(!rendered.contains("password"));
             assert!(!rendered.contains("exfiltrate"));
-            assert_eq!(everyaios_acp::redact_base_url(raw), "<redacted>");
+            assert_eq!(agentcowork_acp::redact_base_url(raw), "<redacted>");
         }
     }
 
     #[test]
     fn status_shape_distinguishes_unconfigured_configured_and_blocked() {
         assert_eq!(
-            backend_status(everyaios_acp::BackendChannel::FixedEnv, false, None),
+            backend_status(agentcowork_acp::BackendChannel::FixedEnv, false, None),
             ("unconfigured", true)
         );
         assert_eq!(
-            backend_status(everyaios_acp::BackendChannel::FixedEnv, true, None),
+            backend_status(agentcowork_acp::BackendChannel::FixedEnv, true, None),
             ("configured", true)
         );
         assert_eq!(
             backend_status(
-                everyaios_acp::BackendChannel::FixedEnv,
+                agentcowork_acp::BackendChannel::FixedEnv,
                 true,
                 Some("refused")
             ),

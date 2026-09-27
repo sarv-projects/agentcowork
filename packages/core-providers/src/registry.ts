@@ -1,4 +1,4 @@
-import type { ProviderGroup } from '@everyaios/core-domain';
+import type { ProviderGroup } from '@agentcowork/core-domain';
 import type { ProviderCatalogEntry } from './types.js';
 
 /**

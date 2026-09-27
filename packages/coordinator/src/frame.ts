@@ -1,5 +1,5 @@
 /**
- * EveryAIOS IPC framing — the TS mirror of `everyaios-ipc/src/frame.rs`.
+ * AgentCowork IPC framing — the TS mirror of `agentcowork-ipc/src/frame.rs`.
  *
  * Wire format (identical on both sides of the stdio pipe):
  *

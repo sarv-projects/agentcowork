@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { RouteContext } from '@everyaios/core-domain';
+import type { RouteContext } from '@agentcowork/core-domain';
 import { resolveHandler } from '../router/handler-mapper.js';
 
 const baseCtx: RouteContext = {

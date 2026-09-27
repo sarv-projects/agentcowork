@@ -172,7 +172,7 @@ const demoMemory = [
   'User works best with plan-first workflow (approve before executing)',
   'The exec-summary.docx document tracks quarterly goals',
   'User dislikes unsolicited tool calls on read-only turns',
-  'EveryAIOS vault keys live in the encrypted SQLCipher store',
+  'AgentCowork vault keys live in the encrypted SQLCipher store',
   'User often asks for Claude-sonnet for planning, gpt-5-codex for coding',
   'The pitch.pptx deck uses the orange brand accent',
 ]

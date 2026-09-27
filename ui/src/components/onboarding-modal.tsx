@@ -94,7 +94,7 @@ export async function completeOnboardingAfterVault(
 }
 
 const BRAND_WORDS = [
-  'EveryAIOS',
+  'AgentCowork',
   'EveryAgent',
   'EveryWork',
   'EveryDoc',
@@ -238,8 +238,8 @@ export function OnboardingModal() {
     setOnboardingDone(true)
     notify(
       boundId
-        ? 'Welcome to EveryAIOS — your agent is bound and ready.'
-        : 'Welcome to EveryAIOS. No agent is bound yet, so the first message will ask you to pick one.',
+        ? 'Welcome to AgentCowork — your agent is bound and ready.'
+        : 'Welcome to AgentCowork. No agent is bound yet, so the first message will ask you to pick one.',
     )
   }
 
@@ -425,7 +425,7 @@ export function OnboardingModal() {
 
                 <details className="mt-8 w-full max-w-lg rounded-xl border border-border/60 bg-card/40 px-3 py-2 text-left">
                   <summary className="cursor-pointer list-none text-[11px] font-medium text-foreground marker:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60">
-                    See what EveryAIOS can do later
+                    See what AgentCowork can do later
                   </summary>
                   <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <div className="rounded-xl border border-border/60 bg-card/60 p-3 text-left">
@@ -560,7 +560,7 @@ export function OnboardingModal() {
                   <div>
                     <h2 className="text-xl font-bold tracking-tight text-foreground">Pick the agent that will do the thinking</h2>
                     <p className="text-xs text-muted-foreground">
-                      EveryAIOS ships no built-in engine: it discovers the agent CLIs on this machine,
+                      AgentCowork ships no built-in engine: it discovers the agent CLIs on this machine,
                       and the one you bind runs your messages. Detection is evidence, not readiness.
                     </p>
                   </div>
@@ -709,7 +709,7 @@ export function OnboardingModal() {
                   <span>
                     {boundId && !firstTaskReady
                       ? 'The binding is recorded, but the shell has not confirmed this agent is runnable yet. Finish its sign-in or rescan before sending.'
-                      : 'Every consequential action still passes the desktop safety gate. The agent keeps its own account; EveryAIOS does not claim a model is ready before the shell verifies it.'}
+                      : 'Every consequential action still passes the desktop safety gate. The agent keeps its own account; AgentCowork does not claim a model is ready before the shell verifies it.'}
                   </span>
                 </div>
               </motion.div>

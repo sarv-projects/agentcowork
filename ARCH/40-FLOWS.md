@@ -8,7 +8,7 @@
 ---
 
 ### FLOW-01 — Interactive turn
-**Actors:** user · surface (`32`) · Work (`11`) · Agent X (`15`) · capability plane (`13`).
+**Actors:** user · surface (`32`) · Work (`11`) · agent plane (`15`) · capability plane (`13`).
 **Steps:** work created (`session_turn`, foreground lane) → admission (turn boundary) → context assembly (`16`) → model step → tool calls scheduled (parallel/sequential) → results observed → continuation decision → completion contract satisfied → response streamed → run completed + events.
 **Terminal:** `completed` · `failed` · `cancelled` · `waiting` (approval/question).
 **Failure branches:** model error → bounded retry → surface reason; tool failure → recovery pipeline; user interrupt → step-boundary stop, session kept.
@@ -26,8 +26,8 @@
 **Failure branches:** child stuck → watchdog + stuck detector; write conflict → lease queue/rebase/ask; depth/parallel limits → admission rejected with reason.
 
 ### FLOW-04 — Workflow with agent node + approval
-**Actors:** trigger source · Workflow Engine (`20`) · capability plane · Agent X · approval (`12`) · user.
-**Steps:** trigger fires → occurrence materialized + claimed (pinned version) → deterministic nodes execute via capabilities → `agent` node invokes Agent X with node task + context refs → result → `approval` node → run `awaiting_approval` (durable) → user decides → resume → remaining nodes → outputs/artifacts → run completed + receipt.
+**Actors:** trigger source · Workflow Engine (`20`) · capability plane · agent plane (`15`) · approval (`12`) · user.
+**Steps:** trigger fires → occurrence materialized + claimed (pinned version) → deterministic nodes execute via capabilities → `agent` node invokes the bound engine with node task + context refs → result → `approval` node → run `awaiting_approval` (durable) → user decides → resume → remaining nodes → outputs/artifacts → run completed + receipt.
 **Terminal:** `completed` · `failed` · `cancelled` · `expired` (approval timeout per class).
 **Failure branches:** agent node blocks → per-node retry policy; approval rejected → condition edge (reject branch) or run fails with reason; crash → resume matrix (`20` §4).
 
@@ -44,7 +44,7 @@
 **Failure branches:** orphan process found → reap or re-attach (audited); stale lease → requeue; keyless side effect interrupted → `needs_attention`.
 
 ### FLOW-07 — Context overflow recovery
-**Actors:** Agent X context control (`16`) · model router (`18`).
+**Actors:** agent context control (`16`) · model router (`18`).
 **Steps:** pre-turn feasibility check → over budget? prune cold items → structured checkpoint → compact (projection boundary) → retry **same step** → if model refuses again → escalate.
 **Terminal:** turn continues; never “start a new conversation”.
 **Failure branches:** bounded retries → block with surfaced reason; checkpoint missing → rebuild from work/events/artifacts.

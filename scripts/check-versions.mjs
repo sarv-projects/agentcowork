@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// EveryAIOS version-lockstep gate (P70.A7) — run in CI and pre-commit.
+// AgentCowork version-lockstep gate (P70.A7) — run in CI and pre-commit.
 //
 // **One authoritative application version, consumed by every surface that shows
 // or publishes it.** The authority is `src-tauri/tauri.conf.json`'s `version`,

@@ -6,7 +6,7 @@
  * destructive-WRITE_LOCAL under an unattended policy), the ask parks here
  * instead of acting — the messaging + automation proactivity layer's inbox.
  *
- * Mirrors `everyaios-guard::autonomy::{AutonomyVerdict, AutonomyPolicy}`
+ * Mirrors `agentcowork-guard::autonomy::{AutonomyVerdict, AutonomyPolicy}`
  * semantics on the TS side (the Rust verdict is authoritative when present;
  * this class is the coordinator-side queue + delivery surface).
  */

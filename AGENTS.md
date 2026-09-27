@@ -55,7 +55,7 @@ Before introducing a new dependency:
 
 Do not modify generated files manually unless the repository explicitly requires it; update the source/template and regenerate them.
 
-- **Archive rule (2026-09-22; v1 note 2026-09-26):** no new work may land in the archived v0 tree (`ARCHIVE/v0/ARCH/archive/`) or name archived modules as owners (e.g. the coordinator loop under `ARCHIVE/v0/ARCH/archive/coordinator-loop/`) — re-home to the live owner instead: the Rust context passport (`src-tauri/src/acp_cmds.rs`) for prompt/context work, `everyaios-acp` for per-agent behavior, `everyaios-mcp` for tool-surface work, and Work/AUTOMATION + the bound agent for coordination.
+- **Archive rule (2026-09-22; v1 note 2026-09-26):** no new work may land in the archived v0 tree (`ARCHIVE/v0/ARCH/archive/`) or name archived modules as owners (e.g. the coordinator loop under `ARCHIVE/v0/ARCH/archive/coordinator-loop/`) — re-home to the live owner instead: the Rust context passport (`src-tauri/src/acp_cmds.rs`) for prompt/context work, `agentcowork-acp` for per-agent behavior, `agentcowork-mcp` for tool-surface work, and Work/AUTOMATION + the bound agent for coordination.
 
 ## 6. Validation
 
@@ -133,13 +133,13 @@ Keep descriptions factual and tied to the repository. Do not add marketing langu
 
 ---
 
-# EveryAIOS — Project-Specific Instructions
+# AgentCowork — Project-Specific Instructions
 
 > The sections below are specific to this repository. Sections 1–9 above are universal.
 
 ## 10. Architecture
 
-> **v1 docs (2026-09-26).** The architecture was rebuilt from scratch; the v0 corpus is archived locally at `ARCHIVE/v0/` (git-ignored). Authority: [`AGENTCOWORK-SPEC.md`](AGENTCOWORK-SPEC.md) (WHAT) → [`ARCH/08-REQUIREMENTS.md`](ARCH/08-REQUIREMENTS.md) (testable behaviors) → [`ARCH/03-HLD.md`](ARCH/03-HLD.md) (HOW) → module docs; the door is [`ARCH/00-INDEX.md`](ARCH/00-INDEX.md). Working names: product **AgentCowork**, runtime **Core**, native agent **Agent X** ([`ARCH/01-NAMING.md`](ARCH/01-NAMING.md)). Delivery status: [`TODO.md`](TODO.md) — the v1 docs are frozen (2026-09-26); implementation proceeds spec-driven (W0–W4).
+> **v1 docs (2026-09-26).** The architecture was rebuilt from scratch; the v0 corpus is archived locally at `ARCHIVE/v0/` (git-ignored). Authority: [`AGENTCOWORK-SPEC.md`](AGENTCOWORK-SPEC.md) (WHAT) → [`ARCH/08-REQUIREMENTS.md`](ARCH/08-REQUIREMENTS.md) (testable behaviors) → [`ARCH/03-HLD.md`](ARCH/03-HLD.md) (HOW) → module docs; the door is [`ARCH/00-INDEX.md`](ARCH/00-INDEX.md). Working names: product **AgentCowork**, runtime **Core** ([`ARCH/01-NAMING.md`](ARCH/01-NAMING.md)). Delivery status: [`TODO.md`](TODO.md) — the v1 docs are frozen (2026-09-26); implementation proceeds spec-driven (W0–W4).
 >
 > **This section is an orientation summary only** — where it disagrees with the v1 set, the v1 set wins. The invariant list lives in [`ARCH/05-INVARIANTS.md`](ARCH/05-INVARIANTS.md); do not fork it here.
 
@@ -151,7 +151,7 @@ L4  COCKPIT           ui/ — React 19 + Zustand 5 + Tailwind 4
         ↓ Tauri IPC: nativeCall("<cmd>", args)
 L3  Tauri Shell        src-tauri/ — thin Rust shell, 42 *_cmds.rs modules
         ↓ direct Rust calls
-L2  Rust Kernel        crates/everyaios-* — guard/vault/audit/office/browser
+L2  Rust Kernel        crates/agentcowork-* — guard/vault/audit/office/browser
         ↓ stdio JSON-RPC 2.0, [u32 LE len][JSON] framing
 L1  Bun Sidecar        packages/coordinator — shared-plane services a turn calls into (not reasoning)
         ↓ ACP/MCP/CDP
@@ -176,11 +176,11 @@ The full invariant set lives in [`ARCH/05-INVARIANTS.md`](ARCH/05-INVARIANTS.md)
 # Build (requires: Rust 1.98+, Node 22+, Bun, pnpm 11+)
 (cd crates && cargo build)        # Rust kernel
 pnpm install                      # JS workspace
-pnpm --filter @everyaios/coordinator build  # Sidecar
+pnpm --filter @agentcowork/coordinator build  # Sidecar
 
 # Test
 (cd crates && cargo test)                    # All Rust tests
-(cd crates && cargo test -p everyaios-core)  # Single crate
+(cd crates && cargo test -p agentcowork-core)  # Single crate
 pnpm -r test                      # All JS/TS tests (recursive; skips packages without a test script)
 
 # Typecheck
@@ -215,29 +215,29 @@ skill's routing contract.
 ## 12. File Structure
 
 ```
-crates/                          # 21 workspace members (the kernel; everyaios-engine
+crates/                          # 21 workspace members (the kernel; agentcowork-engine
                                   #   was deleted 2026-09-23 — TODO P72 — do not re-add)
-  everyaios-core/                #   Orchestrator: supervisor, worktrees, CUA, tools
-  everyaios-ipc/                 #   stdio JSON-RPC 2.0 framing (transport only)
-  everyaios-guard/               #   Guard-1/2: netfloor, pathfloor, tickets, sandboxes
-  everyaios-audit/               #   Append-only tamper-evident audit trail
-  everyaios-vault/               #   Encrypted key vault
-  everyaios-memory/              #   RRF fusion, ACT-R, compaction, graph
-  everyaios-blueprint/           #   Task DAG, checkpoints, skill store, subagents
-  everyaios-types/               #   Canonical schema + id newtypes (AuthMode, AgentBinding)
-  everyaios-browser/             #   a11y snapshot, refs, actions, CDP
-  everyaios-cdp/                 #   CDP wire backend (under everyaios-browser)
-  everyaios-catalog/             #   models.dev sync, provider seed, routing
-  everyaios-storage/             #   Work-stealing walker, dedup, FTS5
-  everyaios-codeintel/           #   LSP, SCIP, repo-map PageRank
-  everyaios-office/              #   IronCalc XLSX, OOXML patchers
-  everyaios-desktop/             #   Desktop automation (CUA)
-  everyaios-acp/                 #   Agent Communication Protocol + prefix guard
-  everyaios-mcp/                 #   MCP server/client (19 shared façades over 51 native tools)
-  everyaios-agents/              #   Agent plane primitives
-  everyaios-search/              #   Kernel search (the one implementation)
-  everyaios-script/              #   Sandboxed script runner
-  everyaios-eval/                #   Eval harness (never a runtime dependency)
+  agentcowork-core/                #   Orchestrator: supervisor, worktrees, CUA, tools
+  agentcowork-ipc/                 #   stdio JSON-RPC 2.0 framing (transport only)
+  agentcowork-guard/               #   Guard-1/2: netfloor, pathfloor, tickets, sandboxes
+  agentcowork-audit/               #   Append-only tamper-evident audit trail
+  agentcowork-vault/               #   Encrypted key vault
+  agentcowork-memory/              #   RRF fusion, ACT-R, compaction, graph
+  agentcowork-blueprint/           #   Task DAG, checkpoints, skill store, subagents
+  agentcowork-types/               #   Canonical schema + id newtypes (AuthMode, AgentBinding)
+  agentcowork-browser/             #   a11y snapshot, refs, actions, CDP
+  agentcowork-cdp/                 #   CDP wire backend (under agentcowork-browser)
+  agentcowork-catalog/             #   models.dev sync, provider seed, routing
+  agentcowork-storage/             #   Work-stealing walker, dedup, FTS5
+  agentcowork-codeintel/           #   LSP, SCIP, repo-map PageRank
+  agentcowork-office/              #   IronCalc XLSX, OOXML patchers
+  agentcowork-desktop/             #   Desktop automation (CUA)
+  agentcowork-acp/                 #   Agent Communication Protocol + prefix guard
+  agentcowork-mcp/                 #   MCP server/client (19 shared façades over 51 native tools)
+  agentcowork-agents/              #   Agent plane primitives
+  agentcowork-search/              #   Kernel search (the one implementation)
+  agentcowork-script/              #   Sandboxed script runner
+  agentcowork-eval/                #   Eval harness (never a runtime dependency)
 
 packages/                        # 10 TypeScript packages (the sidecar)
   coordinator/                   #   Shared plane services a turn calls into
@@ -292,18 +292,18 @@ scripts/                         # CI gates, codegen, tools
 - Integration tests in `crates/*/tests/` use `acceptance_*` prefix
 - UI tests in `ui/src/**/*.test.tsx` use DOM testing library
 - Security tests: `scripts/e2e/security-gate.mjs`
-- Live tests require env var: `EVERYAIOS_LIVE_TEST=1`
+- Live tests require env var: `AGENTCOWORK_LIVE_TEST=1`
 - CI runs all tests on every PR; no merging with failing tests
 
 ## 15. Security Rules
 
-- Provider API keys live ONLY in the Rust vault (`everyaios-vault`)
+- Provider API keys live ONLY in the Rust vault (`agentcowork-vault`)
 - The sidecar NEVER holds credentials
-- All outbound network goes through Guard-2 (`everyaios-guard`)
+- All outbound network goes through Guard-2 (`agentcowork-guard`)
 - Path traversal is blocked by `pathfloor` (Guard-2)
 - SSRF is blocked by `netfloor` (Guard-2)
 - Sandboxed execution via `sandbox` (Guard-2)
-- Audit trail: every mutating operation is logged to `everyaios-audit`
+- Audit trail: every mutating operation is logged to `agentcowork-audit`
 
 ## 16. Spec-driven development (SDD)
 

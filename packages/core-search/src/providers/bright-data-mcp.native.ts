@@ -1,4 +1,4 @@
-import type { SearchContext, SearchProvider } from '@everyaios/core-domain';
+import type { SearchContext, SearchProvider } from '@agentcowork/core-domain';
 
 /** Mobile v1: URL fetch via on-device Readability first; MCP deferred. */
 export class BrightDataWebMcpProvider implements SearchProvider {

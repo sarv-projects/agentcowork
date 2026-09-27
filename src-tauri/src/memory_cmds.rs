@@ -20,7 +20,7 @@ use crate::AppState;
 /// without a borrow-of-temporary.
 fn memory_arc(
     state: &State<'_, AppState>,
-) -> Result<Arc<std::sync::Mutex<everyaios_core::MemoryService>>, String> {
+) -> Result<Arc<std::sync::Mutex<agentcowork_core::MemoryService>>, String> {
     crate::ensure_sidecar(state);
     let relay = state.chat_relay.lock().map_err(|e| e.to_string())?;
     let relay = relay
@@ -55,7 +55,7 @@ pub fn memory_request(
     );
     let out = mem.handle(&method, &params).map_err(|e| e.to_string())?;
     if is_mutation {
-        let dir = everyaios_core::default_data_dir();
+        let dir = agentcowork_core::default_data_dir();
         let _ = std::fs::create_dir_all(&dir);
         let _ = mem.save_to(&dir.join("memory.json"));
     }

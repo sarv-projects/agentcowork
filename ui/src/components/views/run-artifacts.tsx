@@ -182,7 +182,7 @@ export function RunArtifacts({
     }
     // The shell's existing route into the code workbench for a text file.
     window.dispatchEvent(
-      new CustomEvent('everyaios:open-file', { detail: { path: file.path, content: '' } }),
+      new CustomEvent('agentcowork:open-file', { detail: { path: file.path, content: '' } }),
     )
     addView('code')
   }

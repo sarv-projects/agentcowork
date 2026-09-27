@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate EveryAIOS app icons (Tauri bundle requirement).
+"""Generate AgentCowork app icons (Tauri bundle requirement).
 
 Produces src-tauri/icons/{32x32,128x128,128x128@2x,icon}.png and icon.ico.
 Run from desktop_app/ root: python3 scripts/gen-icons.py

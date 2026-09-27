@@ -5,7 +5,7 @@
  * Until `P71.2c` this module was also the *executor*: it ticked
  * `scheduler/due`, reawakened each job's session through its own built-in chat
  * turn (`runChatStream` → `core-engine`) and then recorded the firing. That
- * path assumed an EveryAIOS-owned model, which `ARCH/ADR/0005` retires for v1 —
+ * path assumed an AgentCowork-owned model, which `ARCH/ADR/0005` retires for v1 —
  * and `ARCH/AUTOMATION.md` §9/§6 are explicit that
  * **agent execution is never the scheduler's**: a firing runs through the
  * session's *bound agent*.
@@ -19,6 +19,8 @@
  * Nothing in this module reasons, executes or holds credentials; it is a
  * transport adapter onto the trigger plane.
  */
+
+import { resolveWebhookPort } from "./env";
 
 /** Outbound JSON-RPC request to Rust. */
 type SchedulerRequest = (method: string, params: unknown) => Promise<unknown>;
@@ -107,9 +109,9 @@ export function startWebhookIngress(request: SchedulerRequest): WebhookIngress {
 
   function start(): void {
     if (webhookPort > 0 || stopped) return;
-    const port = process.env.EVERYAIOS_WEBHOOK_PORT
-      ? Number(process.env.EVERYAIOS_WEBHOOK_PORT)
-      : 0;
+    // DEC-053: `AGENTCOWORK_WEBHOOK_PORT`, with the legacy
+    // `EVERYAIOS_WEBHOOK_PORT` spelling honored (absent → 0, ephemeral).
+    const port = resolveWebhookPort();
     try {
       const server = Bun.serve({
         port,

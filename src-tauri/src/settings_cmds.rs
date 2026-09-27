@@ -161,7 +161,7 @@ pub struct AgentSettings {
     pub installed: bool,
     /// `inbuilt | acp | mcp`.
     pub protocol: String,
-    /// Canonical auth-mode spelling (P69.C11, home `everyaios_types::AuthMode`):
+    /// Canonical auth-mode spelling (P69.C11, home `agentcowork_types::AuthMode`):
     /// `subscription | api_key | local | keyless | unknown`. The legacy
     /// `local_cli` spelling is deleted — `local` means local inference on this
     /// machine (`ARCH/03` §3.0), not "open source".
@@ -391,12 +391,12 @@ fn split_provider_groups(
     (popular, rest)
 }
 
-fn profile_store() -> everyaios_catalog::ProfileStore {
-    everyaios_catalog::ProfileStore::in_dir(everyaios_core::default_data_dir())
+fn profile_store() -> agentcowork_catalog::ProfileStore {
+    agentcowork_catalog::ProfileStore::in_dir(agentcowork_core::default_data_dir())
 }
 
 fn default_model_path() -> std::path::PathBuf {
-    everyaios_core::default_data_dir().join("default_model.json")
+    agentcowork_core::default_data_dir().join("default_model.json")
 }
 
 fn read_default_model() -> Value {
@@ -537,7 +537,7 @@ pub fn settings_default_model_set(
             // identity retired (P71.2a) every pin names an external agent, so
             // an unset pin is the only pass-through — no spelling unlocks a
             // native model while an agent is bound (ADR-0005 §5).
-            if let Ok(cfg) = everyaios_core::Config::load() {
+            if let Ok(cfg) = agentcowork_core::Config::load() {
                 if !cfg.primary_chief.trim().is_empty() {
                     return Err(format!(
                         "primary chief '{}' owns its model — selecting a native catalog model while an external agent is active is forbidden",
@@ -622,13 +622,13 @@ fn agent_readiness(
     }
 }
 
-fn auth_mode_for(manifest: &everyaios_acp::HarnessManifest) -> &'static str {
+fn auth_mode_for(manifest: &agentcowork_acp::HarnessManifest) -> &'static str {
     // P69.C11 — one canonical serializer: the enum's own spelling, exactly as
     // `ui/src/lib/acp.ts` declares it. No hand-maintained second mapping.
     manifest.auth_mode.as_str()
 }
 
-fn protocol_for(manifest: &everyaios_acp::HarnessManifest) -> &'static str {
+fn protocol_for(manifest: &agentcowork_acp::HarnessManifest) -> &'static str {
     // The registry's launch plane is ACP only (ADR-0005 §D1 — external agents
     // are the v1 engines).
     let _ = manifest;
@@ -725,7 +725,7 @@ fn runtime_location_from_json(v: &Value) -> RuntimeLocation {
 
 fn native_caps() -> Vec<String> {
     // Every v1 engine is an external agent (ADR-0005 §D1): its native plane
-    // is its own loop/tools/model/permissions, never EveryAIOS's.
+    // is its own loop/tools/model/permissions, never AgentCowork's.
     vec![
         "own-loop".into(),
         "own-tools".into(),
@@ -770,7 +770,7 @@ fn session_loadout_for(ready: bool, health: &str) -> Vec<SessionLoadoutRow> {
             || cap.contains("office-facade");
         rows.push(SessionLoadoutRow {
             capability_id: cap,
-            source: "everyaios-shared".to_string(),
+            source: "agentcowork-shared".to_string(),
             native_or_shared: "shared".to_string(),
             enabled: ready,
             health: health.to_string(),
@@ -784,7 +784,7 @@ fn session_loadout_for(ready: bool, health: &str) -> Vec<SessionLoadoutRow> {
 
 fn build_agent_settings(
     state: &AppState,
-    manifest: &everyaios_acp::HarnessManifest,
+    manifest: &agentcowork_acp::HarnessManifest,
 ) -> AgentSettings {
     let installed = crate::acp_cmds::agent_installed(&manifest.id);
     let auth_mode = auth_mode_for(manifest).to_string();
@@ -956,7 +956,7 @@ fn remote_token_present(state: &AppState, store_id: &str) -> bool {
         }
     }
     if let Ok(vault) = state.vault.lock() {
-        let mgr = everyaios_vault::oauth::OAuthManager::new(&vault);
+        let mgr = agentcowork_vault::oauth::OAuthManager::new(&vault);
         if let Ok(Some(_)) = mgr.load_connector_token("remote-mcp", store_id) {
             return true;
         }
@@ -979,10 +979,10 @@ pub fn settings_connections_list(state: State<'_, AppState>) -> Value {
 
     // Native adapter: the inbuilt catalog is live by construction.
     {
-        let total = everyaios_mcp::all_tools().len();
+        let total = agentcowork_mcp::all_tools().len();
         let hash = config_hash_of(&format!("native|{total}"));
         let row = ConnectionRecord {
-            id: "everyaios-native".to_string(),
+            id: "agentcowork-native".to_string(),
             kind: "native_adapter".to_string(),
             transport: "native".to_string(),
             scopes: vec!["browser".to_string(), "storage".to_string()],
@@ -1048,10 +1048,10 @@ pub fn settings_connections_list(state: State<'_, AppState>) -> Value {
     // (discovery until a token exists). Installed-vs-marketplace stays split:
     // a store entry is never occupancy by itself.
     {
-        use everyaios_mcp::{StoreIndex, StoreKind};
+        use agentcowork_mcp::{StoreIndex, StoreKind};
         let index = StoreIndex::bundled();
         for entry in index.entries() {
-            if entry.id == "everyaios-native" {
+            if entry.id == "agentcowork-native" {
                 continue;
             }
             let is_remote = matches!(entry.kind, StoreKind::RemoteMcp);
@@ -1105,8 +1105,8 @@ pub fn settings_connections_list(state: State<'_, AppState>) -> Value {
     // OAuth accounts: one row per vault account (handle-only view — the row
     // exists because a token is stored, so `connected` is proof-backed).
     {
-        use everyaios_vault::oauth::{OAuthManager, CHATGPT_PRO, COPILOT, QWEN};
-        let accounts: Vec<everyaios_vault::oauth::OAuthAccountInfo> = match state.vault.lock() {
+        use agentcowork_vault::oauth::{OAuthManager, CHATGPT_PRO, COPILOT, QWEN};
+        let accounts: Vec<agentcowork_vault::oauth::OAuthAccountInfo> = match state.vault.lock() {
             Ok(vault) => {
                 let mgr = OAuthManager::new(&vault);
                 if !mgr.enabled() {
@@ -1243,7 +1243,7 @@ fn schedule_settings_for(state: &AppState, job: &Value) -> ScheduleSettings {
         .get("suppressOnBattery")
         .and_then(|v| v.as_bool())
         .unwrap_or(false);
-    let chief = everyaios_core::Config::load()
+    let chief = agentcowork_core::Config::load()
         .map(|c| c.primary_chief)
         .unwrap_or_else(|_| "inbuilt".to_string());
     let timezone = job
@@ -1389,10 +1389,10 @@ pub fn settings_schedule_set_enabled(
 #[tauri::command]
 pub fn settings_extensions_list(state: State<'_, AppState>) -> Value {
     let mut out: Vec<Value> = Vec::new();
-    let root = std::env::var_os("EVERYAIOS_SKILLS_DIR")
+    let root = agentcowork_types::env_compat::get_os("SKILLS_DIR")
         .map(std::path::PathBuf::from)
-        .unwrap_or_else(everyaios_blueprint::SkillStore::default_home);
-    let store = everyaios_blueprint::SkillStore::new(root);
+        .unwrap_or_else(agentcowork_blueprint::SkillStore::default_home);
+    let store = agentcowork_blueprint::SkillStore::new(root);
     if let Ok(skills) = store.scan() {
         for s in skills {
             let granted: Vec<String> = s
@@ -1419,7 +1419,7 @@ pub fn settings_extensions_list(state: State<'_, AppState>) -> Value {
                     abi_version: None,
                     provenance: s.manifest.author.clone(),
                     digest: String::new(),
-                    signature_status: if s.manifest.author == "everyaios-store" {
+                    signature_status: if s.manifest.author == "agentcowork-store" {
                         "verified-store".to_string()
                     } else {
                         "unsigned-local".to_string()
@@ -1555,7 +1555,7 @@ mod tests {
 
     /// P71.2a — the built-in engine is retired (ADR-0005 §2), so an agent's
     /// model surface is never attributed to the host: the column reports
-    /// `managed` when EveryAIOS holds a verified binding for it and `agent`
+    /// `managed` when AgentCowork holds a verified binding for it and `agent`
     /// otherwise. The old `native` branch existed only for the built-in row.
     #[test]
     fn model_owner_rule() {
@@ -1612,7 +1612,7 @@ mod tests {
         }));
         assert!(matches!(loc, RuntimeLocation::UserPath { .. }));
         let loc = runtime_location_from_json(&json!({
-            "kind": "managed", "source": "everyaios_install",
+            "kind": "managed", "source": "agentcowork_install",
             "executable": "/data/agents/x/y", "version": "1.2.3"
         }));
         match loc {

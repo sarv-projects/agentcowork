@@ -1,8 +1,8 @@
 //! P5.9 (J5) — Trajectory Tauri commands. Thin wrappers over the
-//! `everyaios-audit` session log; the logic + tests live in the crate, the
+//! `agentcowork-audit` session log; the logic + tests live in the crate, the
 //! shell just exposes the inspect-by-source context-injection view to the UI.
 
-use everyaios_audit::session_log::{list_session_ids, ContextInjectionRecord, SessionLog};
+use agentcowork_audit::session_log::{list_session_ids, ContextInjectionRecord, SessionLog};
 use tauri::State;
 
 use crate::AppState;

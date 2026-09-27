@@ -16,7 +16,7 @@ import type {
   ConnectorResult,
   MemoryFact,
   UserQuery,
-} from '@everyaios/core-domain';
+} from '@agentcowork/core-domain';
 import { requestConnector } from '../connection-manager.js';
 
 const DROPBOX_API = 'https://api.dropboxapi.com/2';

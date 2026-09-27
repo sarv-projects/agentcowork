@@ -41,7 +41,7 @@ export function CompanionChip() {
   const running = active?.status === 'running'
 
   const agentName =
-    AGENTS.find((a) => a.id === active?.agent)?.name ?? 'EveryAIOS'
+    AGENTS.find((a) => a.id === active?.agent)?.name ?? 'AgentCowork'
   const mood = moodForState(!!paused, !!running)
   const { dot, label } = MOOD_STYLE[mood]
 

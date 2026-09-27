@@ -1,8 +1,8 @@
 // P71.9a/P71.9c — DOM proof for the composer picker in v1.
 //
-// The picker used to render EveryAIOS's own models.dev catalog and a "Curated
-// seed · EveryAIOS Native" list for the built-in engine. There is no built-in
-// engine any more (ADR-0005 §1), EveryAIOS owns no model surface (P71.2d), and
+// The picker used to render AgentCowork's own models.dev catalog and a "Curated
+// seed · AgentCowork Native" list for the built-in engine. There is no built-in
+// engine any more (ADR-0005 §1), AgentCowork owns no model surface (P71.2d), and
 // the retired built-in spellings resolve to *nothing*. What this file proves is
 // the v1 contract instead:
 //
@@ -139,6 +139,7 @@ describe('P71.9a — rows come from discovery, never from the seed', () => {
     expect(ok).toBe(true)
     // Nothing is substituted: no curated row, and certainly no built-in one.
     expect(agentRow('claude-code')).toBeNull()
+    // DEC-053: this legacy spelling stays verbatim so retirement recognition keeps working.
     expect(agentRow('everyaios-native')).toBeNull()
     expect(mounted.container.textContent ?? '').not.toContain('always available')
   })
@@ -185,7 +186,7 @@ describe('P71.9a — rows come from discovery, never from the seed', () => {
 })
 
 describe('P71.9c — the model surface is the agent\u2019s own', () => {
-  test('shows the agent\u2019s ACP model option, not an EveryAIOS catalog', async () => {
+  test('shows the agent\u2019s ACP model option, not an AgentCowork catalog', async () => {
     await withAct(() =>
       useAppStore.setState({
         liveAgents: [runtimeRow('claude-code', 'installed')],
@@ -213,7 +214,7 @@ describe('P71.9c — the model surface is the agent\u2019s own', () => {
     await openPicker()
 
     expect(mounted.container.textContent ?? '').toContain(
-      'No ACP model option is exposed. EveryAIOS will not show or inject its Native BYOK/local models here.',
+      'No ACP model option is exposed. AgentCowork will not show or inject its Native BYOK/local models here.',
     )
   })
 })

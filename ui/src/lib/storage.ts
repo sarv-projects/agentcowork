@@ -1,5 +1,5 @@
 // P4.8 (D9–D12, G7) — storage intelligence bridge. Mirrors the Rust
-// `storage_*` Tauri commands (everyaios-storage crate). In a plain-browser
+// `storage_*` Tauri commands (agentcowork-storage crate). In a plain-browser
 // preview (no shell) the callers fall back to demo data so the page is
 // explorable.
 

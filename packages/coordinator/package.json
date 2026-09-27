@@ -1,10 +1,10 @@
 {
-  "name": "@everyaios/coordinator",
+  "name": "@agentcowork/coordinator",
   "version": "0.1.0",
   "license": "MIT OR Apache-2.0",
   "private": true,
   "type": "module",
-  "description": "EveryAIOS TS sidecar \u2014 the supervised agent-loop engine (P0.3). A sidecar binary, not a library \u2014 no `main` entry (build emits a compiled binary via `bun build --compile`).",
+  "description": "AgentCowork TS sidecar \u2014 the supervised agent-loop engine (P0.3). A sidecar binary, not a library \u2014 no `main` entry (build emits a compiled binary via `bun build --compile`).",
   "scripts": {
     "dev": "bun run src/index.ts",
     "build": "bun build --compile ./src/index.ts --external canvas --outfile dist/coordinator",
@@ -12,10 +12,10 @@
     "test": "bun test"
   },
   "dependencies": {
-    "@everyaios/core-ai": "workspace:*",
-    "@everyaios/core-connectors": "workspace:*",
-    "@everyaios/core-providers": "workspace:*",
-    "@everyaios/core-search": "workspace:*"
+    "@agentcowork/core-ai": "workspace:*",
+    "@agentcowork/core-connectors": "workspace:*",
+    "@agentcowork/core-providers": "workspace:*",
+    "@agentcowork/core-search": "workspace:*"
   },
   "devDependencies": {
     "@types/bun": "^1.1.0",

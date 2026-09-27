@@ -1,4 +1,4 @@
-import type { SearchContext, SearchProvider, SearchResult } from '@everyaios/core-domain';
+import type { SearchContext, SearchProvider, SearchResult } from '@agentcowork/core-domain';
 import poolData from '../data/searx-pool.json' with { type: 'json' };
 
 const FAILURE_THRESHOLD = 3;

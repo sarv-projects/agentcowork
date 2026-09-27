@@ -1,7 +1,7 @@
-//! EveryAIOS desktop shell — Tauri v2 backend (tasks P0.2).
+//! AgentCowork desktop shell — Tauri v2 backend (tasks P0.2).
 //!
 //! The shell is deliberately thin: every capability lives in the
-//! `everyaios-*` crates (core, vault, guard, audit, ipc). This crate wires
+//! `agentcowork-*` crates (core, vault, guard, audit, ipc). This crate wires
 //! them to the UI as Tauri commands + events, and owns the system tray.
 
 use std::path::PathBuf;
@@ -66,9 +66,9 @@ mod work_cmds;
 
 pub use state::AppState;
 
-use everyaios_core::GuardService;
-use everyaios_guard::prescan::guard as compiled_guard;
-use everyaios_vault::Vault;
+use agentcowork_core::GuardService;
+use agentcowork_guard::prescan::guard as compiled_guard;
+use agentcowork_vault::Vault;
 
 pub mod xlsx_cmds;
 use tauri::{AppHandle, Emitter, Manager, State};
@@ -82,14 +82,14 @@ pub const CHAT_EVENT: &str = "chat-event";
 /// FIX-02 / `TASK-TRUST-001` — the process-wide control-plane limiter.
 ///
 /// One instance guards the whole `nativeCall`/Tauri IPC surface
-/// (`everyaios-guard::ratelimit`). It is a `OnceLock` singleton rather than
+/// (`agentcowork-guard::ratelimit`). It is a `OnceLock` singleton rather than
 /// managed state because the gate has to be callable *before* a command's state
 /// is resolved, and because a limiter that could be swapped out from under the
 /// gate would be a limiter that can be turned off.
-fn control_plane_limiter() -> &'static everyaios_guard::RateLimiter {
-    static LIMITER: std::sync::OnceLock<everyaios_guard::RateLimiter> =
+fn control_plane_limiter() -> &'static agentcowork_guard::RateLimiter {
+    static LIMITER: std::sync::OnceLock<agentcowork_guard::RateLimiter> =
         std::sync::OnceLock::new();
-    LIMITER.get_or_init(everyaios_guard::RateLimiter::with_defaults)
+    LIMITER.get_or_init(agentcowork_guard::RateLimiter::with_defaults)
 }
 
 /// Wrap the IPC handler with the control-plane admission gate.
@@ -112,7 +112,7 @@ where
 {
     move |invoke: tauri::ipc::Invoke| {
         let command = invoke.message.command();
-        let caller = invoke.message.headers().get("x-everyaios-caller");
+        let caller = invoke.message.headers().get("x-agentcowork-caller");
         // The header is an attribution hint for the audit row only. It is never
         // trusted for authorization (a caller can set it), it is bounded, and a
         // missing one falls back to the single renderer identity — so the
@@ -226,10 +226,10 @@ fn connect_chat_relay(
         .unwrap_or_else(|e| e.into_inner()) = Some(Arc::clone(&activity));
     // The SidecarLink reader re-arms the supervisor's idle-watchdog clock on
     // every decoded frame (session/ready + session/heartbeat).
-    let link = everyaios_core::SidecarLink::new_with_activity(stdin, stdout, Some(activity));
+    let link = agentcowork_core::SidecarLink::new_with_activity(stdin, stdout, Some(activity));
     // J21: the relay shares the app's Guard-2 service, and loads the user's
     // `permissions.toml` escalation policy at boot.
-    let relay = everyaios_core::ChatRelay::new_with_guard(
+    let relay = agentcowork_core::ChatRelay::new_with_guard(
         link,
         Arc::clone(&state.vault),
         Arc::clone(&state.guard_service),
@@ -268,8 +268,8 @@ fn connect_chat_relay(
     // can observe "no plane" because it raced boot.
     // Coerce the value (not the `Arc::clone` argument) so this is an unsize
     // coercion of the shared handle rather than a second host.
-    let plane_host: Arc<everyaios_core::terminal::PtyHost> = Arc::clone(&state.terminal);
-    let terminal_plane: Arc<dyn everyaios_core::terminal::TerminalPlaneObserver> = plane_host;
+    let plane_host: Arc<agentcowork_core::terminal::PtyHost> = Arc::clone(&state.terminal);
+    let terminal_plane: Arc<dyn agentcowork_core::terminal::TerminalPlaneObserver> = plane_host;
     relay.attach_terminal_plane(terminal_plane);
     // P48.3 — the inbuilt agent's computer-use path (E9). Attached here, before
     // the relay is published, so no agent turn can race ahead of the executor.
@@ -277,12 +277,12 @@ fn connect_chat_relay(
     // nothing is attached and `desktop.*` keeps fail-closing honestly with
     // `desktop session not attached` instead of pretending to drive the GUI.
     match desktop_cmds::publish_desktop_backend(&state, app) {
-        Ok(()) => eprintln!("everyaios-desktop: agent desktop backend attached"),
-        Err(e) => eprintln!("everyaios-desktop: agent desktop backend unavailable ({e})"),
+        Ok(()) => eprintln!("agentcowork-desktop: agent desktop backend attached"),
+        Err(e) => eprintln!("agentcowork-desktop: agent desktop backend unavailable ({e})"),
     }
-    let policy_path = everyaios_core::default_data_dir().join("permissions.toml");
+    let policy_path = agentcowork_core::default_data_dir().join("permissions.toml");
     relay.with_policy(&policy_path);
-    eprintln!("everyaios-desktop: relay stage policy ok");
+    eprintln!("agentcowork-desktop: relay stage policy ok");
     // P71.2c — the relay no longer carries a provider dial plan (profiles,
     // resolved endpoints, keyless local endpoints): the broker that consumed it
     // is deleted with the built-in engine (ADR-0005 §2), and an external agent
@@ -295,7 +295,7 @@ fn connect_chat_relay(
     // up. Unlocking the vault sweeps again, because that is when the keyed
     // providers join the connected set.
     catalog_cmds::spawn_boot_observation_sweep(app.clone());
-    eprintln!("everyaios-desktop: relay stage observation sweep ok");
+    eprintln!("agentcowork-desktop: relay stage observation sweep ok");
     // P43 (B7 v3.53) — push completion: every terminal transition of the
     // task ledger wakes the UI via a `task-update` event (never polling).
     {
@@ -304,7 +304,7 @@ fn connect_chat_relay(
             .tasks()
             .lock()
             .unwrap_or_else(|e| e.into_inner())
-            .watch(Box::new(move |record: &everyaios_core::TaskRecord| {
+            .watch(Box::new(move |record: &agentcowork_core::TaskRecord| {
                 let _ = h.emit(
                     "task-update",
                     serde_json::to_value(record).unwrap_or_else(|_| serde_json::json!({})),
@@ -312,7 +312,7 @@ fn connect_chat_relay(
             }));
     }
     relay.spawn();
-    eprintln!("everyaios-desktop: relay stage spawn ok");
+    eprintln!("agentcowork-desktop: relay stage spawn ok");
     *state.chat_relay.lock().expect("chat_relay poisoned") = Some(relay);
     if let Some(relay) = state
         .chat_relay
@@ -324,7 +324,7 @@ fn connect_chat_relay(
     }
     // Boot diagnostic: `runtime_status.sidecar` reads this slot, so "coordinator
     // offline" in the UI is exactly "this line never printed".
-    eprintln!("everyaios-desktop: chat relay live — coordinator connected");
+    eprintln!("agentcowork-desktop: chat relay live — coordinator connected");
 }
 
 #[derive(serde::Serialize)]
@@ -340,7 +340,7 @@ fn runtime_status(state: State<'_, AppState>) -> RuntimeStatus {
     let vault = if state.vault_unlocked.load(Ordering::Acquire) {
         "ready"
     } else {
-        match everyaios_core::gate_mode(&everyaios_core::default_data_dir()) {
+        match agentcowork_core::gate_mode(&agentcowork_core::default_data_dir()) {
             "setup" | "wrap" => "setup",
             "unlock" => "locked",
             _ => "unknown",
@@ -389,7 +389,7 @@ fn now_ms() -> u64 {
 
 #[tauri::command]
 fn version() -> String {
-    everyaios_core::version::banner()
+    agentcowork_core::version::banner()
 }
 
 #[tauri::command]
@@ -409,8 +409,8 @@ fn scan_text(state: State<'_, AppState>, text: String) -> Result<bool, String> {
 
 /// P71.2c — usage is an **observation** ledger (ADR-0005 §2,
 /// `ARCH/ROUTING.md` §5): the durable `token_usage` rows plus the in-process
-/// memory ledger. It no longer reflects an EveryAIOS-owned call, because
-/// EveryAIOS makes none; the surfaces read what was observed and say so when
+/// memory ledger. It no longer reflects an AgentCowork-owned call, because
+/// AgentCowork makes none; the surfaces read what was observed and say so when
 /// nothing was (`I15`).
 #[tauri::command]
 fn usage_snapshot(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
@@ -431,7 +431,7 @@ fn usage_snapshot(state: State<'_, AppState>) -> Result<serde_json::Value, Strin
 #[tauri::command]
 fn session_totals(
     state: State<'_, AppState>,
-) -> Result<Vec<everyaios_vault::SessionTotal>, String> {
+) -> Result<Vec<agentcowork_vault::SessionTotal>, String> {
     let vault = state.vault.lock().map_err(|e| e.to_string())?;
     vault.session_totals().map_err(|e| e.to_string())
 }
@@ -441,28 +441,28 @@ fn probe_vault() -> Result<String, String> {
     // Security (P0.2 stub): the path is NOT webview-controlled — it is pinned
     // to the data dir. Arbitrary path handling arrives with P1.1 key
     // management (vault path comes from config, never from the frontend).
-    let path = everyaios_core::default_data_dir().join("vault.db");
-    let resolved = everyaios_core::resolve_vault_key(&everyaios_core::default_data_dir())
+    let path = agentcowork_core::default_data_dir().join("vault.db");
+    let resolved = agentcowork_core::resolve_vault_key(&agentcowork_core::default_data_dir())
         .map_err(|e| e.to_string())?;
-    let vault = everyaios_vault::Vault::open(&path, &resolved.key).map_err(|e| e.to_string())?;
+    let vault = agentcowork_vault::Vault::open(&path, &resolved.key).map_err(|e| e.to_string())?;
     Ok(vault.status())
 }
 
 #[tauri::command]
 fn vault_key_status() -> Result<serde_json::Value, String> {
-    let dir = everyaios_core::default_data_dir();
-    let mode = everyaios_core::gate_mode(&dir);
-    let gate = everyaios_core::needs_passphrase_gate(&dir);
-    match everyaios_core::resolve_vault_key(&dir) {
+    let dir = agentcowork_core::default_data_dir();
+    let mode = agentcowork_core::gate_mode(&dir);
+    let gate = agentcowork_core::needs_passphrase_gate(&dir);
+    match agentcowork_core::resolve_vault_key(&dir) {
         Ok(r) => Ok(serde_json::json!({
             "ok": true,
             "origin": r.origin,
             "path": r.path,
             "needsSetup": gate,
-            "mode": if r.origin == everyaios_core::VaultKeyOrigin::Generated { "wrap" } else { mode },
+            "mode": if r.origin == agentcowork_core::VaultKeyOrigin::Generated { "wrap" } else { mode },
             "locked": false,
         })),
-        Err(everyaios_core::VaultKeyError::NeedsSetup) => Ok(serde_json::json!({
+        Err(agentcowork_core::VaultKeyError::NeedsSetup) => Ok(serde_json::json!({
             "ok": false,
             "needsSetup": true,
             "mode": mode,
@@ -473,7 +473,7 @@ fn vault_key_status() -> Result<serde_json::Value, String> {
 }
 
 fn reopen_disk_vault(state: &AppState, key: &str) -> Result<String, String> {
-    let path = everyaios_core::default_data_dir().join("vault.db");
+    let path = agentcowork_core::default_data_dir().join("vault.db");
     let vault = Vault::open(&path, key).map_err(|e| e.to_string())?;
     let status = vault.status();
     *state.vault.lock().map_err(|e| e.to_string())? = vault;
@@ -487,7 +487,7 @@ fn vault_setup(
     passphrase: String,
 ) -> Result<serde_json::Value, String> {
     let r =
-        everyaios_core::setup_vault_passphrase(&everyaios_core::default_data_dir(), &passphrase)
+        agentcowork_core::setup_vault_passphrase(&agentcowork_core::default_data_dir(), &passphrase)
             .map_err(|e| e.to_string())?;
     let status = reopen_disk_vault(&state, &r.key)?;
     state.vault_unlocked.store(true, Ordering::Release);
@@ -510,7 +510,7 @@ fn vault_unlock(
     passphrase: String,
 ) -> Result<serde_json::Value, String> {
     let r =
-        everyaios_core::unlock_vault_passphrase(&everyaios_core::default_data_dir(), &passphrase)
+        agentcowork_core::unlock_vault_passphrase(&agentcowork_core::default_data_dir(), &passphrase)
             .map_err(|e| e.to_string())?;
     let status = reopen_disk_vault(&state, &r.key)?;
     state.vault_unlocked.store(true, Ordering::Release);
@@ -559,12 +559,12 @@ fn session_delete(state: State<'_, AppState>, session_id: String) -> Result<(), 
         .map_err(|e| e.to_string())
 }
 
-/// Locate the coordinator sidecar binary. `EVERYAIOS_COORDINATOR_BIN` wins;
+/// Locate the coordinator sidecar binary. `AGENTCOWORK_COORDINATOR_BIN` wins;
 /// otherwise the packaged resource dir (`bin/coordinator` — P8.8 installers
 /// ship the sidecar as a bundle resource) is probed, then the standard
 /// workspace build output paths.
 fn locate_coordinator_bin(app: &AppHandle) -> Option<PathBuf> {
-    if let Ok(p) = std::env::var("EVERYAIOS_COORDINATOR_BIN") {
+    if let Some(p) = agentcowork_types::env_compat::get("COORDINATOR_BIN") {
         let p = PathBuf::from(p);
         if p.is_file() {
             return Some(p);
@@ -656,9 +656,9 @@ fn sidecar_probe(app: AppHandle, state: State<'_, AppState>) -> SidecarProbe {
                 connected: false,
                 state: "missing",
                 detail: if packaged {
-                    "The coordinator sidecar was not found in this installation — the install is broken or incomplete. Reinstall EveryAIOS to restore live agent work.".into()
+                    "The coordinator sidecar was not found in this installation — the install is broken or incomplete. Reinstall AgentCowork to restore live agent work.".into()
                 } else {
-                    "The coordinator sidecar is not built. Run `pnpm --filter @everyaios/coordinator build` (or set EVERYAIOS_COORDINATOR_BIN) and restart.".into()
+                    "The coordinator sidecar is not built. Run `pnpm --filter @agentcowork/coordinator build` (or set AGENTCOWORK_COORDINATOR_BIN) and restart.".into()
                 },
             }
         }
@@ -674,10 +674,10 @@ fn sidecar_probe(app: AppHandle, state: State<'_, AppState>) -> SidecarProbe {
 /// connected".
 fn pre_spawn_coordinator(app: AppHandle) {
     let Some(bin) = locate_coordinator_bin(&app) else {
-        eprintln!("everyaios-desktop: coordinator binary not found — pre-spawn skipped");
+        eprintln!("agentcowork-desktop: coordinator binary not found — pre-spawn skipped");
         return;
     };
-    let (mut supervisor, link_rx) = everyaios_core::start_supervisor_with_link(bin);
+    let (mut supervisor, link_rx) = agentcowork_core::start_supervisor_with_link(bin);
     let activity = Arc::clone(&supervisor.last_activity_ms);
     // Share the park/resume flags with commands so the next turn can wake
     // a sidecar that exited because the user went idle.
@@ -688,13 +688,13 @@ fn pre_spawn_coordinator(app: AppHandle) {
     // Lifecycle thread: spawn, watchdog, restart. Blocks until circuit open.
     std::thread::spawn(move || {
         if let Err(e) = supervisor.wait_or_restart() {
-            eprintln!("everyaios-desktop: supervisor ended: {e}");
+            eprintln!("agentcowork-desktop: supervisor ended: {e}");
         }
     });
     // Link thread: rebuild the chat relay on every (re)spawn handoff.
     std::thread::spawn(move || {
         while let Ok((stdin, stdout)) = link_rx.recv() {
-            eprintln!("everyaios-desktop: sidecar link acquired — building chat relay");
+            eprintln!("agentcowork-desktop: sidecar link acquired — building chat relay");
             connect_chat_relay(&app, stdin, stdout, Arc::clone(&activity));
         }
     });
@@ -704,12 +704,12 @@ fn pre_spawn_coordinator(app: AppHandle) {
 /// `agent/stop` / `agent/undo` / `agent/interrupt-response`.
 #[cfg(unix)]
 fn serve_unix_control_channel(app: AppHandle) {
-    let cfg = everyaios_core::Config::load().unwrap_or_default();
+    let cfg = agentcowork_core::Config::load().unwrap_or_default();
     let sock = cfg.resolved_socket_path();
-    let server = match everyaios_ipc::UnixFrameServer::bind(&sock) {
+    let server = match agentcowork_ipc::UnixFrameServer::bind(&sock) {
         Ok(s) => s,
         Err(e) => {
-            eprintln!("everyaios-desktop: unix socket bind failed (continuing): {e}");
+            eprintln!("agentcowork-desktop: unix socket bind failed (continuing): {e}");
             return;
         }
     };
@@ -735,7 +735,7 @@ fn serve_unix_control_channel(app: AppHandle) {
                 });
             }
             Err(e) => {
-                eprintln!("everyaios-desktop: unix socket accept: {e}");
+                eprintln!("agentcowork-desktop: unix socket accept: {e}");
                 std::thread::sleep(std::time::Duration::from_millis(200));
             }
         }
@@ -747,10 +747,10 @@ pub fn run() {
     // Build the initial state exactly like the headless binary would.
     let args: Vec<String> = std::env::args().skip(1).collect();
     let mut boot_report =
-        everyaios_core::boot(&args).unwrap_or_else(|e| format!("boot failed: {e}"));
+        agentcowork_core::boot(&args).unwrap_or_else(|e| format!("boot failed: {e}"));
     let guard = compiled_guard().clone();
-    let data_dir = everyaios_core::default_data_dir();
-    let resolved = everyaios_core::resolve_vault_key(&data_dir);
+    let data_dir = agentcowork_core::default_data_dir();
+    let resolved = agentcowork_core::resolve_vault_key(&data_dir);
     // Bugfix 14 — persistence must never fail *silently* open. If the vault
     // cannot be opened on disk we fall back to an in-memory vault (chat keeps
     // working) but flag it loudly so the UI can warn that nothing will persist,
@@ -766,25 +766,25 @@ pub fn run() {
             Err(e) => {
                 // Keep a disposable vault only as a type-safe boot container;
                 // it is locked from the UI and cannot be treated as durable.
-                eprintln!("everyaios-desktop: vault open failed (persistence unavailable): {e}");
+                eprintln!("agentcowork-desktop: vault open failed (persistence unavailable): {e}");
                 vault_ephemeral = true;
                 Vault::open_in_memory(&r.key).unwrap_or_else(|_| {
-                    Vault::open_in_memory(&everyaios_core::default_vault_key())
+                    Vault::open_in_memory(&agentcowork_core::default_vault_key())
                         .expect("in-memory vault")
                 })
             }
         },
         Err(e) => {
-            eprintln!("everyaios-desktop: vault key resolve failed (persistence unavailable): {e}");
+            eprintln!("agentcowork-desktop: vault key resolve failed (persistence unavailable): {e}");
             vault_ephemeral = true;
-            Vault::open_in_memory(&everyaios_core::default_vault_key()).expect("in-memory vault")
+            Vault::open_in_memory(&agentcowork_core::default_vault_key()).expect("in-memory vault")
         }
     };
     if vault_ephemeral {
         boot_report.push_str(" | EPHEMERAL VAULT: persistence disabled (fix vault lock)");
     }
     let vault = Arc::new(Mutex::new(vault));
-    let audit_log = everyaios_audit::AuditWriter::open(&data_dir.join("audit.ndjson")).ok();
+    let audit_log = agentcowork_audit::AuditWriter::open(&data_dir.join("audit.ndjson")).ok();
 
     tauri::Builder::default()
         .manage(AppState {
@@ -796,11 +796,11 @@ pub fn run() {
             sidecar_resume: Arc::new(AtomicBool::new(false)),
             sidecar_parked: Arc::new(AtomicBool::new(false)),
             chat_relay: Mutex::new(None),
-            replay_dir: everyaios_core::default_data_dir(),
+            replay_dir: agentcowork_core::default_data_dir(),
             cockpit: Arc::new(Mutex::new(Default::default())),
             guard_service: Arc::new(Mutex::new(GuardService::new())),
             acp_sessions: Arc::new(Mutex::new(std::collections::HashMap::new())),
-            audit: Mutex::new(everyaios_audit::merkle::MerkleChain::new()),
+            audit: Mutex::new(agentcowork_audit::merkle::MerkleChain::new()),
             audit_log: Mutex::new(audit_log),
             file_undos: Mutex::new(Vec::new()),
             battery: std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
@@ -820,20 +820,20 @@ pub fn run() {
             // H36 (P54) — the PTY host owns live terminal sessions; they
             // persist independently of any Shell-view mount.
             terminal: {
-                let host = everyaios_core::terminal::PtyHost::new();
+                let host = agentcowork_core::terminal::PtyHost::new();
                 // P68.8 — the replay ring's capacity comes from
                 // `terminal.scrollbackBytes` (clamped inside the setter). Read
                 // once, here: sessions snapshot the capacity at spawn, so a
                 // later config change never resizes a live scrollback under
                 // the user's cursor.
-                if let Ok(cfg) = everyaios_core::Config::load() {
+                if let Ok(cfg) = agentcowork_core::Config::load() {
                     host.set_scrollback_bytes(cfg.terminal.scrollback_bytes());
                 }
                 std::sync::Arc::new(host)
             },
             // P56.1 — the live models.dev catalog (snapshot + cadence).
             catalog: std::sync::Arc::new(catalog_cmds::CatalogState::new(
-                everyaios_core::default_data_dir().join("catalog"),
+                agentcowork_core::default_data_dir().join("catalog"),
             )),
             pending_update: Mutex::new(None),
             channel_b: Mutex::new(None),
@@ -866,16 +866,16 @@ pub fn run() {
                 std::thread::spawn(move || {
                     for ev in rx {
                         let payload = match &ev {
-                            everyaios_core::GuardLifecycle::Minted { ticket_id, batch } => {
+                            agentcowork_core::GuardLifecycle::Minted { ticket_id, batch } => {
                                 serde_json::json!({ "kind": "minted", "ticketId": ticket_id, "batch": batch })
                             }
-                            everyaios_core::GuardLifecycle::Approved { ticket_id, batch } => {
+                            agentcowork_core::GuardLifecycle::Approved { ticket_id, batch } => {
                                 serde_json::json!({ "kind": "approved", "ticketId": ticket_id, "batch": batch })
                             }
-                            everyaios_core::GuardLifecycle::Rejected { ticket_id, batch } => {
+                            agentcowork_core::GuardLifecycle::Rejected { ticket_id, batch } => {
                                 serde_json::json!({ "kind": "rejected", "ticketId": ticket_id, "batch": batch })
                             }
-                            everyaios_core::GuardLifecycle::Expired { ticket_id, batch } => {
+                            agentcowork_core::GuardLifecycle::Expired { ticket_id, batch } => {
                                 serde_json::json!({ "kind": "expired", "ticketId": ticket_id, "batch": batch })
                             }
                         };
@@ -886,7 +886,7 @@ pub fn run() {
             // Tray must be non-fatal: on systems without appindicator/tray
             // support the app should still start (just without a tray icon).
             if let Err(e) = boot::setup_tray(app.handle()) {
-                eprintln!("everyaios-desktop: tray setup failed (continuing): {e}");
+                eprintln!("agentcowork-desktop: tray setup failed (continuing): {e}");
             }
             // P71.2c — the trigger plane's firing loop. The host owns a
             // firing (Work + Run + the bound agent's ACP turn); the sidecar
@@ -902,14 +902,14 @@ pub fn run() {
             // retention — compact the NDJSON log at most once per day
             // (writer-quiescent window; marker-gated; non-fatal).
             if let Err(e) = maintenance_cmds::run_audit_sweep_if_due(&app.state::<AppState>()) {
-                eprintln!("everyaios-desktop: audit sweep failed (continuing): {e}");
+                eprintln!("agentcowork-desktop: audit sweep failed (continuing): {e}");
             }
             // P43.4 — task-ledger maintenance at boot: reap grace-expired
             // running tasks + prune terminal records past 7-day retention.
             // (Marker-free: the ledger itself is idempotent — reap/prune
             // only touch records that match their predicates.)
             if let Err(e) = tasks_cmds::tasks_sweep(app.state::<AppState>()) {
-                eprintln!("everyaios-desktop: task sweep failed (continuing): {e}");
+                eprintln!("agentcowork-desktop: task sweep failed (continuing): {e}");
             }
             // P56.1 — the live catalog job: fetch models.dev/api.json when the
             // stored snapshot is stale (4h default, 1–24h configurable), then
@@ -934,7 +934,7 @@ pub fn run() {
             Ok(())
         })
         .run(tauri::generate_context!())
-        .expect("error while running EveryAIOS");
+        .expect("error while running AgentCowork");
 }
 
 #[cfg(test)]
@@ -945,10 +945,10 @@ mod tests {
     //! in a unit test, so what is pinned here is the pure part: the caller
     //! attribution rule and the failure mode of the limiter itself. The
     //! limiter's token-bucket behaviour is covered in
-    //! `everyaios_guard::ratelimit`'s own tests.
+    //! `agentcowork_guard::ratelimit`'s own tests.
 
     use super::control_plane_limiter;
-    use everyaios_guard::{RateLimitConfig, RateLimiter};
+    use agentcowork_guard::{RateLimitConfig, RateLimiter};
 
     /// A missing / oversized / blank caller header collapses to the single
     /// renderer identity, so a spoofed header cannot mint a fresh bucket per
@@ -973,8 +973,8 @@ mod tests {
     #[test]
     fn the_gate_limiter_fails_closed_with_the_canonical_code() {
         let rl = RateLimiter::new(RateLimitConfig {
-            global: everyaios_guard::Limit::new(2, 0.0),
-            per_caller_command: everyaios_guard::Limit::new(2, 0.0),
+            global: agentcowork_guard::Limit::new(2, 0.0),
+            per_caller_command: agentcowork_guard::Limit::new(2, 0.0),
             ttl_ms: 60_000,
             max_entries: 8,
         });

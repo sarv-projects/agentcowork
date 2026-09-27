@@ -1,0 +1,13 @@
+[package]
+name = "agentcowork-catalog"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "P14 — model catalog: models.dev steal (doc 66) — vendorable model capabilities/pricing/limits with a two-tier lab-vs-provider schema."
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+ureq = { workspace = true }

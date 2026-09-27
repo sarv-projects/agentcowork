@@ -27,13 +27,13 @@ import { resolveProvider, streamChatCompletion } from "./lib/provider.mjs";
 
 const provider = resolveProvider();
 if (!provider) {
-  console.log("[P50.5.1] SKIP — no real provider configured (set NVIDIA_API_KEY or EVERYAIOS_E2E_*)");
+  console.log("[P50.5.1] SKIP — no real provider configured (set NVIDIA_API_KEY or AGENTCOWORK_E2E_*)");
   process.exit(2);
 }
 console.log(`[P50.5.1] real provider: ${provider.name} (${provider.baseUrl}, models ${provider.models.join(", ")})`);
 
 /** Inter-leg spacing so a throttled real endpoint can recover (env-tunable). */
-const STAGGER_MS = Number(process.env.EVERYAIOS_E2E_STAGGER_MS ?? 5_000);
+const STAGGER_MS = Number(process.env.AGENTCOWORK_E2E_STAGGER_MS ?? process.env.EVERYAIOS_E2E_STAGGER_MS ?? 5_000);
 /** The intentionally-broken model for the error-honesty leg (real HTTP 410). */
 const EOL_MODEL = "meta/llama-3.1-8b-instruct";
 
@@ -127,7 +127,7 @@ async function assertAbsent(notifP, label, ms = 4_000) {
 const c1 = await spawnCoordinator();
 try {
   const init = await c1.request("initialize", { protocolVersion: 1, clientName: "p50.5.1" });
-  assert(init?.serverName === "@everyaios/coordinator", "handshake: initialize returns the real sidecar identity");
+  assert(init?.serverName === "@agentcowork/coordinator", "handshake: initialize returns the real sidecar identity");
   assert(init?.status === "ready", "handshake: status ready");
   const ping = await c1.request("session/ping");
   assert(ping?.pong === true, "session/ping answers");

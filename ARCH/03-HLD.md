@@ -20,7 +20,7 @@ flowchart TB
   subgraph CORE["Core"]
     WORK["Work Plane<br/>Work · Step · Task · Session · Run · Checkpoint · Scheduler"]
     ORCH["Orchestration<br/>Delegation · Agent Graph"]
-    AGX["Agent Runtime<br/>Agent X + external adapters"]
+    AGX["Agent Runtime<br/>bound engine + external adapters"]
     CTX["Context Infrastructure + Memory"]
     MODELS["Model Plane<br/>registry · router · adapters"]
     CAP["Capability Plane<br/>Registry · Resolver · Handles · Affordances · Guidance"]
@@ -83,8 +83,8 @@ flowchart TB
 | 12 | Trust | Policy, Guard, approvals, tickets, vault, egress, audit hooks, external-agent projections | kernel, work |
 | 13 | Capability | Registry, catalog, resolver, handles (epoch-checked), affordances, guidance | kernel, work, providers, trust |
 | 14 | Providers | `ProviderAdapter` contract + native/MCP/ACP/HTTP/CLI/plugin/remote adapters; MCP era policy | kernel, trust, runtime-environments |
-| 15 | Agent X | Native agent: loop, planner, delegation, recovery, completion contracts, surfacing (CLI, ACP) | work, context, memory, capability, models, runtime-environments |
-| 16 | Context | Context infrastructure (Core: store/query/snapshot/checkpoint) + context control (Agent X) + projections | kernel, files, world-model, memory, artifacts |
+| 15 | Agent plane | The `AgentEngine` contract every agent implements, plus delegation + subagent lifecycle, isolation modes and receipts | work, context, memory, capability, models, runtime-environments |
+| 16 | Context | Context infrastructure (Core: store/query/snapshot/checkpoint) + context control (the bound engine) + projections | kernel, files, world-model, memory, artifacts |
 | 17 | Memory | Durable memory: layers, write/read paths, minimal algorithm set, lifecycle | kernel, events |
 | 18 | Models | Model registry, router, adapters, local discovery (Ollama/LM Studio/vLLM/llama.cpp), reasoning mapping | kernel, trust (vault) |
 | 19 | Runtime & Environments | Process manager, environments, sandbox, lifecycle, health | kernel, trust |
@@ -117,7 +117,7 @@ Every cross-module edge is named in `ARCH/07-CONTRACTS.md`. A module with no own
 | Trust (12) | CTR-011 `Guard` · CTR-012 `ApprovalService` · CTR-013 `Vault` |
 | Capability (13) | CTR-009 `CapabilityBroker` |
 | Providers (14) | CTR-010 `ProviderAdapter` |
-| Agent X (15) | CTR-001 `AgentEngine` · CTR-002 `AgentSession` · CTR-007 `ContextController` · CTR-021 `DelegationService` |
+| Agent plane (15) | CTR-001 `AgentEngine` · CTR-002 `AgentSession` · CTR-007 `ContextController` · CTR-021 `DelegationService` |
 | Context (16) | CTR-005 `CheckpointService` · CTR-006 `ContextProvider` |
 | Memory (17) | CTR-008 `MemoryService` |
 | Models (18) | CTR-014 `ModelRouter` / `ModelAdapter` |
@@ -182,12 +182,12 @@ Resources are installed/available at Global or Workspace and never duplicated pe
 
 ## 7. Cross-cutting subsystems
 
-- **Context** (`16`): Core owns infrastructure (store/query/snapshot/checkpoint/projection); Agent X owns control (selection/ranking/budget/prune/compact/rebuild). External agents get a **context projection**, never the substrate.
+- **Context** (`16`): Core owns infrastructure (store/query/snapshot/checkpoint/projection); the bound engine owns control (selection/ranking/budget/prune/compact/rebuild). External agents get a **context projection**, never the substrate.
 - **Memory** (`17`): durable knowledge; written via explicit lifecycle (not an LLM dumping everything); read through the Context Controller under budget. Memory ≠ context.
 - **World Model** (`21`): the machine explains itself — registries + graph + event stream; consumers query, they do not screenshot by default.
 - **Events** (`30`): one event store; UI projections, workflow triggers, world updates, audit, and usage/cost telemetry all derive from it.
 - **Artifacts & Receipts** (`29`): outputs of work vs reusable inventory (Library); promotion is explicit.
-- **Model Plane** (`18`): one catalog, one router; Agent X and every internal consumer ask the router, never a vendor SDK directly.
+- **Model Plane** (`18`): one catalog, one router; every engine and every internal consumer asks the router, never a vendor SDK directly.
 
 ## 8. Module interop matrix (first cut — expanded per module in P2/P3, verified in P6; re-verified in P9)
 
@@ -198,7 +198,7 @@ Resources are installed/available at Global or Workspace and never duplicated pe
 | Trust | Guard decisions, tickets, approvals, projections | capability, providers, channels, domains |
 | Capability | resolve/invoke, handles, descriptors | agents, workflows, UI (deterministic ops) |
 | Providers | adapter registry, health, events | capability |
-| Agent X | `AgentEngine` implementation, CLI, ACP surface | work, channels, delegation |
+| Agent plane (15) | `AgentEngine` contract + `DelegationService`, CLI and ACP surfaces | work, channels, delegation |
 | Context | query/snapshot/checkpoint + projection | agents, workflow nodes |
 | Memory | memory service (write/read/forget) | agents, context |
 | Models | registry, router, adapters | agents, vision, embeddings |

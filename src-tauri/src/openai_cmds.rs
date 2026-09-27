@@ -1,6 +1,6 @@
 //! P9.5 — Local OpenAI-compatible server: Tauri wiring.
 //!
-//! Starts / stops the `everyaios_core::openai_server::OpenAiServer` on a
+//! Starts / stops the `agentcowork_core::openai_server::OpenAiServer` on a
 //! loopback port and reports its base URL + bearer token so the UI can show a
 //! copy-paste config for VS Code / Cursor / Continue.
 //!
@@ -12,12 +12,12 @@
 //!
 //! Model id resolution: an incoming `model` of `provider/model` is split on
 //! the first `/`; a bare id resolves through the config's MODEL_ALIASES, then
-//! falls back to treating it as an OpenAI model. `everyaios-auto` is a
+//! falls back to treating it as an OpenAI model. `agentcowork-auto` is a
 //! sentinel that lets the request pick the default provider/model.
 
 use std::sync::{Arc, Mutex};
 
-use everyaios_core::{
+use agentcowork_core::{
     ChatCompletionRequest, CompletionBackend, CompletionResult, ModelLister, ModelRow,
     OpenAiServer, StreamPiece, ToolCallFunction, ToolCallOut,
 };
@@ -33,18 +33,18 @@ pub struct OpenAiServerSlot {
 
 /// Live backend: resolve the model → call the vault broker → shape the result.
 struct BrokerBackend {
-    vault: Arc<Mutex<everyaios_vault::Vault>>,
+    vault: Arc<Mutex<agentcowork_vault::Vault>>,
     aliases: std::collections::HashMap<String, String>,
-    /// The default provider/model used for the `everyaios-auto` sentinel.
+    /// The default provider/model used for the `agentcowork-auto` sentinel.
     default_provider: String,
     default_model: String,
 }
 
 impl BrokerBackend {
     /// Split `model` into `(provider, model)`. `provider/model` splits on the
-    /// first `/`; aliases resolve first; `everyaios-auto` → the default.
+    /// first `/`; aliases resolve first; `agentcowork-auto` → the default.
     fn resolve(&self, model: &str) -> (String, String) {
-        if model == "everyaios-auto" || model.is_empty() {
+        if model == "agentcowork-auto" || model.is_empty() {
             return (self.default_provider.clone(), self.default_model.clone());
         }
         // Alias table (config MODEL_ALIASES).
@@ -171,7 +171,7 @@ impl CompletionBackend for BrokerBackend {
         let body = self.upstream_body(req, &model);
 
         let vault = self.vault.lock().map_err(|e| e.to_string())?;
-        let broker = everyaios_vault::Broker::new(&vault);
+        let broker = agentcowork_vault::Broker::new(&vault);
         let resp = broker
             .chat_completion(&provider, &model, SERVER_SESSION, body)
             .map_err(|e| e.to_string())?;
@@ -193,7 +193,7 @@ impl CompletionBackend for BrokerBackend {
         let body = self.upstream_body(req, &model);
 
         let vault = self.vault.lock().map_err(|e| e.to_string())?;
-        let broker = everyaios_vault::Broker::new(&vault);
+        let broker = agentcowork_vault::Broker::new(&vault);
         let mut seen_id: std::collections::HashSet<i64> = std::collections::HashSet::new();
         let events = broker
             .chat_completion_stream_cb(
@@ -201,7 +201,7 @@ impl CompletionBackend for BrokerBackend {
                 &model,
                 SERVER_SESSION,
                 body,
-                &mut |ev: &everyaios_vault::ChatStreamEvent| {
+                &mut |ev: &agentcowork_vault::ChatStreamEvent| {
                     if let Some(delta) = ev.delta.as_deref() {
                         if !delta.is_empty() {
                             on_piece(StreamPiece::Content(delta.to_string()));
@@ -228,7 +228,7 @@ impl CompletionBackend for BrokerBackend {
             .iter()
             .filter_map(|e| e.delta.as_deref())
             .collect::<String>();
-        let tool_calls = everyaios_vault::assemble_tool_calls(&events, finished_by_length)
+        let tool_calls = agentcowork_vault::assemble_tool_calls(&events, finished_by_length)
             .into_iter()
             .enumerate()
             .map(|(i, (name, args))| ToolCallOut {
@@ -241,7 +241,7 @@ impl CompletionBackend for BrokerBackend {
             })
             .collect::<Vec<_>>();
         let usage = events.iter().filter_map(|e| e.usage).fold(
-            everyaios_vault::Usage::default(),
+            agentcowork_vault::Usage::default(),
             |mut acc, u| {
                 acc.merge_max(u);
                 acc
@@ -258,7 +258,7 @@ impl CompletionBackend for BrokerBackend {
     }
 }
 
-/// Model lister: advertise the `everyaios-auto` sentinel + configured aliases
+/// Model lister: advertise the `agentcowork-auto` sentinel + configured aliases
 /// + any installed local models (ollama/llamafile). Never lists a raw key.
 ///
 /// `owned_by` names the **real owner** of each row: the provider the request
@@ -270,13 +270,13 @@ struct EngineModels {
     aliases: Vec<(String, String)>,
     /// Installed local models, already spelled `runtime/model`.
     local: Vec<String>,
-    /// The owner the `everyaios-auto` sentinel resolves to.
+    /// The owner the `agentcowork-auto` sentinel resolves to.
     auto_owner: String,
 }
 
 impl ModelLister for EngineModels {
     fn models(&self) -> Vec<ModelRow> {
-        let mut rows = vec![ModelRow::new("everyaios-auto", self.auto_owner.clone())];
+        let mut rows = vec![ModelRow::new("agentcowork-auto", self.auto_owner.clone())];
         for (alias, owner) in &self.aliases {
             rows.push(ModelRow::new(alias.clone(), owner.clone()));
         }
@@ -305,10 +305,10 @@ pub fn openai_server_start(
         }));
     }
 
-    let cfg = everyaios_core::Config::load().unwrap_or_default();
+    let cfg = agentcowork_core::Config::load().unwrap_or_default();
     let aliases = cfg.model_aliases.clone();
 
-    // Default provider/model for the `everyaios-auto` sentinel: first alias
+    // Default provider/model for the `agentcowork-auto` sentinel: first alias
     // target, else a conservative OpenAI-compatible default.
     let (default_provider, default_model) = aliases
         .values()
@@ -321,7 +321,7 @@ pub fn openai_server_start(
 
     // Installed local models (best-effort; empty if no runtime).
     let local = {
-        let mgr = everyaios_core::LocalManager::from_config(&cfg);
+        let mgr = agentcowork_core::LocalManager::from_config(&cfg);
         mgr.list_ollama_models()
             .into_iter()
             .map(|m| format!("ollama/{}", m.name))

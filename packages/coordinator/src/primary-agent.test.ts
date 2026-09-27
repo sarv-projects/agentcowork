@@ -50,6 +50,7 @@ describe("resolveSessionPrimaryAgent — per-session pin precedence", () => {
   });
 
   test("retired built-in spellings are refused by name (ADR-0005)", () => {
+    // DEC-053: these legacy spellings stay verbatim so retirement recognition keeps working.
     for (const retired of ["inbuilt", "everyaios", "everyaios-native"]) {
       expect(isRetiredAgentId(retired)).toBe(true);
       expect(() => primaryAgentRegistry.setSessionPin("s2", retired)).toThrow(/retired built-in/);

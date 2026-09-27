@@ -14,7 +14,7 @@
  * 7. Fallback resilience — only after timeout/error
  */
 
-import type { AssistantRequestPlan } from '@everyaios/core-domain';
+import type { AssistantRequestPlan } from '@agentcowork/core-domain';
 import type { RouteClass } from '../router/affinity-tracker.js';
 import type { RouteHealth } from '../metrics/metrics-collector.js';
 

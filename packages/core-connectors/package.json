@@ -1,5 +1,5 @@
 {
-  "name": "@everyaios/core-connectors",
+  "name": "@agentcowork/core-connectors",
   "version": "0.1.0",
   "license": "MIT OR Apache-2.0",
   "private": true,
@@ -22,6 +22,6 @@
     "vitest": "^3.0.0"
   },
   "dependencies": {
-    "@everyaios/core-domain": "workspace:*"
+    "@agentcowork/core-domain": "workspace:*"
   }
 }

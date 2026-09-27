@@ -4,18 +4,18 @@
 //! → `use_ticket` + surgical part-patch). A cell write is a renderable
 //! approval card, never a silent mutation.
 
-use everyaios_core::GuardDecision;
-use everyaios_guard::{
+use agentcowork_core::GuardDecision;
+use agentcowork_guard::{
     change_set_hash, BatchOperation, DecisionPackage, Operation as GuardOp, RiskLevel,
 };
-use everyaios_office::CommitReceipt;
-use everyaios_office::xlsx::address::{parse_range, parse_ref};
-use everyaios_office::xlsx::dsl::{
+use agentcowork_office::CommitReceipt;
+use agentcowork_office::xlsx::address::{parse_range, parse_ref};
+use agentcowork_office::xlsx::dsl::{
     pivot_result, Operation as XlsxOp, PivotAgg, Scalar, WorkbookCommandBatch,
 };
-use everyaios_office::xlsx::patch::apply_batch;
-use everyaios_office::xlsx::read::{self, CellValue, SheetMeta, SheetWindow};
-use everyaios_office::xlsx::recalc::{self, RecalcResult};
+use agentcowork_office::xlsx::patch::apply_batch;
+use agentcowork_office::xlsx::read::{self, CellValue, SheetMeta, SheetWindow};
+use agentcowork_office::xlsx::recalc::{self, RecalcResult};
 use std::hash::{Hash, Hasher};
 use std::path::PathBuf;
 use tauri::State;
@@ -82,7 +82,7 @@ pub fn xlsx_recalc(path: String) -> Result<RecalcResult, String> {
 
 /// P4.7 — Guard-2 "plan-before-touch" for a cell edit. Nothing is written:
 /// resolve the plan (goal + paths + risk), route it through the shared
-/// [`everyaios_core::GuardService`], and return `allow` (commit directly) or
+/// [`agentcowork_core::GuardService`], and return `allow` (commit directly) or
 /// `ask` (a ticket the approval card renders). [`xlsx_edit_commit`] is the
 /// executor half.
 #[tauri::command]
@@ -308,7 +308,7 @@ pub fn xlsx_batch_commit(
 /// A workbook commit must be **staging package → fsync → atomic swap**, not
 /// "write + rename": without the fsync the bytes can be renamed into place and
 /// still be lost on power failure, which is the OfficeCLI trade-off
-/// `ARCH/22` §4 explicitly refuses to copy. `everyaios_office::commit_bytes`
+/// `ARCH/22` §4 explicitly refuses to copy. `agentcowork_office::commit_bytes`
 /// is the single crash-safe commit path in the runtime — it records the stages
 /// it actually ran, and a failure names the stage it died in, so there is no
 /// partial commit and no bare io error.
@@ -319,16 +319,16 @@ pub fn xlsx_batch_commit(
 fn commit_workbook(path: &str, bytes: &[u8], ticket_id: &str) -> Result<CommitReceipt, String> {
     let p = PathBuf::from(path);
     let work_id = format!("office.xlsx:{ticket_id}");
-    everyaios_office::commit_under_lease(
+    agentcowork_office::commit_under_lease(
         p.as_path(),
         bytes,
         &work_id,
         "tauri:xlsx_cmds",
-        everyaios_office::now_ms(),
+        agentcowork_office::now_ms(),
     )
     .map_err(|e| match e {
         // The typed "in use" result: name the holder and the two options.
-        everyaios_office::ResidentError::InUse(c) => c.message(),
+        agentcowork_office::ResidentError::InUse(c) => c.message(),
         other => other.to_string(),
     })
 }
@@ -487,7 +487,7 @@ mod tests {
         let mut b1 = WorkbookCommandBatch::new(0, "Fill B2:B10 with 5");
         b1.operations.push(XlsxOp::FillRange {
             range: parse_range("B2:B10").unwrap().1,
-            mode: everyaios_office::xlsx::dsl::FillMode::Constant,
+            mode: agentcowork_office::xlsx::dsl::FillMode::Constant,
             value: Some(Scalar::Number(5.0)),
         });
 
@@ -508,7 +508,7 @@ mod tests {
         let mut b2 = b1.clone();
         b2.operations[0] = XlsxOp::FillRange {
             range: parse_range("B2:B10").unwrap().1,
-            mode: everyaios_office::xlsx::dsl::FillMode::Constant,
+            mode: agentcowork_office::xlsx::dsl::FillMode::Constant,
             value: Some(Scalar::Number(6.0)),
         };
         assert_ne!(h1, change_set_hash(&batch_operations("Sheet1", &b2)));
@@ -530,7 +530,7 @@ mod tests {
         // crash-safe path and that the stages it reports are the required
         // order — which fails if the fsync is ever dropped from that path.
         let dir = std::env::temp_dir().join(format!(
-            "everyaios-xlsx-commit-{}-{}",
+            "agentcowork-xlsx-commit-{}-{}",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
@@ -541,7 +541,7 @@ mod tests {
         let path = dir.join("book.xlsx");
         std::fs::write(&path, b"v1").unwrap();
 
-        let before = everyaios_office::fsync_calls();
+        let before = agentcowork_office::fsync_calls();
         let receipt = commit_workbook(
             path.to_str().unwrap(),
             b"v2-with-fsync",
@@ -549,16 +549,16 @@ mod tests {
         )
         .expect("the commit lands");
         assert!(
-            everyaios_office::fsync_calls() >= before + 1,
+            agentcowork_office::fsync_calls() >= before + 1,
             "the shell's workbook commit did not fsync its staging package"
         );
         assert_eq!(
             receipt.verification.stages,
             vec![
-                everyaios_office::CommitStage::Staged,
-                everyaios_office::CommitStage::Fsynced,
-                everyaios_office::CommitStage::Swapped,
-                everyaios_office::CommitStage::DurablyRenamed
+                agentcowork_office::CommitStage::Staged,
+                agentcowork_office::CommitStage::Fsynced,
+                agentcowork_office::CommitStage::Swapped,
+                agentcowork_office::CommitStage::DurablyRenamed
             ]
         );
         assert!(receipt.verification.durable);
@@ -573,7 +573,7 @@ mod tests {
         // REQ-OFFICE-003: two writers on one document must produce the explicit
         // "in use" result, never a silent overwrite.
         let dir = std::env::temp_dir().join(format!(
-            "everyaios-xlsx-lease-{}-{}",
+            "agentcowork-xlsx-lease-{}-{}",
             std::process::id(),
             std::time::SystemTime::now()
                 .duration_since(std::time::UNIX_EPOCH)
@@ -589,10 +589,10 @@ mod tests {
         // would hold) blocks the shell's commit with a named conflict.
         {
             let mut registry =
-                everyaios_office::resident::process_registry().lock().unwrap();
-            let table = registry.table(everyaios_office::DocFormat::Xlsx);
+                agentcowork_office::resident::process_registry().lock().unwrap();
+            let table = registry.table(agentcowork_office::DocFormat::Xlsx);
             table
-                .open(std::path::Path::new(&p), "other-work", "other-session", 60_000, everyaios_office::now_ms())
+                .open(std::path::Path::new(&p), "other-work", "other-session", 60_000, agentcowork_office::now_ms())
                 .unwrap();
         }
         let err = commit_workbook(&p, b"v2", "ticket-2").unwrap_err();
@@ -605,9 +605,9 @@ mod tests {
 
         {
             let mut registry =
-                everyaios_office::resident::process_registry().lock().unwrap();
-            let table = registry.table(everyaios_office::DocFormat::Xlsx);
-            let _ = table.close(std::path::Path::new(&p), "other-work", everyaios_office::now_ms());
+                agentcowork_office::resident::process_registry().lock().unwrap();
+            let table = registry.table(agentcowork_office::DocFormat::Xlsx);
+            let _ = table.close(std::path::Path::new(&p), "other-work", agentcowork_office::now_ms());
         }
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -618,13 +618,13 @@ mod tests {
         // xlsx_batch_commit: the request mints a BatchTicket over the change
         // set; the exact set consumes; a stretched set is refused (approve
         // all binds the set, never a category).
-        use everyaios_core::GuardService;
-        use everyaios_guard::{DecisionPackage as Dp, RiskLevel as Rl};
+        use agentcowork_core::GuardService;
+        use agentcowork_guard::{DecisionPackage as Dp, RiskLevel as Rl};
 
         let mut b1 = WorkbookCommandBatch::new(0, "Fill + clear");
         b1.operations.push(XlsxOp::FillRange {
             range: parse_range("B2:B10").unwrap().1,
-            mode: everyaios_office::xlsx::dsl::FillMode::Constant,
+            mode: agentcowork_office::xlsx::dsl::FillMode::Constant,
             value: Some(Scalar::Number(5.0)),
         });
         b1.operations.push(XlsxOp::ClearRange {
@@ -640,7 +640,7 @@ mod tests {
             Dp::new(b1.summary.clone()).with_risk(Rl::Medium),
             0,
         );
-        let everyaios_core::GuardDecision::Ask { ticket_id } = verdict else {
+        let agentcowork_core::GuardDecision::Ask { ticket_id } = verdict else {
             panic!("expected Ask");
         };
 
@@ -663,7 +663,7 @@ mod tests {
         });
         let mut guard2 = GuardService::new();
         let ops2 = batch_operations("Sheet1", &b2);
-        let everyaios_core::GuardDecision::Ask { ticket_id: t2 } = guard2.evaluate_batch(
+        let agentcowork_core::GuardDecision::Ask { ticket_id: t2 } = guard2.evaluate_batch(
             "office",
             "everyaios",
             ops2.clone(),

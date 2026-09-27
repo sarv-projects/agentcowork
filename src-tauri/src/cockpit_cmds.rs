@@ -1,6 +1,6 @@
 //! P3.2 — cockpit / ambient flight-deck Tauri commands (H2, doc 33 §9.5).
 //!
-//! Thin wrappers over `everyaios_audit::cockpit`: the live in-memory state
+//! Thin wrappers over `agentcowork_audit::cockpit`: the live in-memory state
 //! lives in `AppState`, the coordinator/sidecar feeds it (the `cockpit_*`
 //! feed commands are the seam), and the UI polls `cockpit_snapshot`. The
 //! control-channel writes (`agent/undo`, `agent/interrupt-response`) mirror
@@ -13,7 +13,7 @@
 //! deck for every later poll. (The guard-service lock is the opposite case: it
 //! holds ticket/policy authority, so it fails **closed**.)
 
-use everyaios_audit::cockpit::{AgentCard, CockpitState};
+use agentcowork_audit::cockpit::{AgentCard, CockpitState};
 use tauri::{AppHandle, Manager, State};
 
 use crate::AppState;

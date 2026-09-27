@@ -1,5 +1,5 @@
 //! P4.8 (D9–D12, G7) — storage intelligence Tauri commands. These expose the
-//! `everyaios-storage` crate (scan → arena → treemap/large-files/duplicates/
+//! `agentcowork-storage` crate (scan → arena → treemap/large-files/duplicates/
 //! cleanup proposals) to the UI. Every destructive action is proposal-only:
 //! the crate emits `CleanupAction` plans that Guard-2 must ticket and execute
 //! (recycle-bin-aware) — the dashboard never deletes on its own.
@@ -28,7 +28,7 @@ use crate::AppState;
 fn resolve_root(path: Option<&str>) -> PathBuf {
     match path {
         Some(p) if !p.is_empty() => PathBuf::from(p),
-        _ => everyaios_core::default_data_dir().join("workspace"),
+        _ => agentcowork_core::default_data_dir().join("workspace"),
     }
 }
 
@@ -40,7 +40,7 @@ pub fn storage_health(
     path: Option<String>,
 ) -> Result<serde_json::Value, String> {
     let root = resolve_root(path.as_deref());
-    let status = everyaios_storage::check_health(&root, 90.0).map_err(|e| e.to_string())?;
+    let status = agentcowork_storage::check_health(&root, 90.0).map_err(|e| e.to_string())?;
     Ok(serde_json::json!({
         "mount": status.drive.mount,
         "totalBytes": status.drive.total,
@@ -72,14 +72,14 @@ pub fn storage_scan(
         }));
     }
     let opts = scan_opts();
-    let records = everyaios_storage::scan(&root, &opts).map_err(|e| e.to_string())?;
+    let records = agentcowork_storage::scan(&root, &opts).map_err(|e| e.to_string())?;
     let files = records.iter().filter(|r| !r.is_dir).count();
     // FIX-10: count before the arena takes ownership of `records`; the response
     // reports how many records the OS gave no identity for (never a zero-filled id).
     let identity_unknown = records.iter().filter(|r| r.identity.is_unknown()).count();
-    let arena = everyaios_storage::build_arena(records, &root);
+    let arena = agentcowork_storage::build_arena(records, &root);
     let root_id = arena.root().unwrap_or(0);
-    let rects = everyaios_storage::treemap_for_dir(&arena, root_id);
+    let rects = agentcowork_storage::treemap_for_dir(&arena, root_id);
     let treemap: Vec<serde_json::Value> = rects
         .into_iter()
         .filter_map(|r| {
@@ -92,7 +92,7 @@ pub fn storage_scan(
                     "isDir": n.is_dir,
                     "w": r.w,
                     "h": r.h,
-                    "color": everyaios_storage::color_for(&n.name),
+                    "color": agentcowork_storage::color_for(&n.name),
                 })
             })
         })
@@ -106,7 +106,7 @@ pub fn storage_scan(
         // Surfaced as a count (never a silent zero-filled id) so the UI can
         // stay honest about hardlink/reclaim numbers derived from it.
         "identityUnknown": identity_unknown,
-        "identityPlatform": everyaios_storage::IdentityPlatform::current().as_str(),
+        "identityPlatform": agentcowork_storage::IdentityPlatform::current().as_str(),
     }))
 }
 
@@ -121,19 +121,19 @@ pub fn storage_large_files(
     if state.battery.load(Ordering::Relaxed) {
         return Ok(serde_json::json!({ "deferred": true, "files": [] }));
     }
-    let records = everyaios_storage::scan(&root, &scan_opts()).map_err(|e| e.to_string())?;
-    let arena = everyaios_storage::build_arena(records, &root);
+    let records = agentcowork_storage::scan(&root, &scan_opts()).map_err(|e| e.to_string())?;
+    let arena = agentcowork_storage::build_arena(records, &root);
     let now = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_secs())
         .unwrap_or(0);
-    let files = everyaios_storage::find_large_files(
+    let files = agentcowork_storage::find_large_files(
         &arena,
-        &everyaios_storage::FinderOptions {
+        &agentcowork_storage::FinderOptions {
             top_n: top_n.unwrap_or(50),
             ..Default::default()
         },
-        everyaios_storage::SortBy::SizeDesc,
+        agentcowork_storage::SortBy::SizeDesc,
         now,
     );
     let listed: Vec<serde_json::Value> = files
@@ -163,15 +163,15 @@ pub fn storage_duplicates(
     if state.battery.load(Ordering::Relaxed) {
         return Ok(serde_json::json!({ "deferred": true, "groups": [] }));
     }
-    let records = everyaios_storage::scan(&root, &scan_opts()).map_err(|e| e.to_string())?;
+    let records = agentcowork_storage::scan(&root, &scan_opts()).map_err(|e| e.to_string())?;
     let identity_unknown = records.iter().filter(|r| r.identity.is_unknown()).count();
-    let cands: Vec<everyaios_storage::DupCandidate> = records
+    let cands: Vec<agentcowork_storage::DupCandidate> = records
         .iter()
         .filter(|r| !r.is_dir)
-        .map(everyaios_storage::DupCandidate::from_record)
+        .map(agentcowork_storage::DupCandidate::from_record)
         .collect();
     let groups =
-        everyaios_storage::find_duplicates(&cands, &everyaios_storage::DedupOptions::default())
+        agentcowork_storage::find_duplicates(&cands, &agentcowork_storage::DedupOptions::default())
             .map_err(|e| e.to_string())?;
     let reclaimable: u64 = groups.iter().map(|g| g.wasted_bytes).sum();
     let reclaimable_backed: u64 = groups
@@ -201,7 +201,7 @@ pub fn storage_duplicates(
         // OS refused to give us and is an upper bound only.
         "reclaimableBytesBacked": reclaimable_backed,
         "identityUnknown": identity_unknown,
-        "identityPlatform": everyaios_storage::IdentityPlatform::current().as_str(),
+        "identityPlatform": agentcowork_storage::IdentityPlatform::current().as_str(),
     }))
 }
 
@@ -217,21 +217,21 @@ pub fn storage_cleanup_proposals(
     if state.battery.load(Ordering::Relaxed) {
         return Ok(serde_json::json!({ "deferred": true, "proposals": [] }));
     }
-    let records = everyaios_storage::scan(&root, &scan_opts()).map_err(|e| e.to_string())?;
+    let records = agentcowork_storage::scan(&root, &scan_opts()).map_err(|e| e.to_string())?;
     // One scan feeds both proposal sources, so the duplicate pass inherits the
     // same identity evidence the arena does.
     let dup_groups = {
-        let cands: Vec<everyaios_storage::DupCandidate> = records
+        let cands: Vec<agentcowork_storage::DupCandidate> = records
             .iter()
             .filter(|r| !r.is_dir)
-            .map(everyaios_storage::DupCandidate::from_record)
+            .map(agentcowork_storage::DupCandidate::from_record)
             .collect();
-        everyaios_storage::find_duplicates(&cands, &everyaios_storage::DedupOptions::default())
+        agentcowork_storage::find_duplicates(&cands, &agentcowork_storage::DedupOptions::default())
             .map_err(|e| e.to_string())?
     };
-    let arena = everyaios_storage::build_arena(records, &root);
-    let mut proposals = everyaios_storage::propose_large_files_cleanup(&arena, top_n.unwrap_or(10));
-    proposals.extend(everyaios_storage::propose_duplicate_cleanup(&dup_groups));
+    let arena = agentcowork_storage::build_arena(records, &root);
+    let mut proposals = agentcowork_storage::propose_large_files_cleanup(&arena, top_n.unwrap_or(10));
+    proposals.extend(agentcowork_storage::propose_duplicate_cleanup(&dup_groups));
     let listed: Vec<serde_json::Value> = proposals.iter().map(|p| p.decision_package()).collect();
     Ok(serde_json::json!({
         "deferred": false,
@@ -249,8 +249,8 @@ pub fn storage_battery(state: State<'_, AppState>, on: bool) -> Result<(), Strin
 }
 
 /// Shared scan options for the heavy (battery-gated) commands.
-fn scan_opts() -> everyaios_storage::ScanOptions {
-    everyaios_storage::ScanOptions {
+fn scan_opts() -> agentcowork_storage::ScanOptions {
+    agentcowork_storage::ScanOptions {
         threads: 1,
         follow_symlinks: false,
         same_filesystem: true,

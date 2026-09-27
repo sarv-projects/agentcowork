@@ -3,7 +3,7 @@
  * ABI pattern, doc 83 §1): formalize the extension contract around the
  * Service-Definition / Provider / Consumer triad, with **reversible
  * registration** — a skill/plugin registration unwinds on unload. This is the
- * coordinator-side ABI the extension registry (I6) and `everyaios-mcp`
+ * coordinator-side ABI the extension registry (I6) and `agentcowork-mcp`
  * manager share.
  *
  * - `ServiceDefinition` — declares a capability (id + version + contract).

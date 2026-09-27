@@ -1,4 +1,4 @@
-import type { SearchContext, SearchProvider } from '@everyaios/core-domain';
+import type { SearchContext, SearchProvider } from '@agentcowork/core-domain';
 
 /**
  * Strip HTML tags and extract text. Lightweight alternative to cheerio for mobile.

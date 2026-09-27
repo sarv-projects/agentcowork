@@ -47,9 +47,9 @@ const ThemeContext = React.createContext<ThemeContextValue | null>(null)
 // and — the bug this fixes — font scale, high contrast and density survive a
 // reload instead of only applying while the Appearance panel happens to be
 // mounted.
-export const THEME_STORAGE_KEY = 'everyaios.theme'
-export const ACCENT_STORAGE_KEY = 'everyaios.accent'
-/** `usePref` keys (prefixed `everyaios.settings.` on write). */
+export const THEME_STORAGE_KEY = 'agentcowork.theme'
+export const ACCENT_STORAGE_KEY = 'agentcowork.accent'
+/** `usePref` keys (prefixed `agentcowork.settings.` on write). */
 export const FONT_SCALE_PREF_KEY = 'fontScale'
 export const HIGH_CONTRAST_PREF_KEY = 'highContrast'
 export const DENSITY_PREF_KEY = 'density'

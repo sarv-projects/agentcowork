@@ -1,11 +1,19 @@
 #!/usr/bin/env node
 // P71.9i — prompt-steering agreement gate.
 //
-// The tool-affinity block is a published contract (`ARCH/EXTERNAL-AGENTS.md`
-// §11.1) AND a shipped string (`crates/everyaios-acp/src/chief.rs`). This gate
-// keeps them one thing: the facade names and their order must match, the shell
-// must route through the steering-aware builder, and the class of bug that
-// shipped once — literal `\n` escapes instead of newlines — cannot come back.
+// The tool-affinity block is a published contract (`ARCH/15-AGENT-PLANE.md`
+// §7, the v1 owner of the engine/delegation contract after DEC-052 retired
+// the v0 `ARCH/EXTERNAL-AGENTS.md` Agent X document) AND a shipped string
+// (`crates/agentcowork-acp/src/chief.rs`). This gate keeps them one thing:
+// the facade names and their order must match, the shell must route through
+// the steering-aware builder, and the class of bug that shipped once —
+// literal `\n` escapes instead of newlines — cannot come back.
+//
+// NOTE (2026-09-27): the v1 agent-plane document does not yet publish the
+// affinity block's facade list, so the doc-side asserts below fail until the
+// ARCH owner publishes it in §7. The code-side asserts (order, newlines,
+// builder routing, regression test) still hold. Do not "fix" this gate by
+// dropping the doc-side asserts — publish the block instead.
 
 import { readFileSync } from 'node:fs';
 
@@ -14,23 +22,23 @@ const problems = [];
 const fail = (m) => problems.push(m);
 const need = (c, m) => { if (!c) fail(m); };
 
-const doc = read('ARCH/EXTERNAL-AGENTS.md');
-const chief = read('crates/everyaios-acp/src/chief.rs');
+const doc = read('ARCH/15-AGENT-PLANE.md');
+const chief = read('crates/agentcowork-acp/src/chief.rs');
 const shell = read('src-tauri/src/acp_cmds.rs');
 
 // 1. The doc still carries the section, with its four steering rules.
-need(doc.includes('## Shared Cowork Capabilities'), 'ARCH/EXTERNAL-AGENTS.md §11.1 lost its heading');
+need(doc.includes('## 7. Delegation & subagents'), 'ARCH/15-AGENT-PLANE.md §7 lost its heading');
 for (const facade of ['office.', 'browser.', 'computer_use.', 'delegate.spawn']) {
-  need(doc.includes(facade), `ARCH/EXTERNAL-AGENTS.md §11.1 no longer names \`${facade}\``);
+  need(doc.includes(facade), `ARCH/15-AGENT-PLANE.md §7 no longer names \`${facade}\``);
   need(chief.includes(facade), `COWORK_AFFINITY_STEERING no longer names \`${facade}\``);
 }
 
-// 2. Order agreement: the doc lists the rules office → browser → desktop →
-//    delegation, and the shipped constant must list them in the same order —
-//    "tool ranking hierarchy" is the point of the block, so a reordering is a
-//    contract change, not a formatting choice.
+// 2. Order agreement: the doc's published rules must run office → browser →
+//    desktop → delegation, and the shipped constant must list them in the same
+//    order — "tool ranking hierarchy" is the point of the block, so a
+//    reordering is a contract change, not a formatting choice.
 const orderInDoc = ['office.', 'browser.', 'computer_use.', 'delegate.spawn'].map((f) => {
-  const i = doc.indexOf(f, doc.indexOf('## Shared Cowork Capabilities'));
+  const i = doc.indexOf(f, doc.indexOf('## 7. Delegation & subagents'));
   return [f, i];
 });
 const orderInCode = ['office.', 'browser.', 'computer_use.', 'delegate.spawn'].map((f) => [
@@ -73,7 +81,7 @@ need(
 //    deleted, but not silently).
 need(
   /fn p71_9i_steering_blocks_follow_the_documented_order/.test(chief),
-  'the order/newline regression test is gone (crates/everyaios-acp/src/chief.rs)',
+  'the order/newline regression test is gone (crates/agentcowork-acp/src/chief.rs)',
 );
 
 if (problems.length) {

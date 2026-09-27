@@ -86,7 +86,7 @@ export default function VaultGate({ children }: { children: React.ReactNode }) {
             <Lock className="h-5 w-5 text-brand" />
           )}
           <h1 className="text-sm font-medium text-foreground">
-            {setup ? 'Create your vault passphrase' : 'Unlock EveryAIOS'}
+            {setup ? 'Create your vault passphrase' : 'Unlock AgentCowork'}
           </h1>
         </div>
         <p className="mb-4 text-xs text-muted-foreground">

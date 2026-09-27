@@ -1,4 +1,4 @@
-import type { SearchContext, SearchProvider, SearchResult } from '@everyaios/core-domain';
+import type { SearchContext, SearchProvider, SearchResult } from '@agentcowork/core-domain';
 
 const TTL_MS = 24 * 60 * 60 * 1000;
 const MAX_ENTRIES = 50;

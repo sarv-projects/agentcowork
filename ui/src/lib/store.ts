@@ -16,6 +16,7 @@ import {
   type TaskKind,
 } from './agents'
 import type { ComposerRole, PermissionMode } from './ui-prefs'
+import { getLocalItem } from './storage-compat'
 import type { WorkAddress, WorkEventEnvelope, WorkPresence } from './work'
 import type { SessionCapabilityLoadout } from './capabilities'
 import { layoutWalkthroughStops, type WalkthroughStop } from './walkthrough'
@@ -544,7 +545,7 @@ export const mockSessions: Session[] = [
         id: 's2m2',
         role: 'assistant',
         content:
-          'Switched browser to **system Chrome** with your signed-in profile (vault profile `acme-personal`). Tier-2 engine. Currently on page 23/47 — `everyaios-cdp` is taking accessibility-tree snapshots, extracting the price via the `[data-product-card]` locator, and writing rows to `pricing.csv`.',
+          'Switched browser to **system Chrome** with your signed-in profile (vault profile `acme-personal`). Tier-2 engine. Currently on page 23/47 — `agentcowork-cdp` is taking accessibility-tree snapshots, extracting the price via the `[data-product-card]` locator, and writing rows to `pricing.csv`.',
         timestamp: iso(8),
         steps: [
           { id: 's2p1', label: 'Chrome login inherited', status: 'done', type: 'browser' },
@@ -845,13 +846,14 @@ function patchStreamMessage(
 // P51.25 — per-pill status-bar customization, persisted to localStorage.
 // Toggles which live pills the casual footer may render (context meter,
 // throughput, cache, cost). Default: everything on.
-const STATUS_BAR_PILLS_KEY = 'everyaios.settings.ui.statusBarPills'
+const STATUS_BAR_PILLS_KEY = 'agentcowork.settings.ui.statusBarPills'
 const STATUS_BAR_PILLS_DEFAULT = { context: true, throughput: true, cache: true, cost: true }
 export type StatusBarPills = typeof STATUS_BAR_PILLS_DEFAULT
 export const readStatusBarPills = (): StatusBarPills => {
   if (typeof window === 'undefined') return STATUS_BAR_PILLS_DEFAULT
   try {
-    const raw = window.localStorage.getItem(STATUS_BAR_PILLS_KEY)
+    // DEC-053: legacy `everyaios.*` key honored + promoted once.
+    const raw = getLocalItem(STATUS_BAR_PILLS_KEY)
     if (!raw) return STATUS_BAR_PILLS_DEFAULT
     const parsed = JSON.parse(raw) as Partial<StatusBarPills>
     return { ...STATUS_BAR_PILLS_DEFAULT, ...parsed }
@@ -869,11 +871,12 @@ const writeStatusBarPills = (p: StatusBarPills) => {
 }
 
 // Progressive-disclosure preference (B9/P31) persisted to localStorage.
-const POWER_MODE_KEY = 'everyaios.settings.ui.powerMode'
+const POWER_MODE_KEY = 'agentcowork.settings.ui.powerMode'
 const readPowerMode = (): boolean => {
   if (typeof window === 'undefined') return true
   try {
-    const v = window.localStorage.getItem(POWER_MODE_KEY)
+    // DEC-053: legacy `everyaios.*` key honored + promoted once.
+    const v = getLocalItem(POWER_MODE_KEY)
     // Unset → full cockpit. Explicit '0' selects the casual layout.
     if (v === null) return true
     return v === '1'
@@ -944,11 +947,12 @@ export const SETTINGS_SECTION_IDS = [
 ] as const
 export type SettingsSectionId = (typeof SETTINGS_SECTION_IDS)[number]
 
-const PERMISSION_KEY = 'everyaios.settings.permissionMode'
+const PERMISSION_KEY = 'agentcowork.settings.permissionMode'
 const readPermission = (): PermissionMode => {
   if (typeof window === 'undefined') return 'ask'
   try {
-    const v = window.localStorage.getItem(PERMISSION_KEY)
+    // DEC-053: legacy `everyaios.*` key honored + promoted once.
+    const v = getLocalItem(PERMISSION_KEY)
     if (v === 'sandbox' || v === 'ask' || v === 'auto' || v === 'full') return v
   } catch {
     /* ignore */
@@ -2009,10 +2013,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   // agent's own control surface owns the choice; this compatibility action
   // never creates a host-side provider/model pin.
   cycleModelVariant: (_dir) => {
-    // P71.2d — there is no EveryAIOS-owned model list to cycle. A bound agent's
+    // P71.2d — there is no AgentCowork-owned model list to cycle. A bound agent's
     // model is switched through that agent's own ACP config options (the picker
     // renders them from `available_commands_update` / session config), never by
-    // EveryAIOS mutating a pin the agent never receives. Returning `undefined`
+    // AgentCowork mutating a pin the agent never receives. Returning `undefined`
     // is the honest answer, so callers fall through instead of showing a switch
     // that did nothing.
     return undefined
@@ -3029,14 +3033,15 @@ export const useAppStore = create<AppState>((set, get) => ({
   onboardingDone: (() => {
     if (typeof window === 'undefined') return true
     try {
-      return window.localStorage.getItem('everyaios.settings.onboardingDone') === '1'
+      // DEC-053: legacy `everyaios.*` key honored + promoted once.
+      return getLocalItem('agentcowork.settings.onboardingDone') === '1'
     } catch {
       return true
     }
   })(),
   setOnboardingDone: (v) => {
     try {
-      window.localStorage.setItem('everyaios.settings.onboardingDone', v ? '1' : '0')
+      window.localStorage.setItem('agentcowork.settings.onboardingDone', v ? '1' : '0')
     } catch {
       /* storage may be unavailable */
     }
@@ -3053,7 +3058,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       const next = { ...(s.sessionLayouts[sessionId] ?? {}), ...partial }
       try {
         window.localStorage.setItem(
-          `everyaios.layout.${sessionId}`,
+          `agentcowork.layout.${sessionId}`,
           JSON.stringify(next),
         )
       } catch {
@@ -3065,7 +3070,8 @@ export const useAppStore = create<AppState>((set, get) => ({
   restoreSessionLayout: (sessionId) => {
     let saved: SessionLayout | undefined
     try {
-      const raw = window.localStorage.getItem(`everyaios.layout.${sessionId}`)
+      // DEC-053: legacy `everyaios.*` key honored + promoted once.
+      const raw = getLocalItem(`agentcowork.layout.${sessionId}`)
       if (raw) saved = JSON.parse(raw) as SessionLayout
     } catch {
       /* ignore */

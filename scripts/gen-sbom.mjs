@@ -2,14 +2,14 @@
 // P70.B5 — SBOM + build-provenance generation.
 //
 // Emits, per release:
-//   * `everyaios-sbom-rust.cdx.json`   — CycloneDX 1.5 over `crates/Cargo.lock`
+//   * `agentcowork-sbom-rust.cdx.json`   — CycloneDX 1.5 over `crates/Cargo.lock`
 //                                        (the kernel + every workspace crate)
-//   * `everyaios-sbom-shell.cdx.json`  — CycloneDX 1.5 over `src-tauri/Cargo.lock`
+//   * `agentcowork-sbom-shell.cdx.json`  — CycloneDX 1.5 over `src-tauri/Cargo.lock`
 //                                        (the Tauri shell + its dependency tree)
-//   * `everyaios-sbom-ui.cdx.json`     — CycloneDX 1.5 over `ui/package-lock.json`
-//   * `everyaios-sbom-sidecar.cdx.json`— CycloneDX 1.5 over the coordinator +
+//   * `agentcowork-sbom-ui.cdx.json`     — CycloneDX 1.5 over `ui/package-lock.json`
+//   * `agentcowork-sbom-sidecar.cdx.json`— CycloneDX 1.5 over the coordinator +
 //                                        vendored core-* package-lock.json files
-//   * `everyaios-provenance.json`      — in-toto-style statement: subject (the
+//   * `agentcowork-provenance.json`      — in-toto-style statement: subject (the
 //                                        app version), source commit, workflow
 //                                        run, toolchain versions, and the gates
 //                                        the commit passed.
@@ -62,14 +62,14 @@ function doc(name) {
     $schema: CYCLONEDX,
     bomFormat: 'CycloneDX',
     specVersion: SPEC_VERSION,
-    serialNumber: `urn:uuid:${uuidV5(`everyaios:${name}:${commit}:${appVersion}`)}`,
+    serialNumber: `urn:uuid:${uuidV5(`agentcowork:${name}:${commit}:${appVersion}`)}`,
     version: 1,
     metadata: {
       timestamp: now,
-      component: { type: 'application', name: 'EveryAIOS', version: appVersion },
+      component: { type: 'application', name: 'AgentCowork', version: appVersion },
       properties: [
-        { name: 'everyaios:source:commit', value: commit },
-        { name: 'everyaios:build:workflow', value: runUrl },
+        { name: 'agentcowork:source:commit', value: commit },
+        { name: 'agentcowork:build:workflow', value: runUrl },
       ],
     },
     components: [],
@@ -108,8 +108,8 @@ function cargoComponents(lockPath, sourceLabel) {
       // carries the workspace licence implicitly — recorded as a property.
       scope: source ? 'required' : 'required',
       properties: [
-        { name: 'everyaios:origin', value: source ?? sourceLabel },
-        { name: 'everyaios:lockfile', value: lockPath },
+        { name: 'agentcowork:origin', value: source ?? sourceLabel },
+        { name: 'agentcowork:lockfile', value: lockPath },
       ],
     });
   }
@@ -136,8 +136,8 @@ function npmComponents(lockPath) {
       version,
       purl: `pkg:npm/${clean}@${version}`,
       properties: [
-        { name: 'everyaios:lockfile', value: lockPath },
-        { name: 'everyaios:resolved', value: rec.resolved ?? 'vendored' },
+        { name: 'agentcowork:lockfile', value: lockPath },
+        { name: 'agentcowork:resolved', value: rec.resolved ?? 'vendored' },
       ],
     };
     if (rec.license) component.licenses = [{ license: { id: rec.license } }];
@@ -170,7 +170,7 @@ function pnpmComponents(lockPath) {
       name,
       version,
       purl: `pkg:npm/${name}@${version}`,
-      properties: [{ name: 'everyaios:lockfile', value: lockPath }],
+      properties: [{ name: 'agentcowork:lockfile', value: lockPath }],
     });
   }
   // Workspace packages (`link:../core-ai` importers) never appear in the
@@ -191,8 +191,8 @@ function pnpmComponents(lockPath) {
       version: manifest.version,
       purl: `pkg:npm/${manifest.name}@${manifest.version}`,
       properties: [
-        { name: 'everyaios:origin', value: `workspace:${dir}` },
-        { name: 'everyaios:lockfile', value: lockPath },
+        { name: 'agentcowork:origin', value: `workspace:${dir}` },
+        { name: 'agentcowork:lockfile', value: lockPath },
       ],
     });
   }
@@ -200,10 +200,10 @@ function pnpmComponents(lockPath) {
 }
 
 const sboms = [
-  ['everyaios-sbom-rust.cdx.json', 'crates/Cargo.lock', (p) => cargoComponents(p, 'path:workspace')],
-  ['everyaios-sbom-shell.cdx.json', 'src-tauri/Cargo.lock', (p) => cargoComponents(p, 'path:workspace')],
-  ['everyaios-sbom-ui.cdx.json', 'ui/package-lock.json', npmComponents],
-  ['everyaios-sbom-sidecar.cdx.json', 'pnpm-lock.yaml', pnpmComponents],
+  ['agentcowork-sbom-rust.cdx.json', 'crates/Cargo.lock', (p) => cargoComponents(p, 'path:workspace')],
+  ['agentcowork-sbom-shell.cdx.json', 'src-tauri/Cargo.lock', (p) => cargoComponents(p, 'path:workspace')],
+  ['agentcowork-sbom-ui.cdx.json', 'ui/package-lock.json', npmComponents],
+  ['agentcowork-sbom-sidecar.cdx.json', 'pnpm-lock.yaml', pnpmComponents],
 ];
 
 mkdirSync(outDir, { recursive: true });
@@ -242,15 +242,15 @@ const provenance = {
   $schema: 'https://in-toto.io/Statement/v1',
   type: 'https://in-toto.io/Statement/v1',
   subject: [
-    { name: 'EveryAIOS', digest: { sha256: createHash('sha256').update(`${commit}:${appVersion}`).digest('hex') } },
+    { name: 'AgentCowork', digest: { sha256: createHash('sha256').update(`${commit}:${appVersion}`).digest('hex') } },
   ],
   predicateType: 'https://slsa.dev/provenance/v1',
   predicate: {
     buildDefinition: {
-      buildType: 'https://github.com/sarv-projects/EveryAIOS/.github/workflows/release.yml@v2',
+      buildType: 'https://github.com/sarv-projects/AgentCowork/.github/workflows/release.yml@v2',
       externalParameters: { version: appVersion, workflow: runUrl },
       internalParameters: { rust: rustToolchain, node: nodeToolchain, platform: 'windows x64 + arm64' },
-      resolvedDependencies: [{ uri: `git+https://github.com/sarv-projects/EveryAIOS@${commit}`, digest: { gitCommit: commit } }],
+      resolvedDependencies: [{ uri: `git+https://github.com/sarv-projects/AgentCowork@${commit}`, digest: { gitCommit: commit } }],
     },
     runDetails: {
       builder: { id: 'GitHub Actions / release.yml' },
@@ -262,8 +262,8 @@ const provenance = {
     },
   },
 };
-writeFileSync(join(outDir, 'everyaios-provenance.json'), `${JSON.stringify(provenance, null, 2)}\n`);
-summary.push('everyaios-provenance.json: in-toto/SLSA statement');
+writeFileSync(join(outDir, 'agentcowork-provenance.json'), `${JSON.stringify(provenance, null, 2)}\n`);
+summary.push('agentcowork-provenance.json: in-toto/SLSA statement');
 
 for (const line of summary) console.log(`  ${line}`);
 console.log(`gen-sbom: PASS — wrote ${summary.length} file(s) to ${outDir} (app ${appVersion}, commit ${commit.slice(0, 12)})`);

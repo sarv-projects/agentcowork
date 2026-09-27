@@ -9,7 +9,7 @@
  *
  * **P71.2c status — the producer is gone.** `runChatStream` was archived with
  * the built-in engine (ADR-0005 §2), so nothing in v1 writes a live turn
- * observation: EveryAIOS makes no provider call to observe. The durable half
+ * observation: AgentCowork makes no provider call to observe. The durable half
  * (`hydrateObservations` from the vault's `token_usage` ledger) still loads and
  * the scorer still consumes it. `P71.4` owns the decision — re-home the
  * observation onto **agent reports** (`ARCH/ROUTING.md` §5: tokens and cost are

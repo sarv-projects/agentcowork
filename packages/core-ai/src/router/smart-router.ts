@@ -1,4 +1,4 @@
-import type { RouteContext, RouteDecision, UserQuery } from '@everyaios/core-domain';
+import type { RouteContext, RouteDecision, UserQuery } from '@agentcowork/core-domain';
 import type { SmartRouterOptions } from './types.js';
 import { resolveHandler } from './handler-mapper.js';
 import { applySizeAwareRouting, buildClassificationText } from './prompt-guard.js';

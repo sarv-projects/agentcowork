@@ -67,7 +67,7 @@ export function DiscoverSection() {
   return (
     <SectionShell
       title="Discover"
-      desc="Everything EveryAIOS manages — discovered, not necessarily installed or active. Auth is a shape, never a secret."
+      desc="Everything AgentCowork manages — discovered, not necessarily installed or active. Auth is a shape, never a secret."
     >
       <div className="space-y-3">
         {/* Header counters */}

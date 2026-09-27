@@ -26,6 +26,7 @@ export type PrimaryAgentId = string;
 /**
  * P71.5b — the retired built-in spellings name *no agent* (ADR-0005 §1).
  * Kept as data so the resolution can fail closed on them by name.
+ * DEC-053: the legacy spellings stay so already-retired agents keep being recognized, never resurrected.
  */
 export const RETIRED_AGENT_IDS: readonly string[] = ["inbuilt", "everyaios", "everyaios-native"];
 

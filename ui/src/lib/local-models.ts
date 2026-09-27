@@ -1,5 +1,6 @@
 import { inTauri, invoke } from "./tauri";
 import { nativeCall } from './runtime';
+import { getLocalItem } from './storage-compat';
 
 export interface HardwareProfile {
   ram_bytes?: number;
@@ -32,7 +33,7 @@ export interface LocalPrefs {
 }
 
 const HF = "https://huggingface.co/api/models";
-const PREFS_KEY = "everyaios.local.prefs";
+const PREFS_KEY = "agentcowork.local.prefs";
 
 export function formatBytes(n: number): string {
   if (!n || n <= 0) return "—";
@@ -154,7 +155,8 @@ export async function getHardware(): Promise<HardwareProfile | null> {
 
 export function getLocalPrefs(): LocalPrefs {
   try {
-    const raw = localStorage.getItem(PREFS_KEY);
+    // DEC-053: legacy `everyaios.*` key honored + promoted once.
+    const raw = getLocalItem(PREFS_KEY);
     if (raw) return { ...{ guardrails: false, kvOffload: true, startOnLogin: true }, ...JSON.parse(raw) };
   } catch {
     /* ignore */
@@ -286,6 +288,7 @@ function firstNumber(row: Record<string, unknown>, keys: string[]): number | und
 
 function normalizeOwnership(value: unknown): RuntimeOwnership {
   const text = typeof value === "string" ? value.toLowerCase().replace(/[-\s]/g, "_") : "";
+  // DEC-053: persisted ownership spellings — the legacy tokens stay so stored runtimes keep parsing as managed.
   if (text === "managed" || text === "managed_by_everyaios" || text === "everyaios" || text === "owned" || text === "host_managed") return "managed";
   if (text === "remote" || text === "hosted" || text === "cloud" || text === "external_remote") return "remote";
   return "external";
@@ -530,7 +533,7 @@ export async function startManagedRuntime(
   if (!inTauri()) throw new Error('Starting a local runtime requires the Tauri desktop shell');
   const id = typeof runtime === 'string' ? runtime : runtime.id;
   if (typeof runtime !== 'string' && runtime.ownership !== 'managed') {
-    throw new Error('Only a Managed runtime can be started by EveryAIOS');
+    throw new Error('Only a Managed runtime can be started by AgentCowork');
   }
   const args: Record<string, unknown> = { runtimeId: id };
   if (options.runtimeKind) args.runtimeKind = options.runtimeKind;
@@ -548,7 +551,7 @@ export async function stopManagedRuntime(
   if (!inTauri()) throw new Error('Stopping a local runtime requires the Tauri desktop shell');
   const id = typeof runtime === 'string' ? runtime : runtime.id;
   if (typeof runtime !== 'string' && runtime.ownership !== 'managed') {
-    throw new Error('Only a Managed runtime can be stopped by EveryAIOS');
+    throw new Error('Only a Managed runtime can be stopped by AgentCowork');
   }
   const value = await nativeCall('stop managed local runtime', () =>
     invoke<unknown>('runtime_stop', { runtimeId: id }),
@@ -590,7 +593,7 @@ function parseControlLevel(value: unknown): AgentModelControlLevel | null {
 /**
  * Resolve only an advertised control level. A model option is enough to expose
  * the agent's own session vocabulary; the absence of one is not evidence that
- * EveryAIOS may choose a model.
+ * AgentCowork may choose a model.
  */
 export function resolveAgentModelControlLevel(
   agent: unknown,

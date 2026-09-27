@@ -1,0 +1,26 @@
+[package]
+name = "agentcowork-browser"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "AgentCowork browser layer — a11y snapshot/refs/diff (P2.2) + 37-tool action engine (P2.3) + tiered engines (P2.4) + tab ownership (P2.6) + session-vault cookie glue (P2.7) + behavioral realism (P2.9) + injected replay recorder (P2.10) + E15 Electron-app CDP attach + E16 slim snapshots + WebMCP handshake + HTTP transport + E17 multi-protocol action parsing (native/CUA/Anthropic/UI-TARS)"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+similar = { workspace = true }
+regex = { workspace = true }
+thiserror = { workspace = true }
+ureq = { workspace = true }
+url = { workspace = true }
+agentcowork-cdp = { path = "../agentcowork-cdp" }
+agentcowork-audit = { path = "../agentcowork-audit" }
+# P62.1 — the one canonical network-destination classifier (SSRF floor).
+agentcowork-guard = { path = "../agentcowork-guard" }
+agentcowork-vault = { path = "../agentcowork-vault" }
+
+[dev-dependencies]
+# DEC-053 — test-only: live-test gates read the new `AGENTCOWORK_*` spelling
+# with the legacy `EVERYAIOS_*` fallback through the one shared rule.
+agentcowork-types = { path = "../agentcowork-types" }

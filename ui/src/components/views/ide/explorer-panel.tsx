@@ -12,7 +12,7 @@ import { useAppStore } from '@/lib/store'
 /**
  * Explorer panel (VS Code left sidebar) over the real disk: lazy-loads
  * directories from `fs_list_dir`, opens text files into the editor tabs
- * (dispatch `everyaios:open-file`), refreshes on demand.
+ * (dispatch `agentcowork:open-file`), refreshes on demand.
  */
 export function ExplorerPanel({
   onOpenFile,
@@ -51,7 +51,7 @@ export function ExplorerPanel({
     if (f.binary || f.truncated) return
     onOpenFile(full)
     window.dispatchEvent(
-      new CustomEvent('everyaios:open-file', { detail: { path: full, content: f.content } })
+      new CustomEvent('agentcowork:open-file', { detail: { path: full, content: f.content } })
     )
   }
 

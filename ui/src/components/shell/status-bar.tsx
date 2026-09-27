@@ -204,7 +204,7 @@ export function StatusBar() {
   const liveAgents = useAppStore((s) => s.liveAgents)
   const agent = liveAgents.find((a) => a.id === selectedAgentId && isRuntimeUsable(a))
   // P60 / P71.2d — model ownership. Every runtime is an external ACP agent that
-  // owns its own model, and EveryAIOS owns no model surface to paint here.
+  // owns its own model, and AgentCowork owns no model surface to paint here.
   const acpModelOption = useAppStore((s) => {
     const opts = s.acpConfigOptions[selectedAgentId]
     if (!opts?.length) return undefined
@@ -215,7 +215,7 @@ export function StatusBar() {
   })
   // P60 / P71.2d — the label is the agent's own ACP value, or an explicit
   // "managed by <agent>". There is no desktop model pin left to name, so the
-  // bar cannot imply EveryAIOS picked the model.
+  // bar cannot imply AgentCowork picked the model.
   const modelLabel = acpModelOption
     ? String(acpModelOption.currentValue)
     : agent?.name || selectedAgentId
@@ -359,7 +359,7 @@ export function StatusBar() {
           <Radar className="h-2.5 w-2.5" />
           cockpit
         </button>
-        <span className="pr-3 text-muted-foreground/40">EveryAIOS {ARCH_VERSION}</span>
+        <span className="pr-3 text-muted-foreground/40">AgentCowork {ARCH_VERSION}</span>
       </footer>
     )
   }
@@ -491,7 +491,7 @@ export function StatusBar() {
           cockpit
         </button>
         <span className="text-muted-foreground/40">·</span>
-        <span className="text-muted-foreground/50">EveryAIOS {ARCH_VERSION}</span>
+        <span className="text-muted-foreground/50">AgentCowork {ARCH_VERSION}</span>
       </div>
     </footer>
   )

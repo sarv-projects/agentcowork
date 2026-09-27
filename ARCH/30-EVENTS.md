@@ -6,7 +6,7 @@
 > **Role:** **one event store + one bus**. UI projections, workflow triggers, world updates, telemetry and audit feeds all derive from it — no hidden side channels (INV-23).
 > **Boundary:** `SessionEvent` (DM-007, owned by `11`) is the session-local append-only log; `Event` (DM-008, owned here) is the **published system stream**. Everything material emits ≥1 published event; session logs remain the session’s truth.
 > **Dependencies:** `10-KERNEL` · `11-WORK` (producers) · all modules (producers/consumers). **Consumers:** UI (`32`), `20` (triggers), `21` (world updates), `12` (audit feed), telemetry.
-> **Evidence:** INV-23 · DEC-027 (log + projections) · DEC-033 (workflow events) · `agent-harness-verification.md` §E3 (typed stream vocabulary) §E4 (log + projections) · `ARCH/15-AGENT-X.md` §4 (typed stream), `ARCH/20-WORKFLOW.md` §4, `ARCH/21-WORLD-MODEL.md` §4.
+> **Evidence:** INV-23 · DEC-027 (log + projections) · DEC-033 (workflow events) · `agent-harness-verification.md` §E3 (typed stream vocabulary) §E4 (log + projections) · `ARCH/15-AGENT-PLANE.md` §4 (typed stream), `ARCH/20-WORKFLOW.md` §4, `ARCH/21-WORLD-MODEL.md` §4.
 
 ## 1. Purpose & rules
 
@@ -100,7 +100,7 @@ Distributed log/federation · cross-device streaming · external schema registry
 
 ## 11. Evidence
 
-INV-23 (one log) · DEC-027 (log + projections) · DEC-033 (workflow event set) · `agent-harness-verification.md` §E3 (typed stream union as wire vocabulary), §E4 (log + projections pattern) · `ARCH/15-AGENT-X.md` §4 · `ARCH/20-WORKFLOW.md` §4 · `ARCH/21-WORLD-MODEL.md` §4 · `ARCH/17-MEMORY.md` §4 (memory events) · `ARCH/29-ARTIFACTS.md` §3 (receipt emission).
+INV-23 (one log) · DEC-027 (log + projections) · DEC-033 (workflow event set) · `agent-harness-verification.md` §E3 (typed stream union as wire vocabulary), §E4 (log + projections pattern) · `ARCH/15-AGENT-PLANE.md` §4 · `ARCH/20-WORKFLOW.md` §4 · `ARCH/21-WORLD-MODEL.md` §4 · `ARCH/17-MEMORY.md` §4 (memory events) · `ARCH/29-ARTIFACTS.md` §3 (receipt emission).
 
 ## 12. Requirements (`REQ-EVENTS-*`)
 

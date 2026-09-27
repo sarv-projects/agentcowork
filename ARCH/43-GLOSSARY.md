@@ -7,8 +7,7 @@
 | Term | Definition |
 |---|---|
 | **Core** | The runtime/kernel — supervisor of the work plane, capability plane, trust plane, domains and stores. Surfaces are projections of it. |
-| **Agent** | A reasoning runtime that plans and acts. Agent X (native) or any external peer (ACP/A2A/CLI/remote). |
-| **Agent X** | The native first-party agent; architecturally a peer of external agents — same `AgentEngine` contract, no privileged path (DEC-010). |
+| **Agent** | A reasoning runtime that plans and acts. Any bound engine — external (ACP/A2A/CLI/remote) or in-process. |
 | **`AgentEngine`** | The peer contract every agent implements: create/resume sessions, run, steer, interrupt, spawn subagent, dispose (CTR-001). |
 | **Agent Gateway** | The brokered entry point external agents use; produces the 7-item projection (enforcement lives in Trust — `12` §8, `32` §3) (CTR-022, DEC-009). |
 | **Agent Profile** | An agent’s declarative configuration: runtime, version, supported models, capabilities, composer abilities (DM-014). |
@@ -72,4 +71,4 @@
 | **World Model** | The continuously updated structural map of the machine + change stream; consumers query it instead of screenshotting (`21`). |
 | **W1…W7** | World Model collector set — W1 file inventory + deltas · W2 process/window registry · W3 UI tree on demand · W4 window capture on demand · W5 browser world · W6 devices/registry/shares (deferred) · W7 content index/OCR (deferred); defined in `ARCH/21-WORLD-MODEL.md` §2. |
 
-**Naming note:** v0 product names (EveryAIOS-era) appear only in `ARCH/01-NAMING.md` and archive references; frozen code identifiers (`everyaios-*`) keep their historical prefix until the post-freeze code-phase rename (OQ-003).
+**Naming note:** v0 product names (AgentCowork-era) appear only in `ARCH/01-NAMING.md` and archive references; frozen code identifiers (`agentcowork-*`) keep their historical prefix until the post-freeze code-phase rename (OQ-003).

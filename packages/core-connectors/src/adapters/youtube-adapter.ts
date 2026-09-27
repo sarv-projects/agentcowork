@@ -22,7 +22,7 @@ import type {
   ConnectorResult,
   MemoryFact,
   UserQuery,
-} from '@everyaios/core-domain';
+} from '@agentcowork/core-domain';
 import { requestConnector } from '../connection-manager.js';
 
 const YT_API = 'https://www.googleapis.com/youtube/v3';

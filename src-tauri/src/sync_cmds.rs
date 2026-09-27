@@ -1,8 +1,8 @@
 //! P8.9 — E2E-encrypted sync Tauri commands (C8 — v2.0 §P8, ARCH/06).
 //!
-//! The protocol framing lives in `everyaios-core::sync` (envelope + AEAD +
+//! The protocol framing lives in `agentcowork-core::sync` (envelope + AEAD +
 //! X25519 key exchange + three-way reconcile, all tested) and the live
-//! TCP transport in `everyaios-core::sync_transport` (direct `ip:port` —
+//! TCP transport in `agentcowork-core::sync_transport` (direct `ip:port` —
 //! covers LAN and Tailscale tailnets alike; both are plain TCP). This module
 //! wires all of it to the UI with two durable pieces:
 //!
@@ -27,8 +27,8 @@ use tauri::State;
 
 use crate::AppState;
 
-use everyaios_core::sync::{self, ChaChaBox, KeyPair, SyncScope, SyncSession, SyncSet};
-use everyaios_core::sync_transport::{fingerprint as fp_hex, sync_with_peer, SyncServer};
+use agentcowork_core::sync::{self, ChaChaBox, KeyPair, SyncScope, SyncSession, SyncSet};
+use agentcowork_core::sync_transport::{fingerprint as fp_hex, sync_with_peer, SyncServer};
 
 use base64::Engine as _;
 
@@ -45,7 +45,7 @@ const SYNC_STATE_FILE: &str = "sync-state.json";
 
 /// Derive the sync storage path inside the data dir.
 fn sync_state_path() -> PathBuf {
-    everyaios_core::default_data_dir().join(SYNC_STATE_FILE)
+    agentcowork_core::default_data_dir().join(SYNC_STATE_FILE)
 }
 
 /// The on-disk sync state: device id, the wrapped secret key, and the local

@@ -1,7 +1,7 @@
 // P43 (B7 v3.53) — detached-work task ledger bridge. Thin wrappers over the
 // Tauri `tasks_*` commands; in a plain-browser preview every call falls back
 // to a demo set so the UI stays explorable. The durable state machine lives
-// in Rust (`everyaios-core::task_ledger`); these are just the wire + types.
+// in Rust (`agentcowork-core::task_ledger`); these are just the wire + types.
 // Push completion: the shell emits `task-update` on every terminal transition
 // (registered at boot) — the rail re-fetches on that event, never polls.
 

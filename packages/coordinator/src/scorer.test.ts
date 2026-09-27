@@ -1,7 +1,7 @@
 /**
  * P36 / P0-5 — pure unit tests for the consensus-scorer port. Imports only
  * `./scorer` (dependency-free) so these run without the APP workspace deps.
- * Locks the TS port against the Rust `everyaios-core::routing::Scorer::score`
+ * Locks the TS port against the Rust `agentcowork-core::routing::Scorer::score`
  * semantics: failed/dead → 0, health 0.20 · quota 0.10 · cost-inverse ·
  * latency-inverse · cache bonus, clamped 0..=1.
  */

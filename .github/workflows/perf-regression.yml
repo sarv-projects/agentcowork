@@ -1,4 +1,4 @@
-# EveryAIOS — performance regression tracking (P10.5).
+# AgentCowork — performance regression tracking (P10.5).
 #
 # Runs the P10.3 perf/stress benches on a weekly schedule + manual dispatch,
 # uploads the full output as a CI artifact, and summarizes the key published

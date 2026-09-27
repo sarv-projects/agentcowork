@@ -3,6 +3,8 @@
 // message text, no provider payloads. Persisted to localStorage; surfaced in
 // Settings → Usage. This is NOT telemetry — nothing leaves the device.
 
+import { clearLocalKey, getLocalItem } from './storage-compat'
+
 export interface UxMetrics {
   firstSeenAtMs: number
   sessionsCreated: number
@@ -14,7 +16,7 @@ export interface UxMetrics {
   approvalsRejected: number
 }
 
-const KEY = 'everyaios.ux-metrics.v1'
+const KEY = 'agentcowork.ux-metrics.v1'
 
 const EMPTY: UxMetrics = {
   firstSeenAtMs: Date.now(),
@@ -29,7 +31,8 @@ const EMPTY: UxMetrics = {
 
 function load(): UxMetrics {
   try {
-    const raw = localStorage.getItem(KEY)
+    // DEC-053: legacy `everyaios.*` key honored + promoted once.
+    const raw = getLocalItem(KEY)
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<UxMetrics>
       return { ...EMPTY, ...parsed }
@@ -96,11 +99,9 @@ export function getUxMetrics(): UxMetrics {
 }
 
 export function resetUxMetrics(): void {
-  try {
-    localStorage.removeItem(KEY)
-  } catch {
-    /* ignore */
-  }
+  // DEC-053: an explicit clear must also drop the legacy `everyaios.*` key, or
+  // a pre-rename value is promoted back on the next read.
+  clearLocalKey(KEY)
 }
 
 /** ms from first launch to first successful tool result (null = not reached). */

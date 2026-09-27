@@ -1,4 +1,4 @@
-import type { SearchContext, SearchProvider, SearchResult } from '@everyaios/core-domain';
+import type { SearchContext, SearchProvider, SearchResult } from '@agentcowork/core-domain';
 import type { SearchCache } from './cache/search-cache.js';
 import { rewriteSearchQuery } from './query-rewrite.js';
 

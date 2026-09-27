@@ -910,7 +910,7 @@ function AgentSendBlockerBanner() {
  * P71.6a / P71.9b — the **unbound or not-ready** empty state.
  *
  * The old card here was the zero-install path's blocker: "no provider key
- * configured". That is no longer what stops a turn. In v1 EveryAIOS makes no
+ * configured". That is no longer what stops a turn. In v1 AgentCowork makes no
  * model call of its own, so the blocker is that **no agent is bound** and there
  * is no built-in engine to fall back to (`ADR-0005` §1). This card names that
  * state and points at the one action that changes it.
@@ -949,7 +949,7 @@ function NoAgentCard() {
       ? `${bound} is not verified as runnable`
       : `${runtime.name} is not ready`
   const detail = !bound
-    ? 'Nothing can answer yet: v1 runs your messages through an agent you install or pick, and EveryAIOS ships no built-in engine. The agent does the reasoning and holds its own model and credentials; EveryAIOS keeps the workspace, the memory and the permission gate.'
+    ? 'Nothing can answer yet: v1 runs your messages through an agent you install or pick, and AgentCowork ships no built-in engine. The agent does the reasoning and holds its own model and credentials; AgentCowork keeps the workspace, the memory and the permission gate.'
     : !runtime
       ? 'The binding exists, but the desktop has no verified readiness result for it. Rescan agent discovery and finish setup before sending.'
       : `The binding is ${readinessLabel(readiness)}. Finish that setup before sending; the chat stays idle until the agent is runnable.`

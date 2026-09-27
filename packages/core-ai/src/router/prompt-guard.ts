@@ -1,4 +1,4 @@
-import type { IntentClassification, RouteContext, RouteDecision, UserQuery } from '@everyaios/core-domain';
+import type { IntentClassification, RouteContext, RouteDecision, UserQuery } from '@agentcowork/core-domain';
 import {
   LARGE_INPUT_CHARS,
   SLM_BLOCK_CHARS,

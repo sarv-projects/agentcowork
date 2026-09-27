@@ -1,5 +1,5 @@
 // P11.5.3 — browse view over a real CDP session (browser_cmds.rs). The Rust
-// side spawns a headless Chrome, connects through everyaios-cdp and holds
+// side spawns a headless Chrome, connects through agentcowork-cdp and holds
 // the session; these calls drive it. Without the shell, the demo fallback
 // serves a canned page snapshot.
 

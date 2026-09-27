@@ -15,10 +15,10 @@
 ## What never leaves the machine
 
 - **Provider API keys and OAuth tokens.** They live only in the encrypted vault
-  (`everyaios-vault`, SQLCipher). The TypeScript sidecar never holds one; this is
+  (`agentcowork-vault`, SQLCipher). The TypeScript sidecar never holds one; this is
   a machine-checked architecture invariant (`scripts/check-arch-invariants.mjs`).
 - **Your files, sessions, memory, calendar, audit ledger and agent bindings.**
-  They are written under `~/.everyaios` and are never uploaded by the app.
+  They are written under `~/.agentcowork` and are never uploaded by the app.
 - **Diagnostics.** The support bundle (`Settings → Diagnostics → Export`) is
   assembled locally and saved locally. It is built from an allow-list — the
   vault is never read, secret-shaped keys are dropped structurally, and long

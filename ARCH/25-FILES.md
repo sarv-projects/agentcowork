@@ -5,7 +5,7 @@
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
 > **Role:** the filesystem as structured state — **identity · watchers · deltas · write leases · metadata index**. Content indexing is deliberately deferred (metadata-first, `21` W7).
 > **Dependencies:** `10-KERNEL` · `12-TRUST` (path scopes) · `19-RUNTIME-ENVIRONMENTS` (helper/leases hosts) · `21-WORLD-MODEL` (W1 collector) · `30-EVENTS` (deltas). **Consumers:** `16`, `26-CODE` (worktrees), `29` (artifact locations), `15`.
-> **Evidence:** `ARCHIVE/v1-research/world-model-verification.md` §3 (identity, cursors, freshness; MS `FILE_ID_INFO` / MFT / USN docs) · local `crates/everyaios-storage` (`walk.rs:131-157`, `dedup.rs:106-118`, `usn.rs:77-90`, `usn_winapi.rs`) · DEC-029 · INV-20.
+> **Evidence:** `ARCHIVE/v1-research/world-model-verification.md` §3 (identity, cursors, freshness; MS `FILE_ID_INFO` / MFT / USN docs) · local `crates/agentcowork-storage` (`walk.rs:131-157`, `dedup.rs:106-118`, `usn.rs:77-90`, `usn_winapi.rs`) · DEC-029 · INV-20.
 
 ## 1. Purpose & rules
 

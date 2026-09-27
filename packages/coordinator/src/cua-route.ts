@@ -1,7 +1,7 @@
 /**
  * P59.1 / P59.11 — preference ladder in code, not a prompt.
  * Office file → office engines; http(s)/file URL → the Rust Browse engine; else Desktop.
- * Mirrors `everyaios-core::route_work_surface`.
+ * Mirrors `agentcowork-core::route_work_surface`.
  */
 
 export type WorkSurface = "office" | "browse" | "desktop";

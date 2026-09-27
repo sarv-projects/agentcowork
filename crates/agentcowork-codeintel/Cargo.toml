@@ -1,0 +1,15 @@
+[package]
+name = "agentcowork-codeintel"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "P7.1 — code intelligence: LSP JSON-RPC framing + core types, SCIP-style symbol index + queries, and a repo map (tag extraction + graph + ranking)."
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+regex = { workspace = true }
+rusqlite = { workspace = true }
+sha2 = { workspace = true }

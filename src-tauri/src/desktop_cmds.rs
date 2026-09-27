@@ -1,6 +1,6 @@
 //! P48.3 — E9 desktop computer-use effect-funnel seam.
 //!
-//! `everyaios-desktop` is a *library* engine (see/read/act/verify); this
+//! `agentcowork-desktop` is a *library* engine (see/read/act/verify); this
 //! module is the host wiring that the crate's own docs require: "the desktop
 //! host wires `policy::PermissionGate` to the ticket store and `AuditSink` to
 //! the Merkle audit chain, exactly like every other effect in the product."
@@ -9,7 +9,7 @@
 //! see / read / the escalation pair) and the inbuilt agent's loop tool
 //! (`desktop.windows` / `desktop.read` / `desktop.act` in `ToolService`,
 //! P48.3), which reaches the same engine through [`DesktopEngineBackend`] — the
-//! `everyaios_core::DesktopBackend` seam `attach_desktop` binds.
+//! `agentcowork_core::DesktopBackend` seam `attach_desktop` binds.
 //!
 //! There is **one** engine, one live policy and one Guard-2 preflight; the two
 //! paths differ only in the provenance they declare. The human commands use
@@ -40,7 +40,7 @@ use crate::AppState;
 /// the engine's Guard-2 audit sink can reach `record_mutation`.
 #[derive(Default)]
 pub struct DesktopSlot {
-    engine: Option<Arc<everyaios_computeruse::DesktopEngine>>,
+    engine: Option<Arc<agentcowork_computeruse::DesktopEngine>>,
     /// Why the engine is unavailable when `None` (empty until first attempt).
     last_error: Option<String>,
     /// The audit sink bridge (holds the `AppHandle` to feed the Merkle chain).
@@ -48,7 +48,7 @@ pub struct DesktopSlot {
     /// P57.8 — the installed-app inventory. The disk scan happens once per
     /// session (installed apps do not appear mid-session); Settings filtering
     /// reads this cache, so typing in the picker costs no filesystem work.
-    apps: Option<Vec<everyaios_computeruse::InstalledApp>>,
+    apps: Option<Vec<agentcowork_computeruse::InstalledApp>>,
 }
 
 /// P57.8 — the persisted desktop policy (`<data_dir>/desktop.json`).
@@ -60,17 +60,17 @@ pub struct DesktopSlot {
 /// malformed file degrades to the local default (no allow-list), never to a
 /// partially trusted one.
 pub fn policy_path() -> std::path::PathBuf {
-    everyaios_core::default_data_dir().join("desktop.json")
+    agentcowork_core::default_data_dir().join("desktop.json")
 }
 
-pub fn load_policy() -> everyaios_computeruse::AppPolicy {
+pub fn load_policy() -> agentcowork_computeruse::AppPolicy {
     std::fs::read(policy_path())
         .ok()
         .and_then(|b| serde_json::from_slice(&b).ok())
         .unwrap_or_default()
 }
 
-fn save_policy(policy: &everyaios_computeruse::AppPolicy) -> Result<(), String> {
+fn save_policy(policy: &agentcowork_computeruse::AppPolicy) -> Result<(), String> {
     let path = policy_path();
     if let Some(dir) = path.parent() {
         std::fs::create_dir_all(dir).map_err(|e| format!("create data dir: {e}"))?;
@@ -81,7 +81,7 @@ fn save_policy(policy: &everyaios_computeruse::AppPolicy) -> Result<(), String> 
     std::fs::rename(&tmp, &path).map_err(|e| format!("rename: {e}"))
 }
 
-fn policy_json(policy: &everyaios_computeruse::AppPolicy) -> serde_json::Value {
+fn policy_json(policy: &agentcowork_computeruse::AppPolicy) -> serde_json::Value {
     serde_json::json!({
         "allowList": policy.allow_list,
         "allowPaths": policy.allow_paths,
@@ -97,7 +97,7 @@ fn policy_json(policy: &everyaios_computeruse::AppPolicy) -> serde_json::Value {
 /// change it did not make).
 fn commit_policy(
     state: &State<'_, AppState>,
-    policy: &everyaios_computeruse::AppPolicy,
+    policy: &agentcowork_computeruse::AppPolicy,
 ) -> Result<bool, String> {
     save_policy(policy)?;
     let mut applied = false;
@@ -117,13 +117,13 @@ fn commit_policy(
 /// they fail closed — never silent.)
 struct FailClosedGate;
 
-impl everyaios_computeruse::policy::PermissionGate for FailClosedGate {
+impl agentcowork_computeruse::policy::PermissionGate for FailClosedGate {
     fn request(
         &self,
-        _act: &everyaios_computeruse::types::ActKind,
-        _class: everyaios_computeruse::policy::ConfirmClass,
-    ) -> everyaios_computeruse::policy::GateDecision {
-        everyaios_computeruse::policy::GateDecision::Deny
+        _act: &agentcowork_computeruse::types::ActKind,
+        _class: agentcowork_computeruse::policy::ConfirmClass,
+    ) -> agentcowork_computeruse::policy::GateDecision {
+        agentcowork_computeruse::policy::GateDecision::Deny
     }
 }
 
@@ -132,13 +132,13 @@ impl everyaios_computeruse::policy::PermissionGate for FailClosedGate {
 /// Pure, so the mapping is pinned by a test: the whole point of threading
 /// provenance through the engine is that an **agent** act never lands on the
 /// Merkle chain as a human gesture.
-fn auth_kind_for(provenance: everyaios_computeruse::ActProvenance) -> crate::control::AuthKind {
+fn auth_kind_for(provenance: agentcowork_computeruse::ActProvenance) -> crate::control::AuthKind {
     match provenance {
-        everyaios_computeruse::ActProvenance::HumanGesture => {
+        agentcowork_computeruse::ActProvenance::HumanGesture => {
             crate::control::AuthKind::HumanGesture
         }
-        everyaios_computeruse::ActProvenance::Agent => crate::control::AuthKind::AgentTicket,
-        everyaios_computeruse::ActProvenance::Automation => {
+        agentcowork_computeruse::ActProvenance::Agent => crate::control::AuthKind::AgentTicket,
+        agentcowork_computeruse::ActProvenance::Automation => {
             crate::control::AuthKind::AutomationTicket
         }
     }
@@ -163,12 +163,12 @@ impl Default for AuditSinkToChain {
     }
 }
 
-impl everyaios_computeruse::policy::AuditSink for AuditSinkToChain {
+impl agentcowork_computeruse::policy::AuditSink for AuditSinkToChain {
     fn write(
         &self,
         kind: &str,
         payload: serde_json::Value,
-        provenance: everyaios_computeruse::ActProvenance,
+        provenance: agentcowork_computeruse::ActProvenance,
     ) {
         let app = self.app.lock().ok().and_then(|a| a.clone());
         if let Some(app) = app {
@@ -188,7 +188,7 @@ impl everyaios_computeruse::policy::AuditSink for AuditSinkToChain {
 fn get_or_attach(
     state: &AppState,
     app: &tauri::AppHandle,
-) -> Result<Arc<everyaios_computeruse::DesktopEngine>, String> {
+) -> Result<Arc<agentcowork_computeruse::DesktopEngine>, String> {
     {
         let mut slot = state.desktop.lock().map_err(|e| e.to_string())?;
         if let Some(engine) = slot.engine.as_ref() {
@@ -198,7 +198,7 @@ fn get_or_attach(
         let slot_sink = Arc::new(sink.clone());
         // P57.8 — the attach reads the persisted policy, so an allow-list row
         // added in a previous session is in force before the first action.
-        match everyaios_computeruse::DesktopEngine::new(
+        match agentcowork_computeruse::DesktopEngine::new(
             load_policy(),
             Box::new(FailClosedGate),
             Box::new(sink),
@@ -237,9 +237,9 @@ fn get_or_attach(
 /// If the window no longer exists we fall back to an id-only `WindowInfo`, which
 /// then fails the allow-list honestly instead of acting on a stale guess.
 fn resolve_window(
-    engine: &everyaios_computeruse::DesktopEngine,
+    engine: &agentcowork_computeruse::DesktopEngine,
     id: u64,
-) -> everyaios_computeruse::WindowInfo {
+) -> agentcowork_computeruse::WindowInfo {
     engine
         .list_windows()
         .ok()
@@ -247,8 +247,8 @@ fn resolve_window(
         .unwrap_or_else(|| window_by_id_only(id))
 }
 
-fn window_by_id_only(id: u64) -> everyaios_computeruse::WindowInfo {
-    everyaios_computeruse::WindowInfo {
+fn window_by_id_only(id: u64) -> agentcowork_computeruse::WindowInfo {
+    agentcowork_computeruse::WindowInfo {
         id,
         title: String::new(),
         app: String::new(),
@@ -262,7 +262,7 @@ fn window_by_id_only(id: u64) -> everyaios_computeruse::WindowInfo {
 
 /// Serialize the engine's window list into the `DesktopBackend` wire shape the
 /// tool registry serves (`{id, title, app}` — see `ToolFamily::Desktop`).
-fn windows_json(windows: &[everyaios_computeruse::WindowInfo]) -> serde_json::Value {
+fn windows_json(windows: &[agentcowork_computeruse::WindowInfo]) -> serde_json::Value {
     serde_json::json!(windows
         .iter()
         .map(|w| serde_json::json!({
@@ -281,7 +281,7 @@ fn windows_json(windows: &[everyaios_computeruse::WindowInfo]) -> serde_json::Va
 /// "the app has no controls" — and the model's next move is a blind click. An
 /// `unknown` status with its guidance is the difference between "nothing there"
 /// and "I could not look" (`REQ-CUA-006`).
-fn snapshot_json(window_id: u64, read: &everyaios_computeruse::ReadResult) -> serde_json::Value {
+fn snapshot_json(window_id: u64, read: &agentcowork_computeruse::ReadResult) -> serde_json::Value {
     let tree = read
         .tree
         .as_ref()
@@ -320,7 +320,7 @@ fn snapshot_json(window_id: u64, read: &everyaios_computeruse::ReadResult) -> se
 }
 
 /// Flatten a11y tree → `[index] role: name` lines (the "text read" of desktop).
-fn render_tree(root: &everyaios_computeruse::ReadNode) -> String {
+fn render_tree(root: &agentcowork_computeruse::ReadNode) -> String {
     root.flatten()
         .into_iter()
         .map(|n| {
@@ -345,7 +345,7 @@ pub fn desktop_status(state: State<'_, AppState>) -> Result<serde_json::Value, S
         Some(engine) => {
             let c = engine.capabilities();
             let policy = engine.policy();
-            let read = everyaios_computeruse::derive_readiness(
+            let read = agentcowork_computeruse::derive_readiness(
                 Some(&c),
                 &policy,
                 engine.guard().kill.is_stopped(),
@@ -380,7 +380,7 @@ pub fn desktop_status(state: State<'_, AppState>) -> Result<serde_json::Value, S
             // H4 — an unattached driver is `driver_missing` with the attach
             // error verbatim, never a green dot over a dead engine.
             let policy = load_policy();
-            let read = everyaios_computeruse::derive_readiness(
+            let read = agentcowork_computeruse::derive_readiness(
                 None,
                 &policy,
                 false,
@@ -508,7 +508,7 @@ pub fn desktop_see(
     }))
 }
 
-/// Parse the wire act-kind vocabulary into an [`everyaios_computeruse::ActKind`].
+/// Parse the wire act-kind vocabulary into an [`agentcowork_computeruse::ActKind`].
 /// Shared by `desktop_act` and the P57.4 escalation pair so both see the exact
 /// same act.
 #[allow(clippy::too_many_arguments)]
@@ -518,23 +518,23 @@ fn parse_act(
     y: Option<i32>,
     name: Option<String>,
     text: Option<String>,
-) -> Result<everyaios_computeruse::ActKind, String> {
+) -> Result<agentcowork_computeruse::ActKind, String> {
     Ok(match kind {
-        "click" => everyaios_computeruse::ActKind::Click {
+        "click" => agentcowork_computeruse::ActKind::Click {
             x: x.unwrap_or(0),
             y: y.unwrap_or(0),
         },
-        "clickByName" => everyaios_computeruse::ActKind::ClickByName {
+        "clickByName" => agentcowork_computeruse::ActKind::ClickByName {
             name: name.ok_or("name required for clickByName")?,
         },
-        "type" => everyaios_computeruse::ActKind::Type {
+        "type" => agentcowork_computeruse::ActKind::Type {
             text: text.ok_or("text required for type")?,
         },
-        "setValue" => everyaios_computeruse::ActKind::SetValue {
+        "setValue" => agentcowork_computeruse::ActKind::SetValue {
             name: name.ok_or("name required for setValue")?,
             value: text.ok_or("value required for setValue")?,
         },
-        "scroll" => everyaios_computeruse::ActKind::Scroll {
+        "scroll" => agentcowork_computeruse::ActKind::Scroll {
             x: x.unwrap_or(0),
             y: y.unwrap_or(0),
             delta: y.unwrap_or(0),
@@ -545,8 +545,8 @@ fn parse_act(
         // as the subject, so an app has to be allow-listed in Settings →
         // Computer use before this can proceed.
         "launch" => match text.filter(|t| !t.trim().is_empty()) {
-            Some(path) => everyaios_computeruse::ActKind::launch_path(path),
-            None => everyaios_computeruse::ActKind::launch_by_name(
+            Some(path) => agentcowork_computeruse::ActKind::launch_path(path),
+            None => agentcowork_computeruse::ActKind::launch_by_name(
                 name.ok_or("launch requires a path (text) or an app name")?,
             ),
         },
@@ -702,7 +702,7 @@ pub fn desktop_policy_get(state: State<'_, AppState>) -> Result<serde_json::Valu
         ),
         None => (load_policy(), None, false),
     };
-    let read = everyaios_computeruse::derive_readiness(
+    let read = agentcowork_computeruse::derive_readiness(
         caps.as_ref(),
         &policy,
         killed,
@@ -730,16 +730,16 @@ pub fn desktop_apps(
         // The filesystem scan is session-cached; policy annotations are
         // refreshed below on every read so an Add/Remove write is visible
         // immediately without rescanning application directories.
-        slot.apps = Some(everyaios_computeruse::installed_apps(&policy));
+        slot.apps = Some(agentcowork_computeruse::installed_apps(&policy));
     }
     let mut cached = slot.apps.clone().unwrap_or_default();
     // Keep the disk scan cached, but never keep policy annotations cached: an
     // Add/Remove operation may have changed the persisted policy since the
     // inventory was collected.
-    everyaios_computeruse::annotate_inventory(&mut cached, &policy);
+    agentcowork_computeruse::annotate_inventory(&mut cached, &policy);
     drop(slot);
     let rows: Vec<serde_json::Value> =
-        everyaios_computeruse::search_apps(&cached, query.as_deref().unwrap_or(""))
+        agentcowork_computeruse::search_apps(&cached, query.as_deref().unwrap_or(""))
             .into_iter()
             .map(|a| {
                 serde_json::json!({
@@ -755,7 +755,7 @@ pub fn desktop_apps(
         "apps": rows,
         "total": cached.len(),
         "scanned": rescan,
-        "platformRoots": everyaios_computeruse::apps::platform_app_roots()
+        "platformRoots": agentcowork_computeruse::apps::platform_app_roots()
             .iter()
             .map(|p| p.to_string_lossy().into_owned())
             .collect::<Vec<_>>(),
@@ -825,7 +825,7 @@ pub fn desktop_policy_set_interaction(
     state: State<'_, AppState>,
     mode: String,
 ) -> Result<serde_json::Value, String> {
-    let parsed = everyaios_computeruse::InteractionMode::parse(&mode)
+    let parsed = agentcowork_computeruse::InteractionMode::parse(&mode)
         .ok_or_else(|| format!("unknown interaction mode: {mode}"))?;
     let mut policy = load_policy();
     policy.interaction_mode = parsed;
@@ -844,7 +844,7 @@ pub fn desktop_policy_set_interaction(
 
 // ==== P48.3 — the inbuilt agent's computer-use path =========================
 
-/// The `everyaios_core::tools::DesktopBackend` seam the loop's `desktop.*`
+/// The `agentcowork_core::tools::DesktopBackend` seam the loop's `desktop.*`
 /// tools dispatch to.
 ///
 /// It shares the **one** engine and the **same** Guard-2 preflight as the human
@@ -858,7 +858,7 @@ pub fn desktop_policy_set_interaction(
 /// deny-by-default while the Guard-2 card surface is unbuilt — so an agent's
 /// risky act fails closed instead of executing.
 struct DesktopEngineBackend {
-    engine: Arc<everyaios_computeruse::DesktopEngine>,
+    engine: Arc<agentcowork_computeruse::DesktopEngine>,
 }
 
 /// Parse a wire act for the **agent** path, refusing what this tool's schema
@@ -874,7 +874,7 @@ fn agent_act_kind(
     kind: &str,
     target: Option<&str>,
     text: Option<&str>,
-) -> Result<everyaios_computeruse::ActKind, String> {
+) -> Result<agentcowork_computeruse::ActKind, String> {
     if matches!(kind, "click" | "scroll") {
         return Err(format!(
             "desktop.act '{kind}' needs a coordinate, which this tool does not carry — \
@@ -890,7 +890,7 @@ fn agent_act_kind(
     )
 }
 
-impl everyaios_core::tools::DesktopBackend for DesktopEngineBackend {
+impl agentcowork_core::tools::DesktopBackend for DesktopEngineBackend {
     fn list_windows(&self) -> Result<serde_json::Value, String> {
         let windows = self.engine.list_windows().map_err(|e| e.to_string())?;
         Ok(windows_json(&windows))
@@ -918,7 +918,7 @@ impl everyaios_core::tools::DesktopBackend for DesktopEngineBackend {
                 &window,
                 &act,
                 None,
-                everyaios_computeruse::ActProvenance::Agent,
+                agentcowork_computeruse::ActProvenance::Agent,
             )
             .map_err(|e| e.to_string())?;
         if let Some(err) = outcome.error {
@@ -985,7 +985,7 @@ fn cua_dir(state: &AppState, work_id: &str) -> std::path::PathBuf {
 #[tauri::command]
 pub fn cua_dag_get(state: State<'_, AppState>, work_id: String) -> serde_json::Value {
     let dir = cua_dir(&state, &work_id);
-    match everyaios_core::load_dag(&dir) {
+    match agentcowork_core::load_dag(&dir) {
         Ok(dag) => serde_json::json!({ "ok": true, "dag": dag }),
         Err(_) => serde_json::json!({ "ok": true, "dag": null, "reason": "no graph yet" }),
     }
@@ -1002,10 +1002,10 @@ pub fn cua_dag_edit_remaining(
     info: Option<String>,
 ) -> Result<serde_json::Value, String> {
     let dir = cua_dir(&state, &work_id);
-    let mut dag = everyaios_core::load_dag(&dir)?;
+    let mut dag = agentcowork_core::load_dag(&dir)?;
     dag.apply_remaining_edit(&node_id, name, info)?;
-    everyaios_core::append_replan_log(&dir, dag.replan_seq, "user-edit-remaining")?;
-    everyaios_core::persist_dag(&dir, &dag)?;
+    agentcowork_core::append_replan_log(&dir, dag.replan_seq, "user-edit-remaining")?;
+    agentcowork_core::persist_dag(&dir, &dag)?;
     Ok(serde_json::json!({ "ok": true, "replanSeq": dag.replan_seq, "dag": dag }))
 }
 
@@ -1017,9 +1017,9 @@ mod policy_tests {
     /// would silently blank the Settings section.
     #[test]
     fn policy_json_exposes_the_contract_fields() {
-        let p = everyaios_computeruse::AppPolicy {
+        let p = agentcowork_computeruse::AppPolicy {
             allow_paths: vec!["/usr/bin/gedit".into()],
-            interaction_mode: everyaios_computeruse::InteractionMode::Foreground,
+            interaction_mode: agentcowork_computeruse::InteractionMode::Foreground,
             ..Default::default()
         };
         let j = policy_json(&p);
@@ -1027,7 +1027,7 @@ mod policy_tests {
         assert_eq!(j["allowsRaisingWindows"], true);
         assert_eq!(j["allowPaths"][0], "/usr/bin/gedit");
         assert_eq!(j["strict"], false);
-        let bg = everyaios_computeruse::AppPolicy {
+        let bg = agentcowork_computeruse::AppPolicy {
             strict: true,
             ..Default::default()
         };
@@ -1038,7 +1038,7 @@ mod policy_tests {
     /// must never be recorded as the user's own gesture.
     #[test]
     fn provenance_maps_to_the_right_authority_class() {
-        use everyaios_computeruse::ActProvenance;
+        use agentcowork_computeruse::ActProvenance;
         assert_eq!(
             auth_kind_for(ActProvenance::HumanGesture),
             crate::control::AuthKind::HumanGesture
@@ -1071,11 +1071,11 @@ mod policy_tests {
         // …and the name-addressed forms still parse.
         assert!(matches!(
             agent_act_kind("clickByName", Some("Save"), None).unwrap(),
-            everyaios_computeruse::ActKind::ClickByName { .. }
+            agentcowork_computeruse::ActKind::ClickByName { .. }
         ));
         assert!(matches!(
             agent_act_kind("type", None, Some("hello")).unwrap(),
-            everyaios_computeruse::ActKind::Type { .. }
+            agentcowork_computeruse::ActKind::Type { .. }
         ));
         // A missing required name is an honest error, not a default.
         assert!(agent_act_kind("clickByName", None, None).is_err());
@@ -1086,7 +1086,7 @@ mod policy_tests {
     /// rename here would silently blank the agent's window list.
     #[test]
     fn window_json_carries_the_contract_fields() {
-        let w = everyaios_computeruse::WindowInfo {
+        let w = agentcowork_computeruse::WindowInfo {
             id: 7,
             title: "Notes".into(),
             app: "notepad".into(),
@@ -1119,7 +1119,7 @@ mod policy_tests {
     /// the model's next move would be a blind click.
     #[test]
     fn the_agent_snapshot_carries_the_read_status_epoch_and_guidance() {
-        let base = everyaios_computeruse::ReadResult::absent(7, 1.0, vec![]);
+        let base = agentcowork_computeruse::ReadResult::absent(7, 1.0, vec![]);
         let json = snapshot_json(7, &base);
         assert_eq!(json["windowId"], 7);
         assert_eq!(json["hasTree"], false);
@@ -1129,15 +1129,15 @@ mod policy_tests {
         assert!(json["guidance"].as_str().unwrap().contains("vision rung"));
 
         // A read that could not look must not report absence as inferable.
-        let blocked = everyaios_computeruse::ReadResult {
-            status: everyaios_computeruse::UiaReadStatus::Unknown {
+        let blocked = agentcowork_computeruse::ReadResult {
+            status: agentcowork_computeruse::UiaReadStatus::Unknown {
                 detail: "this window runs elevated and this process is not UIAccess-enabled"
                     .into(),
             },
             guidance: Some(
                 "this window runs elevated — no input is synthesized into it".into(),
             ),
-            epoch: everyaios_computeruse::SnapshotEpoch(3),
+            epoch: agentcowork_computeruse::SnapshotEpoch(3),
             ..base
         };
         let json = snapshot_json(7, &blocked);
@@ -1155,13 +1155,13 @@ mod policy_tests {
     fn a_malformed_policy_file_is_never_a_partial_allow_list() {
         // `load_policy` reads the real data dir, so assert the decode rule the
         // same way it is applied: a bad document yields the default.
-        let bad: Result<everyaios_computeruse::AppPolicy, _> = serde_json::from_slice(b"{oops");
+        let bad: Result<agentcowork_computeruse::AppPolicy, _> = serde_json::from_slice(b"{oops");
         assert!(bad.is_err());
         let fallback = bad.unwrap_or_default();
         assert!(fallback.allow_paths.is_empty());
         assert_eq!(
             fallback.interaction_mode,
-            everyaios_computeruse::InteractionMode::Background
+            agentcowork_computeruse::InteractionMode::Background
         );
     }
 }

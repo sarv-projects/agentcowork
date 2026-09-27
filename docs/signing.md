@@ -24,7 +24,7 @@ produced artifacts, not just the tree.
 ## 2. Why the pinning matters (what a mistake would cost)
 
 - **The minisign keypair is pinned to `tauri.conf.json`.** It was generated 2026-08-21
-  (`.tauri/everyaios-updater.key[.pub]`), and the base64 `.pub` is embedded in the config. The updater's
+  (`.tauri/agentcowork-updater.key[.pub]`), and the base64 `.pub` is embedded in the config. The updater's
   pubkey is the root of update trust: whatever string is in the shipped config decides which signatures a
   user's install accepts. Changing it without shipping a *new installer* bricks updates for every existing
   install (they verify against the old anchor).
@@ -54,8 +54,8 @@ not ship unsigned.
 
 ### 3.2 Updater keypair rotation (compromise or routine)
 
-1. Generate a new keypair: `tauri signer generate -w .tauri/everyaios-updater.key` (keep it out of git).
-2. Base64-encode the new `.pub` (`base64 -w0 < everyaios-updater.key.pub`) and place it in
+1. Generate a new keypair: `tauri signer generate -w .tauri/agentcowork-updater.key` (keep it out of git).
+2. Base64-encode the new `.pub` (`base64 -w0 < agentcowork-updater.key.pub`) and place it in
    `plugins.updater.pubkey`.
 3. Ship this change **in a release signed with the OLD key** — the anchor update reaches users only
    through a signed update they accept. The release *after* that one signs with the new key.

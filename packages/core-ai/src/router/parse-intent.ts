@@ -1,4 +1,4 @@
-import type { IntentCategory, IntentClassification } from '@everyaios/core-domain';
+import type { IntentCategory, IntentClassification } from '@agentcowork/core-domain';
 import { classifyDepth } from './heuristic-classifier.js';
 
 const VALID_CATEGORIES: IntentCategory[] = [

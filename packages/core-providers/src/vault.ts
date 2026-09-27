@@ -26,9 +26,9 @@ class VaultMutex {
 /**
  * P69.C4 / P69.D4 — **availability + handle facade only.**
  *
- * Provider credentials live **only** in the Rust vault (`everyaios-vault`);
+ * Provider credentials live **only** in the Rust vault (`agentcowork-vault`);
  * the sidecar never holds them (AGENTS.md §15, `ARCH/CORE.md` I10). This class
- * used to seal/unseal API keys with `@everyaios/core-security`, which made a
+ * used to seal/unseal API keys with `@agentcowork/core-security`, which made a
  * TypeScript package a second credential store — the single most severe live
  * violation of the strongest invariant.
  *
@@ -81,7 +81,7 @@ export class ProviderVault {
     // it (a silent ignore would let a caller believe it saved a key).
     if (Object.prototype.hasOwnProperty.call(input, 'apiKey')) {
       throw new Error(
-        'ProviderVault no longer accepts key material (P69.C4): pass an opaque keyRef issued by the Rust vault (vault_key_add). Provider keys live only in everyaios-vault.',
+        'ProviderVault no longer accepts key material (P69.C4): pass an opaque keyRef issued by the Rust vault (vault_key_add). Provider keys live only in agentcowork-vault.',
       );
     }
     const catalog = getProviderById(input.id);

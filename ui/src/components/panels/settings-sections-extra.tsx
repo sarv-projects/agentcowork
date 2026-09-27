@@ -91,7 +91,7 @@ const EXPERIMENTAL_OWNERS: Record<string, string> = {
 }
 
 export function AdvancedSection() {
-  const [dataPath, setDataPath] = usePref('advanced.dataPath', '~/.everyaios/data')
+  const [dataPath, setDataPath] = usePref('advanced.dataPath', '~/.agentcowork/data')
   const [logLevel, setLogLevel] = usePref('advanced.logLevel', 'info')
   // Staged-only record of the experimental surface (never written while the
   // rows are disabled — see EXPERIMENTAL_OWNERS).
@@ -292,7 +292,7 @@ export function AboutSection() {
   return (
     <SectionShell title="About" desc="Version, license and links">
       <div className="rounded-lg border border-border bg-background/30 p-4">
-        <div className="font-mono text-base font-semibold text-brand">EveryAIOS</div>
+        <div className="font-mono text-base font-semibold text-brand">AgentCowork</div>
         <div className="mt-0.5 font-mono text-[11px] text-muted-foreground">
           v{appVersion()}
         </div>
@@ -300,9 +300,9 @@ export function AboutSection() {
           Agentic OS desktop runtime. Self-hosted, local-first.
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <LinkChip icon={<ExternalLink className="h-3 w-3" />} label="Docs" href="https://github.com/sarv-projects/EveryAIOS#readme" />
-          <LinkChip icon={<Github className="h-3 w-3" />} label="GitHub" href="https://github.com/sarv-projects/EveryAIOS" />
-          <LinkChip icon={<ExternalLink className="h-3 w-3" />} label="Issues" href="https://github.com/sarv-projects/EveryAIOS/issues" />
+          <LinkChip icon={<ExternalLink className="h-3 w-3" />} label="Docs" href="https://github.com/sarv-projects/agentcowork#readme" />
+          <LinkChip icon={<Github className="h-3 w-3" />} label="GitHub" href="https://github.com/sarv-projects/agentcowork" />
+          <LinkChip icon={<ExternalLink className="h-3 w-3" />} label="Issues" href="https://github.com/sarv-projects/agentcowork/issues" />
         </div>        {/* P8.8 / P70.C2–C4 auto-updater surface */}
         <div className="mt-3 border-t border-border/40 pt-3">
           <Row label="Release channel" desc="Stable is the default; beta receives preview builds first (applies to the next check)">
@@ -378,7 +378,7 @@ export function SyncSection() {
   const [target, setTarget] = useState('192.168.1.42:47615')
   const [busy, setBusy] = useState(false)
   const [last, setLast] = useState<string | null>(null)
-  const [bundlePath, setBundlePath] = useState('~/everyaios-sync.bundle')
+  const [bundlePath, setBundlePath] = useState('~/agentcowork-sync.bundle')
   // P55.9 — H33: attach a user-owned always-on node (the honest replacement
   // for the old "Cloud env" docker-package dropdown).
   const [controlPlane, setControlPlane] = useState('')
@@ -556,7 +556,7 @@ export function SyncSection() {
         </Row>
         <Row label="Bundle file" desc="Encrypted export/import over the file seam — USB, LAN share, backup (no network)">
           <div className="flex items-center gap-2">
-            <Input value={bundlePath} onChange={(e) => setBundlePath(e.target.value)} placeholder="~/everyaios-sync.bundle" className="h-7 w-56 font-mono text-xs" />
+            <Input value={bundlePath} onChange={(e) => setBundlePath(e.target.value)} placeholder="~/agentcowork-sync.bundle" className="h-7 w-56 font-mono text-xs" />
             <Button size="sm" variant="outline" className="h-7 text-xs" disabled={busy} onClick={handleExportBundle}>Export</Button>
             <Button size="sm" variant="outline" className="h-7 text-xs" disabled={busy} onClick={handleImportBundle}>Import</Button>
           </div>
@@ -594,7 +594,7 @@ export function DoctorSection() {
     s === 'ok' ? 'text-emerald-400' : s === 'warn' ? 'text-warning' : 'text-red-400'
 
   return (
-    <SectionShell title="Doctor" desc="Per-subsystem readiness — a broken component is diagnosed, not a support ticket (everyaios doctor)">
+    <SectionShell title="Doctor" desc="Per-subsystem readiness — a broken component is diagnosed, not a support ticket (agentcowork doctor)">
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <Button size="sm" variant="outline" className="h-7 text-xs" disabled={loading} onClick={run}>
@@ -631,7 +631,7 @@ export function DoctorSection() {
           ))}
         </ul>
         <p className="text-[10px] text-muted-foreground">
-          Also available on the terminal: <code className="font-mono">everyaios doctor</code> (add{' '}
+          Also available on the terminal: <code className="font-mono">agentcowork doctor</code> (add{' '}
           <code className="font-mono">--json</code> for machine output). Credentials are reported as a
           count only — never a value.
         </p>
@@ -671,7 +671,7 @@ export function DiagnosticsSection() {
       const bundle = await nativeCall('support bundle', () =>
         invoke<Record<string, unknown>>('diagnostics_support_bundle'),
       )
-      const name = `everyaios-support-${new Date().toISOString().slice(0, 10)}.json`
+      const name = `agentcowork-support-${new Date().toISOString().slice(0, 10)}.json`
       const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -695,7 +695,7 @@ export function DiagnosticsSection() {
       const r = await nativeCall('remove all data', () =>
         invoke<{ files: number; bytes: number }>('data_remove_all'),
       )
-      notify(`Removed ${r.files} files — restart EveryAIOS to re-initialize`)
+      notify(`Removed ${r.files} files — restart AgentCowork to re-initialize`)
       setConfirmText('')
     } catch (e) {
       notify(e instanceof Error ? e.message : 'Data removal failed', 'error')

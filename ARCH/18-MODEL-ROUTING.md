@@ -4,7 +4,7 @@
 > **P7 pass (2026-09-26):** line-checked; requirements seeded (`REQ-MODEL-*`, Requirements section).
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
 > **Role:** every model — cloud or local — behind **one registry and one router**. No module hard-codes a vendor (P-03, DEC-004).
-> **Dependencies:** `10-KERNEL` · `12-TRUST` (vault) · `16-CONTEXT` (window/tokenization feeds budgets) · `30-EVENTS` (usage). **Consumers:** `15-AGENT-X` · `20-WORKFLOW` (agent nodes) · `17-MEMORY` (extractor) · `24-COMPUTER-USE` (vision).
+> **Dependencies:** `10-KERNEL` · `12-TRUST` (vault) · `16-CONTEXT` (window/tokenization feeds budgets) · `30-EVENTS` (usage). **Consumers:** `15-AGENT-PLANE` · `20-WORKFLOW` (agent nodes) · `17-MEMORY` (extractor) · `24-COMPUTER-USE` (vision).
 > **Evidence:** product-owner brief (ModelAdapter surface, local discovery UX, “never hard-code Claude”) · `ARCHIVE/v1-research/agent-harness-verification.md` §A1 (resolved window + feasibility check, `codex-rs/core/src/session/mod.rs:4560-4587`), §C1 (budget vocabulary) · `ARCH/06-DATA-MODEL.md` DM-025 · `ARCH/07-CONTRACTS.md` CTR-014 · `ARCHIVE/v1-research/memory.md` §7 (extraction disclosure boundary).
 
 ## 1. Purpose & responsibilities

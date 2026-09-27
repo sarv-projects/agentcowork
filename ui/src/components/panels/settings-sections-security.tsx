@@ -410,7 +410,7 @@ export function UsageSection() {
       )}
       <Row
         label={cost?.kind === 'reported' ? 'Total spent (reported)' : cost?.kind === 'estimated' ? 'Total spent (estimated)' : 'Total spent'}
-        desc="Reported when an agent priced its own turns; otherwise EveryAIOS's estimate from configured prices — never the two blended"
+        desc="Reported when an agent priced its own turns; otherwise AgentCowork's estimate from configured prices — never the two blended"
       >
         <span className="font-mono text-xs text-brand">
           {loading ? '…' : cost?.usd != null ? `$${cost.usd.toFixed(4)}` : '—'}

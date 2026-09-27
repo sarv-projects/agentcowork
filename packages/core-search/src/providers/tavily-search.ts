@@ -8,11 +8,11 @@
  * Credential and egress custody (P69.C4/D4): this provider never reads an API
  * key, never reads `process.env` and never calls `fetch` itself. It asks the
  * host through the governed transport, which resolves the `tavily` secret from
- * `everyaios-vault` and routes the request through Guard-2 `netfloor`. With no
+ * `agentcowork-vault` and routes the request through Guard-2 `netfloor`. With no
  * transport attached the provider reports unavailable — there is deliberately
  * no environment-variable fallback.
  */
-import type { SearchContext, SearchProvider, SearchResult } from '@everyaios/core-domain';
+import type { SearchContext, SearchProvider, SearchResult } from '@agentcowork/core-domain';
 import {
   getGovernedSearchTransport,
   type GovernedSearchTransport,

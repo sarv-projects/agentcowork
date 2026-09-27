@@ -11,6 +11,7 @@ describe("H32 send policy (v1: nothing is forwarded)", () => {
     }
     // The retired built-in spellings are not agents, and they forward nothing
     // either — a stale config value must not resurrect the old branch.
+    // DEC-053: these legacy spellings stay verbatim so retirement recognition keeps working.
     for (const retired of ["everyaios-native", "everyaios", "inbuilt", ""]) {
       expect(isAcpAgent(retired)).toBe(false);
       expect(shouldForwardModel(retired)).toBe(false);

@@ -5,7 +5,7 @@
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
 > **Role:** the office domain runtime **under the universal document surface** (DEC-013) — not a sidebar mode. Progressive **L1 semantic → L2 structured mutation → L3 raw escape hatch**; documents stay **resident** for active sessions; render/validate before receipts.
 > **Dependencies:** `13`/`14` (capabilities/providers) · `19-RUNTIME-ENVIRONMENTS` · `12-TRUST` (paths/exec) · `29-ARTIFACTS` (previews/versions) · `34` (verification depth). **Consumers:** `15` (agent office work), UI (document surface).
-> **Evidence:** `ARCHIVE/v1-research/office-runtime-verification.md` (448 lines; OfficeCLI verified in source, GenOffice per-domain registries verified) · v0 corpus `ARCHIVE/v0/RESEARCH/desktop_app/28,29` · local `crates/everyaios-office` (frozen reference) · DEC-013.
+> **Evidence:** `ARCHIVE/v1-research/office-runtime-verification.md` (448 lines; OfficeCLI verified in source, GenOffice per-domain registries verified) · v0 corpus `ARCHIVE/v0/RESEARCH/desktop_app/28,29` · local `crates/agentcowork-office` (frozen reference) · DEC-013.
 
 ## 1. Purpose & rules
 
@@ -22,7 +22,7 @@
 
 | Format | Primary (native) | Fallback / external | Notes |
 |---|---|---|---|
-| DOCX | `everyaios-office` OOXML patcher | LibreOffice headless (convert/render, MPL-2.0) | Surgical edits preferred; re-serialization declared when unavoidable |
+| DOCX | `agentcowork-office` OOXML patcher | LibreOffice headless (convert/render, MPL-2.0) | Surgical edits preferred; re-serialization declared when unavoidable |
 | XLSX | IronCalc (recalc) + patcher | LibreOffice headless | **Always recalc via IronCalc** before commit (formula integrity) |
 | PPTX | OOXML patcher + staged deck builder | LibreOffice headless | Charts/images: subset; SmartArt/OLE deferred |
 | PDF | Native PDF runtime | LibreOffice/mutool-class tools | Redact must **remove** content, not annotate (code-phase P0) |
@@ -88,7 +88,7 @@ Pivot authoring · reflow · SmartArt/OLE editing · multi-writer merge · real-
 
 1. **Resident/lease missing** in the current crate (has commit/snapshot primitives) — the main gap for DEC-013.
 2. **PDF “redact” currently annotates** — must remove content (v0 P0 carried forward).
-3. **fsync before atomic swap** — partial: the DOCX/PDF command paths use `everyaios_office::write_atomic` (temp → `sync_all` → rename, plus a best-effort directory fsync on POSIX), but the XLSX command path has its own `atomic_write` (`src-tauri/src/xlsx_cmds.rs:301-312`) = write + rename with **no fsync**; route it — and every new commit path — through the fsynced primitive (OfficeCLI's no-fsync trade-off is the gap we do not copy).
+3. **fsync before atomic swap** — partial: the DOCX/PDF command paths use `agentcowork_office::write_atomic` (temp → `sync_all` → rename, plus a best-effort directory fsync on POSIX), but the XLSX command path has its own `atomic_write` (`src-tauri/src/xlsx_cmds.rs:301-312`) = write + rename with **no fsync**; route it — and every new commit path — through the fsynced primitive (OfficeCLI's no-fsync trade-off is the gap we do not copy).
 4. Declare per-engine fidelity limits in the registry (lossy ops surface as `guidance`).
 
 ## 11. Open questions (`OQ-OFFICE-*`)

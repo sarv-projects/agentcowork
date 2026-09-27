@@ -4,8 +4,8 @@ import type {
   MemoryFact,
   MemoryRepository,
   RecallOptions,
-} from '@everyaios/core-domain';
-import { normalizeMemoryCategory } from '@everyaios/core-domain';
+} from '@agentcowork/core-domain';
+import { normalizeMemoryCategory } from '@agentcowork/core-domain';
 import { MemoryConflictResolver, type EmbedVectorFn } from './conflict.js';
 
 export type RememberOptions = {

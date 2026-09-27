@@ -20,7 +20,7 @@ import type {
   ConnectorResult,
   MemoryFact,
   UserQuery,
-} from '@everyaios/core-domain';
+} from '@agentcowork/core-domain';
 import { requestConnector } from '../connection-manager.js';
 
 const FINNHUB_API = 'https://finnhub.io/api/v1';

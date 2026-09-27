@@ -3,7 +3,7 @@
  * Scrapes html.duckduckgo.com (non-JS version) for web search results.
  * More reliable than lite version — returns full result links with snippets.
  */
-import type { SearchContext, SearchProvider, SearchResult } from '@everyaios/core-domain';
+import type { SearchContext, SearchProvider, SearchResult } from '@agentcowork/core-domain';
 
 function decodeDdgUrl(encodedUrl: string): string {
   const match = encodedUrl.match(/uddg=([^&]+)/);

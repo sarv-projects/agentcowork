@@ -21,7 +21,7 @@ import type {
   ConnectorResult,
   MemoryFact,
   UserQuery,
-} from '@everyaios/core-domain';
+} from '@agentcowork/core-domain';
 import { requestConnector } from '../connection-manager.js';
 
 const SLACK_API = 'https://slack.com/api';

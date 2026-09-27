@@ -4,7 +4,7 @@
 //
 // Bridge for the artifact action stream + loopback preview server:
 //   - `startArtifactServer(workspace)` serves the guarded artifact folder on
-//     127.0.0.1:<port> via the Rust `ArtifactServer` (everyaios-script).
+//     127.0.0.1:<port> via the Rust `ArtifactServer` (agentcowork-script).
 //   - `stopArtifactServer(port)` tears it down.
 //   - `tickArtifactActions` reflects runner state into the store checklist.
 //

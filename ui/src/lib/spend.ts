@@ -1,5 +1,5 @@
 // P5.9 — token/cost dashboard bridge (H9). Mirrors the Rust
-// `MemoryService::usage_snapshot()` shape (everyaios-core). In a plain-browser
+// `MemoryService::usage_snapshot()` shape (agentcowork-core). In a plain-browser
 // preview (no shell) the caller falls back to demo data so the page is
 // explorable.
 

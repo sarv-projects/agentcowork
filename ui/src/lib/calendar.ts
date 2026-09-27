@@ -4,7 +4,7 @@
 import { invoke } from "./tauri";
 import { bridgeCall } from "./runtime";
 
-/** Wire shape owned by everyaios-vault::CalendarRow. */
+/** Wire shape owned by agentcowork-vault::CalendarRow. */
 export interface CalendarRow {
   id: string;
   name: string;
@@ -14,7 +14,7 @@ export interface CalendarRow {
   updated_at: number;
 }
 
-/** Wire shape owned by everyaios-vault::CalendarEventRow. */
+/** Wire shape owned by agentcowork-vault::CalendarEventRow. */
 export interface CalendarEventRow {
   id: string;
   calendar_id: string;

@@ -1,4 +1,4 @@
-// P48.3 (E9) — desktop computer-use bridge (desktop_cmds.rs / everyaios-
+// P48.3 (E9) — desktop computer-use bridge (desktop_cmds.rs / agentcowork-
 // computeruse). See / read / act on native windows through the effect funnel:
 // every `act` is Guard-2 gated + Merkle-audited with human-gesture provenance,
 // and risky classes fail closed on the Rust side.
@@ -139,7 +139,7 @@ export async function desktopStop(): Promise<{ stopped: boolean }> {
 function demoWindows(): DesktopWindow[] {
   return [
     { id: 1, title: 'Untitled — TextEdit', app: 'TextEdit', x: 100, y: 80, width: 720, height: 480 },
-    { id: 2, title: 'EveryAIOS — Chromium', app: 'Chromium', x: 200, y: 120, width: 1200, height: 800 },
+    { id: 2, title: 'AgentCowork — Chromium', app: 'Chromium', x: 200, y: 120, width: 1200, height: 800 },
   ]
 }
 

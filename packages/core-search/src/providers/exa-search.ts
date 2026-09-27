@@ -1,4 +1,4 @@
-import type { SearchContext, SearchProvider, SearchResult } from '@everyaios/core-domain';
+import type { SearchContext, SearchProvider, SearchResult } from '@agentcowork/core-domain';
 import { McpSearchClient } from '../mcp-client.js';
 
 export class ExaSearchProvider implements SearchProvider {

@@ -206,7 +206,7 @@ export default function OfficeDocxView() {
               Q3 2026 Executive Summary
             </h1>
             <div className="font-mono text-[10px] text-muted-foreground">
-              Prepared by EveryAIOS Agent · 2026-09-30
+              Prepared by AgentCowork Agent · 2026-09-30
             </div>
 
             <h2 className="pt-2 text-lg font-semibold text-brand">1. Overview</h2>

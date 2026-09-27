@@ -38,12 +38,12 @@ Thumbs.db
 !8cfdc45d-f91f-4857-8ca5-9777c8ae4822.png
 
 # P50.3 sidecar resource: the bun-compiled coordinator binary (97MB, built
-# via `pnpm --filter @everyaios/coordinator build` + copy — never committed)
+# via `pnpm --filter @agentcowork/coordinator build` + copy — never committed)
 src-tauri/bin/
 
 # Benchmark test artifacts
-.everyaios_bench/
-packages/coordinator/.everyaios_bench/
+.agentcowork_bench/
+packages/coordinator/.agentcowork_bench/
 
 # Code intelligence artifacts (agent-agnostic code analysis)
 .code-intelligence/

@@ -1,5 +1,5 @@
 // P3.2 — cockpit / ambient flight-deck bridge (H2, doc 33 §9.5). Mirrors the
-// Rust types in everyaios-audit/src/cockpit.rs. In a plain-browser preview
+// Rust types in agentcowork-audit/src/cockpit.rs. In a plain-browser preview
 // (no shell) the callers fall back to demo data so the page is explorable.
 
 import { inTauri, invoke } from "./tauri";

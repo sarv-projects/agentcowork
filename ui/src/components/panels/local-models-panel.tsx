@@ -241,7 +241,7 @@ function compatibilityFor(
   if (controlLevel === 'native_only') {
     return {
       status: 'not_supported',
-      reason: 'This agent manages its model inside the agent, so EveryAIOS is not offering a runtime handoff.',
+      reason: 'This agent manages its model inside the agent, so AgentCowork is not offering a runtime handoff.',
     }
   }
   if (controlLevel === 'unknown') {

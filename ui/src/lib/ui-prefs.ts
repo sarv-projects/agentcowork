@@ -1,14 +1,15 @@
 import { useCallback, useState } from 'react'
+import { clearLocalKey, getLocalItem } from './storage-compat'
 
-const PREFIX = 'everyaios.settings.'
+const PREFIX = 'agentcowork.settings.'
+
+// DEC-053: every read below goes through `getLocalItem`, which honors the
+// legacy `everyaios.*` key when the renamed `agentcowork.*` key is absent and
+// promotes it once. Writes always use the new key only.
 
 function readRaw(key: string): string | null {
   if (typeof window === 'undefined') return null
-  try {
-    return window.localStorage.getItem(PREFIX + key)
-  } catch {
-    return null
-  }
+  return getLocalItem(PREFIX + key)
 }
 
 /** Persist one preference. Exported so a non-React owner (the theme
@@ -38,13 +39,13 @@ function parseOrUndefined<T>(raw: string | null): T | undefined {
 
 /** Read one appearance value from its **own literal key**.
  *
- * The appearance keys (`everyaios.theme`, `everyaios.accent`, …) are already
+ * The appearance keys (`agentcowork.theme`, `agentcowork.accent`, …) are already
  * namespaced, and the pre-paint script in `index.html` reads them with plain
  * `localStorage` because it runs before any module loads. Two consequences,
  * both of which were broken:
  *
  * - going through `usePref` prefixes the key a second time
- *   (`everyaios.settings.everyaios.theme`), so the boot script looked for a key
+ *   (`agentcowork.settings.agentcowork.theme`), so the boot script looked for a key
  *   nothing ever wrote — every reload flashed the default appearance;
  * - the value is stored as **plain text**, not JSON, so the boot script needs
  *   no parser and cannot fail on a corrupt entry. A value left behind by the
@@ -55,13 +56,10 @@ function parseOrUndefined<T>(raw: string | null): T | undefined {
  * saved while the double-prefix was in force. */
 export function readStoredText(key: string, initial: string): string {
   if (typeof window === 'undefined') return initial
-  let raw: string | null = null
-  try {
-    raw = window.localStorage.getItem(key)
-    if (raw == null) raw = window.localStorage.getItem(PREFIX + key)
-  } catch {
-    return initial
-  }
+  // DEC-053: both the literal key and the settings-prefixed fallback go
+  // through the legacy read-fallback (promotion happens once, on first read).
+  let raw: string | null = getLocalItem(key)
+  if (raw == null) raw = getLocalItem(PREFIX + key)
   if (raw == null || raw === '') return initial
   if (raw.startsWith('"')) {
     const legacy = parseOrUndefined<unknown>(raw)
@@ -96,14 +94,10 @@ export function writeStoredFlag(key: string, value: boolean) {
 
 /** Delete an appearance value so a reset cannot be undone by a reload. Removing
  * (rather than storing a sentinel) keeps "never chosen" and "chosen and reset"
- * the same state. */
+ * the same state. DEC-053: the clear reaches the legacy `everyaios.*` spelling
+ * too, so a pre-rename value cannot resurrect on the next read. */
 export function removeStoredKey(key: string) {
-  if (typeof window === 'undefined') return
-  try {
-    window.localStorage.removeItem(key)
-  } catch {
-    /* storage may be unavailable */
-  }
+  clearLocalKey(PREFIX + key)
 }
 
 /** Non-hook read for producers outside React (wire handlers, bridge).

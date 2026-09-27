@@ -12,9 +12,9 @@ use std::process::{ChildStdin, ChildStdout};
 use std::sync::atomic::{AtomicBool, AtomicU64};
 use std::sync::{Arc, Mutex};
 
-use everyaios_core::GuardService;
-use everyaios_guard::prescan::Guard;
-use everyaios_vault::Vault;
+use agentcowork_core::GuardService;
+use agentcowork_guard::prescan::Guard;
+use agentcowork_vault::Vault;
 
 use crate::acp_cmds::AcpHandle;
 use crate::browser_cmds::LiveBrowser;
@@ -23,11 +23,11 @@ use crate::control::FileUndo;
 use crate::desktop_cmds::DesktopSlot;
 use crate::mcp_cmds::McpServerRow;
 
-use everyaios_core::terminal::PtyHost;
+use agentcowork_core::terminal::PtyHost;
 
 /// Shared state handed to every Tauri command via `State<'_, AppState>`.
 pub struct AppState {
-    /// P0.2: the boot report line from `everyaios-core::boot`.
+    /// P0.2: the boot report line from `agentcowork-core::boot`.
     pub boot_report: Mutex<String>,
     /// P0.2: an initialized Guard-1 scanner (stub blocklist until P7.4).
     pub guard: Guard,
@@ -48,13 +48,13 @@ pub struct AppState {
     /// P1.4: the chat relay over the coordinator link. `None` until the
     /// supervisor hands the sidecar's stdio pipes to a `SidecarLink` (the
     /// integration seam — the relay + protocol are fully built + tested).
-    pub chat_relay: Mutex<Option<everyaios_core::ChatRelay<ChildStdin, ChildStdout>>>,
+    pub chat_relay: Mutex<Option<agentcowork_core::ChatRelay<ChildStdin, ChildStdout>>>,
     /// P3.1: the replay store base dir (replays/ + screenshots/ + index).
     pub replay_dir: PathBuf,
     /// P3.2: the cockpit / ambient flight-deck live state (agent cards,
     /// interrupts, quiet flag) — fed by the coordinator via the feed seams,
     /// polled by the UI.
-    pub cockpit: Arc<Mutex<everyaios_audit::cockpit::CockpitState>>,
+    pub cockpit: Arc<Mutex<agentcowork_audit::cockpit::CockpitState>>,
     /// P7.5/J21 (Guard-2): the shared pre-flight service (tickets + policy +
     /// estop + profile) — minted by the coordinator over `guard/*`, rendered
     /// + approved/rejected by the cards here, consumed by the executor.
@@ -67,9 +67,9 @@ pub struct AppState {
     /// same map the launch path writes.
     pub(crate) acp_sessions: Arc<Mutex<std::collections::HashMap<String, AcpHandle>>>,
     /// H4: Merkle chain of mutations (Excel / ACP-install / undo).
-    pub audit: Mutex<everyaios_audit::merkle::MerkleChain>,
+    pub audit: Mutex<agentcowork_audit::merkle::MerkleChain>,
     /// Durable NDJSON audit log (best-effort; None if the file couldn't open).
-    pub audit_log: Mutex<Option<everyaios_audit::AuditWriter>>,
+    pub audit_log: Mutex<Option<agentcowork_audit::AuditWriter>>,
     /// File snapshots for agent undo (xlsx + other shell mutations).
     pub file_undos: Mutex<Vec<FileUndo>>,
     /// J16: whether the device is on battery (heavy storage scans defer).
@@ -94,7 +94,7 @@ pub struct AppState {
     /// the same child that answered `tools/list` — one server per row, never a
     /// second spawn. Dropping the last reference kills the children.
     pub mcp_live:
-        Arc<Mutex<std::collections::HashMap<String, everyaios_mcp::attach::AttachedServer>>>,
+        Arc<Mutex<std::collections::HashMap<String, agentcowork_mcp::attach::AttachedServer>>>,
     /// Remote-MCP OAuth 2.1: in-flight PKCE flows (store id → flow) and
     /// connected tokens (store id → bearer). Live in the shell, not the
     /// renderer — the coordinator never sees them.
@@ -112,12 +112,12 @@ pub struct AppState {
     /// here — never in the renderer or the coordinator.
     pub desktop: Mutex<DesktopSlot>,
     /// P15-H29: live artifact preview servers keyed by loopback port
-    /// (`everyaios_script::artifact::serve`). Dropping a handle stops its
+    /// (`agentcowork_script::artifact::serve`). Dropping a handle stops its
     /// server thread; the map is the shell's registry of running previews so
     /// `artifact_stop` can tear a specific one down. Guard-2-ticketed at the
     /// command layer — the server is loopback-only + path-floored by
     /// construction.
-    pub artifacts: Mutex<std::collections::HashMap<u16, everyaios_script::artifact::ServerHandle>>,
+    pub artifacts: Mutex<std::collections::HashMap<u16, agentcowork_script::artifact::ServerHandle>>,
     /// P9.5: the local OpenAI-compatible server (loopback + bearer token).
     /// `None` until `openai_server_start`; dropping it closes the listener.
     pub openai_server: Mutex<crate::openai_cmds::OpenAiServerSlot>,
@@ -127,7 +127,7 @@ pub struct AppState {
     /// `.part` staging file in place so a later start resumes via `Range`.
     pub model_downloads:
         Mutex<std::collections::HashMap<String, crate::model_cmds::ModelDownloadSlot>>,
-    /// EveryAIOS-owned model-runtime process handles keyed by stable serve id.
+    /// AgentCowork-owned model-runtime process handles keyed by stable serve id.
     /// Dropping AppState drops this registry and therefore kills/reaps every
     /// retained managed child through `ManagedServeHandle`'s RAII contract.
     pub(crate) model_serves: Mutex<crate::model_cmds::ManagedServeRegistry>,

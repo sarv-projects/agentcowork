@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// EveryAIOS architecture-invariant gate (P69.E).
+// AgentCowork architecture-invariant gate (P69.E).
 //
 // The repo has already paid for these regressions once (P69.C/P69.D). Each
 // check below asserts a CORE invariant structurally, so a future edit cannot
@@ -11,14 +11,14 @@
 //   CRED-2  no TS package takes a dependency on the crypto pack for custody
 //   CRED-3  no TS module reads a provider secret out of `process.env`
 //   AUTH-1  one auth-mode wire vocabulary (no `local_cli` / `*_cli` spellings)
-//   AUTH-2  `AuthMode` is declared exactly once — in `everyaios-types`
+//   AUTH-2  `AuthMode` is declared exactly once — in `agentcowork-types`
 //   AUTH-3  the UI derives its auth type from the canonical union (no rewrite)
-//   SCHEMA-1 the canonical schema objects exist in `everyaios-types`
+//   SCHEMA-1 the canonical schema objects exist in `agentcowork-types`
 //   DECIDE-1 permission classification is not exported from `core-tools`
 //   DECIDE-2 the ACP permission path never hardcodes `Approval::allow()`
 //   E3-ACP-V2 an ACP v2 connection is refused, never silently downgraded
 //   LAYER-1 `core-engine` is policies/helpers only — no transport, no egress
-//   LAYER-2 `everyaios-eval` stays outside the runtime (no production dep)
+//   LAYER-2 `agentcowork-eval` stays outside the runtime (no production dep)
 //   TS-DUP   TypeScript never re-declares a canonical record/id (P69.D15/D25)
 //   RUST-DUP Rust declares each canonical primitive once (P69.B2)
 //   LAYER-3  the TS search cascade is not wired into the turn loop (P69.D9)
@@ -30,8 +30,8 @@
 //   E4-JOURNAL    one durable Work journal; no second events.jsonl owner
 //   E4-SPAWN      scheduler/blueprint ownership cannot spawn execution
 //   E4-WORK-CREATION  Work creation/delegation only enters through WorkGateway
-//   PURITY-1 `everyaios-ipc` is transport only (D26)
-//   PURITY-3 `everyaios-catalog` is metadata only — no vault/guard (D28)
+//   PURITY-1 `agentcowork-ipc` is transport only (D26)
+//   PURITY-3 `agentcowork-catalog` is metadata only — no vault/guard (D28)
 //   PURITY-4 CDP is a backend under BrowserService, not a kernel dependency (D31)
 //
 // Usage: node scripts/check-arch-invariants.mjs
@@ -325,7 +325,7 @@ for (const file of walk(PACKAGE_DIRS, new Set([".json"]))) {
   if (name.startsWith("packages/core-security/")) continue;
   const pkg = JSON.parse(readFileSync(file, "utf8"));
   const deps = { ...(pkg.dependencies ?? {}), ...(pkg.devDependencies ?? {}) };
-  if (name.startsWith("packages/core-providers/") && deps["@everyaios/core-security"]) {
+  if (name.startsWith("packages/core-providers/") && deps["@agentcowork/core-security"]) {
     fail(
       "CRED-2",
       name,
@@ -345,7 +345,7 @@ for (const root of ["packages", "ui/src"]) {
       fail(
         "CRED-3",
         name,
-        `secret read from the environment at line ${hit.line}: ${hit.text} — resolve it from everyaios-vault through the host instead`,
+        `secret read from the environment at line ${hit.line}: ${hit.text} — resolve it from agentcowork-vault through the host instead`,
       );
     }
   }
@@ -375,7 +375,7 @@ for (const root of SCAN_ROOTS) {
     const src = productionPart(readFileSync(file, "utf8"));
     if (/\benum\s+AuthMode\b/.test(src)) authModeDecls.push(rel(file));
   }
-  const expected = "crates/everyaios-types/src/lib.rs";
+  const expected = "crates/agentcowork-types/src/lib.rs";
   if (authModeDecls.length !== 1 || authModeDecls[0] !== expected) {
     fail(
       "AUTH-2",
@@ -414,7 +414,7 @@ for (const root of SCAN_ROOTS) {
 
 // --- SCHEMA-1: canonical schema objects -----------------------------------
 {
-  const typesPath = "crates/everyaios-types/src/lib.rs";
+  const typesPath = "crates/agentcowork-types/src/lib.rs";
   const src = read(typesPath);
   const required = [
     "CANONICAL_SCHEMA_VERSION",
@@ -448,7 +448,7 @@ for (const root of SCAN_ROOTS) {
         fail(
           "DECIDE-1",
           rel(file),
-          `${name} must live in @everyaios/core-engine/src/policy (advisory), not core-tools; line ${hits[0].line}`,
+          `${name} must live in @agentcowork/core-engine/src/policy (advisory), not core-tools; line ${hits[0].line}`,
         );
       }
     }
@@ -457,7 +457,7 @@ for (const root of SCAN_ROOTS) {
 
 // --- DECIDE-2: ACP permission path never hardcodes an allow ---------------
 {
-  const acpSrc = join(ROOT, "crates", "everyaios-acp", "src");
+  const acpSrc = join(ROOT, "crates", "agentcowork-acp", "src");
   for (const file of walk(acpSrc, new Set([".rs"]))) {
     const src = productionPart(readFileSync(file, "utf8"));
     for (const pattern of [/Approval::allow\s*\(/, /Approval::Allow\b/]) {
@@ -481,7 +481,7 @@ for (const root of SCAN_ROOTS) {
 // mediated fs/terminal path the agent cannot serve. Nothing in CI would notice
 // if that check were deleted, so it is asserted here.
 {
-  const clientPath = join(ROOT, "crates", "everyaios-acp", "src", "client.rs");
+  const clientPath = join(ROOT, "crates", "agentcowork-acp", "src", "client.rs");
   const src = readFileSync(clientPath, "utf8");
   const checks = [
     { pattern: /if\s+result\.protocol_version\s*!=\s*PROTOCOL_VERSION/, why: "the advertised-version comparison" },
@@ -530,7 +530,7 @@ for (const root of SCAN_ROOTS) {
           fail(
             "LAYER-1",
             rel(file),
-            `${name} re-declared outside ARCH/archive at line ${hits[0].line} — everyaios has no turn loop (ADR-0005 §2)`,
+            `${name} re-declared outside ARCH/archive at line ${hits[0].line} — agentcowork has no turn loop (ADR-0005 §2)`,
           );
         }
       }
@@ -539,15 +539,15 @@ for (const root of SCAN_ROOTS) {
 }
 
 // --- LAYER-2: evaluation stays outside the runtime ------------------------
-// P69.D32 — `everyaios-eval` is a harness, not a runtime dependency. Kernel
-// crates verify through the contract (`everyaios_blueprint::verify`); only the
+// P69.D32 — `agentcowork-eval` is a harness, not a runtime dependency. Kernel
+// crates verify through the contract (`agentcowork_blueprint::verify`); only the
 // shell may link the harness itself, for its eval/debug surface.
 {
   const offenders = [];
   for (const file of walk(join(ROOT, "crates"), new Set([".toml"]))) {
     const name = rel(file);
-    if (name === "crates/everyaios-eval/Cargo.toml") continue;
-    if (!/everyaios-eval\s*=/.test(readFileSync(file, "utf8"))) continue;
+    if (name === "crates/agentcowork-eval/Cargo.toml") continue;
+    if (!/agentcowork-eval\s*=/.test(readFileSync(file, "utf8"))) continue;
     offenders.push(name);
   }
   if (offenders.length) {
@@ -578,38 +578,38 @@ function productionDeps(crateName) {
 
 {
   // D26 — serialization, framing, streaming, lifecycle; no business logic.
-  const ipcDeps = productionDeps("everyaios-ipc").filter((d) => d.startsWith("everyaios-"));
+  const ipcDeps = productionDeps("agentcowork-ipc").filter((d) => d.startsWith("agentcowork-"));
   if (ipcDeps.length) {
-    fail("PURITY-1", "crates/everyaios-ipc/Cargo.toml", `transport crate must not depend on ${ipcDeps.join(", ")}`);
+    fail("PURITY-1", "crates/agentcowork-ipc/Cargo.toml", `transport crate must not depend on ${ipcDeps.join(", ")}`);
   }
 
-  // D27 (PURITY-2) retired 2026-09-23 with the `everyaios-engine` deletion (P72):
+  // D27 (PURITY-2) retired 2026-09-23 with the `agentcowork-engine` deletion (P72):
   // the pure policy crate had zero dependents, so there is no purity left to gate.
 
   // D28 — provider/model metadata only; credentials and custody are elsewhere.
-  const catalogDeps = productionDeps("everyaios-catalog");
-  for (const banned of ["everyaios-vault", "everyaios-guard"]) {
+  const catalogDeps = productionDeps("agentcowork-catalog");
+  for (const banned of ["agentcowork-vault", "agentcowork-guard"]) {
     if (catalogDeps.includes(banned)) {
-      fail("PURITY-3", "crates/everyaios-catalog/Cargo.toml", `catalog is metadata — ${banned} must not be a dependency`);
+      fail("PURITY-3", "crates/agentcowork-catalog/Cargo.toml", `catalog is metadata — ${banned} must not be a dependency`);
     }
   }
 
   // D31 — CDP is a backend under BrowserService.
-  for (const crate of ["everyaios-core", "everyaios-acp", "everyaios-office", "everyaios-desktop", "everyaios-script", "everyaios-codeintel", "everyaios-memory", "everyaios-storage", "everyaios-mcp", "everyaios-catalog", "everyaios-blueprint", "everyaios-browser", "everyaios-search", "everyaios-agents"]) {
+  for (const crate of ["agentcowork-core", "agentcowork-acp", "agentcowork-office", "agentcowork-desktop", "agentcowork-script", "agentcowork-codeintel", "agentcowork-memory", "agentcowork-storage", "agentcowork-mcp", "agentcowork-catalog", "agentcowork-blueprint", "agentcowork-browser", "agentcowork-search", "agentcowork-agents"]) {
     const deps = productionDeps(crate);
-    if (crate === "everyaios-browser") continue;
-    if (deps.includes("everyaios-cdp")) {
+    if (crate === "agentcowork-browser") continue;
+    if (deps.includes("agentcowork-cdp")) {
       fail(
         "PURITY-4",
         `crates/${crate}/Cargo.toml`,
-        "cdp is a backend under BrowserService (everyaios-browser); kernel crates must not depend on it",
+        "cdp is a backend under BrowserService (agentcowork-browser); kernel crates must not depend on it",
       );
     }
   }
 }
 
 // --- LAYER-3: one search implementation (the kernel's) --------------------
-// P69.D9 — `everyaios-search` (Rust) owns search; the TypeScript package is a
+// P69.D9 — `agentcowork-search` (Rust) owns search; the TypeScript package is a
 // projection/facade. Re-wiring the TS cascade into the turn loop would be a
 // second implementation again, which is exactly what D9 removes.
 {
@@ -674,7 +674,7 @@ function productionDeps(crateName) {
 }
 
 // --- TS-DUP: TypeScript never re-declares the canonical schema -------------
-// P69.D15/D25 — `everyaios-types` (Rust) owns the canonical records and id
+// P69.D15/D25 — `agentcowork-types` (Rust) owns the canonical records and id
 // newtypes; a TS file may *project* them (a projection is named for its job —
 // `AgentDirectoryEntry`, `AgentProfile`, `AgentPersonaOverlay`) but must never
 // declare a second `AgentDefinition` or a second `WorkId`. Three different
@@ -683,7 +683,7 @@ function productionDeps(crateName) {
   const patterns = [
     [/(?:export\s+)?interface\s+AgentDefinition\b/, 'AgentDefinition (Rust owns the agent record — project it, e.g. AgentDirectoryEntry)'],
     [/(?:export\s+)?type\s+AgentDefinition\b/, 'AgentDefinition (Rust owns the agent record)'],
-    [/(?:export\s+)?(?:interface|type)\s+(?:WorkId|SessionId|EventId|EffectId|StepId|TicketId|AgentBindingId)\b/, 'canonical id newtype (everyaios-types owns these)'],
+    [/(?:export\s+)?(?:interface|type)\s+(?:WorkId|SessionId|EventId|EffectId|StepId|TicketId|AgentBindingId)\b/, 'canonical id newtype (agentcowork-types owns these)'],
   ];
   for (const root of ["packages", "ui/src"]) {
     for (const file of walk(join(ROOT, root), TS)) {
@@ -700,13 +700,13 @@ function productionDeps(crateName) {
 }
 
 // --- RUST-DUP: one declaration per canonical primitive ---------------------
-// The TS-DUP failure mode on the Rust side: `everyaios-blueprint`'s plugin
+// The TS-DUP failure mode on the Rust side: `agentcowork-blueprint`'s plugin
 // manifest used to declare a second `AgentBinding` (a `bind: Vec<String>`
 // manifest declaration) beside the canonical durable primitive. A local shape
 // is fine — shadowing a canonical name is not; name it for its job.
 {
   const canonical = {
-    AgentBinding: "crates/everyaios-types/src/lib.rs",
+    AgentBinding: "crates/agentcowork-types/src/lib.rs",
   };
   for (const file of walk(join(ROOT, "crates"), new Set([".rs"]))) {
     const name = rel(file);
@@ -733,8 +733,8 @@ function productionDeps(crateName) {
   // E3-CONNECTOR — the Graph write methods must approve the exact action
   // before the transport POST.  The shared read-first module owns the ticket
   // binding and single-use replay refusal.
-  const graphPath = "crates/everyaios-core/src/connectors/graph.rs";
-  const readFirstPath = "crates/everyaios-core/src/connectors/read_first.rs";
+  const graphPath = "crates/agentcowork-core/src/connectors/graph.rs";
+  const readFirstPath = "crates/agentcowork-core/src/connectors/read_first.rs";
   const graph = productionCode(read(graphPath));
   const readFirst = productionCode(read(readFirstPath));
 
@@ -790,7 +790,7 @@ function productionDeps(crateName) {
   // The managed gws adapter is the other concrete connector write surface in
   // this module.  It uses a boolean approval seam rather than SendApproval,
   // but it must still refuse an unapproved write before constructing Command.
-  const gwsPath = "crates/everyaios-core/src/connectors/gws.rs";
+  const gwsPath = "crates/agentcowork-core/src/connectors/gws.rs";
   const gws = productionCode(read(gwsPath));
   const gwsCommand = findRustFn(gws, "command");
   if (!gwsCommand) {
@@ -811,7 +811,7 @@ function productionDeps(crateName) {
   // E3-MCP — protocol transport authenticates first and delegates tool calls
   // to the host seam; the shell's remote/attached executors consume a ticket
   // before a process or network effect.
-  const serverPath = "crates/everyaios-mcp/src/server.rs";
+  const serverPath = "crates/agentcowork-mcp/src/server.rs";
   const server = productionCode(read(serverPath));
   const handle = findRustFn(server, "handle_json");
   const serve = findRustFn(server, "serve_http_connection");
@@ -902,7 +902,7 @@ function productionDeps(crateName) {
 {
   // E3-ACP — the library keeps the fail-closed host gate, and the shell maps
   // the ACP tool kind into a Guard decision before any permission reply.
-  const acpLibPath = "crates/everyaios-acp/src/chief.rs";
+  const acpLibPath = "crates/agentcowork-acp/src/chief.rs";
   const acpLib = productionCode(read(acpLibPath));
   const acpImpl = acpLib.indexOf("impl ChiefAdapter for AcpChief");
   const acpRequest = acpImpl === -1
@@ -1006,8 +1006,8 @@ function productionDeps(crateName) {
 
 // --- P69.E4: one journal, no owner-owned execution, one Work creation API ----
 {
-  const ownerPath = "crates/everyaios-core/src/work_gateway.rs";
-  const schemaPath = "crates/everyaios-core/src/store_schema.rs";
+  const ownerPath = "crates/agentcowork-core/src/work_gateway.rs";
+  const schemaPath = "crates/agentcowork-core/src/store_schema.rs";
   const owner = productionCode(read(ownerPath));
   const schema = productionCode(read(schemaPath));
 
@@ -1052,7 +1052,7 @@ function productionDeps(crateName) {
 }
 
 {
-  const schedulerPath = "crates/everyaios-core/src/scheduler_service.rs";
+  const schedulerPath = "crates/agentcowork-core/src/scheduler_service.rs";
   const scheduler = productionCode(read(schedulerPath));
   const processPatterns = [
     [/\bstd::process\s*::/, "std::process reference"],
@@ -1070,13 +1070,13 @@ function productionDeps(crateName) {
   // outside this scope: it is an evidence/tool backend, not subagent runtime
   // ownership.
   const runtimeFiles = [
-    "crates/everyaios-blueprint/src/subagent.rs",
-    "crates/everyaios-blueprint/src/jobs.rs",
-    "crates/everyaios-blueprint/src/kanban.rs",
-    "crates/everyaios-blueprint/src/swarm.rs",
-    "crates/everyaios-blueprint/src/workflow.rs",
-    "crates/everyaios-blueprint/src/loop_pattern.rs",
-    "crates/everyaios-blueprint/src/marketplace.rs",
+    "crates/agentcowork-blueprint/src/subagent.rs",
+    "crates/agentcowork-blueprint/src/jobs.rs",
+    "crates/agentcowork-blueprint/src/kanban.rs",
+    "crates/agentcowork-blueprint/src/swarm.rs",
+    "crates/agentcowork-blueprint/src/workflow.rs",
+    "crates/agentcowork-blueprint/src/loop_pattern.rs",
+    "crates/agentcowork-blueprint/src/marketplace.rs",
   ];
   for (const file of runtimeFiles) {
     const code = productionCode(read(file));
@@ -1092,11 +1092,11 @@ function productionDeps(crateName) {
 }
 
 {
-  const ownerPath = "crates/everyaios-core/src/work_gateway.rs";
+  const ownerPath = "crates/agentcowork-core/src/work_gateway.rs";
   const owner = productionCode(read(ownerPath));
   const allowedCreators = new Set([
     ownerPath,
-    "crates/everyaios-core/src/chat.rs",
+    "crates/agentcowork-core/src/chat.rs",
     "src-tauri/src/scheduler_fire.rs",
     "src-tauri/src/work_cmds.rs",
     // ACP turns call WorkGateway::create_work_in_session. They do not append
@@ -1142,7 +1142,7 @@ function productionDeps(crateName) {
     [ownerPath, /pub\s+fn\s+create_work\s*\(/, "WorkGateway::create_work API is missing"],
     [ownerPath, /pub\s+fn\s+create_work_in_session\s*\(/, "WorkGateway::create_work_in_session API is missing"],
     [ownerPath, /pub\s+fn\s+create_child_work\s*\(/, "WorkGateway::create_child_work API is missing"],
-    ["crates/everyaios-core/src/chat.rs", /\.\s*delegate_child_work\s*\(/, "chat delegation no longer enters through WorkGateway"],
+    ["crates/agentcowork-core/src/chat.rs", /\.\s*delegate_child_work\s*\(/, "chat delegation no longer enters through WorkGateway"],
     ["src-tauri/src/scheduler_fire.rs", /\.\s*create_work_in_session\s*\(/, "scheduler firing no longer creates Work through WorkGateway"],
     ["src-tauri/src/work_cmds.rs", /\.\s*create_work\s*\(/, "the Tauri Work command no longer creates Work through WorkGateway"],
   ]) {
@@ -1172,22 +1172,22 @@ function productionDeps(crateName) {
     "pub struct AuthorizationTicket",
   ];
   const allowed = new Map([
-    ["pub enum AuthMode", new Set(["crates/everyaios-types/src/lib.rs"])],
-    ["pub struct AgentBinding", new Set(["crates/everyaios-types/src/lib.rs"])],
-    ["pub struct EffectRequest", new Set(["crates/everyaios-types/src/lib.rs"])],
-    ["pub struct EventEnvelope", new Set(["crates/everyaios-types/src/lib.rs"])],
+    ["pub enum AuthMode", new Set(["crates/agentcowork-types/src/lib.rs"])],
+    ["pub struct AgentBinding", new Set(["crates/agentcowork-types/src/lib.rs"])],
+    ["pub struct EffectRequest", new Set(["crates/agentcowork-types/src/lib.rs"])],
+    ["pub struct EventEnvelope", new Set(["crates/agentcowork-types/src/lib.rs"])],
     [
       "pub struct ContextPassport",
       new Set([
-        "crates/everyaios-types/src/lib.rs",
-        "crates/everyaios-memory/src/passport.rs",
+        "crates/agentcowork-types/src/lib.rs",
+        "crates/agentcowork-memory/src/passport.rs",
       ]),
     ],
     [
       "pub struct AuthorizationTicket",
       new Set([
-        "crates/everyaios-guard/src/ticket.rs",
-        "crates/everyaios-types/src/lib.rs",
+        "crates/agentcowork-guard/src/ticket.rs",
+        "crates/agentcowork-types/src/lib.rs",
       ]),
     ],
   ]);

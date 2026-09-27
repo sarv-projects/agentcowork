@@ -23,7 +23,7 @@ function stubNotifyPref(key: string, value: boolean) {
   ;(globalThis as { window?: unknown }).window = {
     localStorage: {
       getItem: (k: string) =>
-        k === `everyaios.settings.${key}` ? JSON.stringify(value) : null,
+        k === `agentcowork.settings.${key}` ? JSON.stringify(value) : null,
     },
   }
 }

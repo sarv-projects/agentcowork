@@ -3,7 +3,7 @@ import { FrameDecoder, encodeJson, encode, MAX_FRAME_LEN } from "./frame";
 import { handleRequest, PROTOCOL_VERSION, VERSION } from "./index";
 import { isRequest, methodNotFound, ERROR_CODES } from "./message";
 
-describe("frame.ts — length-prefix framing (mirror of everyaios-ipc/frame.rs)", () => {
+describe("frame.ts — length-prefix framing (mirror of agentcowork-ipc/frame.rs)", () => {
   test("encode produces [u32 LE length][payload]", () => {
     const payload = new TextEncoder().encode(JSON.stringify({ jsonrpc: "2.0", method: "echo" }));
     const framed = encode(payload);
@@ -69,13 +69,13 @@ describe("index.ts — request handling", () => {
     const res = handleRequest({
       jsonrpc: "2.0",
       method: "initialize",
-      params: { protocolVersion: PROTOCOL_VERSION, clientName: "everyaios-core" },
+      params: { protocolVersion: PROTOCOL_VERSION, clientName: "agentcowork-core" },
       id: 1,
     });
     expect(res).not.toBeNull();
     expect(res!.result).toMatchObject({
       protocolVersion: PROTOCOL_VERSION,
-      serverName: "@everyaios/coordinator",
+      serverName: "@agentcowork/coordinator",
       serverVersion: VERSION,
       capabilities: { streamDeltas: true, passByReference: true },
       status: "ready",
@@ -114,7 +114,7 @@ describe("E2E — real child process over stdin/stdout", () => {
     // (also exercises frame splitting across a single write).
     const payloads = [
       encodeJson({ jsonrpc: "2.0", method: "initialize", params: { protocolVersion: 1 }, id: 1 }),
-      encodeJson({ jsonrpc: "2.0", method: "echo", params: { text: "hello-everyaios" }, id: 2 }),
+      encodeJson({ jsonrpc: "2.0", method: "echo", params: { text: "hello-agentcowork" }, id: 2 }),
       encodeJson({ jsonrpc: "2.0", method: "session/ping", id: 3 }),
     ];
     const joined = new Uint8Array(payloads.reduce((n, p) => n + p.byteLength, 0));
@@ -158,7 +158,7 @@ describe("E2E — real child process over stdin/stdout", () => {
     expect(results[1]!.id).toBeUndefined();
     expect(results[1]!.params).toMatchObject({ protocolVersion: 1, status: "ready" });
     expect(results[2]!.result).toMatchObject({ protocolVersion: 1, status: "ready" });
-    expect(results[3]!.result).toEqual({ text: "hello-everyaios", echoed: true });
+    expect(results[3]!.result).toEqual({ text: "hello-agentcowork", echoed: true });
     expect(results[4]!.result).toMatchObject({ pong: true });
   });
 

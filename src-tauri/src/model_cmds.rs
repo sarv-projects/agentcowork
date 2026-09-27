@@ -1,6 +1,6 @@
 //! P50.4.2 — Local model downloads (Tauri wiring over the P27 backend).
 //!
-//! The backend (`everyaios_core::models`) was landed in the P27 queue:
+//! The backend (`agentcowork_core::models`) was landed in the P27 queue:
 //! [`HfClient`] (resumable `Range` downloads + sha256 verify), [`ModelRegistry`]
 //! (`<data_dir>/models/hf/index.json`), `local://` URLs + resolver, and
 //! [`ModelsRuntime`] (llamafile serve / `ollama create`). This module is the
@@ -25,10 +25,10 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
-use everyaios_core::models::hf::{part_path, quant_from_filename, HfClient, HfError};
-use everyaios_core::models::store::{ModelEntry, ModelRegistry};
-use everyaios_core::models::{probe_hardware, ManagedServeHandle, ModelsRuntime};
-use everyaios_types::RuntimeHealthState;
+use agentcowork_core::models::hf::{part_path, quant_from_filename, HfClient, HfError};
+use agentcowork_core::models::store::{ModelEntry, ModelRegistry};
+use agentcowork_core::models::{probe_hardware, ManagedServeHandle, ModelsRuntime};
+use agentcowork_types::RuntimeHealthState;
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, State};
 
@@ -133,7 +133,7 @@ pub(crate) struct ManagedServeSnapshot {
     pub started_at_ms: u64,
 }
 
-/// The AppState registry that retains every EveryAIOS-started model serve.
+/// The AppState registry that retains every AgentCowork-started model serve.
 ///
 /// Dropping the registry drops every retained handle, which invokes the core
 /// handle's RAII child cleanup. Stop removes custody first and calls the
@@ -220,7 +220,7 @@ impl<H: ManagedServeProcess> ManagedServeRegistry<H> {
 }
 
 fn models_base() -> PathBuf {
-    everyaios_core::default_data_dir().join("models")
+    agentcowork_core::default_data_dir().join("models")
 }
 
 fn emit_download(
@@ -329,7 +329,7 @@ pub fn model_download_start(
     let repo2 = repo.clone();
     let filename2 = filename.clone();
     let id2 = id.clone();
-    let num_ctx = everyaios_core::Config::load()
+    let num_ctx = agentcowork_core::Config::load()
         .unwrap_or_default()
         .local
         .num_ctx;
@@ -559,7 +559,7 @@ pub fn model_recommend_quant(repo: String) -> Result<serde_json::Value, String> 
     }))
 }
 
-/// Stable start response for one EveryAIOS-owned model runtime.
+/// Stable start response for one AgentCowork-owned model runtime.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ModelServeStart {
@@ -595,10 +595,10 @@ fn now_ms() -> u64 {
 fn parse_serve_options(
     serve_options: Option<serde_json::Value>,
 ) -> (
-    everyaios_core::models::ServeOptions,
-    Option<everyaios_core::models::KvCacheType>,
+    agentcowork_core::models::ServeOptions,
+    Option<agentcowork_core::models::KvCacheType>,
 ) {
-    use everyaios_core::models::{FlashAttn, ServeOptions};
+    use agentcowork_core::models::{FlashAttn, ServeOptions};
 
     let mut kv_cache = None;
     let opts = match serve_options {
@@ -607,10 +607,10 @@ fn parse_serve_options(
                 serde_json::from_value::<ServeOptions>(value.clone()).unwrap_or_default();
             if let Some(kv) = value.get("kvCache").and_then(serde_json::Value::as_str) {
                 kv_cache = match kv.to_ascii_lowercase().as_str() {
-                    "q8_0" => Some(everyaios_core::models::KvCacheType::Q8_0),
-                    "q4_0" => Some(everyaios_core::models::KvCacheType::Q4_0),
-                    "f32" => Some(everyaios_core::models::KvCacheType::F32),
-                    _ => Some(everyaios_core::models::KvCacheType::F16),
+                    "q8_0" => Some(agentcowork_core::models::KvCacheType::Q8_0),
+                    "q4_0" => Some(agentcowork_core::models::KvCacheType::Q4_0),
+                    "f32" => Some(agentcowork_core::models::KvCacheType::F32),
+                    _ => Some(agentcowork_core::models::KvCacheType::F16),
                 };
             }
             if parsed.num_ctx.is_none() {
@@ -656,12 +656,12 @@ pub(crate) fn start_managed_serve(
         .get(id)
         .cloned()
         .ok_or_else(|| format!("model not in registry: {id}"))?;
-    let cfg = everyaios_core::Config::load().unwrap_or_default();
-    let mgr = everyaios_core::LocalManager::from_config(&cfg);
+    let cfg = agentcowork_core::Config::load().unwrap_or_default();
+    let mgr = agentcowork_core::LocalManager::from_config(&cfg);
     let port = cfg.local.llamafile_port;
     let (mut opts, kv_cache) = parse_serve_options(serve_options.clone());
 
-    use everyaios_core::models::{mlx_quant_id, ServeRuntime};
+    use agentcowork_core::models::{mlx_quant_id, ServeRuntime};
     let is_mlx = opts.runtime == ServeRuntime::Mlx;
     if is_mlx && opts.model_id.is_none() {
         let hf_part = entry.id.rsplit(':').next().unwrap_or(&entry.id);
@@ -672,7 +672,7 @@ pub(crate) fn start_managed_serve(
         None
     } else {
         Some(mgr.find_llamafile(&cfg.data_dir).ok_or_else(|| {
-            "no llamafile binary found — drop one in `<data_dir>/bin` or set `EVERYAIOS_LLAMAFILE`"
+            "no llamafile binary found — drop one in `<data_dir>/bin` or set `AGENTCOWORK_LLAMAFILE`"
                 .to_string()
         })?)
     };
@@ -684,7 +684,7 @@ pub(crate) fn start_managed_serve(
             .map_err(|error| error.to_string())?;
         if registry.rows().iter().any(|row| row.port == port) {
             return Err(format!(
-                "managed runtime port {port} is already retained by EveryAIOS"
+                "managed runtime port {port} is already retained by AgentCowork"
             ));
         }
     }
@@ -825,7 +825,7 @@ pub fn model_estimate_fit(file_gb: f64, ctx_tokens: u64) -> Result<serde_json::V
     let hw = probe_hardware();
     let ram_gb = hw.available_ram_bytes as f64 / 1_073_741_824.0;
     let vram_gb = hw.gpu_vram_bytes.unwrap_or(0) as f64 / 1_073_741_824.0;
-    let est = everyaios_core::models::fit::estimate_fit(file_gb, ctx_tokens, ram_gb, vram_gb);
+    let est = agentcowork_core::models::fit::estimate_fit(file_gb, ctx_tokens, ram_gb, vram_gb);
     Ok(serde_json::json!({
         "tier": est.tier,
         "fileGb": est.file_gb,
@@ -833,7 +833,7 @@ pub fn model_estimate_fit(file_gb: f64, ctx_tokens: u64) -> Result<serde_json::V
         "totalGb": est.total_gb,
         "ramGb": ram_gb,
         "vramGb": vram_gb,
-        "defaultQuant": everyaios_core::models::fit::DEFAULT_QUANT,
+        "defaultQuant": agentcowork_core::models::fit::DEFAULT_QUANT,
     }))
 }
 
@@ -841,7 +841,7 @@ pub fn model_estimate_fit(file_gb: f64, ctx_tokens: u64) -> Result<serde_json::V
 /// install). Returns the index or a parse error.
 #[tauri::command]
 pub fn model_gallery_parse(yaml: String) -> Result<serde_json::Value, String> {
-    let index = everyaios_catalog::gallery::load_index_yaml(&yaml).map_err(|e| e.to_string())?;
+    let index = agentcowork_catalog::gallery::load_index_yaml(&yaml).map_err(|e| e.to_string())?;
     serde_json::to_value(&index).map_err(|e| e.to_string())
 }
 
@@ -853,11 +853,11 @@ pub fn model_best_pick(
     hw: String,
     candidates: serde_json::Value,
 ) -> Result<serde_json::Value, String> {
-    let hw_class: everyaios_core::models::best::HwClass =
+    let hw_class: agentcowork_core::models::best::HwClass =
         serde_json::from_value(serde_json::json!(hw)).map_err(|e| format!("bad hw: {e}"))?;
-    let list: Vec<everyaios_core::models::best::VariantCandidate> =
+    let list: Vec<agentcowork_core::models::best::VariantCandidate> =
         serde_json::from_value(candidates).map_err(|e| format!("bad candidates: {e}"))?;
-    Ok(everyaios_core::models::best::best_variant(&hw_class, &list)
+    Ok(agentcowork_core::models::best::best_variant(&hw_class, &list)
         .map(|v| serde_json::to_value(v).unwrap_or(serde_json::Value::Null))
         .unwrap_or(serde_json::Value::Null))
 }

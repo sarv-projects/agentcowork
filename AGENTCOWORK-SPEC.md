@@ -3,7 +3,7 @@
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P5). **Authority:** root for **WHAT** the product must be (`ARCH/00-INDEX.md` §2). HOW lives in `ARCH/03-HLD.md` and the module docs; schemas in `ARCH/06-DATA-MODEL.md`/`07-CONTRACTS.md`; flows in `ARCH/40-FLOWS.md`.
 > **P7 pass (2026-09-26):** line-checked; requirements registry (`ARCH/08-REQUIREMENTS.md`) cross-referenced.
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
-> **Names:** product **AgentCowork** (working), runtime **Core**, native agent **Agent X** (`ARCH/01-NAMING.md`).
+> **Names:** product **AgentCowork** (working), runtime **Core**; the agent engine is external in v1 (`ARCH/01-NAMING.md`).
 > **v1.0 scope:** Windows-first desktop, local-first, single-user. No scope cuts carried from here — deferrals are explicit (§15).
 > **SDD:** testable behaviors derived from this SPEC are registered as `REQ-*` in `ARCH/08-REQUIREMENTS.md`; traceability accrues in `ARCH/09-FEATURE-MATRIX.md`; process: `.agents/docs/spec-driven-development.md`.
 
@@ -40,7 +40,7 @@ Desktop app (primary), CLI (`agentcowork`, placeholder), IDE via ACP, Work API, 
 
 ## 4. Governed execution contract
 
-Every externally visible effect: `Work → Capability → Provider → Handle → Guard → Ticket → Execute → Effect → Verify → Receipt → Event`. Control path: p50 < 2 ms · p95 < 10 ms · p99 < 25 ms (bounded work only); effect path: asynchronous and observable. No bypasses — not for domains, adapters, UI, or Agent X. Verification depth scales with risk class; receipts are mandatory for visible effects. → `ARCH/03-HLD.md` §5, `12`, `13`, `34`, `29`.
+Every externally visible effect: `Work → Capability → Provider → Handle → Guard → Ticket → Execute → Effect → Verify → Receipt → Event`. Control path: p50 < 2 ms · p95 < 10 ms · p99 < 25 ms (bounded work only); effect path: asynchronous and observable. No bypasses — not for domains, adapters, UI, or any engine. Verification depth scales with risk class; receipts are mandatory for visible effects. → `ARCH/03-HLD.md` §5, `12`, `13`, `34`, `29`.
 
 ## 5. Capability contract
 
@@ -94,7 +94,8 @@ Every externally visible effect: `Work → Capability → Provider → Handle �
 
 ## 11. Multi-agent contract
 
-- Agent X and external agents are peers: same `AgentEngine`, same Guard, no privileged path (`DEC-010`).
+- Every agent engine is a peer: same `AgentEngine`, same Guard, no privileged path — including a first-party engine bound later (`DEC-010`, `DEC-052`).
+- **No first-party engine ships in v1.** The reasoning engine is developed outside this repository and is bound here afterwards as an ordinary engine binding: same contract, same Guard, same projections, no privileged path (`DEC-052`).
 - Delegation: child session per subagent; full escaped project rules; per-spawn worktree option; **receipts, not transcripts**; outer bounds enforced by Core (`DEC-029`, `DEC-031`).
 - Scheduler lanes: foreground · background · detached, with interactive priority.
 

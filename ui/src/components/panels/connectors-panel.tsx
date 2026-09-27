@@ -445,7 +445,7 @@ export default function ConnectorsPanel() {
         void tick()
       }
     } catch (e) {
-      notify(e instanceof Error ? e.message : 'OAuth failed — set EVERYAIOS_OAUTH=1')
+      notify(e instanceof Error ? e.message : 'OAuth failed — set AGENTCOWORK_OAUTH=1')
     }
   }
 
@@ -502,7 +502,7 @@ export default function ConnectorsPanel() {
           <div className="mb-2 flex items-center justify-between">
           <span className="text-[11px] font-medium text-foreground">Subscription OAuth</span>
           <Badge className={oauthOn ? 'bg-emerald-500/20 text-[9px] text-emerald-300' : 'bg-zinc-700 text-[9px] text-zinc-300'}>
-            {oauthOn ? 'EVERYAIOS_OAUTH=1' : 'flag off'}
+            {oauthOn ? 'AGENTCOWORK_OAUTH=1' : 'flag off'}
           </Badge>
         </div>
         <div className="flex flex-wrap gap-1.5">
@@ -1387,7 +1387,7 @@ function ToolCatalogSection({ catalog }: { catalog: McpCatalog | null }) {
             Registered agent tools
           </span>
           <Badge variant="secondary" className="text-[9px]">
-            everyaios-mcp
+            agentcowork-mcp
           </Badge>
         </div>
         <ul className="space-y-1">

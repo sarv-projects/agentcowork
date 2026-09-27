@@ -1,12 +1,12 @@
 {
-  "name": "everyaios-desktop-workspace",
+  "name": "agentcowork-workspace",
   "version": "0.1.0",
   "private": true,
-  "description": "EveryAIOS desktop workspace (Tauri shell + TS coordinator sidecar)",
+  "description": "AgentCowork desktop workspace (Tauri shell + TS coordinator sidecar)",
   "scripts": {
-    "coordinator:dev": "pnpm --filter @everyaios/coordinator dev",
-    "coordinator:test": "pnpm --filter @everyaios/coordinator test",
-    "coordinator:typecheck": "pnpm --filter @everyaios/coordinator type-check",
+    "coordinator:dev": "pnpm --filter @agentcowork/coordinator dev",
+    "coordinator:test": "pnpm --filter @agentcowork/coordinator test",
+    "coordinator:typecheck": "pnpm --filter @agentcowork/coordinator type-check",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
     "tauri:verify-clean-boot": "node scripts/clean-profile-boot-check.mjs",

@@ -2,7 +2,7 @@
 //
 // The product contract is one primary Settings surface for agent/runtime
 // management (ARCH/12): there is no "Native models" peer tab, no built-in runtime
-// card, and no "EveryAIOS Native model catalog" disclosure — because EveryAIOS
+// card, and no "AgentCowork Native model catalog" disclosure — because AgentCowork
 // owns no model surface at all and ships no built-in agent in v1 (ADR-0005 §1).
 
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, test } from 'bun:test'
@@ -95,7 +95,7 @@ describe('P71.2a — Settings renders one agent surface with no built-in row', (
     // exists in v1.
     expect(tabs).not.toContain('Native models')
     const body = mounted.container.textContent ?? ''
-    expect(body).not.toContain('EveryAIOS Native')
+    expect(body).not.toContain('AgentCowork Native')
     expect(body).not.toContain('native-catalog-toggle')
   })
 
@@ -112,7 +112,7 @@ describe('P71.2a — Settings renders one agent surface with no built-in row', (
 
     const body = mounted.container.textContent ?? ''
     expect(body).toContain('auth owner: Claude Code')
-    expect(body).not.toContain('Key: from the EveryAIOS vault')
+    expect(body).not.toContain('Key: from the AgentCowork vault')
   })
 
   test('a legacy vault-key record has a visible clear/migrate path and clears through IPC', async () => {
@@ -152,7 +152,7 @@ describe('P71.2a — Settings renders one agent surface with no built-in row', (
     let body = mounted.container.textContent ?? ''
     expect(body).toContain('legacy host-vault request')
     expect(body).toContain('No host vault key was or will be injected')
-    expect(body).not.toContain('injected from the EveryAIOS vault')
+    expect(body).not.toContain('injected from the AgentCowork vault')
 
     const clear = mounted.container.querySelector<HTMLButtonElement>(
       '[aria-label="Clear legacy host-vault request for claude-code"]',
@@ -213,7 +213,7 @@ describe('P71.2a — Settings renders one agent surface with no built-in row', (
     // The discovery warning is explicit that an empty list is not occupancy…
     expect(body).toContain('not occupancy')
     // …and nothing is painted as an always-available runtime.
-    expect(body).not.toContain('EveryAIOS Native')
+    expect(body).not.toContain('AgentCowork Native')
     expect(body).not.toContain('always live')
   })
 })

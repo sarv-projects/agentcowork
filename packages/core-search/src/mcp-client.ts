@@ -1,6 +1,6 @@
 import { Client } from '@modelcontextprotocol/sdk/client';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
-import type { SearchResult } from '@everyaios/core-domain';
+import type { SearchResult } from '@agentcowork/core-domain';
 
 /** Shape of a single MCP content item as returned by callTool. */
 interface McpContentItem {
@@ -23,7 +23,7 @@ export class McpSearchClient {
     // validated by the desktop bridge (HTTPS or loopback); the SDK owns the
     // protocol/session negotiation and reconnect behavior.
     this.transport = new StreamableHTTPClientTransport(new URL(this.endpoint));
-    this.client = new Client({ name: 'everyaios-sidecar', version: '1.0.0' }, { capabilities: {} });
+    this.client = new Client({ name: 'agentcowork-sidecar', version: '1.0.0' }, { capabilities: {} });
     
     // SDK 1.30's exactOptionalPropertyTypes declarations disagree between
     // `Client.connect` and StreamableHTTPClientTransport.sessionId. The

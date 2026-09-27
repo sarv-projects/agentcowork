@@ -197,7 +197,7 @@ export function stripAnsi(input: string): string {
 }
 
 /** P64.11 — CLI stream normalization at the drawer boundary. The render-side
- * twin of the `UIEventEnvelope` normalization in `everyaios-acp`: collapse
+ * twin of the `UIEventEnvelope` normalization in `agentcowork-acp`: collapse
  * `\r` spinner/progress frames to their final frame, drop ANSI churn, and
  * trim blank-line runs — so raw external CLI stdout/stderr never spills past
  * the tool drawer onto the chat surface. Display-only; stored records keep
@@ -325,7 +325,7 @@ const ToolChip = memo(function ToolChip({ rec }: { rec: ToolCallRecord }) {
   const summary = toolActivitySummary(rec)
   const source = rec.error ?? rec.result
   // P64.11 — normalize CLI streams at the drawer boundary: the render-side
-  // twin of the `UIEventEnvelope` normalization in `everyaios-acp`. Raw
+  // twin of the `UIEventEnvelope` normalization in `agentcowork-acp`. Raw
   // stdout/stderr (ANSI, spinners, progress churn) never reaches the chat
   // surface unformatted; only the quarantined drawer shows it, cleaned.
   const normalized = useMemo(

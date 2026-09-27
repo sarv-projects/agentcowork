@@ -5,7 +5,7 @@ use std::net::TcpListener;
 use std::sync::Arc;
 use std::thread;
 
-use everyaios_vault::oauth::{
+use agentcowork_vault::oauth::{
     DevicePoll, OAuthManager, CHATGPT_PRO, COPILOT, OAUTH_ENV_FLAG, QWEN,
 };
 use tauri::State;
@@ -66,7 +66,7 @@ pub fn oauth_start_pkce(
                     let mgr = OAuthManager::new(&v).with_redirect_uri(&redirect_c);
                     match mgr.complete_pkce(&provider_c, &code, &st) {
                         Ok(_) => {
-                            "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<html><body>EveryAIOS signed in. You can close this tab.</body></html>"
+                            "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<html><body>AgentCowork signed in. You can close this tab.</body></html>"
                         }
                         Err(_) => {
                             "HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\n\r\noauth failed"

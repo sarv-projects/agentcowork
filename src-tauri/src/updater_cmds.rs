@@ -44,7 +44,7 @@ const HOSTED_ENDPOINT_BASE: &str = "https://releases.everyaios.dev";
 /// GitHub-releases fallback endpoint (the second endpoint in
 /// `tauri.conf.json`). Only valid for the stable channel — see `channel_endpoints`.
 const GITHUB_FALLBACK_ENDPOINT: &str =
-    "https://github.com/sarv-projects/EveryAIOS/releases/latest/download/latest.json";
+    "https://github.com/sarv-projects/AgentCowork/releases/latest/download/latest.json";
 
 /// Pending update kept between the background download and the explicit
 /// install/restart. `download_and_install` cannot be used here: it would run
@@ -58,7 +58,7 @@ pub struct PendingUpdate {
 
 /// where the channel choice persists.
 fn channel_path() -> std::path::PathBuf {
-    everyaios_core::default_data_dir().join("update_channel.json")
+    agentcowork_core::default_data_dir().join("update_channel.json")
 }
 
 fn normalize_channel(raw: &str) -> Result<String, String> {

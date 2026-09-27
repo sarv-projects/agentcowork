@@ -61,7 +61,7 @@ export function UxMetricsSection() {
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      a.download = `everyaios-activity-recording-${Date.now()}.json`
+      a.download = `agentcowork-activity-recording-${Date.now()}.json`
       a.click()
       URL.revokeObjectURL(url)
       notify('Activity recording exported (JSON)')

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
-import type { ConnectorName } from '@everyaios/core-domain';
+import type { ConnectorName } from '@agentcowork/core-domain';
 import { ConnectorOrchestrator } from '../orchestrator';
 import { setConnectorHostTransport, type ConnectorHostRequest } from '../connection-manager';
 import * as publicApi from '../index';

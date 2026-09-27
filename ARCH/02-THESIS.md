@@ -12,7 +12,7 @@
 
 - **Not an OS replacement.** It is an AI-native execution layer on the user's existing computer(s) — not a kernel, bootloader, or desktop-environment substitute.
 - **Not an MCP application.** MCP is one interoperability door among several; it is never the architectural center.
-- **Not a wrapper around one agent.** Agent X is the native first-party agent, but external agents (OpenCode, Codex, Claude Code, ACP/A2A agents, remote agents) are peers — same engine contract, same governance.
+- **Not a wrapper around one agent.** External agents (OpenCode, Codex, Claude Code, ACP/A2A agents, remote agents) are peers — same engine contract, same governance.
 - **The outward promise:** one workspace, every model, every tool. **The internal promise:** one governed path for every effect.
 
 ## 3. Locked principles
@@ -21,7 +21,7 @@
 |---|---|---|
 | P-01 | **Core is the brain.** | Desktop / web / CLI / IDE / mobile are projections; none is a second source of truth. |
 | P-02 | **Work is the universal execution abstraction.** | A chat turn, workflow run, background job, subagent task — all are `Work` with a lifecycle. |
-| P-03 | **Agent ≠ Model ≠ Provider.** | None is hard-coded to another; Agent X asks the model router. |
+| P-03 | **Agent ≠ Model ≠ Provider.** | None is hard-coded to another; the engine asks the model router. |
 | P-04 | **Capability ≠ Provider.** | A capability is a semantic operation (`office.spreadsheet.edit`); a provider is who implements it (native, MCP, ACP, CLI, plugin, remote). |
 | P-05 | **Protocols are adapters, never the center.** | MCP / ACP / CLI / HTTP / plugins are interoperability doors. |
 | P-06 | **One governed path.** | Every externally visible effect: `Work → Capability → Provider → Handle → Guard → Ticket → Execute → Effect → Verify → Receipt → Event`. Control path is bounded (ms); effect path is asynchronous and observable. |
@@ -67,4 +67,4 @@ Competitors ship pieces of this: agents, capability catalogs, browser/computer c
 ## 7. Language discipline
 
 - The product never markets itself as “an AI OS that replaces your OS”.
-- “Agent” always means a reasoning runtime (Agent X or external peer); “capability” always means a semantic operation; “provider” always means an implementation of capabilities. Docs MUST NOT blur these.
+- “Agent” always means a reasoning runtime (the bound engine, of any kind); “capability” always means a semantic operation; “provider” always means an implementation of capabilities. Docs MUST NOT blur these.

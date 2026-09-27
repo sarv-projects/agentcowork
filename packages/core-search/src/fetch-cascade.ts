@@ -1,4 +1,4 @@
-import type { SearchContext, SearchProvider } from '@everyaios/core-domain';
+import type { SearchContext, SearchProvider } from '@agentcowork/core-domain';
 
 export class WebFetchCascade {
   private providers: SearchProvider[] = [];

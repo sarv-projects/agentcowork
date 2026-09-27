@@ -1,12 +1,12 @@
-# EveryAIOS desktop workspace (P0.3 task 19).
+# AgentCowork desktop workspace (P0.3 task 19).
 # `packages/*` = all desktop packages: the coordinator, ui, AND the vendored
-# `@everyaios/core-*` engine packages (copied in from the reference APP repo
+# `@agentcowork/core-*` engine packages (copied in from the reference APP repo
 # so this repo is fully self-contained — no `../APP` sibling required).
 packages:
   - "packages/*"
   - "ui"
 
-# Native deps pulled in via @everyaios/core-* — allow their build scripts
+# Native deps pulled in via @agentcowork/core-* — allow their build scripts
 # (better-sqlite3, onnxruntime-node, etc. are required by the engine).
 # pnpm 11 syntax: map of package → true (renamed from onlyBuiltDependencies).
 allowBuilds:

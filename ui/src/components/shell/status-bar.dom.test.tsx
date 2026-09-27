@@ -1,7 +1,7 @@
 // P71.2d — DOM proof for the status bar's model label.
 //
 // The bar used to name the exact `(provider, model-id)` pair the broker would
-// receive for EveryAIOS's own model call. There is no such call any more: the
+// receive for AgentCowork's own model call. There is no such call any more: the
 // bound agent owns its model, so the bar paints **that agent's** ACP value (or an
 // explicit "managed by <agent>") and never a desktop-sourced model name. With no
 // usable agent row it must claim nothing at all.
@@ -56,7 +56,7 @@ afterEach(() => {
   mounted.unmount()
 })
 
-describe('P71.2d — the bar names the agent\u2019s own model, never EveryAIOS\u2019s', () => {
+describe('P71.2d — the bar names the agent\u2019s own model, never AgentCowork\u2019s', () => {
   test('paints the agent\u2019s ACP model value', async () => {
     installShell()
     await setState({

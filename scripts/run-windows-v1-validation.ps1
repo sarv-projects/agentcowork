@@ -34,7 +34,7 @@ param(
 Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
 
-$Destination = 'C:\Users\sonali\Desktop\tests\EveryAIOS'
+$Destination = 'C:\Users\sonali\Desktop\tests\AgentCowork'
 $EvidenceRoot = 'C:\Users\sonali\Desktop\tests\evidence'
 $TimestampBase = Get-Date -Format 'yyyyMMdd-HHmmss-fff'
 $Timestamp = $TimestampBase
@@ -232,7 +232,7 @@ function Redact-PatchText {
     $redacted = $Text
     $redacted = [regex]::Replace($redacted, '(?s)-----BEGIN [^-]*PRIVATE KEY-----.*?-----END [^-]*PRIVATE KEY-----', '[REDACTED PRIVATE KEY]')
     $redacted = [regex]::Replace($redacted, '(?i)(sk-[A-Za-z0-9_-]{20,}|ghp_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16})', '[REDACTED TOKEN]')
-    $redacted = [regex]::Replace($redacted, '(?im)^(\s*(?:TAURI_SIGNING_PRIVATE_KEY|EVERYAIOS_VAULT_KEY)\s*=\s*).+$', '$1[REDACTED]')
+    $redacted = [regex]::Replace($redacted, '(?im)^(\s*(?:TAURI_SIGNING_PRIVATE_KEY|AGENTCOWORK_VAULT_KEY|EVERYAIOS_VAULT_KEY)\s*=\s*).+$', '$1[REDACTED]')
     return $redacted
 }
 
@@ -329,12 +329,18 @@ function Set-WindowsEnvironment {
     $env:OPENSSL_DIR = Join-Path 'C:\vcpkg\installed' $Triplet
     $env:OPENSSL_STATIC = '1'
     $env:RUSTFLAGS = '-D warnings -Clink-arg=advapi32.lib -Clink-arg=user32.lib -Clink-arg=crypt32.lib -Clink-arg=gdi32.lib'
-    $env:EVERYAIOS_LIVE_TEST = if ($Live) { '1' } else { '0' }
+    # Both spellings: the current Rust harness gates on the legacy name.
+    $env:AGENTCOWORK_LIVE_TEST = if ($Live) { '1' } else { '0' }
+    $env:EVERYAIOS_LIVE_TEST = $env:AGENTCOWORK_LIVE_TEST
     if ($null -eq $script:CoreExe) {
+        Remove-Item Env:AGENTCOWORK_CLEAN_BOOT_BIN -ErrorAction SilentlyContinue
         Remove-Item Env:EVERYAIOS_CLEAN_BOOT_BIN -ErrorAction SilentlyContinue
+        Remove-Item Env:AGENTCOWORK_E2E_CORE_BIN -ErrorAction SilentlyContinue
         Remove-Item Env:EVERYAIOS_E2E_CORE_BIN -ErrorAction SilentlyContinue
     } else {
+        $env:AGENTCOWORK_CLEAN_BOOT_BIN = $script:CoreExe
         $env:EVERYAIOS_CLEAN_BOOT_BIN = $script:CoreExe
+        $env:AGENTCOWORK_E2E_CORE_BIN = $script:CoreExe
         $env:EVERYAIOS_E2E_CORE_BIN = $script:CoreExe
     }
 }
@@ -439,21 +445,21 @@ function Run-StandardChecks {
     [void](Invoke-Check -Id 'STANDARD-CORE-TYPECHECK' -Name 'Vendored core typecheck' -File 'pnpm' -Arguments @('--filter', './packages/core-*', 'run', 'type-check') -WorkingDirectory $root)
     [void](Invoke-Check -Id 'STANDARD-CORE-TEST' -Name 'Vendored core tests' -File 'pnpm' -Arguments @('--filter', './packages/core-*', 'run', 'test') -WorkingDirectory $root)
 
-    [void](Invoke-Check -Id 'STANDARD-COORDINATOR-TYPECHECK' -Name 'Coordinator typecheck' -File 'pnpm' -Arguments @('--filter', '@everyaios/coordinator', 'type-check') -WorkingDirectory $root)
-    [void](Invoke-Check -Id 'STANDARD-COORDINATOR-TEST' -Name 'Coordinator Bun tests' -File 'pnpm' -Arguments @('--filter', '@everyaios/coordinator', 'test') -WorkingDirectory $root)
-    [void](Invoke-Check -Id 'STANDARD-COORDINATOR-BUILD' -Name 'Coordinator compiled sidecar' -File 'pnpm' -Arguments @('--filter', '@everyaios/coordinator', 'build') -WorkingDirectory $root)
+    [void](Invoke-Check -Id 'STANDARD-COORDINATOR-TYPECHECK' -Name 'Coordinator typecheck' -File 'pnpm' -Arguments @('--filter', '@agentcowork/coordinator', 'type-check') -WorkingDirectory $root)
+    [void](Invoke-Check -Id 'STANDARD-COORDINATOR-TEST' -Name 'Coordinator Bun tests' -File 'pnpm' -Arguments @('--filter', '@agentcowork/coordinator', 'test') -WorkingDirectory $root)
+    [void](Invoke-Check -Id 'STANDARD-COORDINATOR-BUILD' -Name 'Coordinator compiled sidecar' -File 'pnpm' -Arguments @('--filter', '@agentcowork/coordinator', 'build') -WorkingDirectory $root)
 
     [void](Invoke-Check -Id 'STANDARD-RUST-FMT' -Name 'Rust format check' -File 'cargo' -Arguments @('fmt', '--all', '--', '--check') -WorkingDirectory $crates)
     [void](Invoke-Check -Id 'STANDARD-RUST-CLIPPY' -Name 'Rust clippy' -File 'cargo' -Arguments @('--all-targets', '--all-features', '--', '-D', 'warnings') -WorkingDirectory $crates)
     [void](Invoke-Check -Id 'STANDARD-RUST-TEST' -Name 'Rust tests' -File 'cargo' -Arguments @('test', '--all-features') -WorkingDirectory $crates)
     [void](Invoke-Check -Id 'STANDARD-RUST-WORKSPACE-TEST' -Name 'Rust workspace tests' -File 'cargo' -Arguments @('test', '--workspace', '--all-features') -WorkingDirectory $crates)
-    [void](Invoke-Check -Id 'STANDARD-RUST-CORE-BUILD' -Name 'Debug core binary' -File 'cargo' -Arguments @('build', '-p', 'everyaios-core') -WorkingDirectory $crates)
+    [void](Invoke-Check -Id 'STANDARD-RUST-CORE-BUILD' -Name 'Debug core binary' -File 'cargo' -Arguments @('build', '-p', 'agentcowork-core') -WorkingDirectory $crates)
 
-    $coreCandidates = @((Join-Path $crates 'target\debug\everyaios-core.exe'), (Join-Path $crates 'target\debug\everyaios-core'))
+    $coreCandidates = @((Join-Path $crates 'target\debug\agentcowork-core.exe'), (Join-Path $crates 'target\debug\agentcowork-core'))
     $script:CoreExe = $coreCandidates | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
     if ($null -ne $script:CoreExe) {
-        $env:EVERYAIOS_CLEAN_BOOT_BIN = $script:CoreExe
-        $env:EVERYAIOS_E2E_CORE_BIN = $script:CoreExe
+        $env:AGENTCOWORK_CLEAN_BOOT_BIN = $script:CoreExe
+        $env:AGENTCOWORK_E2E_CORE_BIN = $script:CoreExe
     }
 
     # tauri-build resolves the resource glob before cargo check, so stage the
@@ -502,12 +508,12 @@ function Run-StandardChecks {
         [void](Invoke-Check -Id $gate.id -Name $gate.name -File 'node' -Arguments $arguments -WorkingDirectory $root)
     }
 
-    [void](Invoke-Check -Id 'STANDARD-P50-SEARCH' -Name 'P50 search gate' -File 'cargo' -Arguments @('test', '-p', 'everyaios-search', '--test', 'p50_search_e2e') -WorkingDirectory $crates)
-    [void](Invoke-Check -Id 'STANDARD-P50-MCP' -Name 'P50 connector/MCP gate' -File 'cargo' -Arguments @('test', '-p', 'everyaios-mcp', '--test', 'p50_mcp_e2e') -WorkingDirectory $crates)
-    [void](Invoke-Check -Id 'STANDARD-P50-CRASH' -Name 'P50 crash/failure composition gate' -File 'cargo' -Arguments @('test', '-p', 'everyaios-core', '--test', 'p50_gates') -WorkingDirectory $crates)
+    [void](Invoke-Check -Id 'STANDARD-P50-SEARCH' -Name 'P50 search gate' -File 'cargo' -Arguments @('test', '-p', 'agentcowork-search', '--test', 'p50_search_e2e') -WorkingDirectory $crates)
+    [void](Invoke-Check -Id 'STANDARD-P50-MCP' -Name 'P50 connector/MCP gate' -File 'cargo' -Arguments @('test', '-p', 'agentcowork-mcp', '--test', 'p50_mcp_e2e') -WorkingDirectory $crates)
+    [void](Invoke-Check -Id 'STANDARD-P50-CRASH' -Name 'P50 crash/failure composition gate' -File 'cargo' -Arguments @('test', '-p', 'agentcowork-core', '--test', 'p50_gates') -WorkingDirectory $crates)
     [void](Invoke-Check -Id 'STANDARD-SECURITY-GATE' -Name 'Security release gate' -File 'node' -Arguments @('scripts/e2e/security-gate.mjs') -WorkingDirectory $root -BlockedOnExitTwo)
-    [void](Invoke-Check -Id 'STANDARD-FAILURE-INJECTION' -Name 'Failure-injection gate' -File 'node' -Arguments @('scripts/e2e/failure-injection.mjs') -WorkingDirectory $root -BlockedOnExitTwo -Environment @{ EVERYAIOS_E2E_CORE_BIN = $script:CoreExe })
-    [void](Invoke-Check -Id 'STANDARD-CLEAN-PROFILE' -Name 'Clean-profile boot' -File 'node' -Arguments @('scripts/clean-profile-boot-check.mjs') -WorkingDirectory $root -BlockedOnExitTwo -Environment @{ EVERYAIOS_CLEAN_BOOT_BIN = $script:CoreExe })
+    [void](Invoke-Check -Id 'STANDARD-FAILURE-INJECTION' -Name 'Failure-injection gate' -File 'node' -Arguments @('scripts/e2e/failure-injection.mjs') -WorkingDirectory $root -BlockedOnExitTwo -Environment @{ AGENTCOWORK_E2E_CORE_BIN = $script:CoreExe })
+    [void](Invoke-Check -Id 'STANDARD-CLEAN-PROFILE' -Name 'Clean-profile boot' -File 'node' -Arguments @('scripts/clean-profile-boot-check.mjs') -WorkingDirectory $root -BlockedOnExitTwo -Environment @{ AGENTCOWORK_CLEAN_BOOT_BIN = $script:CoreExe })
     [void](Invoke-Check -Id 'STANDARD-PERF-P10' -Name 'P10 performance benches' -File 'cargo' -Arguments @('test', '--release', '--all-features', '--test', 'p10_bench', '--', '--test-threads=4') -WorkingDirectory $crates)
     [void](Invoke-Check -Id 'STANDARD-PERF-P45' -Name 'P45 measurement' -File 'node' -Arguments @('scripts/measure-perf-p45.mjs') -WorkingDirectory $root)
     foreach ($target in @('x86_64-pc-windows-msvc', 'aarch64-pc-windows-msvc')) {
@@ -521,7 +527,7 @@ function Run-StandardChecks {
 
 function Run-ReleaseQualification {
     param([Parameter(Mandatory = $true)][string]$Root)
-    $environment = @{ EVERYAIOS_LIVE_TEST = if ($Live) { '1' } else { '0' } }
+    $environment = @{ AGENTCOWORK_LIVE_TEST = if ($Live) { '1' } else { '0' }; EVERYAIOS_LIVE_TEST = if ($Live) { '1' } else { '0' } }
     $qualification = Invoke-Check -Id 'STANDARD-RELEASE-QUALIFICATION' -Name 'P70.E1-E12 qualification harness' -File 'node' -Arguments @('scripts/release-qualify.mjs', '--execute', '--json') -WorkingDirectory $Root -Environment $environment -Detail 'The harness reports PASS, FAIL, RUNNABLE, or BLOCKED; only PASS is treated as a qualification pass.'
     $raw = $qualification.output
     $start = $raw.IndexOf('{')
@@ -572,7 +578,7 @@ function Find-Browser {
 function Run-LiveChecks {
     $root = $Destination
     $crates = Join-Path $root 'crates'
-    $liveEnv = @{ EVERYAIOS_LIVE_TEST = '1' }
+    $liveEnv = @{ AGENTCOWORK_LIVE_TEST = '1'; EVERYAIOS_LIVE_TEST = '1' }
 
     if (-not $Live) {
         Add-BlockedLive 'LIVE-ACP' 'External ACP agent' 'Live mode was not requested; pass -Live only on a disposable validation host.'
@@ -592,22 +598,22 @@ function Run-LiveChecks {
         return
     }
 
-    [void](Invoke-Check -Id 'LIVE-ACP-SPAWN' -Name 'External ACP handshake' -File 'cargo' -Arguments @('test', '-p', 'everyaios-acp', '--test', 'live_spawn', '--', '--ignored', '--test-threads=1', '--nocapture') -WorkingDirectory $crates -Environment $liveEnv -BlockedOnOutputSkip -BlockedOutputPatterns @('(?i)\b(skip|skipped|not resolvable|not available|not found)\b') -Detail 'Requires an installed external ACP CLI; an ignored test that prints skip is BLOCKED.')
-    [void](Invoke-Check -Id 'LIVE-ACP-REGISTRY' -Name 'Live ACP registry refresh' -File 'cargo' -Arguments @('test', '-p', 'everyaios-acp', '--test', 'live_registry', '--', '--ignored', '--nocapture') -WorkingDirectory $crates -BlockedOnOutputSkip -BlockedOutputPatterns @('(?i)\b(skip|skipped|not available|not found)\b') -Detail 'Requires network access to the live registry and is not occupancy evidence by itself.')
+    [void](Invoke-Check -Id 'LIVE-ACP-SPAWN' -Name 'External ACP handshake' -File 'cargo' -Arguments @('test', '-p', 'agentcowork-acp', '--test', 'live_spawn', '--', '--ignored', '--test-threads=1', '--nocapture') -WorkingDirectory $crates -Environment $liveEnv -BlockedOnOutputSkip -BlockedOutputPatterns @('(?i)\b(skip|skipped|not resolvable|not available|not found)\b') -Detail 'Requires an installed external ACP CLI; an ignored test that prints skip is BLOCKED.')
+    [void](Invoke-Check -Id 'LIVE-ACP-REGISTRY' -Name 'Live ACP registry refresh' -File 'cargo' -Arguments @('test', '-p', 'agentcowork-acp', '--test', 'live_registry', '--', '--ignored', '--nocapture') -WorkingDirectory $crates -BlockedOnOutputSkip -BlockedOutputPatterns @('(?i)\b(skip|skipped|not available|not found)\b') -Detail 'Requires network access to the live registry and is not occupancy evidence by itself.')
     Add-BlockedLive 'LIVE-MODEL-SOAK' 'Live model/edit-ladder/shadow-preflight soak' 'No credential value is collected by this runner. Attach a separately executed, redacted real-repository soak record for P70.E6.'
     Add-BlockedLive 'LIVE-VAULT-HYDRATION' 'Live vault hydration' 'No vault secret is collected by this runner. Attach a separately executed redacted first-run/provider hydration record for P70.E5.'
 
-    [void](Invoke-Check -Id 'LIVE-OFFICE-DOCX' -Name 'LibreOffice clean DOCX oracle' -File 'cargo' -Arguments @('test', '-p', 'everyaios-office', '--lib', 'conformance::tests::live_oracle_opens_clean_docx', '--', '--ignored', '--test-threads=1', '--nocapture') -WorkingDirectory $crates -Environment $liveEnv -BlockedOnOutputSkip -BlockedOutputPatterns @('(?i)\b(skip|skipped|not found|not available)\b') -Detail 'Requires LibreOffice soffice and the live oracle fixture.')
-    [void](Invoke-Check -Id 'LIVE-OFFICE-PATCH' -Name 'LibreOffice patched DOCX oracle' -File 'cargo' -Arguments @('test', '-p', 'everyaios-office', '--lib', 'conformance::tests::live_oracle_opens_clean_after_docx_patch', '--', '--ignored', '--test-threads=1', '--nocapture') -WorkingDirectory $crates -Environment $liveEnv -BlockedOnOutputSkip -BlockedOutputPatterns @('(?i)\b(skip|skipped|not found|not available)\b') -Detail 'Requires LibreOffice soffice and the live oracle fixture.')
+    [void](Invoke-Check -Id 'LIVE-OFFICE-DOCX' -Name 'LibreOffice clean DOCX oracle' -File 'cargo' -Arguments @('test', '-p', 'agentcowork-office', '--lib', 'conformance::tests::live_oracle_opens_clean_docx', '--', '--ignored', '--test-threads=1', '--nocapture') -WorkingDirectory $crates -Environment $liveEnv -BlockedOnOutputSkip -BlockedOutputPatterns @('(?i)\b(skip|skipped|not found|not available)\b') -Detail 'Requires LibreOffice soffice and the live oracle fixture.')
+    [void](Invoke-Check -Id 'LIVE-OFFICE-PATCH' -Name 'LibreOffice patched DOCX oracle' -File 'cargo' -Arguments @('test', '-p', 'agentcowork-office', '--lib', 'conformance::tests::live_oracle_opens_clean_after_docx_patch', '--', '--ignored', '--test-threads=1', '--nocapture') -WorkingDirectory $crates -Environment $liveEnv -BlockedOnOutputSkip -BlockedOutputPatterns @('(?i)\b(skip|skipped|not found|not available)\b') -Detail 'Requires LibreOffice soffice and the live oracle fixture.')
 
     $browser = Find-Browser
     if ($null -eq $browser) {
         Add-BlockedLive 'LIVE-CHROME-CDP' 'Chrome/CDP' 'No supported Chrome/Edge/Brave executable was found.'
     } else {
-        [void](Invoke-Check -Id 'LIVE-CHROME-CDP' -Name 'Chrome/CDP acceptance' -File 'cargo' -Arguments @('test', '-p', 'everyaios-browser', '--test', 'acceptance_cdp', '--', '--ignored', '--test-threads=1', '--nocapture') -WorkingDirectory $crates -Environment $liveEnv -BlockedOnOutputSkip -BlockedOutputPatterns @('(?i)\b(skip|skipped|not available|not found)\b') -Detail ('Browser candidate: ' + $browser))
+        [void](Invoke-Check -Id 'LIVE-CHROME-CDP' -Name 'Chrome/CDP acceptance' -File 'cargo' -Arguments @('test', '-p', 'agentcowork-browser', '--test', 'acceptance_cdp', '--', '--ignored', '--test-threads=1', '--nocapture') -WorkingDirectory $crates -Environment $liveEnv -BlockedOnOutputSkip -BlockedOutputPatterns @('(?i)\b(skip|skipped|not available|not found)\b') -Detail ('Browser candidate: ' + $browser))
     }
 
-    [void](Invoke-Check -Id 'LIVE-CUA-INVENTORY' -Name 'Native application inventory' -File 'cargo' -Arguments @('test', '-p', 'everyaios-computeruse', 'live_inventory', '--', '--ignored', '--nocapture') -WorkingDirectory $crates -Environment $liveEnv -BlockedOnOutputSkip -BlockedOutputPatterns @('(?i)\b(skip|skipped|not available|not found)\b') -Detail 'This is an inventory check, not proof of WGC, UIA action delivery, or ConPTY.')
+    [void](Invoke-Check -Id 'LIVE-CUA-INVENTORY' -Name 'Native application inventory' -File 'cargo' -Arguments @('test', '-p', 'agentcowork-desktop', 'live_inventory', '--', '--ignored', '--nocapture') -WorkingDirectory $crates -Environment $liveEnv -BlockedOnOutputSkip -BlockedOutputPatterns @('(?i)\b(skip|skipped|not available|not found)\b') -Detail 'This is an inventory check, not proof of WGC, UIA action delivery, or ConPTY.')
     Add-BlockedLive 'LIVE-CUA-WGC-UIA-CONPTY' 'CUA/UIA/WGC/ConPTY acceptance' 'The current repository has no Windows live harness proving Windows.Graphics.Capture, UIA invoke/set-value, and ConPTY together; compile/unit evidence is insufficient.'
 
     [void](Invoke-Check -Id 'LIVE-UI-COMPACT-SMOKE' -Name 'Compact UI DOM smoke' -File 'bun' -Arguments @('test', 'src/components/chat/agent-model-picker.dom.test.tsx', 'src/components/panels/computer-use-section.dom.test.tsx', 'src/components/shell/status-bar.dom.test.tsx') -WorkingDirectory (Join-Path $root 'ui') -Environment $liveEnv -Detail 'Targeted DOM evidence only; packaged accessibility behavior still needs a host record.')
@@ -793,7 +799,7 @@ function Write-Summary {
 
 try {
     if ([string]::IsNullOrWhiteSpace($Repo)) {
-        throw 'No -Repo was supplied. Set -Repo to the source working tree containing package.json, crates\, and src-tauri\; this script never guesses a source path. It copies to C:\Users\sonali\Desktop\tests\EveryAIOS.'
+        throw 'No -Repo was supplied. Set -Repo to the source working tree containing package.json, crates\, and src-tauri\; this script never guesses a source path. It copies to C:\Users\sonali\Desktop\tests\AgentCowork.'
     }
     if (-not (Test-Path -LiteralPath $Repo -PathType Container)) {
         throw ('The -Repo path does not exist or is not a directory: ' + $Repo)
@@ -808,7 +814,7 @@ try {
     }
     foreach ($required in @('package.json', 'crates\Cargo.toml', 'src-tauri\Cargo.toml')) {
         if (-not (Test-Path -LiteralPath (Join-Path $Repo $required) -PathType Leaf)) {
-            throw ('The supplied -Repo is not the expected EveryAIOS working tree; missing ' + $required)
+            throw ('The supplied -Repo is not the expected AgentCowork working tree; missing ' + $required)
         }
     }
 

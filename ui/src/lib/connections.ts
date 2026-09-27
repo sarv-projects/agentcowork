@@ -11,7 +11,7 @@
 // `@/lib/settings`. This module is the **display projection** over the domain
 // libs, so it is deliberately named `ConnectionView` to keep one name meaning
 // one shape. Two incompatible types sharing the name `ConnectionRecord` is
-// exactly the contract drift `everyaios-types` exists to prevent on the Rust
+// exactly the contract drift `agentcowork-types` exists to prevent on the Rust
 // side. Use `ConnectionView` for rendering; use `@/lib/settings`'s
 // `ConnectionRecord` when reading the authoritative wire state.
 //

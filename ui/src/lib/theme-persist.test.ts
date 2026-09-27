@@ -28,8 +28,8 @@ afterAll(() => {
 
 describe('theme and accent persistence', () => {
   test('uses the shared storage keys', () => {
-    expect(THEME_STORAGE_KEY).toBe('everyaios.theme')
-    expect(ACCENT_STORAGE_KEY).toBe('everyaios.accent')
+    expect(THEME_STORAGE_KEY).toBe('agentcowork.theme')
+    expect(ACCENT_STORAGE_KEY).toBe('agentcowork.accent')
   })
 
   test('restores a stored theme', () => {

@@ -7,7 +7,7 @@ owns *what the shipped install touches*.
 
 ## 1. Install model (D1)
 
-**Per-user, per-machine-none.** EveryAIOS installs for the current Windows
+**Per-user, per-machine-none.** AgentCowork installs for the current Windows
 user only:
 
 | Setting | Value | Where |
@@ -22,8 +22,8 @@ user only:
 
 | What | Where | Written when |
 |---|---|---|
-| Binaries + resources | `%LOCALAPPDATA%\EveryAIOS\` (installer) | install / update |
-| **User data directory** | `%USERPROFILE%\.everyaios\` (override: `EVERYAIOS_HOME`) | first run |
+| Binaries + resources | `%LOCALAPPDATA%\AgentCowork\` (installer) | install / update |
+| **User data directory** | `%USERPROFILE%\.agentcowork\` (override: `AGENTCOWORK_HOME`; legacy `%USERPROFILE%\.everyaios\` and `EVERYAIOS_*` are read as a fallback and migrated once by Core — DEC-053) | first run |
 | Vault (`vault.db`) | `<data>\vault.db` | first unlock |
 | Audit ledger | `<data>\audit.ndjson` | boot |
 | Store manifest | `<data>\store-schema.json` | boot (`store_schema::boot()`) |
@@ -57,9 +57,9 @@ The five failure classes, with the recovery a user can actually perform:
 |---|---|---|---|
 | 1 | **Failed vault unlock** (forgotten passphrase / lost keyfile) | unlock screen rejects; doctor shows Vault ✕ | If a keyfile exists, restore it; if the passphrase is lost, the vault is **unreadable by design** (no backdoor). Delete `vault.db` (Settings → Diagnostics → Remove all data is the sledgehammer; deleting `vault.db` alone keeps sessions/memory) and re-provision keys. |
 | 2 | **Corrupt database** (vault or a manifest store) | boot error naming the store, or `ManifestCorrupt` refusal naming the file | The manifest is *reported, never overwritten* — fix or remove the named file. For a corrupt non-vault store, delete that one file; it re-stamps on next boot. For a corrupt vault, see #1. |
-| 3 | **Missing sidecar** (`coordinator` binary absent) | doctor shows Sidecar ✕ "the install is broken or incomplete — reinstall" | Reinstall the app (the sidecar is a bundled resource). Dev: `pnpm --filter @everyaios/coordinator build` or set `EVERYAIOS_COORDINATOR_BIN`. |
+| 3 | **Missing sidecar** (`coordinator` binary absent) | doctor shows Sidecar ✕ "the install is broken or incomplete — reinstall" | Reinstall the app (the sidecar is a bundled resource). Dev: `pnpm --filter @agentcowork/coordinator build` or set `AGENTCOWORK_COORDINATOR_BIN`. |
 | 4 | **Dead agent runtime** (an ACP agent crashes / hangs mid-turn) | turn ends with the agent's error; agent row shows not-ready | `acp_shutdown` / kill the child; re-launch from the agent tab. Persistent failure: reinstall that agent (`acp_install`) — app data is untouched. |
 | 5 | **Half-applied migration** (boot died between store writes) | next boot refuses: `NewerThanApp` naming the store, or a re-run of `boot()` re-stamps cleanly | A newer-stamped store is refused *before any write* (nothing is half-migrated); follow the refused store's note in Settings → Doctor / `docs/updating.md` §6. If a manifest store was stamped but its writer died, the store is *adopted* (flagged), not claimed migrated. |
 
-The doctor surface (Settings → Doctor, or `everyaios-core doctor`) is the first
+The doctor surface (Settings → Doctor, or `agentcowork-core doctor`) is the first
 stop for all five: it names the broken subsystem and the remedy.

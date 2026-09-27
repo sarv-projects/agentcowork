@@ -1,5 +1,5 @@
-import type { IntentCategory, MemoryCategory } from '@everyaios/core-domain';
-import { MEMORY_CATEGORIES } from '@everyaios/core-domain';
+import type { IntentCategory, MemoryCategory } from '@agentcowork/core-domain';
+import { MEMORY_CATEGORIES } from '@agentcowork/core-domain';
 
 const QUERY_CATEGORY_HINTS: Array<{ pattern: RegExp; categories: MemoryCategory[] }> = [
   { pattern: /\b(book|chapter|character|author|novel|read)\b/i, categories: ['books'] },

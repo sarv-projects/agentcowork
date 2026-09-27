@@ -456,7 +456,7 @@ export function LeftSidebar({
             <div className="grid h-5 w-5 place-items-center rounded-md bg-brand/15 ring-1 ring-brand/30">
               <Sparkles className="h-3 w-3 text-brand" />
             </div>
-            <span className="flex-1 text-left text-[12.5px] font-semibold">EveryAIOS</span>
+            <span className="flex-1 text-left text-[12.5px] font-semibold">AgentCowork</span>
             <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
           </button>
         )}
@@ -645,7 +645,7 @@ export function LeftSidebar({
           icon={HelpCircle}
           label="Help"
           collapsed={collapsed}
-          onClick={() => { window.open('https://github.com/sarv-projects/EveryAIOS', '_blank', 'noopener'); navigate() }}
+          onClick={() => { window.open('https://github.com/sarv-projects/agentcowork', '_blank', 'noopener'); navigate() }}
         />
         {!collapsed && (
           <button

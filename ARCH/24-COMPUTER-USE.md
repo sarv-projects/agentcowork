@@ -6,7 +6,7 @@
 > **Role:** operate the desktop when no better rung exists. **The ladder:** native API → structured UI → browser DOM/AX → CLI/MCP → **vision fallback** → raw input.
 > **Honest framing (recorded):** screenshot-first is the industry default (OpenAI computer tool · Anthropic computer-use · UI-TARS “solely perceives the screenshots”). **AgentCowork chooses structured-first** — verified hybrids (Agent-S a11y+OCR, open-codex AX-first, arXiv 2511.19477) outperform where semantics exist; vision remains a first-class rung, not the default.
 > **Dependencies:** `21-WORLD-MODEL` (observations, W3/W4) · `23-BROWSER` (browser rung) · `12-TRUST` (consent/approvals) · `18-MODEL-ROUTING` (vision models). **Consumers:** `15`, `22`–`28`, `34`.
-> **Evidence:** `ARCHIVE/v1-research/world-model-verification.md` §1–§2 (UIA caveats, ladder reality, vision costs) · local `crates/everyaios-desktop` (`platform/win.rs:1-23,76-97`, `ladder.rs:16-24`, `ocr.rs:1-7`, `types.rs:235-247`) · DEC-011/016 · INV-20/21.
+> **Evidence:** `ARCHIVE/v1-research/world-model-verification.md` §1–§2 (UIA caveats, ladder reality, vision costs) · local `crates/agentcowork-desktop` (`platform/win.rs:1-23,76-97`, `ladder.rs:16-24`, `ocr.rs:1-7`, `types.rs:235-247`) · DEC-011/016 · INV-20/21.
 
 ## 1. Purpose & rules
 

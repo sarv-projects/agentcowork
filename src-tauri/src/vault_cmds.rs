@@ -1,6 +1,6 @@
 //! BYOK key-ring surface — list / add / remove keys in the SQLCipher vault.
 
-use everyaios_vault::{KeyRing, KeySpec, KeyStatus};
+use agentcowork_vault::{KeyRing, KeySpec, KeyStatus};
 use tauri::State;
 
 use crate::AppState;
@@ -84,7 +84,7 @@ pub fn vault_key_add(
         .map(|u| !u.trim().is_empty())
         .unwrap_or(false);
     if has_base || format.is_some() {
-        let store = everyaios_catalog::ProfileStore::in_dir(everyaios_core::default_data_dir());
+        let store = agentcowork_catalog::ProfileStore::in_dir(agentcowork_core::default_data_dir());
         let mut profile = store.get(&provider).unwrap_or_default();
         profile.id.clone_from(&provider);
         if profile.name.trim().is_empty() {
@@ -94,10 +94,10 @@ pub fn vault_key_add(
             profile.base_url = url;
         }
         if let Some(f) = format.as_deref() {
-            profile.format = everyaios_catalog::ProfileFormat::parse(f)?;
+            profile.format = agentcowork_catalog::ProfileFormat::parse(f)?;
         }
         profile.api_key_required = true;
-        profile.source = everyaios_catalog::ProfileSource::UserConfig;
+        profile.source = agentcowork_catalog::ProfileSource::UserConfig;
         if let Some(stamp) = verified_at {
             profile.verified_at = Some(stamp);
         }

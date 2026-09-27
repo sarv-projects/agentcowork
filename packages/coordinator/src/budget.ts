@@ -1,7 +1,7 @@
 /**
  * P39.1 — per-message-type IPC payload budgets (doc-42 §1.4, spec §9.3 §1).
  *
- * The TS mirror of `everyaios-ipc/src/budget.rs`. The transport hard cap is
+ * The TS mirror of `agentcowork-ipc/src/budget.rs`. The transport hard cap is
  * `MAX_FRAME_LEN` (16 MiB, frame.ts); this module adds the per-message-type
  * budgets the doc-42 table calls for, so a 60 KB tool result arrives as a
  * ≤50 KB payload + ref — never a 60 KB frame.
@@ -28,7 +28,7 @@ export interface PayloadBudget {
   previewLimit: number;
 }
 
-/** The doc-42 §1.4 table — must match `budget_for` in everyaios-ipc. */
+/** The doc-42 §1.4 table — must match `budget_for` in agentcowork-ipc. */
 export function budgetFor(kind: MessageKind): PayloadBudget {
   switch (kind) {
     case MessageKind.ToolResult:
@@ -78,7 +78,7 @@ export function applyBudget(kind: MessageKind, payload: Uint8Array): Budgeted {
 /**
  * The coordinator-side ref registry (C10 pass-by-reference seam): one-shot
  * storage of full payloads behind `ref:handle:<n>` wire forms (mirrors the
- * Rust side's stateless content-addressed `HandleStore` in everyaios-memory).
+ * Rust side's stateless content-addressed `HandleStore` in agentcowork-memory).
  *
  * ## Lifecycle (W5 — "refs split-brain" fault line)
  *

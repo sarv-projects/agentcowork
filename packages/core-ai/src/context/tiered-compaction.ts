@@ -16,7 +16,7 @@
  * the entire prompt every turn — it damages provider-cache locality.
  */
 
-import type { ChatMessage } from '@everyaios/core-domain';
+import type { ChatMessage } from '@agentcowork/core-domain';
 import { CHAT_CONTEXT_TOKENS, CHAT_MAX_OUTPUT_TOKENS, CHARS_PER_TOKEN_ESTIMATE } from '../router/prompt-limits.js';
 
 const MAX_RECENT_TURNS = 6;

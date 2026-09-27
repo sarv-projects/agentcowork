@@ -12,7 +12,7 @@
 Durable, scoped, provenance-carrying knowledge that survives sessions — deliberately **not** per-turn context.
 
 **Owns:** the durable store (SQLite + FTS5); the write pipeline (extraction → validation → persistence); the recall primitive; lifecycle (dedup · supersede · forget · expiry); sensitivity handling at the store boundary; export/import; the audit trail of memory mutations.
-**Never owns:** context assembly and budgeting (Agent X via `16-CONTEXT`); work state, checkpoints, approvals (`11-WORK`); project rules files (`AGENTS.md`-style — user/repo authored); secrets (rejected, never stored); artifacts (`29-ARTIFACTS`).
+**Never owns:** context assembly and budgeting (the bound engine via `16-CONTEXT`); work state, checkpoints, approvals (`11-WORK`); project rules files (`AGENTS.md`-style — user/repo authored); secrets (rejected, never stored); artifacts (`29-ARTIFACTS`).
 
 Locked rules:
 
@@ -124,10 +124,18 @@ CREATE TABLE memory_jobs (                           -- extraction bookkeeping (
     created_at   INTEGER NOT NULL,
     updated_at   INTEGER NOT NULL
 );
+
+CREATE TABLE memory_session_anchors (               -- the persisted anchor the 7 d session TTL evaluates against (§7, REQ-MEM-025); added at schema version 2
+    session_id  TEXT PRIMARY KEY,
+    anchor      TEXT NOT NULL CHECK (anchor IN ('archived','hibernated','last_active')),
+    anchored_at INTEGER NOT NULL
+);
 ```
 
 - **Pointer policy:** FK enforcement is on per connection; `superseded_by` is cascade-collapsed (no dangling pointer, no resurrection). User forget of a current item never resurrects its predecessor; forgetting a superseding item removes the chain it headed (audited).
 - **Erasure policy (DEC-039):** forget pages are overwritten (`secure_delete`), the WAL is checkpointed/truncated after forget, FTS rows are removed through the delete trigger, and the claim is bounded by the stated threat model (no secure erase from OS caches, backups, or flash wear-leveling).
+- **Key custody (DEC-039 + INV-02):** the whole-DB key is vault-held and supplied by the caller, applied with `PRAGMA key` before any schema read so a wrong key surfaces as a read error rather than a silent plaintext fallback. **The product path never opens a plaintext store.** A keyless open is a test/ephemeral-session affordance only; when the store is wired into the product path the two cases become separate constructors rather than a nullable argument, so "no key" cannot be reached by forgetting one.
+- **Session anchors:** one row per session, written by the anchor event (`archived`, `hibernated` where the retention class allows, `last_active` as fallback). Session-scope expiry reads `anchored_at` — never a live wall-clock delta, so a clock jump cannot extend or cut a TTL (REQ-MEM-025, EDGE-177). The table arrives at schema version 2 through the idempotent `user_version` migration (REQ-KERNEL-006); a missing anchor row is not a silent "now".
 - **FTS integrity:** `integrity-check`/row-count parity detects drift; repair is FTS5 `rebuild` followed by post-rebuild verification (REQ-MEM-001).
 - **Jobs GC:** `done` rows older than 7 d and `error` rows older than 30 d are swept by the single writer (defaults; product knobs). A lease older than its term is reclaimed with an audit entry.
 - Temporal columns (`valid_at`/`invalid_at`) are intentionally absent — the single `superseded_by` pointer covers explicit reversal; add them with upgrade U10.
@@ -196,7 +204,7 @@ Context Controller ── memory.recall(query, scope_filter?, tokens) ──►
 
 - **Dedup:** keyed hash on versioned normalized content; `dedup_key` for canonical facts (`project.build.test_cmd`). Near-duplicate detection is U2, not v1.
 - **Update:** ADD-only body + single `superseded_by` pointer (extractor `SUPERSEDE` or user edit); superseded rows retained for audit; read paths filter them. A user edit creates a **new** item with `source='user'` and supersedes the old one — the stored body is never rewritten.
-- **Forget:** hard delete + suppression + audit; recovery follows DEC-039 (§3). A suppressed hash is **global** (the suppression row survives scope wipes), so neither re-extraction nor import can resurrect it. If the forgotten item superseded older rows, the chain is removed with it — no dangling pointer, no resurrection.
+- **Forget:** hard delete + suppression + audit; recovery follows DEC-039 (§3). A suppressed hash is **global** (the suppression row survives scope wipes), so neither re-extraction nor import can resurrect it. If the forgotten item superseded older rows, the chain is removed with it — no dangling pointer, no resurrection — and **every hash the removal took with it is suppressed, not only the head**: suppressing the head alone would let a predecessor's text return one run later.
 - **Scope wipe:** deletes the scope's items and superseded rows (and their FTS entries) but **retains suppressions**, which are not scope data; consequence (declared): content forgotten anywhere stays un-extractable everywhere, including inside a wiped scope. Requires explicit confirmation.
 - **Expiry & TTL anchor:** only `session` scope has a default TTL — 7 d after the session **anchor** event (`archived`, or `hibernated` where the retention class allows; `last_active` is the fallback — `11` §7). Expiry is evaluated against the persisted anchor timestamp, never a live wall-clock delta (REQ-MEM-025).
 - **Growth bounds:** per-item cap 4 KiB (reject oversize at validate); per-scope caps — session 500 · task 500 · project 5,000 · user 1,000 items with a declared byte bound (defaults; product-visible knobs). Eviction removes the oldest **unpinned** items first and audits each removal; a pinned item is never auto-evicted.
@@ -275,7 +283,7 @@ Sequencing if metrics force upgrades: U1, U2 → U5, U4 → U0. Nothing is built
 
 ## 14. Open questions (`OQ-MEM-*`)
 
-1. **Agent X native memory vs Core shared memory** — **resolved (DEC-043):** the Core store is the only durable memory; Agent X's private notes are session-scope memory items + the session log, not a second store.
+1. **Engine-private memory vs Core shared memory** — **resolved (DEC-043):** the Core store is the only durable memory; an engine's private notes are session-scope memory items + the session log, not a second store.
 2. **Rules write authority** — extractor never writes project rules; may propose a diff via approval. *(still open as UX detail)*
 3. **Extraction model** — **resolved (DEC-044):** session provider by default; `confidential` scopes local-only or off until enabled; global budget + kill switches.
 4. **Encryption at rest** — **resolved (DEC-039):** whole-DB SQLCipher (key in the vault) + erasure policy and threat model; PEND-06 closed.

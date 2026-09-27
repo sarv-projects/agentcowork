@@ -1,5 +1,5 @@
 {
-  "name": "@everyaios/core-ai",
+  "name": "@agentcowork/core-ai",
   "version": "0.1.0",
   "license": "MIT OR Apache-2.0",
   "private": true,
@@ -22,8 +22,8 @@
     "vitest": "^3.0.0"
   },
   "dependencies": {
-    "@everyaios/core-agents": "workspace:*",
-    "@everyaios/core-domain": "workspace:*",
-    "@everyaios/core-memory": "workspace:*"
+    "@agentcowork/core-agents": "workspace:*",
+    "@agentcowork/core-domain": "workspace:*",
+    "@agentcowork/core-memory": "workspace:*"
   }
 }

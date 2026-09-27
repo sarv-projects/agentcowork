@@ -68,7 +68,7 @@ const ACP_TO_CATALOG: Record<string, string> = {
 
 /** Merge the live ACP registry + per-agent install state over the static
  * catalog. Install truth comes from the shell: an agent is `installed` only
- * when EveryAIOS installed it (`acp_install_status`) or auto-discovery found
+ * when AgentCowork installed it (`acp_install_status`) or auto-discovery found
  * its CLI on PATH (kind "path"). PATH-discovered agents carry no version —
  * never fall back to a static example version. */
 function mergeAgentCatalog(
@@ -882,7 +882,7 @@ export async function sendUserMessage(
           code: 'unbound' as const,
           title: 'No runnable agent bound',
           detail:
-            'Choose an installed, ready agent before sending. EveryAIOS ships no built-in engine in v1.',
+            'Choose an installed, ready agent before sending. AgentCowork ships no built-in engine in v1.',
         }
       : !runtime
         ? {

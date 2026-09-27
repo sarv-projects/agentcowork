@@ -5,7 +5,7 @@
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
 > **Role:** **one** search service over all context sources. Deterministic retrieval — **never an LLM call** (DEC-015). `27` is the one Core-side search implementation and indexing surface (the baseline's "kernel search" names this service, not module `10`); other modules register index adapters, and `16`'s `context.search` (`CTR-006`) is the assembly-facing façade over it.
 > **Dependencies:** source owners (`17` memory · `21` world · `25` files · `26` repo · `29` artifacts · `30` events) · `12-TRUST` (scope/sensitivity). **Consumers:** `16` (retrieval), `15` (agent queries), UI (global search), `32` (external-agent projection).
-> **Evidence:** repo principle (one Core search implementation — `everyaios-search`; `AGENTS.md` §12's "Kernel search" names the Rust crate workspace, not module `10`) · product-owner brief (search/file-index rows are explicitly token-free) · `ARCH/16-CONTEXT.md` §1, `ARCH/17-MEMORY.md` §6, `ARCH/21-WORLD-MODEL.md` §4.
+> **Evidence:** repo principle (one Core search implementation — `agentcowork-search`; `AGENTS.md` §12's "Kernel search" names the Rust crate workspace, not module `10`) · product-owner brief (search/file-index rows are explicitly token-free) · `ARCH/16-CONTEXT.md` §1, `ARCH/17-MEMORY.md` §6, `ARCH/21-WORLD-MODEL.md` §4.
 
 ## 1. Purpose & rules
 
@@ -79,7 +79,7 @@ Semantic/vector search (trigger: recall misses) · cross-repository federation �
 
 ## 11. Evidence
 
-Repo principle: one Core search implementation (`everyaios-search`; `AGENTS.md` §12) · product-owner brief (search/files-index rows explicitly zero-token) · `ARCH/16-CONTEXT.md` §1/§4 · `ARCH/17-MEMORY.md` §6 (non-negative relevance, abstention) · `ARCH/21-WORLD-MODEL.md` §4 (index-not-walk) · `ARCH/26-CODE.md` §5 (structural queries owned by `26`).
+Repo principle: one Core search implementation (`agentcowork-search`; `AGENTS.md` §12) · product-owner brief (search/files-index rows explicitly zero-token) · `ARCH/16-CONTEXT.md` §1/§4 · `ARCH/17-MEMORY.md` §6 (non-negative relevance, abstention) · `ARCH/21-WORLD-MODEL.md` §4 (index-not-walk) · `ARCH/26-CODE.md` §5 (structural queries owned by `26`).
 
 ## 12. Requirements (`REQ-SEARCH-*`)
 

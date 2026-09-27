@@ -8,7 +8,7 @@
 //! `shell_cmds.rs` piped `sh -i`/`cmd` path is gone from the product surface.
 //!
 //! **Authority boundary.** The renderer never sends an executable path — it
-//! sends a *profile name*. This module re-runs `everyaios-core`'s detection on
+//! sends a *profile name*. This module re-runs `agentcowork-core`'s detection on
 //! the shell side and resolves the name against that registry, so a
 //! compromised renderer cannot ask the shell to spawn an arbitrary binary or a
 //! profile the user has not confirmed. Unsafe profiles (world-writable install
@@ -33,11 +33,11 @@ use base64::Engine as _;
 // reaches the managed shell state to record its own audit entry).
 use tauri::{AppHandle, Emitter, Manager, State};
 
-use everyaios_core::terminal::{
+use agentcowork_core::terminal::{
     detect_available_profiles, CommandRecord, CommandTracker, DetectedProfile, Platform, PtyFrame,
     PtyHost, SpawnOpts, TerminalBackend, TerminalConfig, TerminalOrigin, TerminalPlaneObserver,
 };
-use everyaios_core::Config;
+use agentcowork_core::Config;
 
 use crate::AppState;
 
@@ -151,7 +151,7 @@ pub fn terminal_profiles() -> Result<serde_json::Value, String> {
     }))
 }
 
-/// Persist mutated `terminal.*` back to `everyaios.toml`.
+/// Persist mutated `terminal.*` back to `agentcowork.toml`.
 fn save_terminal(mutate: impl FnOnce(&mut TerminalConfig)) -> Result<(), String> {
     let path = Config::config_path().map_err(|e| e.to_string())?;
     let mut cfg = Config::load().map_err(|e| e.to_string())?;
@@ -240,7 +240,7 @@ pub fn terminal_set_shell_integration(enabled: bool) -> Result<bool, String> {
 fn stream_frames(
     app: AppHandle,
     pty_id: String,
-    output: everyaios_core::terminal::PtyOutput,
+    output: agentcowork_core::terminal::PtyOutput,
 ) -> Result<(), String> {
     let id = pty_id.clone();
     output
@@ -308,7 +308,7 @@ fn finish_spawn(
     app: &AppHandle,
     state: &State<'_, AppState>,
     pty_id: String,
-    output: everyaios_core::terminal::PtyOutput,
+    output: agentcowork_core::terminal::PtyOutput,
     prov: SpawnProvenance<'_>,
 ) -> Result<String, String> {
     stream_frames(app.clone(), pty_id.clone(), output)?;
@@ -521,7 +521,7 @@ fn ticket_for_agent_command(
     command: &str,
     origin: TerminalOrigin,
 ) -> Result<String, String> {
-    use everyaios_guard::{DecisionPackage, Operation as GuardOp, RiskLevel, prescan};
+    use agentcowork_guard::{DecisionPackage, Operation as GuardOp, RiskLevel, prescan};
     use std::hash::{Hash, Hasher};
 
     // 1) Guard-1: the deterministic blocklist, on the exact command line.
@@ -562,15 +562,15 @@ fn ticket_for_agent_command(
         0,
     );
     let ticket_id = match verdict {
-        everyaios_core::GuardDecision::Allow { ticket_id } => ticket_id,
-        everyaios_core::GuardDecision::Ask { .. } => {
+        agentcowork_core::GuardDecision::Allow { ticket_id } => ticket_id,
+        agentcowork_core::GuardDecision::Ask { .. } => {
             return Err(
                 "terminal_run refused: this command needs an approval card — run it through the \
                  governed `script.run` tool so the decision is recorded"
                     .into(),
             );
         }
-        everyaios_core::GuardDecision::Block { reason } => {
+        agentcowork_core::GuardDecision::Block { reason } => {
             return Err(format!("terminal_run refused: {reason}"));
         }
     };
@@ -718,13 +718,13 @@ impl TerminalPlaneExecutor {
     }
 }
 
-impl everyaios_core::tools::TerminalExecutor for TerminalPlaneExecutor {
+impl agentcowork_core::tools::TerminalExecutor for TerminalPlaneExecutor {
     fn run(
         &self,
         command: &str,
         label: &str,
         origin: TerminalOrigin,
-    ) -> Result<everyaios_core::tools::TerminalRun, String> {
+    ) -> Result<agentcowork_core::tools::TerminalRun, String> {
         let trimmed = command.trim();
         if trimmed.is_empty() {
             return Err("script.run: command must not be empty".into());
@@ -816,7 +816,7 @@ impl everyaios_core::tools::TerminalExecutor for TerminalPlaneExecutor {
                 (trimmed.to_string(), cwd, None, output, false)
             }
         };
-        Ok(everyaios_core::tools::TerminalRun {
+        Ok(agentcowork_core::tools::TerminalRun {
             pty_id,
             profile_id,
             command: command_line,

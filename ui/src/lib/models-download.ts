@@ -150,7 +150,7 @@ export async function serveModel(id: string, options?: ServeOptions): Promise<{
 }
 
 /** P52.2 — one pinned file inside a gallery entry (mirrors
- * `everyaios_catalog::gallery::GalleryFile`). */
+ * `agentcowork_catalog::gallery::GalleryFile`). */
 export interface GalleryFile {
   path: string
   sha256: string

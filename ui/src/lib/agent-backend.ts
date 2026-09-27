@@ -2,14 +2,14 @@
 //
 // External agents own their account, authentication, model, and config. The
 // host may retain only a credential-free launch override such as a model or
-// base URL; it never reads a provider key from the EveryAIOS vault for a child
+// base URL; it never reads a provider key from the AgentCowork vault for a child
 // process and never writes the agent's own config. `agentBackendGet` returns
 // non-secret variable names only.
 
 import { invoke } from './tauri'
 import { nativeCall } from './runtime'
 
-/** How the agent accepts a provider binding (`everyaios_acp::BackendChannel`). */
+/** How the agent accepts a provider binding (`agentcowork_acp::BackendChannel`). */
 export type BackendChannel =
   | 'provider_env'
   | 'fixed_env'
@@ -28,7 +28,7 @@ export interface AgentBackendChoice {
   model: string
   /**
    * @deprecated Legacy compatibility only. `true` identifies an old record that
-   * must be cleared; the host never injects an EveryAIOS vault key.
+   * must be cleared; the host never injects an AgentCowork vault key.
    */
   useVaultKey: boolean
   baseUrl: string | null

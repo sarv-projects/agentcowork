@@ -1,6 +1,6 @@
 //! F12 / J17 — the **ACP harness bridge** commands (doc 45 §1, doc 57 §2).
 //!
-//! Thin wrappers over `everyaios-acp`:
+//! Thin wrappers over `agentcowork-acp`:
 //! - [`acp_agents`] — the launch registry (the `ollama launch` pattern): one
 //!   manifest per agent with its auth-mode badge, distribution and protocol,
 //!   so the picker shows "same chat bar, agent differs, default = inbuilt".
@@ -13,7 +13,7 @@
 //!   the agent handles login; url-type: return the browser URL, re-call after
 //!   the user completes), then retry `session/new`.
 //! - [`acp_prompt`] — drive one turn; the agent's `session/request_permission`
-//!   requests are answered by the shared [`everyaios_core::GuardService`]
+//!   requests are answered by the shared [`agentcowork_core::GuardService`]
 //!   (estop → policy → profile), so an ACP agent obeys the *same* Guard-2
 //!   ticket card as the inbuilt engine.
 //! - [`acp_install_request`] / [`acp_install_commit`] — the F8 one-click
@@ -24,22 +24,22 @@
 //! - [`acp_cancel`] / [`acp_shutdown`] / [`acp_sessions`] — turn interrupt,
 //!   teardown, and live-handle listing.
 //!
-//! The spawn/handshake/framing logic is tested in `everyaios-acp`; this
+//! The spawn/handshake/framing logic is tested in `agentcowork-acp`; this
 //! module is the app-level state holder + policy seam.
 
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
-use everyaios_acp::{
+use agentcowork_acp::{
     AcpCancelHandle, AcpError, AcpSession, AuthMethod, AvailableCommand, ClientInfo, ConfigOption,
     Distribution, Installer, LaunchRegistry, PermissionDecision, Platform, PolicyVerdict,
     ProcessTransport, PromptContent, PromptOutcome, RegistryClient, RegistryPolicy, ToolCall,
     ToolKind,
 };
-use everyaios_core::config::Config;
-use everyaios_core::{ExecutionPhase, ExecutionTrigger, GuardDecision};
-use everyaios_guard::{DecisionPackage, Operation, RiskLevel};
-use everyaios_types::RuntimeControl;
+use agentcowork_core::config::Config;
+use agentcowork_core::{ExecutionPhase, ExecutionTrigger, GuardDecision};
+use agentcowork_guard::{DecisionPackage, Operation, RiskLevel};
+use agentcowork_types::RuntimeControl;
 use serde::Serialize;
 use tauri::State;
 
@@ -67,7 +67,7 @@ pub fn chief_default_get() -> Result<serde_json::Value, String> {
 }
 
 /// P53.3 — set the `primary_chief` default. Occupancy is **any installed**
-/// agent: the id must be in the launch registry **and** installed (an EveryAIOS
+/// agent: the id must be in the launch registry **and** installed (an AgentCowork
 /// install record or a PATH-discovered binary). Unknown or not-installed ids
 /// are refused fail-closed, and no id is privileged — a typo or a missing
 /// binary must never silently fall back to a built-in engine, because none
@@ -91,11 +91,11 @@ pub fn chief_default_set(primary_chief: String) -> Result<String, String> {
     Ok(primary_chief)
 }
 
-/// P53.3 — installed-ness for Chief occupancy: an EveryAIOS install record
+/// P53.3 — installed-ness for Chief occupancy: an AgentCowork install record
 /// **or** a PATH-discovered binary (the same two legs `acp_install_status`
 /// reports — one predicate, no second definition). No id is installed by
 /// construction (ADR-0005).
-fn install_outcome_usable(outcome: &everyaios_acp::InstallOutcome) -> bool {
+fn install_outcome_usable(outcome: &agentcowork_acp::InstallOutcome) -> bool {
     match outcome.kind.as_str() {
         // A stale pointer is not occupancy. The executable must still be
         // present before Settings or Chief can call this agent installed.
@@ -105,7 +105,7 @@ fn install_outcome_usable(outcome: &everyaios_acp::InstallOutcome) -> bool {
             .map(std::path::Path::is_file)
             .unwrap_or(false),
         // npx/uvx are self-installing at launch; readiness means their
-        // package manager is available, not that EveryAIOS downloaded the
+        // package manager is available, not that AgentCowork downloaded the
         // package into its own tree.
         "npx" => resolve_on_path("npx").is_some(),
         "uvx" => resolve_on_path("uvx").is_some(),
@@ -132,8 +132,8 @@ fn live_facts(handle: &AcpHandle) -> (bool, bool) {
 /// `Failed`/`Unavailable` are reachable only from attempt records the shell
 /// does not keep yet (a failed launch is reported to the caller today), so the
 /// cold path never claims them.
-pub(crate) fn agent_readiness(agent_id: &str) -> everyaios_types::AgentReadiness {
-    use everyaios_types::AgentReadiness;
+pub(crate) fn agent_readiness(agent_id: &str) -> agentcowork_types::AgentReadiness {
+    use agentcowork_types::AgentReadiness;
     // ADR-0005 — no built-in row ships, so nothing is `Ready` by construction;
     // every id is probed like any other external agent.
     let registry = launch_registry();
@@ -169,8 +169,8 @@ pub(crate) fn agent_readiness(agent_id: &str) -> everyaios_types::AgentReadiness
 pub(crate) fn agent_readiness_with_live(
     agent_id: &str,
     live: Option<(bool, bool)>,
-) -> everyaios_types::AgentReadiness {
-    use everyaios_types::AgentReadiness;
+) -> agentcowork_types::AgentReadiness {
+    use agentcowork_types::AgentReadiness;
     match live {
         Some((true, _)) => AgentReadiness::AuthRequired,
         Some((false, true)) => AgentReadiness::Ready,
@@ -179,7 +179,7 @@ pub(crate) fn agent_readiness_with_live(
     }
 }
 
-/// P71.3f — the shell's mounted [`everyaios_core::tools::AgentReadinessSource`]:
+/// P71.3f — the shell's mounted [`agentcowork_core::tools::AgentReadinessSource`]:
 /// install/discovery facts plus the live ACP handshake state from
 /// `AppState::acp_sessions`. This is the one place the picker, the delegation
 /// gate and the trigger plane's doctor read agent readiness from.
@@ -193,9 +193,9 @@ pub(crate) struct ShellAgentReadiness {
 /// rather than a single opaque boolean.
 pub(crate) fn agents_doctor_check(
     sessions: Arc<std::sync::Mutex<std::collections::HashMap<String, AcpHandle>>>,
-) -> everyaios_core::CronCheck {
-    use everyaios_core::tools::AgentReadinessSource;
-    use everyaios_types::AgentReadiness;
+) -> agentcowork_core::CronCheck {
+    use agentcowork_core::tools::AgentReadinessSource;
+    use agentcowork_types::AgentReadiness;
     let source = ShellAgentReadiness { sessions };
     let registry = launch_registry();
     let (mut ready, mut launchable, mut needs_auth, mut discovered) = (0usize, 0, 0, 0);
@@ -213,7 +213,7 @@ pub(crate) fn agents_doctor_check(
         .filter(|m| source.readiness(&m.id) == AgentReadiness::Unknown)
         .map(|m| m.id.as_str())
         .collect();
-    everyaios_core::CronCheck {
+    agentcowork_core::CronCheck {
         name: "agents".to_string(),
         ok: ready > 0,
         detail: format!(
@@ -233,8 +233,8 @@ pub(crate) fn agents_doctor_check(
     }
 }
 
-impl everyaios_core::tools::AgentReadinessSource for ShellAgentReadiness {
-    fn readiness(&self, agent_id: &str) -> everyaios_types::AgentReadiness {
+impl agentcowork_core::tools::AgentReadinessSource for ShellAgentReadiness {
+    fn readiness(&self, agent_id: &str) -> agentcowork_types::AgentReadiness {
         let live = self.sessions.lock().ok().and_then(|sessions| {
             sessions
                 .values()
@@ -260,7 +260,7 @@ pub(crate) fn agent_installed(agent_id: &str) -> bool {
 /// This is the one place the dynamic catalog enters the runtime. The two
 /// facts stay separate: the merged registry is the *catalog* (which agents
 /// exist, and how to spawn them), while occupancy is [`agent_installed`]
-/// (an EveryAIOS install record or a PATH-discovered binary). A registry
+/// (an AgentCowork install record or a PATH-discovered binary). A registry
 /// entry therefore never becomes a selectable/usable agent by itself.
 ///
 /// No cache (never fetched, or offline before the first fetch) ⇒ the curated
@@ -300,7 +300,7 @@ static LAUNCH_REGISTRY_MEMO: std::sync::Mutex<
 
 /// The canonical owner of one ACP turn path.
 ///
-/// `session_id` is the EveryAIOS Session identity supplied by the caller. The
+/// `session_id` is the AgentCowork Session identity supplied by the caller. The
 /// provider's own ACP session id is deliberately not part of this value; it
 /// lives on [`AcpHandle::provider_session_id`] and in the durable binding.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -470,16 +470,16 @@ pub(crate) struct AcpHandle {
     /// agent sends one). Served to the composer via `acp_session_commands`.
     pub available_commands: Vec<AvailableCommand>,
     /// Complete agent-owned config option state. This is intentionally
-    /// separate from EveryAIOS Native provider/model state.
+    /// separate from AgentCowork Native provider/model state.
     pub config_options: Vec<ConfigOption>,
     /// P69.E9 — the I16 prefix-stability guard: fingerprints the shell-owned
     /// stable prefix each turn and classifies turn-to-turn changes (stable /
     /// declared / undeclared mutation) into the per-session observability log
     /// (`ARCH/CONTEXT.md` §4: prefix mutations must be intentional AND
     /// observable).
-    pub prefix_guard: everyaios_acp::PrefixGuard,
+    pub prefix_guard: agentcowork_acp::PrefixGuard,
     /// The provider-native ACP session identity. It is never used as the
-    /// EveryAIOS Session id and is persisted only on the AgentBinding.
+    /// AgentCowork Session id and is persisted only on the AgentBinding.
     pub provider_session_id: Option<String>,
     /// The canonical owner claimed by the first prompt. A handle is valid only
     /// for this Session/Work/Binding tuple once claimed.
@@ -562,13 +562,13 @@ impl From<(&AcpHandle, &str)> for AcpHandleInfo {
     }
 }
 
-/// The launch registry (the agent picker). Default = inbuilt EveryAIOS.
+/// The launch registry (the agent picker). Default = inbuilt AgentCowork.
 ///
 /// P50.3.9 — governance truth: every agent row carries an explicit
 /// `governance` classification so the picker and the work transcript never
-/// imply EveryAIOS audit coverage for effects an external agent performs
+/// imply AgentCowork audit coverage for effects an external agent performs
 /// inside its own process.
-/// - `GovernedMediated` — every effect flows through the EveryAIOS executor
+/// - `GovernedMediated` — every effect flows through the AgentCowork executor
 ///   (Guard-2 ticket → receipt on the one audit trail). No registry row is
 ///   this today: it belonged to the retired built-in engine, and an external
 ///   agent's own tools never cross Guard — the class stays in the vocabulary
@@ -576,9 +576,9 @@ impl From<(&AcpHandle, &str)> for AcpHandleInfo {
 /// - `SelfContained` — the agent's `session/request_permission` requests are
 ///   answered by the shared GuardService (mediated at the ACP boundary), but
 ///   effects the agent performs internally (its own shell, files, network)
-///   are **outside** the EveryAIOS audit trail. Honest label for ACP
+///   are **outside** the AgentCowork audit trail. Honest label for ACP
 ///   harnesses like Claude Code / Codex.
-/// - `NotGoverned` — neither of the above; no EveryAIOS coverage. (Registry
+/// - `NotGoverned` — neither of the above; no AgentCowork coverage. (Registry
 ///   agents that neither mediate permissions nor route effects; the picker
 ///   must render the row as un-audited.)
 #[tauri::command]
@@ -593,7 +593,7 @@ pub fn acp_agents() -> Vec<serde_json::Value> {
             let (class, audited_effects, note) = (
                 "SelfContained",
                 false,
-                "Permission requests are mediated by Guard-2, but effects performed inside the agent's own process (shell, files, network) are outside the EveryAIOS audit trail.",
+                "Permission requests are mediated by Guard-2, but effects performed inside the agent's own process (shell, files, network) are outside the AgentCowork audit trail.",
             );
             let mut v = serde_json::to_value(m).unwrap_or(serde_json::Value::Null);
             if let Some(obj) = v.as_object_mut() {
@@ -659,7 +659,7 @@ pub fn acp_registry_install_plan(agent_id: String) -> Result<serde_json::Value, 
 
 /// The F8 registry cache dir: `<data_dir>/agents`.
 fn registry_client() -> RegistryClient {
-    RegistryClient::new(everyaios_core::default_data_dir().join("agents"))
+    RegistryClient::new(agentcowork_core::default_data_dir().join("agents"))
 }
 
 /// How old a cached registry must be before the boot job refetches it. The
@@ -710,12 +710,12 @@ fn now_ms() -> u64 {
 /// The F8 install root: `<data_dir>/agents` (registry cache + installed
 /// binaries + install-state pointers share the directory).
 fn installer() -> Installer {
-    Installer::new(everyaios_core::default_data_dir().join("agents"))
+    Installer::new(agentcowork_core::default_data_dir().join("agents"))
 }
 
 /// Resolve the current install plan for a registry agent (shared by the
 /// install request/commit halves so the args-hash is deterministic).
-fn resolve_spec(agent_id: &str) -> Result<everyaios_acp::InstallSpec, String> {
+fn resolve_spec(agent_id: &str) -> Result<agentcowork_acp::InstallSpec, String> {
     let client = registry_client();
     let snap = client
         .load_or_refresh()
@@ -730,7 +730,7 @@ fn resolve_spec(agent_id: &str) -> Result<everyaios_acp::InstallSpec, String> {
             // Pin the extract destination so the decision card shows exactly
             // where the bytes land (`<data_dir>/agents/<id>/<version>`).
             spec.install_dir = Some(
-                everyaios_core::default_data_dir()
+                agentcowork_core::default_data_dir()
                     .join("agents")
                     .join(agent_id)
                     .join(&spec.version),
@@ -741,7 +741,7 @@ fn resolve_spec(agent_id: &str) -> Result<everyaios_acp::InstallSpec, String> {
 
 /// Probe PATH for an executable name. This is the auto-discovery half: an
 /// agent CLI the user installed themselves (Claude Code via npm, Codex, …)
-/// shows up as installed without EveryAIOS ever downloading it. On Windows,
+/// shows up as installed without AgentCowork ever downloading it. On Windows,
 /// npm-global CLIs are `.cmd`/`.bat` shims and native tools are `.exe`, so
 /// all three are probed there.
 fn resolve_on_path(name: &str) -> Option<std::path::PathBuf> {
@@ -765,7 +765,7 @@ fn resolve_on_path(name: &str) -> Option<std::path::PathBuf> {
 
 /// Read a Windows App Paths registration without invoking a shell. App Paths
 /// is a discovery source only: its result is never treated as a managed
-/// EveryAIOS install and is never persisted as an install record.
+/// AgentCowork install and is never persisted as an install record.
 #[cfg(windows)]
 fn discover_windows_app_path(command: &str) -> Option<std::path::PathBuf> {
     use std::process::Command;
@@ -851,8 +851,8 @@ pub fn resolve_wsl_spawn(command: &str) -> Option<(String, Vec<String>)> {
 /// Build the public, non-secret runtime location record consumed by Settings
 /// and the picker. Catalog membership is never used as occupancy evidence.
 pub(crate) fn runtime_location_json(
-    manifest: &everyaios_acp::HarnessManifest,
-    install: Option<&everyaios_acp::InstallOutcome>,
+    manifest: &agentcowork_acp::HarnessManifest,
+    install: Option<&agentcowork_acp::InstallOutcome>,
 ) -> serde_json::Value {
     if let Some(o) = install {
         let kind = match o.kind.as_str() {
@@ -870,7 +870,7 @@ pub(crate) fn runtime_location_json(
         };
         return serde_json::json!({
             "kind": kind,
-            "source": if o.kind == "path" { "path_probe" } else { "everyaios_install" },
+            "source": if o.kind == "path" { "path_probe" } else { "agentcowork_install" },
             "executable": o.binary_path.as_ref().map(|p| p.to_string_lossy().into_owned()),
             "version": if o.version == "path" { serde_json::Value::Null } else { serde_json::json!(o.version) },
             "verifiedAt": serde_json::Value::Null,
@@ -979,7 +979,7 @@ pub fn acp_install_status(state: State<'_, AppState>) -> Result<serde_json::Valu
         // projections (kept because older surfaces read them), not parallel
         // truths. A live handle outranks install facts.
         let readiness = {
-            use everyaios_types::AgentReadiness;
+            use agentcowork_types::AgentReadiness;
             let live = state.acp_sessions.lock().ok().and_then(|sessions| {
                 sessions
                     .values()
@@ -1045,40 +1045,40 @@ pub fn acp_install_request(
         .install_dir
         .clone()
         .unwrap_or_else(|| {
-            everyaios_core::default_data_dir()
+            agentcowork_core::default_data_dir()
                 .join("agents")
                 .join(&agent_id)
         })
         .to_string_lossy()
         .into_owned()]);
     let exact_command: Vec<String> = match &spec.kind {
-        everyaios_acp::InstallKind::Npx { package, .. } => {
+        agentcowork_acp::InstallKind::Npx { package, .. } => {
             vec!["npx".into(), "-y".into(), package.clone()]
         }
-        everyaios_acp::InstallKind::Uvx { package, .. } => {
+        agentcowork_acp::InstallKind::Uvx { package, .. } => {
             vec!["uvx".into(), package.clone()]
         }
-        everyaios_acp::InstallKind::Binary {
+        agentcowork_acp::InstallKind::Binary {
             archive, sha256, ..
         } => {
             vec![
-                "everyaios-installer".into(),
+                "agentcowork-installer".into(),
                 "download".into(),
                 archive.clone(),
                 format!("sha256:{sha256}"),
             ]
         }
     };
-    everyaios_core::exact_command_consent(&exact_command).map_err(|e| e.to_string())?;
+    agentcowork_core::exact_command_consent(&exact_command).map_err(|e| e.to_string())?;
 
     decision = match &spec.kind {
-        everyaios_acp::InstallKind::Npx { package, .. } => decision
+        agentcowork_acp::InstallKind::Npx { package, .. } => decision
             .with_script(vec![format!("npx -y {package}")], "npx")
             .with_network(vec!["registry.npmjs.org".into()]),
-        everyaios_acp::InstallKind::Uvx { package, .. } => decision
+        agentcowork_acp::InstallKind::Uvx { package, .. } => decision
             .with_script(vec![format!("uvx {package}")], "uvx")
             .with_network(vec!["pypi.org".into()]),
-        everyaios_acp::InstallKind::Binary {
+        agentcowork_acp::InstallKind::Binary {
             archive, sha256, ..
         } => {
             let host = url_host(archive);
@@ -1095,7 +1095,7 @@ pub fn acp_install_request(
                                 .unwrap_or_default()
                         ),
                     ],
-                    "everyaios-installer",
+                    "agentcowork-installer",
                 )
                 .with_network(vec![host])
         }
@@ -1125,7 +1125,7 @@ pub fn acp_install_request(
             "ticketId": ticket_id,
             "exactCommand": exact_command,
             "consentRequired": true,
-            "preferNative": matches!(spec.kind, everyaios_acp::InstallKind::Binary { .. }),
+            "preferNative": matches!(spec.kind, agentcowork_acp::InstallKind::Binary { .. }),
             "license": spec.license,
             "licenseUrl": spec.license_url,
             "verdict": "allow",
@@ -1139,7 +1139,7 @@ pub fn acp_install_request(
             "ticketId": ticket_id,
             "exactCommand": exact_command,
             "consentRequired": true,
-            "preferNative": matches!(spec.kind, everyaios_acp::InstallKind::Binary { .. }),
+            "preferNative": matches!(spec.kind, agentcowork_acp::InstallKind::Binary { .. }),
             "license": spec.license,
             "licenseUrl": spec.license_url,
             "verdict": "ask",
@@ -1423,7 +1423,7 @@ pub fn acp_agent_verify(agent_id: String) -> Result<serde_json::Value, String> {
 
 /// P63.11 — the shared-plane servers for this launch. A bind failure leaves
 /// the list empty and is logged; the launch itself still proceeds.
-fn channel_b_servers(state: &AppState) -> Vec<everyaios_acp::McpServer> {
+fn channel_b_servers(state: &AppState) -> Vec<agentcowork_acp::McpServer> {
     if let Ok(relay) = state.chat_relay.lock() {
         if let Some(relay) = relay.as_ref() {
             crate::channel_b::publish_tools(&state.channel_b_tools, relay.tools());
@@ -1432,7 +1432,7 @@ fn channel_b_servers(state: &AppState) -> Vec<everyaios_acp::McpServer> {
     match crate::channel_b::ensure_servers(&state.channel_b, &state.channel_b_tools) {
         Ok(servers) => servers,
         Err(err) => {
-            eprintln!("everyaios: channel B lease unavailable: {err}");
+            eprintln!("agentcowork: channel B lease unavailable: {err}");
             Vec::new()
         }
     }
@@ -1533,8 +1533,8 @@ pub fn acp_launch(
     let mut session = AcpSession::new(transport);
     session
         .initialize(ClientInfo {
-            name: "everyaios".to_string(),
-            title: "EveryAIOS".to_string(),
+            name: "agentcowork".to_string(),
+            title: "AgentCowork".to_string(),
             version: "0.1.0".to_string(),
         })
         .map_err(|e| format!("acp initialize failed: {e}"))?;
@@ -1548,7 +1548,7 @@ pub fn acp_launch(
     let mcp_servers = channel_b_servers(&state);
     let (session_id, auth_required) = match session.session_new(&cwd, mcp_servers) {
         Ok(sid) => (sid, false),
-        Err(everyaios_acp::AcpError::AuthRequired) => (String::new(), true),
+        Err(agentcowork_acp::AcpError::AuthRequired) => (String::new(), true),
         Err(e) => return Err(format!("acp session/new failed: {e}")),
     };
 
@@ -1575,7 +1575,7 @@ pub fn acp_launch(
                 embedded_context,
                 available_commands: Vec::new(),
                 config_options: config_options.clone(),
-                prefix_guard: everyaios_acp::PrefixGuard::new(),
+                prefix_guard: agentcowork_acp::PrefixGuard::new(),
                 provider_session_id,
                 owner: None,
                 run_id: None,
@@ -1644,7 +1644,7 @@ pub fn acp_authenticate(
         let mcp_servers = channel_b_servers(&state);
         let session_id = match session.session_new(&cwd, mcp_servers) {
             Ok(sid) => sid,
-            Err(everyaios_acp::AcpError::AuthRequired) => {
+            Err(agentcowork_acp::AcpError::AuthRequired) => {
                 return Err("still auth_required after authenticate".to_string());
             }
             Err(e) => return Err(format!("acp session/new after auth failed: {e}")),
@@ -1670,7 +1670,7 @@ pub fn acp_authenticate(
 fn build_acp_prompt_with_passport(state: &State<'_, AppState>, text: &str) -> (String, u64) {
     // Every agent we launch is external and self-contained: permission
     // requests are mediated by Guard-2 at the ACP boundary, but effects
-    // performed inside the agent's own process are outside the EveryAIOS audit
+    // performed inside the agent's own process are outside the AgentCowork audit
     // trail. No id gets a fully-mediated session any more — that was the
     // retired built-in engine's privilege (ADR-0005 §3). The class is an
     // architectural claim and is recorded as a decision; the Channel-B flag is
@@ -1678,7 +1678,7 @@ fn build_acp_prompt_with_passport(state: &State<'_, AppState>, text: &str) -> (S
     // that claims a mounted catalog when none is mounted is a lie the agent
     // would read as permission to use it (FIX-07).
     let channel_b = !channel_b_servers(state).is_empty();
-    let governance = everyaios_acp::GovernedSession::SelfContained { channel_b };
+    let governance = agentcowork_acp::GovernedSession::SelfContained { channel_b };
     let core_facts = {
         let relay = state.chat_relay.lock().ok();
         relay
@@ -1719,16 +1719,16 @@ fn build_acp_prompt_with_passport(state: &State<'_, AppState>, text: &str) -> (S
             mix.push_str("\nUse only within the declared B3 depth/concurrency limits.");
         }
     }
-    // P71.9i — the passport assembly itself lives in `everyaios-acp` so the
+    // P71.9i — the passport assembly itself lives in `agentcowork-acp` so the
     // documented block order (passport → governance → tool-affinity steering →
     // delegation mix → user turn) is one implementation, not a call-site
     // convention. (This block previously appended the mix *after* the user
     // turn and emitted literal `\\n` escapes instead of newlines.)
-    let prompt = everyaios_acp::build_chief_prompt_with_steering(
+    let prompt = agentcowork_acp::build_chief_prompt_with_steering(
         text,
         &core_facts,
         &governance,
-        Some(everyaios_acp::COWORK_AFFINITY_STEERING),
+        Some(agentcowork_acp::COWORK_AFFINITY_STEERING),
         if mix.is_empty() {
             None
         } else {
@@ -1738,9 +1738,9 @@ fn build_acp_prompt_with_passport(state: &State<'_, AppState>, text: &str) -> (S
     // P69.E9 — fingerprint the shell-owned stable prefix with the exact
     // inputs this builder assembled (`ARCH/CONTEXT.md` §4: the warm-memory
     // set is dynamic-tail content and is deliberately not fingerprinted).
-    let fingerprint = everyaios_acp::fingerprint_stable_prefix(
+    let fingerprint = agentcowork_acp::fingerprint_stable_prefix(
         governance.badge(),
-        Some(everyaios_acp::COWORK_AFFINITY_STEERING),
+        Some(agentcowork_acp::COWORK_AFFINITY_STEERING),
         if mix.is_empty() {
             None
         } else {
@@ -1763,7 +1763,7 @@ fn append_acp_tool_log(
     agent_id: &str,
     text: &str,
     outcome: &PromptOutcome,
-    prefix_event: everyaios_acp::PrefixEvent,
+    prefix_event: agentcowork_acp::PrefixEvent,
 ) {
     let safe: String = application_session_id
         .chars()
@@ -1775,7 +1775,7 @@ fn append_acp_tool_log(
             }
         })
         .collect();
-    let dir = everyaios_core::default_data_dir()
+    let dir = agentcowork_core::default_data_dir()
         .join("acp_sessions")
         .join(if safe.is_empty() { "unknown" } else { &safe });
     if std::fs::create_dir_all(&dir).is_err() {
@@ -1826,11 +1826,11 @@ fn append_acp_tool_log(
 }
 
 /// P53.6 + P60 — Settings → Subagents rows: **installed CLIs only** (an
-/// EveryAIOS install record or a PATH-discovered binary — the same
-/// `agent_installed` predicate Chief occupancy uses), plus EveryAIOS Native,
+/// AgentCowork install record or a PATH-discovered binary — the same
+/// `agent_installed` predicate Chief occupancy uses), plus AgentCowork Native,
 /// which is always present as the default candidate. Each row carries the
 /// shipped default when-to-use text (the registry manifest description) plus
-/// the user's override from `everyaios.toml` (`subagent_notes`; empty =
+/// the user's override from `agentcowork.toml` (`subagent_notes`; empty =
 /// default). The Chief reads these at delegate time (ACP prompt injection +
 /// handoff bundle).
 #[tauri::command]
@@ -1934,7 +1934,7 @@ pub fn chief_subagent_set_policy(
     let policy = cfg
         .subagent_policy
         .entry(agent_id.clone())
-        .or_insert_with(everyaios_core::SubagentPolicy::default);
+        .or_insert_with(agentcowork_core::SubagentPolicy::default);
     if let Some(v) = model_policy {
         policy.model_policy = v;
     }
@@ -2165,7 +2165,7 @@ where
     }
     if !options.iter().any(|option| option.id == config_id) {
         return Err(format!(
-            "agent does not advertise config option {config_id}; EveryAIOS will not fabricate one"
+            "agent does not advertise config option {config_id}; AgentCowork will not fabricate one"
         ));
     }
     let updated = apply(config_id, value)?;
@@ -2289,7 +2289,7 @@ pub fn acp_session_set_config_option(
     }
     if !advertised.iter().any(|option| option.id == config_id) {
         return Err(format!(
-            "agent does not advertise config option {config_id}; EveryAIOS will not fabricate one"
+            "agent does not advertise config option {config_id}; AgentCowork will not fabricate one"
         ));
     }
     let options = {
@@ -2315,7 +2315,7 @@ pub fn acp_session_set_config_option(
 /// reconnect** — replay the Work event stream from the last acknowledged
 /// sequence and re-attach the existing binding — the precondition for
 /// attempting provider resume at all. v1 has no such reconnect seam, so
-/// [`AcpSession::session_load`](everyaios_acp::AcpSession::session_load) stays
+/// [`AcpSession::session_load`](agentcowork_acp::AcpSession::session_load) stays
 /// adapter-internal and its only call site is the crate's own handshake
 /// acceptance suite. A shell caller gets one of these reasons instead of a
 /// fabricated resume.
@@ -2332,7 +2332,7 @@ pub enum AcpSessionLoadRefusal {
     /// (ADR-0007 §4), so this is refusal rather than a probe.
     CapabilityNotNegotiated,
     /// The canonical `Session → Work → Run → AgentBinding` chain records no
-    /// provider session id for this agent. EveryAIOS never fabricates one, and
+    /// provider session id for this agent. AgentCowork never fabricates one, and
     /// an unavailable Work Gateway is treated exactly like a missing record
     /// (fail-closed).
     NoRecordedProviderSession,
@@ -2368,13 +2368,13 @@ impl std::fmt::Display for AcpSessionLoadRefusal {
             Self::CapabilityNotNegotiated => write!(
                 f,
                 "This agent never advertised the ACP \"loadSession\" capability, so it cannot \
-                 re-open an existing provider conversation, and EveryAIOS does not guess from \
+                 re-open an existing provider conversation, and AgentCowork does not guess from \
                  silence. The conversation continues in a new provider session instead."
             ),
             Self::NoRecordedProviderSession => write!(
                 f,
                 "This conversation has no provider session id recorded on its agent binding, so \
-                 there is nothing to re-open. EveryAIOS never invents a provider session id, and a \
+                 there is nothing to re-open. AgentCowork never invents a provider session id, and a \
                  provider session id is never a Session id."
             ),
             Self::ProviderResumeOutOfScope => write!(
@@ -2396,11 +2396,11 @@ impl std::fmt::Display for AcpSessionLoadRefusal {
 /// The lookup is keyed by the **application** Session (whose id is this path's
 /// Work id) plus the agent id, so a provider transcript id can never be used as
 /// a Session/Work key. A missing Work, a missing or foreign binding, and a
-/// binding with no recorded provider session all yield `None`: EveryAIOS never
+/// binding with no recorded provider session all yield `None`: AgentCowork never
 /// fabricates a provider session id, and a restarted provider session is not
 /// evidence of a resume.
 fn recorded_binding_provider_session_id(
-    gateway: &everyaios_core::WorkGateway,
+    gateway: &agentcowork_core::WorkGateway,
     application_session_id: &str,
     agent_id: &str,
 ) -> Option<String> {
@@ -2422,7 +2422,7 @@ fn recorded_binding_provider_session_id(
 ///
 /// **This command refuses, in v1, by policy — the refusal is the contract.**
 /// `session/load` is implemented and capability-gated in the adapter
-/// (`crates/everyaios-acp/src/client.rs`), but ADR-0007 §3 makes transport
+/// (`crates/agentcowork-acp/src/client.rs`), but ADR-0007 §3 makes transport
 /// reconnect the precondition for attempting provider resume, and v1 has no
 /// reconnect seam; ADR-0007 §4 keeps ACP v2 (and therefore its `session/resume`
 /// method) out of scope. Rather than ship a command that would need a second
@@ -2516,7 +2516,7 @@ pub fn acp_tool_log(session_id: String) -> Result<Vec<serde_json::Value>, String
             }
         })
         .collect();
-    let path = everyaios_core::default_data_dir()
+    let path = agentcowork_core::default_data_dir()
         .join("acp_sessions")
         .join(if safe.is_empty() { "unknown" } else { &safe })
         .join("tool_log.jsonl");
@@ -2549,8 +2549,8 @@ fn canonical_binding_id(session_id: &str, work_id: &str, agent_id: &str) -> Stri
 }
 
 type AcpRelayPlanes = (
-    Arc<Mutex<everyaios_core::WorkGateway>>,
-    Arc<Mutex<everyaios_core::ExecutionKernel>>,
+    Arc<Mutex<agentcowork_core::WorkGateway>>,
+    Arc<Mutex<agentcowork_core::ExecutionKernel>>,
 );
 
 fn relay_planes(state: &State<'_, AppState>) -> Result<AcpRelayPlanes, AcpIdentityError> {
@@ -2577,8 +2577,8 @@ struct AcpTurnIdentity {
 /// overwritten. A provider session is only ever stored on the binding's
 /// private `provider_session_id` field.
 fn prepare_acp_turn(
-    gateway: &mut everyaios_core::WorkGateway,
-    kernel: &mut everyaios_core::ExecutionKernel,
+    gateway: &mut agentcowork_core::WorkGateway,
+    kernel: &mut agentcowork_core::ExecutionKernel,
     application_session_id: &str,
     agent_id: &str,
     provider_session_id: &str,
@@ -2609,7 +2609,7 @@ fn prepare_acp_turn(
     // `Interactive`.
     let session_kind = gateway
         .get_work(&work_id)
-        .map_or(everyaios_types::SessionKind::Interactive, |existing| {
+        .map_or(agentcowork_types::SessionKind::Interactive, |existing| {
             existing.session_kind
         });
     let address = gateway
@@ -2663,7 +2663,7 @@ fn prepare_acp_turn(
             )));
         }
         match binding.state {
-            everyaios_types::BindingLifecycle::Active => {
+            agentcowork_types::BindingLifecycle::Active => {
                 if binding
                     .provider_session_id
                     .as_deref()
@@ -2685,7 +2685,7 @@ fn prepare_acp_turn(
                         .map_err(AcpIdentityError::Binding)?;
                 }
             }
-            everyaios_types::BindingLifecycle::Parked => {
+            agentcowork_types::BindingLifecycle::Parked => {
                 gateway
                     .transition_agent_binding(
                         &binding_id,
@@ -2695,7 +2695,7 @@ fn prepare_acp_turn(
                     .map_err(AcpIdentityError::Binding)?;
                 activated_here = true;
             }
-            everyaios_types::BindingLifecycle::Resuming => {
+            agentcowork_types::BindingLifecycle::Resuming => {
                 gateway
                     .transition_agent_binding(
                         &binding_id,
@@ -2705,8 +2705,8 @@ fn prepare_acp_turn(
                     .map_err(AcpIdentityError::Binding)?;
                 activated_here = true;
             }
-            everyaios_types::BindingLifecycle::Dead
-            | everyaios_types::BindingLifecycle::Unavailable => {
+            agentcowork_types::BindingLifecycle::Dead
+            | agentcowork_types::BindingLifecycle::Unavailable => {
                 return Err(AcpIdentityError::Binding(format!(
                     "binding {binding_id} is {:?}",
                     binding.state
@@ -2714,20 +2714,20 @@ fn prepare_acp_turn(
             }
         }
     } else {
-        let binding = everyaios_types::AgentBinding {
-            binding_id: everyaios_types::AgentBindingId::new(binding_id.clone()),
-            session_id: everyaios_types::SessionId::new(application_session_id),
-            work_id: everyaios_types::WorkId::new(work_id.clone()),
-            agent_id: everyaios_types::AgentId::new(agent_id),
+        let binding = agentcowork_types::AgentBinding {
+            binding_id: agentcowork_types::AgentBindingId::new(binding_id.clone()),
+            session_id: agentcowork_types::SessionId::new(application_session_id),
+            work_id: agentcowork_types::WorkId::new(work_id.clone()),
+            agent_id: agentcowork_types::AgentId::new(agent_id),
             adapter_id: None,
-            protocol: everyaios_types::AgentProtocol::Acp,
+            protocol: agentcowork_types::AgentProtocol::Acp,
             provider_session_id: None,
             model: None,
             mode: None,
             capability_manifest: Vec::new(),
-            governance_mode: everyaios_types::AgentGovernanceMode::SelfContained,
+            governance_mode: agentcowork_types::AgentGovernanceMode::SelfContained,
             bridge_id: None,
-            state: everyaios_types::BindingLifecycle::Parked,
+            state: agentcowork_types::BindingLifecycle::Parked,
             usage: Default::default(),
             last_event_seq: 0,
             private_state_ref: None,
@@ -2803,7 +2803,7 @@ fn prepare_acp_turn(
                 if let Err(error) = gateway.record_execution_transition(
                     &work_id,
                     &existing_id,
-                    everyaios_types::WorkState::Running,
+                    agentcowork_types::WorkState::Running,
                 ) {
                     let _ = kernel.transition(&existing_id, ExecutionPhase::Failed);
                     if activated_here {
@@ -2873,7 +2873,7 @@ fn prepare_acp_turn(
         if let Err(error) = gateway.record_execution_transition(
             &work_id,
             &execution,
-            everyaios_types::WorkState::Running,
+            agentcowork_types::WorkState::Running,
         ) {
             let _ = kernel.transition(&execution, ExecutionPhase::Failed);
             if activated_here {
@@ -2897,7 +2897,7 @@ fn transition_acp_run(
     state: &State<'_, AppState>,
     work_id: &str,
     execution_id: &str,
-    work_state: everyaios_types::WorkState,
+    work_state: agentcowork_types::WorkState,
 ) -> Result<(), String> {
     let (gateway, kernel) = relay_planes(state).map_err(|e| e.to_string())?;
     let mut gateway = gateway.lock().map_err(|e| e.to_string())?;
@@ -2905,20 +2905,20 @@ fn transition_acp_run(
         .record_execution_transition(work_id, execution_id, work_state)
         .map_err(|e| e.to_string())?;
     let phase = match work_state {
-        everyaios_types::WorkState::WaitingApproval => ExecutionPhase::WaitingApproval,
-        everyaios_types::WorkState::WaitingTool => ExecutionPhase::WaitingTool,
-        everyaios_types::WorkState::WaitingUser => ExecutionPhase::WaitingUser,
-        everyaios_types::WorkState::Checkpointed => ExecutionPhase::Checkpointed,
-        everyaios_types::WorkState::Paused => ExecutionPhase::Paused,
-        everyaios_types::WorkState::Recoverable => ExecutionPhase::Recoverable,
-        everyaios_types::WorkState::Completed => ExecutionPhase::Completed,
-        everyaios_types::WorkState::Failed => ExecutionPhase::Failed,
-        everyaios_types::WorkState::Cancelled => ExecutionPhase::Cancelled,
-        everyaios_types::WorkState::Verifying => ExecutionPhase::Verifying,
-        everyaios_types::WorkState::Created
-        | everyaios_types::WorkState::Planning
-        | everyaios_types::WorkState::Ready
-        | everyaios_types::WorkState::Running => ExecutionPhase::Running,
+        agentcowork_types::WorkState::WaitingApproval => ExecutionPhase::WaitingApproval,
+        agentcowork_types::WorkState::WaitingTool => ExecutionPhase::WaitingTool,
+        agentcowork_types::WorkState::WaitingUser => ExecutionPhase::WaitingUser,
+        agentcowork_types::WorkState::Checkpointed => ExecutionPhase::Checkpointed,
+        agentcowork_types::WorkState::Paused => ExecutionPhase::Paused,
+        agentcowork_types::WorkState::Recoverable => ExecutionPhase::Recoverable,
+        agentcowork_types::WorkState::Completed => ExecutionPhase::Completed,
+        agentcowork_types::WorkState::Failed => ExecutionPhase::Failed,
+        agentcowork_types::WorkState::Cancelled => ExecutionPhase::Cancelled,
+        agentcowork_types::WorkState::Verifying => ExecutionPhase::Verifying,
+        agentcowork_types::WorkState::Created
+        | agentcowork_types::WorkState::Planning
+        | agentcowork_types::WorkState::Ready
+        | agentcowork_types::WorkState::Running => ExecutionPhase::Running,
     };
     let mut kernel = kernel.lock().map_err(|e| e.to_string())?;
     kernel
@@ -2930,7 +2930,7 @@ fn transition_acp_run(
 fn record_acp_binding_usage(
     state: &State<'_, AppState>,
     owner: &AcpCanonicalOwner,
-    usage: Option<&everyaios_acp::PromptUsage>,
+    usage: Option<&agentcowork_acp::PromptUsage>,
 ) -> Result<(), String> {
     let Some(usage) = usage.filter(|usage| usage.reported()) else {
         return Ok(());
@@ -2940,7 +2940,7 @@ fn record_acp_binding_usage(
     gateway
         .record_binding_usage(
             &owner.binding_id,
-            everyaios_types::BindingUsage {
+            agentcowork_types::BindingUsage {
                 input_tokens: usage.input_tokens,
                 output_tokens: usage.output_tokens,
                 cost_micros: usage
@@ -2968,7 +2968,7 @@ pub fn acp_prompt(
     binding_id: Option<String>,
 ) -> Result<serde_json::Value, String> {
     crate::ensure_sidecar(&state);
-    // The caller's Session id is the canonical EveryAIOS identity. Never
+    // The caller's Session id is the canonical AgentCowork identity. Never
     // replace it with the provider's ACP session id.
     let application_session_id = session_id.trim().to_string();
     if application_session_id.is_empty() {
@@ -3175,7 +3175,7 @@ pub fn acp_prompt(
         let event = entry
             .prefix_guard
             .observe(prefix_fingerprint, handoff_declared);
-        if event == everyaios_acp::PrefixEvent::UndeclaredMutation {
+        if event == agentcowork_acp::PrefixEvent::UndeclaredMutation {
             eprintln!(
                 "ACP stable-prefix mutation without a declared cache-boundary event on \
                  application Session {application_session_id}, provider session {provider_session_id} \
@@ -3207,7 +3207,7 @@ pub fn acp_prompt(
     // decider; the bridge maps its verdict onto an option the agent actually
     // offered, requires a live single-use bound ticket for any allow, and
     // fails closed when it cannot answer (`ARCH/12-TRUST.md` §5, §11).
-    let bridge = everyaios_acp::PermissionBridge::new();
+    let bridge = agentcowork_acp::PermissionBridge::new();
     let prompt_result = provider_session.prompt_with_content(content, |req| {
         if cancel.is_requested() {
             return PermissionDecision::deny();
@@ -3222,7 +3222,7 @@ pub fn acp_prompt(
         // change rather than a title. The preview is the only source of that
         // content — this call site just maps it onto the canonical Guard-2
         // decision package.
-        let preview = everyaios_acp::PermissionPreview::build(req, op.name(), risk);
+        let preview = agentcowork_acp::PermissionPreview::build(req, op.name(), risk);
         let decision = DecisionPackage::new(preview.title.clone())
             .with_diff(preview.diff.clone())
             .with_risk(risk)
@@ -3233,7 +3233,7 @@ pub fn acp_prompt(
             )
             .with_network(preview.network_destinations.clone());
         let args_hash = hash_tool_args(&req.tool_call);
-        let binding = everyaios_acp::TicketBinding {
+        let binding = agentcowork_acp::TicketBinding {
             agent_id: agent_id.clone(),
             session_id: application_session_id.clone(),
             args_hash: args_hash.clone(),
@@ -3253,12 +3253,12 @@ pub fn acp_prompt(
         // approval → validity → args → single-use, and its result is never
         // discarded (a stale, expired or already-used ticket is a denial, not
         // an allow).
-        let spend = |g: &mut everyaios_core::GuardService, ticket_id: &str| -> bool {
+        let spend = |g: &mut agentcowork_core::GuardService, ticket_id: &str| -> bool {
             match g.use_ticket(ticket_id, &args_hash) {
                 Ok(()) => !cancel.is_requested(),
                 Err(error) => {
                     eprintln!(
-                        "everyaios: ACP permission `{tool_call_id}` refused — ticket {ticket_id} \
+                        "agentcowork: ACP permission `{tool_call_id}` refused — ticket {ticket_id} \
                          could not be spent: {error}"
                     );
                     false
@@ -3268,16 +3268,16 @@ pub fn acp_prompt(
         let trust = match verdict {
             GuardDecision::Allow { ticket_id } => {
                 if spend(&mut g, &ticket_id) {
-                    everyaios_acp::TrustOutcome::once(
+                    agentcowork_acp::TrustOutcome::once(
                         acp_ticket_facts(&ticket_id, &binding),
                         "guard allow (policy or standing rule)",
                     )
                 } else {
-                    everyaios_acp::TrustOutcome::reject("ticket spend refused")
+                    agentcowork_acp::TrustOutcome::reject("ticket spend refused")
                 }
             }
             GuardDecision::Block { reason } => {
-                everyaios_acp::TrustOutcome::reject(format!("guard deny: {reason}"))
+                agentcowork_acp::TrustOutcome::reject(format!("guard deny: {reason}"))
             }
             GuardDecision::Ask { ticket_id } => {
                 pending_tickets.push(ticket_id.clone());
@@ -3300,14 +3300,14 @@ pub fn acp_prompt(
                     return PermissionDecision::deny();
                 };
                 if approved && spend(&mut g, &ticket_id) {
-                    everyaios_acp::TrustOutcome::once(
+                    agentcowork_acp::TrustOutcome::once(
                         acp_ticket_facts(&ticket_id, &binding),
                         "human approved on the owning channel",
                     )
                 } else if approved {
-                    everyaios_acp::TrustOutcome::reject("ticket spend refused after approval")
+                    agentcowork_acp::TrustOutcome::reject("ticket spend refused after approval")
                 } else {
-                    everyaios_acp::TrustOutcome::reject("human rejected or wait ended")
+                    agentcowork_acp::TrustOutcome::reject("human rejected or wait ended")
                 }
             }
         };
@@ -3315,7 +3315,7 @@ pub fn acp_prompt(
             Ok(answer) => {
                 if answer.narrowed {
                     eprintln!(
-                        "everyaios: ACP permission `{tool_call_id}` answered as `{}` — no durable \
+                        "agentcowork: ACP permission `{tool_call_id}` answered as `{}` — no durable \
                          policy change was recorded, so the standing grant was not created",
                         answer.choice.card_vocabulary()
                     );
@@ -3326,7 +3326,7 @@ pub fn acp_prompt(
                 // Fail closed: the bridge could not express the decision, so no
                 // option is granted. `resolve_option` will refuse to name an
                 // option the agent never offered and the turn ends.
-                eprintln!("everyaios: ACP permission `{tool_call_id}` failed closed: {error}");
+                eprintln!("agentcowork: ACP permission `{tool_call_id}` failed closed: {error}");
                 PermissionDecision::deny()
             }
         }
@@ -3340,7 +3340,7 @@ pub fn acp_prompt(
                 &state,
                 &identity.owner.work_id,
                 &identity.run_id,
-                everyaios_types::WorkState::Cancelled,
+                agentcowork_types::WorkState::Cancelled,
             );
             return Err("ACP turn cancelled".to_string());
         }
@@ -3349,7 +3349,7 @@ pub fn acp_prompt(
                 &state,
                 &identity.owner.work_id,
                 &identity.run_id,
-                everyaios_types::WorkState::Failed,
+                agentcowork_types::WorkState::Failed,
             );
             return Err(format!("ACP prompt failed: {error}"));
         }
@@ -3399,7 +3399,7 @@ pub fn acp_prompt(
             m.set_primary_agent(&agent_id);
             match outcome.usage {
                 Some(u) if u.reported() => m.record_usage_from(
-                    everyaios_core::UsageSource::AgentReport,
+                    agentcowork_core::UsageSource::AgentReport,
                     &agent_id,
                     &agent_id,
                     &application_session_id,
@@ -3415,12 +3415,12 @@ pub fn acp_prompt(
         }
     }
 
-    let transition_error = if outcome.stop_reason == everyaios_acp::StopReason::Cancelled {
+    let transition_error = if outcome.stop_reason == agentcowork_acp::StopReason::Cancelled {
         transition_acp_run(
             &state,
             &identity.owner.work_id,
             &identity.run_id,
-            everyaios_types::WorkState::Cancelled,
+            agentcowork_types::WorkState::Cancelled,
         )
         .err()
     } else if pending_tickets.is_empty() {
@@ -3428,14 +3428,14 @@ pub fn acp_prompt(
             &state,
             &identity.owner.work_id,
             &identity.run_id,
-            everyaios_types::WorkState::Verifying,
+            agentcowork_types::WorkState::Verifying,
         )
         .and_then(|_| {
             transition_acp_run(
                 &state,
                 &identity.owner.work_id,
                 &identity.run_id,
-                everyaios_types::WorkState::Completed,
+                agentcowork_types::WorkState::Completed,
             )
         })
         .err()
@@ -3444,7 +3444,7 @@ pub fn acp_prompt(
             &state,
             &identity.owner.work_id,
             &identity.run_id,
-            everyaios_types::WorkState::WaitingApproval,
+            agentcowork_types::WorkState::WaitingApproval,
         )
         .err()
     };
@@ -3760,9 +3760,9 @@ fn map_tool_call(tc: &ToolCall) -> (Operation, RiskLevel) {
 /// fabricated or stale approval can never reach the agent.
 fn acp_ticket_facts(
     ticket_id: &str,
-    binding: &everyaios_acp::TicketBinding,
-) -> everyaios_acp::TicketFacts {
-    everyaios_acp::TicketFacts {
+    binding: &agentcowork_acp::TicketBinding,
+) -> agentcowork_acp::TicketFacts {
+    agentcowork_acp::TicketFacts {
         ticket_id: ticket_id.to_string(),
         agent_id: binding.agent_id.clone(),
         session_id: binding.session_id.clone(),
@@ -3875,8 +3875,8 @@ mod tests {
     /// only under the application Session + agent that own it.
     #[test]
     fn recorded_provider_session_id_comes_from_the_canonical_binding() {
-        let mut gateway = everyaios_core::WorkGateway::new();
-        let mut kernel = everyaios_core::ExecutionKernel::new();
+        let mut gateway = agentcowork_core::WorkGateway::new();
+        let mut kernel = agentcowork_core::ExecutionKernel::new();
         let identity = prepare_acp_turn(
             &mut gateway,
             &mut kernel,
@@ -3937,8 +3937,8 @@ mod tests {
 
     #[test]
     fn missing_application_or_provider_identity_fails_closed() {
-        let mut gateway = everyaios_core::WorkGateway::new();
-        let mut kernel = everyaios_core::ExecutionKernel::new();
+        let mut gateway = agentcowork_core::WorkGateway::new();
+        let mut kernel = agentcowork_core::ExecutionKernel::new();
         assert!(matches!(
             prepare_acp_turn(
                 &mut gateway,
@@ -3966,8 +3966,8 @@ mod tests {
 
     #[test]
     fn canonical_owner_keeps_provider_ids_separate_for_shared_agent() {
-        let mut gateway = everyaios_core::WorkGateway::new();
-        let mut kernel = everyaios_core::ExecutionKernel::new();
+        let mut gateway = agentcowork_core::WorkGateway::new();
+        let mut kernel = agentcowork_core::ExecutionKernel::new();
         let first = prepare_acp_turn(
             &mut gateway,
             &mut kernel,
@@ -4014,14 +4014,14 @@ mod tests {
 
     #[test]
     fn existing_active_run_is_resolved_instead_of_replaced() {
-        let mut gateway = everyaios_core::WorkGateway::new();
-        let mut kernel = everyaios_core::ExecutionKernel::new();
+        let mut gateway = agentcowork_core::WorkGateway::new();
+        let mut kernel = agentcowork_core::ExecutionKernel::new();
         gateway
             .create_work_in_session(
                 "automation-session",
                 None,
                 Some("automation-session".into()),
-                everyaios_types::SessionKind::Automation,
+                agentcowork_types::SessionKind::Automation,
                 "scheduled objective",
             )
             .unwrap();
@@ -4046,7 +4046,7 @@ mod tests {
             .record_execution_transition(
                 "automation-session",
                 &existing,
-                everyaios_types::WorkState::Running,
+                agentcowork_types::WorkState::Running,
             )
             .unwrap();
 
@@ -4069,12 +4069,12 @@ mod tests {
     #[test]
     fn binding_and_run_replay_from_the_work_journal() {
         let path = std::env::temp_dir().join(format!(
-            "everyaios-acp-identity-{}-{}.jsonl",
+            "agentcowork-acp-identity-{}-{}.jsonl",
             std::process::id(),
             ACP_COUNTER.fetch_add(1, Ordering::Relaxed)
         ));
-        let mut gateway = everyaios_core::WorkGateway::open(&path).unwrap();
-        let mut kernel = everyaios_core::ExecutionKernel::new();
+        let mut gateway = agentcowork_core::WorkGateway::open(&path).unwrap();
+        let mut kernel = agentcowork_core::ExecutionKernel::new();
         let identity = prepare_acp_turn(
             &mut gateway,
             &mut kernel,
@@ -4087,7 +4087,7 @@ mod tests {
         gateway
             .record_binding_usage(
                 &identity.owner.binding_id,
-                everyaios_types::BindingUsage {
+                agentcowork_types::BindingUsage {
                     input_tokens: 7,
                     output_tokens: 3,
                     cost_micros: 11,
@@ -4097,7 +4097,7 @@ mod tests {
         drop(gateway);
         drop(kernel);
 
-        let replay = everyaios_core::WorkGateway::open(&path).unwrap();
+        let replay = agentcowork_core::WorkGateway::open(&path).unwrap();
         let binding = replay.agent_binding(&identity.owner.binding_id).unwrap();
         assert_eq!(binding.session_id.as_str(), "replay-session");
         assert_eq!(
@@ -4220,7 +4220,7 @@ mod tests {
     /// bridge asserts is not an assumption.
     #[test]
     fn an_acp_permission_ticket_is_spent_exactly_once() {
-        let mut g = everyaios_core::GuardService::new();
+        let mut g = agentcowork_core::GuardService::new();
         let verdict = g.evaluate(
             "session-1",
             "claude-code",
@@ -4248,7 +4248,7 @@ mod tests {
         );
         // A different argument set is refused too — the ticket is bound to the
         // exact request (`DM-009`).
-        let mut other = everyaios_core::GuardService::new();
+        let mut other = agentcowork_core::GuardService::new();
         let verdict = other.evaluate(
             "session-1",
             "claude-code",
@@ -4304,6 +4304,8 @@ mod tests {
     fn registry_has_no_builtin_and_lists_launch_agents() {
         let reg = LaunchRegistry::builtin();
         // ADR-0005 §D1: no built-in/default identity ships in the catalog.
+        // NOTE (DEC-053 Step 4): `everyaios` stays asserted-absent — the
+        // retired agent id, recognized so it is never resurrected.
         assert!(reg.get("everyaios").is_none());
         assert!(reg.get("claude").is_some());
         assert!(reg.get("codex").is_some());
@@ -4319,7 +4321,7 @@ mod tests {
             "{probe} must resolve on PATH"
         );
         assert!(
-            resolve_on_path("definitely-not-a-real-everyaios-binary-xyz").is_none(),
+            resolve_on_path("definitely-not-a-real-agentcowork-binary-xyz").is_none(),
             "unknown names must not resolve"
         );
     }
@@ -4327,11 +4329,11 @@ mod tests {
     #[test]
     fn stale_managed_install_is_not_occupancy() {
         let root = std::env::temp_dir().join(format!(
-            "everyaios-stale-agent-{}-{}",
+            "agentcowork-stale-agent-{}-{}",
             std::process::id(),
             ACP_COUNTER.load(Ordering::Relaxed)
         ));
-        let outcome = everyaios_acp::InstallOutcome {
+        let outcome = agentcowork_acp::InstallOutcome {
             agent_id: "test-agent".into(),
             version: "1.0.0".into(),
             kind: "binary".into(),
@@ -4342,7 +4344,7 @@ mod tests {
         std::fs::create_dir_all(&root).unwrap();
         let binary = root.join("agent.exe");
         std::fs::write(&binary, b"test").unwrap();
-        let usable = everyaios_acp::InstallOutcome {
+        let usable = agentcowork_acp::InstallOutcome {
             binary_path: Some(binary),
             ..outcome
         };
@@ -4352,7 +4354,7 @@ mod tests {
 
     #[test]
     fn package_manager_install_requires_manager_readiness() {
-        let outcome = everyaios_acp::InstallOutcome {
+        let outcome = agentcowork_acp::InstallOutcome {
             agent_id: "test-agent".into(),
             version: "1.0.0".into(),
             kind: "npx".into(),
@@ -4391,10 +4393,10 @@ mod tests {
     /// P60.14 — the desktop shell's live registry leg, end to end.
     ///
     /// `#[ignore]` (network). Run explicitly, single-threaded because it
-    /// repoints `EVERYAIOS_HOME` for the duration:
+    /// repoints `AGENTCOWORK_HOME` for the duration:
     ///
     /// ```text
-    /// cargo test -p everyaios-desktop acp_registry_refresh -- --ignored --nocapture --test-threads=1
+    /// cargo test -p agentcowork-desktop acp_registry_refresh -- --ignored --nocapture --test-threads=1
     /// ```
     ///
     /// It exercises the *shell's own* composition rather than a copy of it:
@@ -4409,10 +4411,10 @@ mod tests {
     #[ignore = "network: fetches the live ACP registry CDN"]
     fn live_acp_registry_refresh_drives_the_shell_launch_registry() {
         let home =
-            std::env::temp_dir().join(format!("everyaios-shell-registry-{}", std::process::id()));
+            std::env::temp_dir().join(format!("agentcowork-shell-registry-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&home);
-        let previous_home = std::env::var("EVERYAIOS_HOME").ok();
-        std::env::set_var("EVERYAIOS_HOME", &home);
+        let previous_home = std::env::var("AGENTCOWORK_HOME").ok();
+        std::env::set_var("AGENTCOWORK_HOME", &home);
 
         // No cache yet ⇒ the resolver degrades to the curated seed.
         let seed = LaunchRegistry::builtin();
@@ -4466,8 +4468,8 @@ mod tests {
         assert_eq!(launch_registry().agents.len(), merged.agents.len());
 
         match previous_home {
-            Some(prev) => std::env::set_var("EVERYAIOS_HOME", prev),
-            None => std::env::remove_var("EVERYAIOS_HOME"),
+            Some(prev) => std::env::set_var("AGENTCOWORK_HOME", prev),
+            None => std::env::remove_var("AGENTCOWORK_HOME"),
         }
         let _ = std::fs::remove_dir_all(&home);
     }
@@ -4475,7 +4477,7 @@ mod tests {
     #[test]
     fn test_user_path_import_and_verification() {
         let tmp =
-            std::env::temp_dir().join(format!("everyaios-import-test-{}", std::process::id()));
+            std::env::temp_dir().join(format!("agentcowork-import-test-{}", std::process::id()));
         let _ = std::fs::create_dir_all(&tmp);
         let dummy_bin = tmp.join("dummy_agent");
         std::fs::write(&dummy_bin, b"#!/bin/sh\necho 'dummy-agent v1.2.3'\n").unwrap();
@@ -4487,9 +4489,9 @@ mod tests {
             std::fs::set_permissions(&dummy_bin, perms).unwrap();
         }
 
-        let home = std::env::temp_dir().join(format!("everyaios-home-test-{}", std::process::id()));
-        let previous_home = std::env::var("EVERYAIOS_HOME").ok();
-        std::env::set_var("EVERYAIOS_HOME", &home);
+        let home = std::env::temp_dir().join(format!("agentcowork-home-test-{}", std::process::id()));
+        let previous_home = std::env::var("AGENTCOWORK_HOME").ok();
+        std::env::set_var("AGENTCOWORK_HOME", &home);
 
         let inst = installer();
         inst.record_path("opencode", &dummy_bin).unwrap();
@@ -4502,8 +4504,8 @@ mod tests {
         assert_eq!(verify["executable"], dummy_bin.to_string_lossy().as_ref());
 
         match previous_home {
-            Some(prev) => std::env::set_var("EVERYAIOS_HOME", prev),
-            None => std::env::remove_var("EVERYAIOS_HOME"),
+            Some(prev) => std::env::set_var("AGENTCOWORK_HOME", prev),
+            None => std::env::remove_var("AGENTCOWORK_HOME"),
         }
         let _ = std::fs::remove_dir_all(&tmp);
         let _ = std::fs::remove_dir_all(&home);

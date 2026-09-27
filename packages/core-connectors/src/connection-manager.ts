@@ -12,7 +12,7 @@
  *
  * For native-only connectors (Calendar): no OAuth, just permission request → ready.
  */
-import type { ConnectorName } from '@everyaios/core-domain';
+import type { ConnectorName } from '@agentcowork/core-domain';
 
 export type ConnectorStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
 

@@ -1,4 +1,4 @@
-import type { ProviderGroup } from '@everyaios/core-domain';
+import type { ProviderGroup } from '@agentcowork/core-domain';
 
 /** Minimal async key-value store used by ProviderVault. */
 export interface KeyValueStore {
@@ -28,7 +28,7 @@ export interface ProviderCatalogEntry {
  * Credentials never live here: `keyRef` is an **opaque Rust-vault handle**
  * (`vault:<provider>:<n>`), not key material. Sealing/serializing keys in
  * TypeScript was removed with the rest of the TS credential path — provider
- * keys live only in `everyaios-vault` (AGENTS.md §15, I10).
+ * keys live only in `agentcowork-vault` (AGENTS.md §15, I10).
  */
 export interface StoredProviderRecord {
   id: string;

@@ -1,5 +1,5 @@
 {
-  "name": "@everyaios/core-memory",
+  "name": "@agentcowork/core-memory",
   "version": "0.1.0",
   "license": "MIT OR Apache-2.0",
   "private": true,
@@ -18,7 +18,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@everyaios/core-domain": "workspace:*"
+    "@agentcowork/core-domain": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.7.0",

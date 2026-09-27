@@ -52,7 +52,7 @@ const fail = (m) => problems.push(m);
 const WINGET_DIR = 'packaging/winget';
 const installerFor = (arch) => ({
   Arch: arch,
-  Url: `https://github.com/sarv-projects/EveryAIOS/releases/download/v${VERSION}/${PRODUCT}_${VERSION}_${arch === 'x64' ? 'x64' : 'arm64'}-setup.exe`,
+  Url: `https://github.com/sarv-projects/AgentCowork/releases/download/v${VERSION}/${PRODUCT}_${VERSION}_${arch === 'x64' ? 'x64' : 'arm64'}-setup.exe`,
   Sha256: '<filled by the release workflow from SHA256SUMS>',
 });
 
@@ -61,11 +61,11 @@ function wingetManifests() {
     PackageIdentifier: 'EveryAIOS.EveryAIOS',
     PackageVersion: VERSION,
     PackageLocale: 'en-US',
-    Publisher: conf.bundle?.publisher ?? 'EveryAIOS',
+    Publisher: conf.bundle?.publisher ?? 'AgentCowork',
     PackageName: PRODUCT,
     License: conf.bundle?.license ?? 'MIT OR Apache-2.0',
     ShortDescription: conf.bundle?.shortDescription ?? 'A local-first desktop cockpit for governed AI agents.',
-    PackageUrl: conf.bundle?.homepage ?? 'https://github.com/sarv-projects/EveryAIOS',
+    PackageUrl: conf.bundle?.homepage ?? 'https://github.com/sarv-projects/AgentCowork',
     InstallerType: 'nullsoft',
     Scope: 'user',
     Installers: [installerFor('x64'), installerFor('arm64')],

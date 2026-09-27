@@ -1,5 +1,5 @@
 {
-  "name": "@everyaios/core-agents",
+  "name": "@agentcowork/core-agents",
   "version": "0.1.0",
   "license": "MIT OR Apache-2.0",
   "private": true,
@@ -12,7 +12,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@everyaios/core-tools": "workspace:*"
+    "@agentcowork/core-tools": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.7.0",

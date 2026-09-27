@@ -23,17 +23,17 @@ import { DiffRail } from './diff-rail'
 import ShellView from '@/components/views/shell-view'
 import { useAppStore } from '@/lib/store'
 
-type ActivityId = 'explorer' | 'search' | 'scm' | 'run' | 'extensions' | 'everyaios'
+type ActivityId = 'explorer' | 'search' | 'scm' | 'run' | 'extensions' | 'agentcowork'
 type PanelId = 'problems' | 'terminal' | 'output' | 'diff'
 
 /**
- * P11.5.3 — EveryAIOS Code: a VS Code-like workbench over our Rust backends.
+ * P11.5.3 — AgentCowork Code: a VS Code-like workbench over our Rust backends.
  *
  * Layout mirrors VS Code exactly — Activity Bar · Explorer/Search/SCM
  * sidebar · editor tabs + Monaco (MIT — VS Code's own editor) · bottom
  * Problems/Terminal panel · status bar — but every surface talks to the
- * EveryAIOS Rust layer: real FS explorer (fs_cmds), real git SCM
- * (git_cmds), real LSP diagnostics (lsp_cmds → everyaios-codeintel), and
+ * AgentCowork Rust layer: real FS explorer (fs_cmds), real git SCM
+ * (git_cmds), real LSP diagnostics (lsp_cmds → agentcowork-codeintel), and
  * the *same* real PTY terminal as the Shell view (terminal_cmds — one
  * plane, provenance-tracked; the legacy piped `shell_cmds` path is gone).
  *
@@ -62,8 +62,8 @@ export function IdeWorkbench() {
       setActivePath(d.path)
       if (d.path.includes('/')) setCwd(d.path.slice(0, d.path.lastIndexOf('/')))
     }
-    window.addEventListener('everyaios:open-file', handler)
-    return () => window.removeEventListener('everyaios:open-file', handler)
+    window.addEventListener('agentcowork:open-file', handler)
+    return () => window.removeEventListener('agentcowork:open-file', handler)
   }, [])
 
   // The bottom terminal panel is the same PTY plane as the Shell view
@@ -85,7 +85,7 @@ export function IdeWorkbench() {
   }
 
   const jumpToLine = (line: number, col: number) => {
-    window.dispatchEvent(new CustomEvent('everyaios:editor-jump', { detail: { line, col } }))
+    window.dispatchEvent(new CustomEvent('agentcowork:editor-jump', { detail: { line, col } }))
   }
 
   const sidebar = () => {
@@ -150,12 +150,12 @@ export function IdeWorkbench() {
           ))}
           <div className="flex-1" />
           <button
-            onClick={() => setActivity('everyaios')}
-            aria-label="EveryAIOS"
-            title="EveryAIOS"
+            onClick={() => setActivity('agentcowork')}
+            aria-label="AgentCowork"
+            title="AgentCowork"
             className={cn(
               'grid h-11 w-11 place-items-center rounded-md',
-              activity === 'everyaios' ? 'text-brand' : 'text-[#858585] hover:text-brand'
+              activity === 'agentcowork' ? 'text-brand' : 'text-[#858585] hover:text-brand'
             )}
           >
             <Sparkles className="h-5 w-5" strokeWidth={1.5} />
@@ -236,7 +236,7 @@ export function IdeWorkbench() {
         <span className="flex-1" />
         {activeFile && <span>{activeFile.name.split('.').pop()}</span>}
         <span>UTF-8</span>
-        <span className="flex items-center gap-1"><Sparkles className="h-2.5 w-2.5" /> EveryAIOS Guard</span>
+        <span className="flex items-center gap-1"><Sparkles className="h-2.5 w-2.5" /> AgentCowork Guard</span>
       </div>
     </div>
   )

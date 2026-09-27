@@ -1,7 +1,7 @@
 // Provider directory (opencode BYOK pattern over the Rust registry).
 //
 // The shell already vendors all 212 models.dev providers
-// (`everyaios-catalog::provider_seed`, served via `discovery_inventory` as
+// (`agentcowork-catalog::provider_seed`, served via `discovery_inventory` as
 // provider cards). This module merges those cards with the live vault key set
 // (`vault_keys_list`) so the UI can render one honest row per provider:
 // configured keys unlock routes, everything else explains where the key goes.

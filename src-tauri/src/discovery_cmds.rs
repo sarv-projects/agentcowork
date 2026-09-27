@@ -13,11 +13,11 @@
 
 use std::path::{Path, PathBuf};
 
-use everyaios_catalog::{
+use agentcowork_catalog::{
     apply_observation_health, DiscoveryInventory, Health, ManagedResource, ResourceCard,
     ResourceKind, RouteRequirements, RoutingFeed,
 };
-use everyaios_vault::KeyRing;
+use agentcowork_vault::KeyRing;
 use tauri::State;
 
 use crate::AppState;
@@ -31,7 +31,7 @@ pub fn discovery_inventory() -> Result<serde_json::Value, String> {
     let reg = crate::catalog_cmds::observed_registry();
     let mut inv = DiscoveryInventory::from_registry(&reg, 1);
 
-    let data_dir = everyaios_core::default_data_dir();
+    let data_dir = agentcowork_core::default_data_dir();
     inv.extend(collect_local_models());
     inv.extend(collect_installed_mcp(&data_dir));
     inv.extend(collect_installed_skills(&data_dir));
@@ -104,8 +104,8 @@ pub fn routing_feed_decide(
 
 fn collect_local_models() -> Vec<ResourceCard> {
     // Wire `status` is this catalog projection; process `lifecycle` uses core `ManagedResource<R>` and never occupies this field.
-    let cfg = everyaios_core::Config::load().unwrap_or_default();
-    let mgr = everyaios_core::LocalManager::from_config(&cfg);
+    let cfg = agentcowork_core::Config::load().unwrap_or_default();
+    let mgr = agentcowork_core::LocalManager::from_config(&cfg);
     mgr.list_ollama_models()
         .into_iter()
         .map(|m| ResourceCard {
@@ -186,7 +186,7 @@ fn collect_agents(data_dir: &Path) -> Vec<ResourceCard> {
     let mut cards = vec![ResourceCard {
         kind: ResourceKind::Agent,
         id: "inbuilt".into(),
-        name: "EveryAIOS".into(),
+        name: "AgentCowork".into(),
         version: env!("CARGO_PKG_VERSION").into(),
         source: "builtin".into(),
         auth: "none".into(),
@@ -339,6 +339,6 @@ pub fn provider_health_probe(url: String) -> Result<serde_json::Value, String> {
     {
         return Err("probe refused: loopback or https only".to_string());
     }
-    let reachable = everyaios_core::models::probe::probe_openai_endpoint(base);
+    let reachable = agentcowork_core::models::probe::probe_openai_endpoint(base);
     Ok(serde_json::json!({ "url": base, "reachable": reachable }))
 }

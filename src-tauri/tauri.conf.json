@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "EveryAIOS",
+  "productName": "AgentCowork",
   "version": "0.1.0",
   "identifier": "com.everyaios.desktop",
   "build": {
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "EveryAIOS",
+        "title": "AgentCowork",
         "width": 1200,
         "height": 800,
         "minWidth": 800,
@@ -44,11 +44,11 @@
       "icons/icon.png"
     ],
     "category": "DeveloperTool",
-    "publisher": "EveryAIOS",
-    "copyright": "Copyright © 2026 EveryAIOS contributors",
-    "homepage": "https://github.com/sarv-projects/EveryAIOS",
+    "publisher": "AgentCowork",
+    "copyright": "Copyright © 2026 AgentCowork contributors",
+    "homepage": "https://github.com/sarv-projects/AgentCowork",
     "license": "MIT OR Apache-2.0",
-    "shortDescription": "EveryAIOS — agentic desktop OS shell",
+    "shortDescription": "AgentCowork — agentic desktop OS shell",
     "longDescription": "A local-first, BYOK, open-source desktop workspace where your chat, browser, files, documents, code, automations, agents, and connected accounts live in one safe continuity.",
     "createUpdaterArtifacts": true,
     "windows": {
@@ -90,7 +90,7 @@
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDUxNTg2MjM4OUE2QjM5NUEKUldSYU9XdWFPR0pZVWFyU0wyM1VQaE9FSW5GdmRIRmx5WllSTW1XcG9hM2tLREEzVTQwRmdRWWgK",
       "endpoints": [
         "https://releases.everyaios.dev/{{target}}/{{arch}}/{{current_version}}",
-        "https://github.com/sarv-projects/EveryAIOS/releases/latest/download/latest.json"
+        "https://github.com/sarv-projects/AgentCowork/releases/latest/download/latest.json"
       ],
       "windows": {
         "installMode": "passive"

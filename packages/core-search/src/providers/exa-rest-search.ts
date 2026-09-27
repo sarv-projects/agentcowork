@@ -2,12 +2,12 @@
  * Exa REST search provider.
  *
  * Credential and egress custody (P69.C4/D4): the key lives in
- * `everyaios-vault` and the request leaves through Guard-2 `netfloor`. This
+ * `agentcowork-vault` and the request leaves through Guard-2 `netfloor`. This
  * provider therefore holds only a *provider id* and an endpoint — it never
  * reads `process.env`, never accepts an API key argument, and never calls
  * `fetch` itself. No governed transport attached ⇒ unavailable.
  */
-import type { SearchContext, SearchProvider, SearchResult } from '@everyaios/core-domain';
+import type { SearchContext, SearchProvider, SearchResult } from '@agentcowork/core-domain';
 import {
   getGovernedSearchTransport,
   type GovernedSearchTransport,

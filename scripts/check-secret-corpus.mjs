@@ -14,7 +14,7 @@
 //
 // It is a *structural* scan, not a keyword grep. A keyword grep for "token" or
 // "api_key" is a keyword grep: this repo's own kernel redactor
-// (`crates/everyaios-core/src/spool.rs`) is explicit that the corpus is "a
+// (`crates/agentcowork-core/src/spool.rs`) is explicit that the corpus is "a
 // fixed, bounded corpus of *token shapes*", and that is what is matched here:
 //
 //   * prefix rules   — the credential prefixes of the providers this product
@@ -94,16 +94,16 @@ const CORPUS = [
     id: 'corpus',
     label: 'secret-corpus fixtures — the kernel files that own the vocabulary and the deliberate fake secrets that keep the redactor honest',
     roots: [
-      'crates/everyaios-core/src/spool.rs',
-      'crates/everyaios-vault/src/lib.rs',
-      'crates/everyaios-vault/src/egress.rs',
-      'crates/everyaios-acp/src/agent_backend.rs',
+      'crates/agentcowork-core/src/spool.rs',
+      'crates/agentcowork-vault/src/lib.rs',
+      'crates/agentcowork-vault/src/egress.rs',
+      'crates/agentcowork-acp/src/agent_backend.rs',
     ],
   },
 ];
 
 /** Single reference for what counts as a secret shape (ARCH/12 §6 vocabulary). */
-const VOCAB_SOURCE = 'crates/everyaios-core/src/spool.rs';
+const VOCAB_SOURCE = 'crates/agentcowork-core/src/spool.rs';
 
 const SKIP_DIRS = new Set([
   'node_modules', 'target', 'dist', '.git', 'coverage',
@@ -513,7 +513,7 @@ const KNOWN_BAD = [
   { id: 'pem-private-key', expect: 'pem-private-key', secret: frag('-----BEGIN RSA', ' PRIVATE KEY-----'), in: `${frag('-----BEGIN RSA', ' PRIVATE KEY-----')}\nMIIEow==\n${frag('-----END RSA', ' PRIVATE KEY-----')}` },
   { id: 'bearer-header', expect: 'bearer-token', secret: frag('4Zt9xQw2', 'Lm7Nv1Kp8Rd3Sf6Hg0Jc5Yb1Ua2Xe4Ni'), in: `Authorization: 'Bearer ${frag('4Zt9xQw2', 'Lm7Nv1Kp8Rd3Sf6Hg0Jc5Yb1Ua2Xe4Ni')}'` },
   { id: 'assigned-secret', expect: 'assigned-secret', secret: frag('Tr0ub4dor', '&3xKcd!mn9Qv2wLpZ'), in: `const vaultPassword = "${frag('Tr0ub4dor', '&3xKcd!mn9Qv2wLpZ')}";` },
-  { id: 'env-secret', expect: 'env-secret', secret: frag('9fKq2LmZ', '7xRw4Tb1Vc6Yn0Ps3Dg8Hj5Kl2Fq7Bx1'), in: `EVERYAIOS_VAULT_KEY=${frag('9fKq2LmZ', '7xRw4Tb1Vc6Yn0Ps3Dg8Hj5Kl2Fq7Bx1')}` },
+  { id: 'env-secret', expect: 'env-secret', secret: frag('9fKq2LmZ', '7xRw4Tb1Vc6Yn0Ps3Dg8Hj5Kl2Fq7Bx1'), in: `AGENTCOWORK_VAULT_KEY=${frag('9fKq2LmZ', '7xRw4Tb1Vc6Yn0Ps3Dg8Hj5Kl2Fq7Bx1')}` },
   { id: 'high-entropy-blob', expect: 'high-entropy-blob', secret: frag('Zm9vYmFy', 'MTIzNDU2Nzg5MEFCQ0RlRmdISUpLTE1OT1BRUlNUVVZXWFla'), in: `"${frag('Zm9vYmFy', 'MTIzNDU2Nzg5MEFCQ0RlRmdISUpLTE1OT1BRUlNUVVZXWFla')}"` },
   { id: 'hex-blob', expect: 'hex-digest-blob', secret: frag('a3f1c95e', '7b2d4806af13ce95b7d2048ea16fb3c97d5e0a4b83c1f6927de5b0a48'), in: `digest = "${frag('a3f1c95e', '7b2d4806af13ce95b7d2048ea16fb3c97d5e0a4b83c1f6927de5b0a48')}"` },
   { id: 'credentialed-url', expect: 'url-userinfo', secret: frag('Zt7Qw2Lm', '9Xk4Rb1Vc6Yn0Ps3Dg8Hj5Kl'), in: `await fetch("https://svc:${frag('hZt7Qw2', 'Lm9Xk4Rb1Vc6Yn0Ps3Dg8Hj5Kl')}@internal.example/api")` },
@@ -525,7 +525,7 @@ const KNOWN_BAD = [
   // review (allowlist) decides. The placeholder screen is a *heuristic* gate.
   { id: 'structural-beats-placeholder', expect: 'prefix:sk-', secret: frag('sk-', 'portable-000000000000'), in: `secret: "${frag('sk-', 'portable-000000000000')}"` },
   // The value whose fingerprint the allowlist carries for the vault at-rest
-  // fixture (`crates/everyaios-vault/src/lib.rs`). Pinned below so the two
+  // fixture (`crates/agentcowork-vault/src/lib.rs`). Pinned below so the two
   // cannot drift apart silently.
   { id: 'allowlist-key-pin', expect: 'prefix:sk-', secret: frag('sk-', 'portable-secret-42'), in: `let secret = "${frag('sk-', 'portable-secret-42')}";` },
 ];
@@ -539,7 +539,7 @@ const KNOWN_GOOD = [
   { id: 'data-uri', in: `src = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="` },
   { id: 'placeholder-upper', in: `apiKey: "YOUR_API_KEY_HERE"` },
   { id: 'placeholder-mask', in: `api_key: "<redacted>"` },
-  { id: 'env-reference', in: `const key = process.env.EVERYAIOS_VAULT_KEY;` },
+  { id: 'env-reference', in: `const key = process.env.AGENTCOWORK_VAULT_KEY;` },
   { id: 'template-interpolation', in: 'const url = `https://api.example.com/v1?key=${apiKey}`;' },
   { id: 'git-sha', in: `const base = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";` },
   { id: 'uuid', in: `const sessionId = "9f3b7c1d-5a8e-4f2b-8c0d-9e1a3f5b7c9d";` },
@@ -548,7 +548,7 @@ const KNOWN_GOOD = [
   { id: 'public-address', in: `const to = "0x71C7656EC7ab88b098defB751B7401B5f6d8976F";` },
   { id: 'hex-placeholder', in: `sha256: 0000000000000000000000000000000000000000000000000000000000000000` },
   { id: 'bare-prefix-string', in: `if (lower.starts_with("github_pat_"))` },
-  { id: 'import-path', in: `import { run } from "everyaios-acp/src/agent_backend";` },
+  { id: 'import-path', in: `import { run } from "agentcowork-acp/src/agent_backend";` },
   { id: 'css-classes', in: `className="h-6 rounded-md border-input bg-background px-2 text-xs font-medium"` },
   { id: 'token-counter', in: `tokensThisTurn={Math.round(streamStats.tokensThisTurn / 1000)}` },
   { id: 'semver', in: `version: "1.12.0-beta.3+build.20260926"` },

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { SearchContext } from '@everyaios/core-domain';
+import type { SearchContext } from '@agentcowork/core-domain';
 import { buildCascadeProviders } from '../build-cascade-providers.js';
 
 const baseCtx: SearchContext = {

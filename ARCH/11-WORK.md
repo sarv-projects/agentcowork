@@ -4,7 +4,7 @@
 > **P7 pass (2026-09-26):** line-checked; requirements seeded (`REQ-WORK-*`, Requirements section).
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
 > **Role:** the **universal execution abstraction** (DEC-003). Everything that runs — a chat turn, a workflow run, a background job, a subagent task, an automation — is a `Work` item with one lifecycle, one scheduler, one Runs surface.
-> **Dependencies:** `10-KERNEL` · `12-TRUST` (tickets for effects) · `16-CONTEXT` (checkpoints) · `30-EVENTS` (stream). **Consumers:** `15-AGENT-X` · `20-WORKFLOW` · `32-CHANNELS` · UI.
+> **Dependencies:** `10-KERNEL` · `12-TRUST` (tickets for effects) · `16-CONTEXT` (checkpoints) · `30-EVENTS` (stream). **Consumers:** `15-AGENT-PLANE` · `20-WORKFLOW` · `32-CHANNELS` · UI.
 > **Evidence:** product-owner brief (lanes, limits, background work, “Work is universal”) · `ARCHIVE/v1-research/agent-harness-verification.md` §A3 (background guidance), §D1/§E4 (durable log + projections, `next-turn`/`next-step`), §C2 (durable history) · `ARCH/06-DATA-MODEL.md` (DM-001…008) · DEC-003 / DEC-027 / INV-16 / INV-23.
 
 ## 1. Purpose & responsibilities
@@ -112,7 +112,7 @@ Rules:
 
 ## 12. Evidence
 
-Product-owner brief (universal Work; lanes; global limits; background work) · `agent-harness-verification.md` §A3 (background guidance, bounded delegation), §D1 (inbox `next-turn`/`next-step`, handle/factory), §E4 (log + projections), §C2 (durable history over DB rows) · `ARCH/04-DECISIONS.md` DEC-003/DEC-027 · `ARCH/06-DATA-MODEL.md` DM-001…008 · `ARCH/15-AGENT-X.md` §3–§4 (session model, loop).
+Product-owner brief (universal Work; lanes; global limits; background work) · `agent-harness-verification.md` §A3 (background guidance, bounded delegation), §D1 (inbox `next-turn`/`next-step`, handle/factory), §E4 (log + projections), §C2 (durable history over DB rows) · `ARCH/04-DECISIONS.md` DEC-003/DEC-027 · `ARCH/06-DATA-MODEL.md` DM-001…008 · `ARCH/15-AGENT-PLANE.md` §3–§4 (session model, loop).
 
 ## 13. Requirements (`REQ-WORK-*`)
 

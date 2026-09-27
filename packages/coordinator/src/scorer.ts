@@ -1,10 +1,10 @@
 /**
  * P36 / P0-5 — the deterministic consensus scorer, extracted dependency-free
- * so the coordinator and the Rust crate (`everyaios-core::routing::Scorer`)
+ * so the coordinator and the Rust crate (`agentcowork-core::routing::Scorer`)
  * can be locked against each other by pure unit tests.
  *
  * This is a faithful TS port of `Scorer::score` in
- * `crates/everyaios-core/src/routing.rs`. Honest ceiling: without
+ * `crates/agentcowork-core/src/routing.rs`. Honest ceiling: without
  * observations the router still falls back to capability-filter + cost-sort
  * (there is nothing to score against yet); with observations it ranks by the
  * consensus score, not raw cost.
