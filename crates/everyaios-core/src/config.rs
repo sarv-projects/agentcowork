@@ -23,8 +23,49 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
+use everyaios_types::canonical;
+use everyaios_types::config::{
+    CONFIG_SCHEMA_VERSION, ConfigRefusal, ConfigSnapshot, is_secret_shaped_key,
+};
+
 use crate::default_data_dir;
 use crate::local::LocalConfig;
+
+/// The registered name of the whole config document, as it appears in a
+/// refusal and in a migration note.
+pub const CONFIG_ENTRY: &str = "everyaios.toml";
+
+/// The note attached to a refusal that is about the document rather than one
+/// entry. It states the two rules a user actually needs — no silent acceptance,
+/// and no credentials here — without asserting which build wrote the file.
+pub const CONFIG_MIGRATION: &str = "the config file is schema-versioned and every key is checked \
+     against the documented schema. A key this build does not know is reported rather than \
+     ignored, and a credential belongs in the vault (INV-02) with only a reference written \
+     here. Remove an unknown key or correct its spelling; to move a credential, store it in the \
+     vault and replace the key with its reference.";
+
+/// Every top-level key `Config` defines, in declaration order.
+///
+/// The single list the unknown-key check reads and the default-serialisation
+/// test compares against, so a field cannot be added to [`Config`] without also
+/// becoming a key the checker knows — the alternative is a `deny_unknown_fields`
+/// that turns a typo in a *later* build's key into a hard parse error here.
+pub const CONFIG_KEYS: [&str; 14] = [
+    "data_dir",
+    "vault_path",
+    "retention_days",
+    "browser_binary",
+    "socket_path",
+    "local",
+    "model_aliases",
+    "primary_chief",
+    "subagent_notes",
+    "subagent_enabled",
+    "subagent_policy",
+    "terminal",
+    "controlPlaneRateLimit",
+    "schema_version",
+];
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Config {
@@ -88,6 +129,20 @@ pub struct Config {
     /// while `Config`'s own older keys stay snake_case.
     #[serde(default, rename = "controlPlaneRateLimit")]
     pub control_plane_rate_limit: Option<toml::Table>,
+    /// `TASK-KERNEL-003` — the schema version this document was written under
+    /// (`ARCH/10-KERNEL.md` §4: "schemas are typed, versioned, and validated at
+    /// load"). Declared last, after the rate-limit table, for the same reason:
+    /// a TOML table may only follow scalars.
+    ///
+    /// Defaults to [`CONFIG_SCHEMA_VERSION`], so a file written before this
+    /// field existed still loads. A file declaring a **newer** version is refused
+    /// by [`Config::load_checked`] rather than partially read.
+    #[serde(default = "default_schema_version")]
+    pub schema_version: u32,
+}
+
+fn default_schema_version() -> u32 {
+    CONFIG_SCHEMA_VERSION
 }
 
 /// P71.9d — one agent's delegation profile (Settings → Subagents). Every
@@ -179,6 +234,7 @@ impl Default for Config {
             subagent_policy: std::collections::HashMap::new(),
             terminal: crate::terminal::TerminalConfig::default(),
             control_plane_rate_limit: None,
+            schema_version: CONFIG_SCHEMA_VERSION,
         }
     }
 }
@@ -235,6 +291,178 @@ impl Config {
         Ok(cfg)
     }
 
+    /// Load from the default location with every document-level check applied,
+    /// returning the config together with what the check found.
+    ///
+    /// This is the path a caller that *surfaces* configuration problems wants.
+    /// [`Self::load`] stays as it is — it cannot grow a return type — and a
+    /// caller using it gets the same parse errors, minus the warnings.
+    pub fn load_checked() -> Result<LoadedConfig, ConfigError> {
+        Self::load_checked_from(&Self::config_path()?)
+    }
+
+    /// The checked load, from an explicit path.
+    ///
+    /// Three refusals are **hard** (the file is not acted on at all):
+    ///
+    /// - a credential-shaped key (`INV-02` — a config store carries references,
+    ///   never values; a value here is a plaintext credential with a backup
+    ///   policy nobody chose);
+    /// - a document written under a **newer** schema version (a partially-read
+    ///   config is a config whose author believes a setting is in force when this
+    ///   build never applied it);
+    /// - a malformed document (fail closed for the whole layer, as
+    ///   `ARCH/10-KERNEL.md` §9 requires).
+    ///
+    /// One is a **warning**: an unknown non-secret key. The document still loads
+    /// — refusing a whole install over a key this build does not recognise is a
+    /// worse failure than reporting it — but the key is never silently accepted,
+    /// and the note says what to do (`ARCH/10-KERNEL.md` §4).
+    pub fn load_checked_from(path: &Path) -> Result<LoadedConfig, ConfigError> {
+        if !path.exists() {
+            let cfg = Config::default();
+            cfg.save(path)?;
+            return Ok(LoadedConfig {
+                warnings: Vec::new(),
+                config: cfg,
+            });
+        }
+        let raw = std::fs::read_to_string(path).map_err(ConfigError::Io)?;
+        let table: toml::Table = toml::from_str(&raw).map_err(ConfigError::Parse)?;
+
+        let mut warnings = Vec::new();
+        for refusal in everyaios_types::config::check_document(&table) {
+            match refusal {
+                // A key this build does not define: a warning plus a migration
+                // note, never a silent drop.
+                ConfigRefusal::UnknownKey { key } if !is_secret_shaped_key(&key) => {
+                    warnings.push(ConfigWarning {
+                        layer: ConfigLayer::User,
+                        entry: CONFIG_ENTRY,
+                        reason: format!("`{key}` is not a key this build defines"),
+                        migration: CONFIG_MIGRATION,
+                    });
+                }
+                other => {
+                    return Err(ConfigError::InvalidEntry {
+                        entry: CONFIG_ENTRY,
+                        reason: other.to_string(),
+                        migration: CONFIG_MIGRATION,
+                    });
+                }
+            }
+        }
+        for key in table.keys() {
+            if !CONFIG_KEYS.contains(&key.as_str())
+                && !warnings
+                    .iter()
+                    .any(|warning| warning.reason.contains(&format!("`{key}`")))
+            {
+                warnings.push(ConfigWarning {
+                    layer: ConfigLayer::User,
+                    entry: CONFIG_ENTRY,
+                    reason: format!("`{key}` is not a key this build defines"),
+                    migration: CONFIG_MIGRATION,
+                });
+            }
+        }
+
+        let mut config: Config = table.clone().try_into().map_err(ConfigError::Parse)?;
+        let base = path.parent().unwrap_or_else(|| Path::new("."));
+        config.data_dir = normalize(base, &config.data_dir);
+        config.vault_path = normalize(base, &config.vault_path);
+        config.validate()?;
+        Ok(LoadedConfig { warnings, config })
+    }
+
+    /// The typed, at-load validation of the whole document
+    /// (`ARCH/10-KERNEL.md` §4: "schemas are typed, versioned and validated at
+    /// load").
+    ///
+    /// Entry-level validation lives with the entry ([`Self::rate_limit_layer`]
+    /// and the terminal/agent sections' own rules); this is the document-level
+    /// pass that no entry can supply, so a field that is *this build's* mistake
+    /// is caught at load rather than at first use.
+    pub fn validate(&self) -> Result<(), ConfigError> {
+        if self.schema_version > CONFIG_SCHEMA_VERSION {
+            return Err(ConfigError::InvalidEntry {
+                entry: CONFIG_ENTRY,
+                reason: format!(
+                    "the document declares schema v{} and this build understands up to v{}",
+                    self.schema_version, CONFIG_SCHEMA_VERSION
+                ),
+                migration: CONFIG_MIGRATION,
+            });
+        }
+        if self.data_dir.as_os_str().is_empty() {
+            return Err(ConfigError::InvalidEntry {
+                entry: CONFIG_ENTRY,
+                reason: "`data_dir` is empty: every store path would resolve against the process \
+                 working directory, which is not a data directory anyone chose"
+                    .to_string(),
+                migration: CONFIG_MIGRATION,
+            });
+        }
+        if self.retention_days == 0 {
+            return Err(ConfigError::InvalidEntry {
+                entry: CONFIG_ENTRY,
+                reason: format!(
+                    "`retention_days` is 0: the audit and replay history would be deleted on its \
+                     next sweep, which is a policy decision no zero should make implicitly. Set a \
+                     retention window, or remove the key to use the shipped default of {}",
+                    Config::default().retention_days
+                ),
+                migration: CONFIG_MIGRATION,
+            });
+        }
+        if self
+            .model_aliases
+            .keys()
+            .any(|alias| alias.trim().is_empty())
+        {
+            return Err(ConfigError::InvalidEntry {
+                entry: CONFIG_ENTRY,
+                reason: "a model alias is empty: an empty name cannot be typed, so the entry can \
+                 never be reached and only hides a typo"
+                    .to_string(),
+                migration: CONFIG_MIGRATION,
+            });
+        }
+        Ok(())
+    }
+
+    /// The reproducibility record a `Work` pins: the schema version plus a
+    /// fingerprint of *this* resolved configuration
+    /// (`ARCH/10-KERNEL.md` §4: "config changes that affect running work are
+    /// versioned into that work's record").
+    ///
+    /// Built from the canonical JSON of the resolved values, so two processes
+    /// that resolved the same config produce the same hash and a value change
+    /// anywhere shows up. Refusals propagate rather than producing a hash over
+    /// something that was not validated.
+    pub fn snapshot(&self) -> Result<ConfigSnapshot, ConfigError> {
+        self.validate()?;
+        let value = serde_json::to_value(self).map_err(|err| ConfigError::InvalidEntry {
+            entry: CONFIG_ENTRY,
+            reason: format!("the config is not representable as a snapshot: {err}"),
+            migration: CONFIG_MIGRATION,
+        })?;
+        let canonical_bytes =
+            canonical::to_canonical_string(&value).map_err(|err| ConfigError::InvalidEntry {
+                entry: CONFIG_ENTRY,
+                reason: format!("the config has no canonical form: {err}"),
+                migration: CONFIG_MIGRATION,
+            })?;
+        Ok(ConfigSnapshot::new(
+            everyaios_types::canonical::digest(&serde_json::Value::String(canonical_bytes))
+                .map_err(|err| ConfigError::InvalidEntry {
+                    entry: CONFIG_ENTRY,
+                    reason: format!("the config has no snapshot digest: {err}"),
+                    migration: CONFIG_MIGRATION,
+                })?,
+        ))
+    }
+
     /// The resolved UNIX socket path (J16): explicit config, else the default
     /// `<data_dir>/coordinator.sock`.
     pub fn resolved_socket_path(&self) -> PathBuf {
@@ -259,6 +487,36 @@ fn normalize(base: &Path, p: &Path) -> PathBuf {
         p.to_path_buf()
     } else {
         base.join(p)
+    }
+}
+
+/// A checked config load: the config, plus everything the check found that the
+/// caller should surface (and audit).
+///
+/// The distinction this type makes is the one `ARCH/10-KERNEL.md` §4 asks for:
+/// a **refusal** is an `Err` and the document is not acted on; a **warning** is
+/// a usable config plus something the user must be told. A load that returned
+/// only a `Config` would force one of those two facts to be dropped.
+#[derive(Debug, Clone, PartialEq)]
+pub struct LoadedConfig {
+    /// The validated config.
+    pub config: Config,
+    /// Document-level problems that did not stop the load. Each carries a
+    /// migration note; the caller surfaces them and writes the audit row,
+    /// because a pure config read has no channel to the audit trail itself.
+    pub warnings: Vec<ConfigWarning>,
+}
+
+impl LoadedConfig {
+    /// Whether the load was clean. Convenience for a caller that has already
+    /// decided a warning is worth a log line.
+    pub fn is_clean(&self) -> bool {
+        self.warnings.is_empty()
+    }
+
+    /// The snapshot a `Work` pins, taken from the loaded config.
+    pub fn snapshot(&self) -> Result<ConfigSnapshot, ConfigError> {
+        self.config.snapshot()
     }
 }
 
@@ -1146,5 +1404,309 @@ globalBurstAllowance = 700
             Some(ConfigLayer::User)
         );
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    // =========================================================================
+    // `TASK-KERNEL-003` — versioning + document-level validation
+    // =========================================================================
+
+    /// A scratch config directory for one test, removed on drop.
+    struct Scratch(PathBuf);
+
+    impl Scratch {
+        fn new(tag: &str) -> Self {
+            let dir = std::env::temp_dir().join(format!(
+                "everyaios-kernel003-{}-{}-{tag}",
+                std::process::id(),
+                line!()
+            ));
+            let _ = std::fs::remove_dir_all(&dir);
+            std::fs::create_dir_all(&dir).expect("scratch dir");
+            Self(dir.join(CONFIG_ENTRY))
+        }
+
+        fn write(&self, body: &str) {
+            std::fs::write(&self.0, body).expect("write the config document");
+        }
+    }
+
+    impl Drop for Scratch {
+        fn drop(&mut self) {
+            if let Some(parent) = self.0.parent() {
+                let _ = std::fs::remove_dir_all(parent);
+            }
+        }
+    }
+
+    /// The minimum a document must declare to be a config at all.
+    fn document(extra: &str) -> String {
+        format!(
+            "data_dir = \"/tmp/everyaios\"\nvault_path = \"/tmp/everyaios/vault.db\"\nretention_days = 7\nschema_version = {CONFIG_SCHEMA_VERSION}\n{extra}"
+        )
+    }
+
+    /// A document with `retention_days` set to something other than the default.
+    /// Written separately because a TOML document may not state a key twice — a
+    /// test that appended the override would be testing the parser, not the
+    /// validator.
+    fn document_with_retention(days: u32, extra: &str) -> String {
+        format!(
+            "data_dir = \"/tmp/everyaios\"\nvault_path = \"/tmp/everyaios/vault.db\"\nretention_days = {days}\nschema_version = {CONFIG_SCHEMA_VERSION}\n{extra}"
+        )
+    }
+
+    /// Every key `Config` writes is a key the unknown-key checker knows. This is
+    /// the test that stops a new field from becoming a key the loader reports as
+    /// unknown on the very next read.
+    #[test]
+    fn every_written_key_is_a_registered_key() {
+        let rendered =
+            toml::to_string_pretty(&Config::default()).expect("a default config renders");
+        let table: toml::Table = toml::from_str(&rendered).expect("re-parse");
+        // Nothing a default config writes may look unknown to the loader. This
+        // is the direction that breaks silently: a field added without a
+        // CONFIG_KEYS entry makes every save/load round-trip report a warning.
+        for key in table.keys() {
+            assert!(
+                CONFIG_KEYS.contains(&key.as_str()),
+                "`{key}` is written by a default config but is not in CONFIG_KEYS"
+            );
+        }
+        // …and every registered key that is *not* an absent `Option` is written,
+        // so a stale CONFIG_KEYS entry is caught here rather than letting a live
+        // key look unknown.
+        for key in CONFIG_KEYS {
+            if matches!(
+                key,
+                "browser_binary" | "socket_path" | "controlPlaneRateLimit"
+            ) {
+                // An `Option` set to `None` is not rendered. The key is still
+                // registered, which is what the loader needs.
+                continue;
+            }
+            assert!(
+                table.contains_key(key),
+                "{key} is registered but a default config never writes it — is the name right?"
+            );
+        }
+    }
+
+    /// A saved file round-trips through the *checked* loader with no warning:
+    /// what this build writes, this build accepts.
+    #[test]
+    fn a_saved_document_reloads_clean_through_the_checked_loader() {
+        let scratch = Scratch::new("roundtrip");
+        let cfg = Config {
+            retention_days: 30,
+            ..Config::default()
+        };
+        cfg.save(&scratch.0).expect("save");
+        let loaded =
+            Config::load_checked_from(&scratch.0).expect("the file this build wrote loads");
+        assert!(loaded.is_clean(), "{:?}", loaded.warnings);
+        assert_eq!(loaded.config.retention_days, 30);
+        assert_eq!(loaded.config.schema_version, CONFIG_SCHEMA_VERSION);
+    }
+
+    /// An unknown top-level key is a **warning with a migration note** and a
+    /// still-usable config — never a silent acceptance
+    /// (`ARCH/10-KERNEL.md` §4).
+    #[test]
+    fn an_unknown_top_level_key_warns_with_a_migration_note() {
+        let scratch = Scratch::new("unknown");
+        scratch.write(&document("retention_days_typo = 14\n"));
+        let loaded = Config::load_checked_from(&scratch.0).expect("an unknown key is not fatal");
+        assert!(!loaded.is_clean());
+        let warning = &loaded.warnings[0];
+        assert_eq!(warning.layer, ConfigLayer::User);
+        assert_eq!(warning.entry, CONFIG_ENTRY);
+        assert!(
+            warning.reason.contains("retention_days_typo"),
+            "{warning:?}"
+        );
+        assert_eq!(warning.migration, CONFIG_MIGRATION);
+        assert!(
+            warning.migration.contains("reported rather than ignored"),
+            "{warning:?}"
+        );
+        // The rest of the document still applies — the file is not discarded.
+        assert_eq!(loaded.config.retention_days, 7);
+    }
+
+    /// A credential in the config file is a **refusal**, not a warning: a config
+    /// store carries vault references, never values (`INV-02`).
+    #[test]
+    fn a_credential_in_the_config_file_is_refused_outright() {
+        for (key, value) in [
+            ("api_key", "\"sk-live-nope\""),
+            ("openaiApiKey", "\"sk-live-nope\""),
+            ("password", "\"hunter2\""),
+        ] {
+            let scratch = Scratch::new("secret");
+            scratch.write(&document(&format!("{key} = {value}\n")));
+            let err = Config::load_checked_from(&scratch.0)
+                .expect_err("a credential in config is refused");
+            assert!(
+                matches!(err, ConfigError::InvalidEntry { entry, .. } if entry == CONFIG_ENTRY),
+                "{key}: {err:?}"
+            );
+            assert_eq!(err.migration(), Some(CONFIG_MIGRATION));
+            let shown = err.to_string();
+            assert!(shown.contains("vault"), "{shown}");
+            // The value is nowhere in the message: the refusal names the key,
+            // never what it held.
+            assert!(!shown.contains("sk-live-nope"), "{shown}");
+            assert!(!shown.contains("hunter2"), "{shown}");
+        }
+    }
+
+    /// A document written under a **newer** schema version is refused whole.
+    /// Reading part of it would apply settings this build does not know while
+    /// the file says they are in force.
+    #[test]
+    fn a_newer_schema_version_is_refused_rather_than_partially_read() {
+        let scratch = Scratch::new("future");
+        scratch.write(&document("").replace(
+            &format!("schema_version = {CONFIG_SCHEMA_VERSION}"),
+            &format!("schema_version = {}", CONFIG_SCHEMA_VERSION + 1),
+        ));
+        let err = Config::load_checked_from(&scratch.0).expect_err("a future document is refused");
+        let shown = err.to_string();
+        assert!(shown.contains("newer build"), "{shown}");
+        assert!(
+            shown.contains(&format!("v{}", CONFIG_SCHEMA_VERSION + 1)),
+            "{shown}"
+        );
+        assert_eq!(err.migration(), Some(CONFIG_MIGRATION));
+    }
+
+    /// An older document (written before the field existed) still loads, and the
+    /// loader stamps the version it actually applied.
+    #[test]
+    fn a_document_without_a_schema_version_loads_and_is_stamped() {
+        let scratch = Scratch::new("legacy");
+        scratch.write("data_dir = \"/tmp/everyaios\"\nvault_path = \"/tmp/everyaios/vault.db\"\nretention_days = 9\n");
+        let loaded = Config::load_checked_from(&scratch.0).expect("a pre-versioning file loads");
+        assert!(loaded.is_clean(), "{:?}", loaded.warnings);
+        assert_eq!(loaded.config.schema_version, CONFIG_SCHEMA_VERSION);
+        assert_eq!(loaded.config.retention_days, 9);
+    }
+
+    /// The typed validation: a value this build cannot honour is refused at load
+    /// with the same migration-note discipline as an entry-level refusal.
+    #[test]
+    fn an_invalid_value_is_refused_at_load_with_a_migration_note() {
+        // A zero retention: history would be deleted on the next sweep, which is
+        // a policy decision no zero should make implicitly.
+        let scratch = Scratch::new("retention");
+        scratch.write(&document_with_retention(0, ""));
+        let err = Config::load_checked_from(&scratch.0).expect_err("retention 0 is refused");
+        assert_eq!(err.migration(), Some(CONFIG_MIGRATION));
+        assert!(err.to_string().contains("deleted on its"), "{err}");
+
+        // An empty model alias: unreachable, and it hides a typo.
+        let scratch = Scratch::new("alias");
+        scratch.write(&document("model_aliases = { \"\" = \"x/y\" }\n"));
+        let err = Config::load_checked_from(&scratch.0).expect_err("an empty alias is refused");
+        assert_eq!(err.migration(), Some(CONFIG_MIGRATION));
+        assert!(
+            err.to_string().contains("empty name cannot be typed"),
+            "{err}"
+        );
+
+        // A non-positive retention is not the only invalid shape, and a valid
+        // one is still accepted — the validator is not a blanket refusal.
+        assert!(
+            Config::load_checked_from(&scratch.0).is_err(),
+            "the same document is still refused"
+        );
+        let scratch = Scratch::new("valid-retention");
+        scratch.write(&document_with_retention(1, ""));
+        let loaded = Config::load_checked_from(&scratch.0).expect("retention 1 is fine");
+        assert_eq!(loaded.config.retention_days, 1);
+    }
+
+    /// The reproducibility record: a `Work` pins a snapshot, and any change to a
+    /// value that affects running work changes the snapshot. Same values, same
+    /// snapshot — that is what makes a reproduction verifiable rather than
+    /// asserted.
+    #[test]
+    fn a_config_snapshot_pins_the_values_a_work_depends_on() {
+        let base = Config {
+            data_dir: "/tmp/everyaios".into(),
+            vault_path: "/tmp/everyaios/vault.db".into(),
+            retention_days: 7,
+            ..Config::default()
+        };
+        let pinned = base.snapshot().expect("a validated config has a snapshot");
+        assert_eq!(pinned.schema_version, CONFIG_SCHEMA_VERSION);
+        assert!(pinned.is_reproducible_here());
+
+        // The same values, resolved twice, agree — the digest is over canonical
+        // bytes, so it does not depend on map iteration order.
+        let again = Config {
+            model_aliases: Default::default(),
+            ..base.clone()
+        }
+        .snapshot()
+        .expect("snapshot");
+        assert!(pinned.is_same_config(&again), "{pinned} vs {again}");
+
+        // A value that affects running work changes it.
+        let changed = Config {
+            retention_days: 14,
+            ..base.clone()
+        }
+        .snapshot()
+        .expect("snapshot");
+        assert!(
+            !pinned.is_same_config(&changed),
+            "a retention change is drift"
+        );
+
+        // And it round-trips as a record, so a Work row can carry it verbatim.
+        let json = serde_json::to_string(&pinned).expect("a snapshot serializes");
+        let back: ConfigSnapshot = serde_json::from_str(&json).expect("and deserializes");
+        assert_eq!(back, pinned);
+
+        // A snapshot is refused for a config that did not validate: hashing
+        // unvalidated values would pin a configuration nobody agreed to.
+        let invalid = Config {
+            retention_days: 0,
+            ..base
+        };
+        assert!(invalid.snapshot().is_err());
+    }
+
+    /// The layer ladder and the document check agree: a value that survives
+    /// `load_checked` resolves through the fixed order, and the resolved record
+    /// still names its source.
+    #[test]
+    fn a_checked_document_resolves_through_the_same_ladder() {
+        let scratch = Scratch::new("ladder");
+        scratch.write(&document(
+            "\n[controlPlaneRateLimit]\ncallerCommandBurst = 200\n",
+        ));
+        let loaded = Config::load_checked_from(&scratch.0).expect("a well-formed document loads");
+        assert!(loaded.is_clean(), "{:?}", loaded.warnings);
+        let resolved = loaded.config.resolve_rate_limit(&BTreeMap::new());
+        assert_eq!(resolved.settings.caller_command_burst, 200);
+        assert_eq!(
+            resolved.source_of("callerCommandBurst"),
+            Some(ConfigLayer::User)
+        );
+        // The pinned snapshot covers the entry, so a change to it is drift in the
+        // work record too.
+        let pinned = loaded.snapshot().expect("snapshot");
+        let mut bumped = loaded.config.clone();
+        bumped.control_plane_rate_limit = Some(
+            RateLimitOverrides {
+                caller_command_burst: Some(201),
+                ..RateLimitOverrides::default()
+            }
+            .to_table()
+            .expect("table"),
+        );
+        assert!(!pinned.is_same_config(&bumped.snapshot().expect("snapshot")));
     }
 }

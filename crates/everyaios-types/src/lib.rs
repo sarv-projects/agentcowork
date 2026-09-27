@@ -17,10 +17,24 @@
 
 use serde::{Deserialize, Serialize};
 
+pub mod canonical;
+pub mod config;
 pub mod delegation;
+pub mod error;
+pub mod id;
 pub mod plane;
+pub mod store;
+pub mod time;
 pub mod turn_snapshot;
 pub mod workbench;
+
+pub use config::{CONFIG_SCHEMA_VERSION, ConfigRefusal, ConfigSnapshot};
+pub use error::{
+    BoundaryError, ErrorCode, KernelError, MAX_BOUNDARY_CAUSE, MAX_BOUNDARY_MESSAGE, NextStep,
+    RetryClass,
+};
+pub use id::{EntityId, IdMinter, ShortId, UuidV7Error};
+pub use time::{Deadline, EpochMillis, MonotonicClock, TimezonePolicy};
 
 // ────────────────────────────────────────────────────────────────────────
 // ID newtypes — opaque, serializable, displayable, comparable.

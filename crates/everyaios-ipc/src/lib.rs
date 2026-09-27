@@ -13,22 +13,34 @@
 //! - The handshake mirrors ACP `initialize` (protocolVersion + optional-by-
 //!   default capabilities, doc 45) so the contract can evolve without
 //!   breaking older sides.
+//! - [`envelope`] is the **base envelope** every `CTR-*` call carries
+//!   (`ARCH/10-KERNEL.md` §7): actor context, cooperative cancellation with
+//!   deadline propagation, a ticket-derived idempotency key for effects, and a
+//!   versioned `{ ok, value } | { error }` result whose two arms cannot be
+//!   confused. The taxonomy it speaks is the kernel's, from
+//!   `everyaios-types::error` — this crate maps envelopes onto JSON-RPC, it does
+//!   not re-declare the errors.
 //!
 //! This is the P0.1 skeleton: framing + JSON-RPC message types + handshake
 //! negotiation, all unit-tested. P0.5 wires it into the ProcessSupervisor
 //! with backpressure, truncation and latency benchmarks.
 
+pub mod budget;
 pub mod channel;
+pub mod envelope;
 pub mod frame;
 pub mod handle;
 pub mod message;
 #[cfg(unix)]
 pub mod socket;
 
-pub use channel::{BoundedChannel, DEFAULT_CAPACITY};
-pub mod budget;
-
 pub use budget::{Budgeted, MessageKind, PayloadBudget, apply_budget, budget_for};
+pub use channel::{BoundedChannel, DEFAULT_CAPACITY};
+pub use envelope::{
+    ActorContext, ActorKind, CONTRACT_RULES, ContractRule, DedupeSupport, ENVELOPE_VERSION,
+    EffectBearing, EnvelopeViolation, IdempotencyKey, RequestEnvelope, ResultEnvelope,
+    TicketBinding, TypedEnvelope, WireEnvelope, decode_result, rule_for,
+};
 pub use frame::{FrameError, MAX_FRAME_LEN, encode};
 pub use handle::{HandleRef, HandleStore, WirePayload};
 pub use message::{JsonRpcError, Request, Response};

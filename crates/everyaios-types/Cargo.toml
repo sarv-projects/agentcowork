@@ -11,6 +11,11 @@ serde = { workspace = true }
 # P69.D25 — the canonical event envelope carries a typed JSON payload
 # (`EventEnvelope`); serde_json is data-only, no IO, so the purity rule holds.
 serde_json = { workspace = true }
+# TASK-KERNEL-003 — the config document check (`config::check_document`) reads a
+# `toml::Table`, so the kernel states the rules a config surface must satisfy
+# against the one table type the surfaces already parse into. `toml` is a parser
+# here, not storage: no IO, no handle, nothing held past the call.
+toml = { workspace = true }
 
 [dev-dependencies]
 serde_json = { workspace = true }
