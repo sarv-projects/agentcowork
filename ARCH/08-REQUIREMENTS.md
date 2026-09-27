@@ -184,7 +184,7 @@ This registry answers one question per entry: **what behavior must this system e
 - **Status:** seeded
 
 #### REQ-KERNEL-007 — Base envelope on every contract
-- **Statement:** GIVEN any `CTR-*` invocation, WHEN it is called, THEN it carries actor context (user/agent/workflow with scope + permissions snapshot), cooperative cancellation with deadline propagation, idempotency keys for effects (`work_id` + ticket), and a versioned `{ ok, value } | { error }` result envelope.
+- **Statement:** GIVEN any `CTR-*` invocation, WHEN it is called, THEN it carries actor context (user/agent/workflow with scope + a `permissions_ref` naming the admission decision, resolved by Trust — never a permission snapshot in the envelope; DEC-050), cooperative cancellation with deadline propagation, idempotency keys for effects (`work_id` + ticket), and a versioned `{ ok, value } | { error }` result envelope.
 - **Priority:** must
 - **Source:** `ARCH/10-KERNEL.md` §7 · `ARCH/07-CONTRACTS.md` · `ARCH/05-INVARIANTS.md` INV-16
 - **Acceptance:** contract conformance tests show the envelope on every boundary; cancellation leaves durable state consistent; duplicate effect invocation with the same key dedupes where the provider supports it.

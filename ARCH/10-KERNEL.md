@@ -70,7 +70,7 @@ defaults → user (global) → workspace/project → agent profile → session �
 
 Every `CTR-*` (in `07`) carries:
 
-- **Actor context:** who is calling (user · agent · workflow), with scope + permissions snapshot.
+- **Actor context:** who is calling (user · agent · workflow), with scope + a permissions **reference** (`permissions_ref`, resolved by the Trust owner — a snapshot never travels inside the envelope; DEC-050, INV-11).
 - **Cancellation:** cooperative cancellation token; deadlines propagate; cancellation leaves durable state consistent (INV-16).
 - **Idempotency:** effect invocations carry keys minted here (`work_id` + `ticket`), so retries cannot double-apply where providers support dedupe.
 - **Result envelope:** `{ ok, value } | { error: { code, message, retryable, cause? } }` — language-neutral schema, versioned.
