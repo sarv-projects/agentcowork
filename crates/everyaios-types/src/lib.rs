@@ -20,6 +20,7 @@ use serde::{Deserialize, Serialize};
 pub mod canonical;
 pub mod config;
 pub mod delegation;
+pub mod envelope;
 pub mod error;
 pub mod id;
 pub mod plane;
@@ -29,6 +30,11 @@ pub mod turn_snapshot;
 pub mod workbench;
 
 pub use config::{CONFIG_SCHEMA_VERSION, ConfigRefusal, ConfigSnapshot};
+pub use envelope::{
+    ActorContext, ActorKind, CONTRACT_RULES, ContractRule, DedupeSupport, ENVELOPE_VERSION,
+    EffectBearing, EnvelopeViolation, IdempotencyKey, RequestEnvelope, ResultEnvelope,
+    TicketBinding, TypedEnvelope, WireEnvelope, decode_result, rule_for,
+};
 pub use error::{
     BoundaryError, ErrorCode, KernelError, MAX_BOUNDARY_CAUSE, MAX_BOUNDARY_MESSAGE, NextStep,
     RetryClass,

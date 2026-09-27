@@ -34,13 +34,11 @@ use std::fmt;
 
 use serde::{Deserialize, Serialize};
 
-use everyaios_types::error::{BoundaryError, ErrorCode, KernelError};
-use everyaios_types::time::{
-    CancellationToken, Deadline, EpochMillis, SystemClock, now_epoch_millis,
-};
-use everyaios_types::{CANONICAL_SCHEMA_VERSION, EntityId, TicketId, WorkId};
+use crate::error::{BoundaryError, ErrorCode, KernelError};
+use crate::time::{CancellationToken, Deadline, EpochMillis, SystemClock, now_epoch_millis};
+use crate::{CANONICAL_SCHEMA_VERSION, EntityId, TicketId, WorkId};
 
-/// The current instant as an [`EpochMillis`]. The one place the IPC layer reads
+/// The current instant as an [`EpochMillis`]. The one place the kernel reads
 /// the wall clock for a boundary decision.
 fn now() -> EpochMillis {
     EpochMillis::from_unix_millis(now_epoch_millis())
@@ -888,7 +886,7 @@ impl<T: serde::de::DeserializeOwned> ResultEnvelope<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use everyaios_types::MonotonicClock;
+    use crate::MonotonicClock;
     use std::time::Duration;
 
     fn actor() -> ActorContext {
@@ -983,7 +981,7 @@ mod tests {
         // and the steps survive the wire.
         let guidance = ResultEnvelope::<u32>::from_kernel(KernelError::guidance(
             "the drive connector is not connected",
-            vec![everyaios_types::error::NextStep::at(
+            vec![crate::error::NextStep::at(
                 "Connect Google Drive",
                 "settings/connectors/drive",
             )],

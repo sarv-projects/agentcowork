@@ -4,13 +4,12 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
-description = "EveryAIOS IPC — JSON-RPC over stdio with [u32 LE] length-prefixed framing (sidecar contract, ARCH/01 §1.4)"
+description = "EveryAIOS IPC — JSON-RPC over stdio with [u32 LE] length-prefixed framing (transport only: framing and message shape, ARCH/07-CONTRACTS.md)"
 
 [dependencies]
-# TASK-KERNEL-002 — the base envelope is expressed in the kernel's own
-# vocabulary (the canonical error taxonomy, the cancellation token/deadline and
-# the single id minter), so the wire layer never re-declares them.
-everyaios-types = { path = "../everyaios-types" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
+
+[dev-dependencies]
+everyaios-types = { path = "../everyaios-types" }

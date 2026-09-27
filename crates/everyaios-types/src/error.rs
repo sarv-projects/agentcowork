@@ -206,6 +206,80 @@ impl ErrorCode {
     }
 }
 
+impl ErrorCode {
+    /// JSON-RPC parse error: the payload is not interpretable JSON.
+    pub const JSONRPC_PARSE_ERROR: i64 = -32700;
+    /// JSON-RPC invalid request: the payload is not a valid request object.
+    pub const JSONRPC_INVALID_REQUEST: i64 = -32600;
+    /// JSON-RPC method not found: the named method does not exist.
+    pub const JSONRPC_METHOD_NOT_FOUND: i64 = -32601;
+    /// JSON-RPC internal error: the standard range's catch-all.
+    pub const JSONRPC_INTERNAL_ERROR: i64 = -32603;
+
+    /// The first implementation-defined code, which is where the taxonomy's
+    /// stable codes live (`-32000…-32099` is JSON-RPC's reserved range for
+    /// "server-defined", so nothing here can collide with a future standard
+    /// code).
+    pub const JSONRPC_APPLICATION_BASE: i64 = -32000;
+
+    // The eight stable application codes, named so the mapping is data both ways
+    // and a peer can switch on the constant instead of the number.
+    pub const JSONRPC_AUTHORIZATION_DENIED: i64 = Self::JSONRPC_APPLICATION_BASE - 1;
+    pub const JSONRPC_NOT_FOUND: i64 = Self::JSONRPC_APPLICATION_BASE - 2;
+    pub const JSONRPC_CONFLICT: i64 = Self::JSONRPC_APPLICATION_BASE - 3;
+    pub const JSONRPC_UNAVAILABLE: i64 = Self::JSONRPC_APPLICATION_BASE - 4;
+    pub const JSONRPC_TIMEOUT: i64 = Self::JSONRPC_APPLICATION_BASE - 5;
+    pub const JSONRPC_INVALID_STATE: i64 = Self::JSONRPC_APPLICATION_BASE - 6;
+    pub const JSONRPC_GUIDANCE_REQUIRED: i64 = Self::JSONRPC_APPLICATION_BASE - 7;
+    pub const JSONRPC_REQUIRES_USER_ACTION: i64 = Self::JSONRPC_APPLICATION_BASE - 8;
+
+    /// The stable JSON-RPC code for one taxonomy code. This mapping is kernel
+    /// policy, not transport: the transport carries the integer, the kernel
+    /// decides what it means.
+    ///
+    /// `Internal` reuses JSON-RPC's own `-32603` rather than taking an
+    /// application code: it is the same fact, and a peer that special-cases the
+    /// standard range keeps working.
+    pub const fn jsonrpc_code(self) -> i64 {
+        match self {
+            Self::AuthorizationDenied => Self::JSONRPC_AUTHORIZATION_DENIED,
+            Self::NotFound => Self::JSONRPC_NOT_FOUND,
+            Self::Conflict => Self::JSONRPC_CONFLICT,
+            Self::Unavailable => Self::JSONRPC_UNAVAILABLE,
+            Self::Timeout => Self::JSONRPC_TIMEOUT,
+            Self::InvalidState => Self::JSONRPC_INVALID_STATE,
+            Self::GuidanceRequired => Self::JSONRPC_GUIDANCE_REQUIRED,
+            Self::RequiresUserAction => Self::JSONRPC_REQUIRES_USER_ACTION,
+            Self::Internal => Self::JSONRPC_INTERNAL_ERROR,
+        }
+    }
+
+    /// The taxonomy code a JSON-RPC code denotes, when it denotes one.
+    ///
+    /// The three shared standard codes map by *meaning*, not by number
+    /// coincidence: an unknown method is a target that does not exist, and an
+    /// unparseable payload is a document this build cannot interpret. The
+    /// remaining reserved codes have no counterpart and are `None`, so a caller
+    /// is forced to decide what an unrecognised code means instead of inheriting
+    /// a guess.
+    pub const fn from_jsonrpc_code(code: i64) -> Option<Self> {
+        match code {
+            Self::JSONRPC_AUTHORIZATION_DENIED => Some(Self::AuthorizationDenied),
+            Self::JSONRPC_NOT_FOUND => Some(Self::NotFound),
+            Self::JSONRPC_CONFLICT => Some(Self::Conflict),
+            Self::JSONRPC_UNAVAILABLE => Some(Self::Unavailable),
+            Self::JSONRPC_TIMEOUT => Some(Self::Timeout),
+            Self::JSONRPC_INVALID_STATE => Some(Self::InvalidState),
+            Self::JSONRPC_GUIDANCE_REQUIRED => Some(Self::GuidanceRequired),
+            Self::JSONRPC_REQUIRES_USER_ACTION => Some(Self::RequiresUserAction),
+            Self::JSONRPC_METHOD_NOT_FOUND => Some(Self::NotFound),
+            Self::JSONRPC_PARSE_ERROR | Self::JSONRPC_INVALID_REQUEST => Some(Self::InvalidState),
+            Self::JSONRPC_INTERNAL_ERROR => Some(Self::Internal),
+            _ => None,
+        }
+    }
+}
+
 impl fmt::Display for ErrorCode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(self.as_str())
@@ -874,6 +948,52 @@ mod tests {
             ErrorCode::Internal,
         ] {
             assert!(!code.is_retryable(), "{code} must not be retryable");
+        }
+    }
+
+    #[test]
+    fn every_code_has_a_stable_json_rpc_code() {
+        for code in ErrorCode::ALL {
+            let mapped = code.jsonrpc_code();
+            assert_eq!(
+                ErrorCode::from_jsonrpc_code(mapped),
+                Some(code),
+                "{code} must round-trip"
+            );
+        }
+        for code in ErrorCode::ALL {
+            let mapped = code.jsonrpc_code();
+            if code == ErrorCode::Internal {
+                // `Internal` deliberately reuses the standard code: it is the
+                // same fact, and a peer that special-cases `-32603` keeps working.
+                assert_eq!(mapped, ErrorCode::JSONRPC_INTERNAL_ERROR);
+                continue;
+            }
+            // The application range is reserved for server-defined codes, so a
+            // future standard assignment cannot collide with ours.
+            assert!(
+                (-32099..=-32000).contains(&mapped),
+                "{code} → {mapped} is outside the server-defined range"
+            );
+        }
+        // The application codes are the exact integers peers already switch on.
+        assert_eq!(ErrorCode::JSONRPC_AUTHORIZATION_DENIED, -32001);
+        assert_eq!(ErrorCode::JSONRPC_REQUIRES_USER_ACTION, -32008);
+        // The three shared standard codes map by meaning.
+        assert_eq!(
+            ErrorCode::from_jsonrpc_code(ErrorCode::JSONRPC_METHOD_NOT_FOUND),
+            Some(ErrorCode::NotFound)
+        );
+        assert_eq!(
+            ErrorCode::from_jsonrpc_code(ErrorCode::JSONRPC_PARSE_ERROR),
+            Some(ErrorCode::InvalidState)
+        );
+        // A code with no counterpart is refused, not guessed.
+        assert_eq!(ErrorCode::from_jsonrpc_code(-32099), None);
+        assert_eq!(ErrorCode::from_jsonrpc_code(42), None);
+        // The standard codes that do not map are genuinely unmapped.
+        for reserved in [-32602, -32604, -32605] {
+            assert_eq!(ErrorCode::from_jsonrpc_code(reserved), None, "{reserved}");
         }
     }
 

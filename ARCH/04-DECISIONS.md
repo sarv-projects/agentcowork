@@ -332,7 +332,7 @@ Background extraction defaults to the session's active provider (no *new* disclo
 
 ### DEC-050 — Base envelope carries a permissions reference, not a snapshot
 
-**Correction on record (W1 kernel implementation, 2026-09-27):** two prose statements described the base envelope's actor context as carrying a permissions **snapshot** — `ARCH/10-KERNEL.md` §7 (*"who is calling (user · agent · workflow), with scope + permissions snapshot"*) and `REQ-KERNEL-007` in `ARCH/08-REQUIREMENTS.md` (*"actor context (user/agent/workflow with scope + permissions snapshot)"*). The canonical shape stated twelve lines below the first one already disagreed: the envelope JSON carries `"permissions_ref": "…"`. The implementation follows the shape, not the prose (`crates/everyaios-ipc/src/envelope.rs` — `ActorContext::permissions_ref`, a reference rather than values, resolved by the Trust owner).
+**Correction on record (W1 kernel implementation, 2026-09-27):** two prose statements described the base envelope's actor context as carrying a permissions **snapshot** — `ARCH/10-KERNEL.md` §7 (*"who is calling (user · agent · workflow), with scope + permissions snapshot"*) and `REQ-KERNEL-007` in `ARCH/08-REQUIREMENTS.md` (*"actor context (user/agent/workflow with scope + permissions snapshot)"*). The canonical shape stated twelve lines below the first one already disagreed: the envelope JSON carries `"permissions_ref": "…"`. The implementation follows the shape, not the prose (`crates/everyaios-types/src/envelope.rs` — `ActorContext::permissions_ref`, a reference rather than values, resolved by the Trust owner).
 
 **Why the reference is the correct reading:** the envelope crosses a trust boundary. INV-11 gives external callers projections only, and a permission snapshot travelling *inside* the envelope would be a second copy of an authorization decision that no ticket mints and no audit entry covers — exactly the "second, unaudited copy" failure the one-decider rule (`INV-01`, `ARCH/12-TRUST.md`) exists to prevent. The admission decision stays in Trust; the envelope only names it.
 
@@ -340,7 +340,7 @@ Background extraction defaults to the session's active provider (no *new* disclo
 
 **Status note:** Locked (2026-09-27).
 
-**Evidence:** `ARCH/10-KERNEL.md` §7 (JSON canonical shape) · `ARCH/05-INVARIANTS.md` INV-11 · `crates/everyaios-ipc/src/envelope.rs` `ActorContext` · `crates/everyaios-ipc/tests/envelope_conformance.rs`.
+**Evidence:** `ARCH/10-KERNEL.md` §7 (JSON canonical shape) · `ARCH/05-INVARIANTS.md` INV-11 · `crates/everyaios-types/src/envelope.rs` `ActorContext` · `crates/everyaios-types/tests/envelope.rs`.
 
 **Affects:** `10-KERNEL`, `08-REQUIREMENTS`, `07-CONTRACTS`, `05-INVARIANTS`.
 
