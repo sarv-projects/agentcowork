@@ -3056,11 +3056,11 @@ This registry answers one question per entry: **what behavior must this system e
 - **Status:** accepted
 
 #### REQ-UXQ-005 — Universal Workbench with honest format support
-- **Statement:** GIVEN a file, URL, artifact or agent, WHEN opened beside chat, THEN a stable tab, typed selection and inspect/edit/takeover control are offered only at probed capability, with reader or native fallback otherwise.
+- **Statement:** GIVEN any selected file, URL, artifact or agent, WHEN opened beside chat, THEN a stable tab and typed identity/version selection are available; one shared handler registry probes the content and exposes only supported operations, while an unknown/unhandled file still opens a safe metadata tab with a user-chosen native-app handoff.
 - **Priority:** must
 - **Source:** DEC-055; `48` §5
-- **Acceptance:** `TC-010…018` pass including conflict and unsupported-format paths.
-- **Failure cases:** silent file flattening, wrong selection target, browser control without resnapshot.
+- **Acceptance:** `TC-010…018` and `TC-051` pass, including arbitrary/mislabeled formats, safe native-app handoff, refreshed file version and concurrent-edit conflict.
+- **Failure cases:** silent file flattening, wrong selection target, extension-only misclassification, unsupported file presented as read, file selection auto-running executable/script content, active-content risk hidden during native handoff, external edit silently overwriting a Workbench version, browser control without resnapshot.
 - **Tests:** pending
 - **Status:** accepted
 

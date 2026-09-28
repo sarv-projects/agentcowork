@@ -20,6 +20,12 @@
 4. **No lossy re-serialization without disclosure** — formats declare engines/limits; we prefer surgical OOXML patching over whole-file re-serialization (openpyxl’s lost shapes are the cautionary proof).
 5. **Render/validate before receipts** — validation hooks run proportional to risk (`34`, INV-19).
 
+### 1.1 Shared document-handler registry
+
+The existing per-format operation registry is also the **universal document-handler registry** used by `48`'s Workbench; this is an extension of the Office/format-provider boundary, not a new service. A `DocumentHandlerDescriptor` declares `handler_id/version` · content signatures · MIME types/extensions · operations (`metadata`, `preview`, `extract`, `select`, `annotate`, `edit`, `render`, `validate`, `convert`, `open_native`) · per-operation support/fidelity limits · size/time/resource bounds · isolation class · provenance/health. `CapabilityBroker` (`13`) still owns invocation and Trust; the handler registry resolves which descriptor can serve a particular file and operation.
+
+Resolve against a bounded content-signature probe first, then declared MIME, then extension; an extension/content mismatch is shown and never silently treated as the extension's format. Resolution is deterministic and may return multiple user-selectable providers when capabilities differ. Every operation is probed independently: a handler that can preview does not imply it can edit or save losslessly. Never execute a document's macros, embedded scripts, archive entries or linked content during identification or preview. Each parser/provider has input bounds; untrusted or third-party handlers run in the existing sandbox/provider boundary (`19`, `31`).
+
 ## 2. Format providers & technology
 
 | Format | Primary (native) | Fallback / external | Notes |
@@ -30,6 +36,14 @@
 | PDF | Native PDF runtime | LibreOffice/mutool-class tools | Redact must **remove** content, not annotate (code-phase P0) |
 
 Licensing: LibreOffice is MPL-2.0 (usable; packaging decision deferred); OfficeCLI (.NET) is **benchmark/external-provider only** — its architecture is absorbed, not embedded (`44-ABSORB-REGISTER`).
+
+### 2.1 Arbitrary-file opening and native-app handoff
+
+Every file selected from Files, Library, chat attachments or an agent result gets a stable Workbench tab, even when no semantic reader is registered. Selecting a file never runs it or auto-launches its OS default. A supported handler provides its declared preview/extraction/edit operations. With no handler, the tab shows safe metadata (identity, size, extension, detected MIME/signature, freshness and why no reader is available) and a user-invoked **Open with…** action for a registered/OS-native app; it does not fabricate extracted text. For untrusted documents with active content, use a handler's protected/view-only mode when available; otherwise disclose the native application's active-content behavior and require a separate explicit open action. Executables, scripts, shortcuts and installers never use the ordinary document-open path. The chat may carry the exact file/version reference, but an agent receives bytes or extracted content only through its granted file capability and a compatible provider.
+
+Native-app handoff is an operation, not a renderer claim: resolve an explicitly selected executable through a provider descriptor, pass the file as a distinct argument under pathfloor, show the target application, and retain the Workbench tab as the file-status/selection surface. Watch the stable file identity and digest. After the native app changes the file, report the new version and conflict state, then refresh/re-open or import a new managed Artifact version according to the owning file/artifact contract (`25`/`29`); never overwrite concurrent Workbench changes silently. If there is no safe app association, offer a picker or leave the metadata tab open. An optional office suite may broaden preview/edit coverage but is not assumed installed or embedded.
+
+Third-party format handlers may register through the existing provider/plugin surfaces (`14`, `31`) after review, explicit enablement and scoped grants. There is one resolution path and one capability authorization path; no extension may register a hidden shell command, bypass Core, or imply that every format has a lossless editor. This provides an open-ended format ecosystem while keeping the default Workbench useful for unknown files.
 
 ## 3. Operation registry (per format — v1 op set)
 

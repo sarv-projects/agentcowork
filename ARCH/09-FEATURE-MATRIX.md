@@ -359,7 +359,7 @@ One row per `REQ-*`. Status only from evidence.
 | `REQ-UXQ-002` | `38-EXPERIENCE-QUALITY` | pending | `DEC-054`, `DEC-057/058` | `TC-001…049` | `TASK-UXQ-009` | pending | planned |
 | `REQ-UXQ-003` | `48-EXPERIENCE-SURFACES` | pending | `DEC-055` | `TC-005…008` | `TASK-UI-014`, `TASK-UI-015`, `TASK-UXQ-001` | pending | planned |
 | `REQ-UXQ-004` | `48-EXPERIENCE-SURFACES`, `46-ECOSYSTEM-ARCHITECTURE` | pending | `DEC-055` | `TC-007/009/038` | `TASK-UI-030`, `TASK-UXQ-002` | pending | planned |
-| `REQ-UXQ-005` | `48-EXPERIENCE-SURFACES`, `22-OFFICE`, `23-BROWSER`, `24-COMPUTER-USE` | pending | `DEC-055` | `TC-010…018` | `TASK-UI-011`, `TASK-UI-040`, `TASK-UXQ-003` | pending | planned |
+| `REQ-UXQ-005` | `48-EXPERIENCE-SURFACES`, `22-OFFICE`, `23-BROWSER`, `24-COMPUTER-USE` | pending | `DEC-055` | `TC-010…018/051` | `TASK-UI-011`, `TASK-UI-040`, `TASK-UXQ-003` | pending | planned |
 | `REQ-UXQ-006` | `48-EXPERIENCE-SURFACES` | pending | `DEC-055` | `TC-003/004/014/038` | `TASK-UXQ-004` | pending | planned |
 | `REQ-UXQ-007` | `29-ARTIFACTS`, `48-EXPERIENCE-SURFACES` | pending | `DEC-055` | `TC-015/033` | `TASK-UI-041`, `TASK-UXQ-005` | pending | planned |
 | `REQ-UXQ-008` | `46-ECOSYSTEM-ARCHITECTURE`, `48-EXPERIENCE-SURFACES` | pending | `DEC-054/055` | `TC-007/008/026` | `TASK-UXQ-006` | pending | planned |

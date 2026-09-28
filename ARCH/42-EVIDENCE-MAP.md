@@ -60,7 +60,7 @@ Each doc’s claims map to a verification class; tests are sized to the claim. (
 | `34` Verification | Risk→depth matrix tests; unverified-state surfacing; repair paths. |
 | `35`/`36` Mission | Contract/plan versioning, Work replacement, drift invalidation, independent outcome checks and stop decisions; `TC-027…036`. |
 | `46` Ecosystem | Read-only discovery, supported overlay negotiation, native/Core evidence separation, extension scope/collision/revocation and heterogeneous child handoff. |
-| `48` Experience | First-run comprehension, composer controls, responsive/accessible renderer, Workbench edit/takeover, Library retrieval, truthful Settings and child-state display; `TC-001…038`, `TC-049`. |
+| `48` Experience | First-run comprehension, composer controls, responsive/accessible renderer, universal file-handler/fallback path with no file-selection auto-run, Workbench edit/takeover, Library retrieval, truthful Settings and child-state display; `TC-001…038`, `TC-049`, `TC-051`. |
 | `51` Machine Observer | Typed snapshots/provider gaps, explicit local consent and exact-operation elevation, bounded history/query, least-rights process diagnostics, storage/GPU/WSL limits, standalone IPC and approachable System Workbench; `TC-040…050`. |
 | `49` Test cases | Pinned fixture/scorer/run metadata and raw result bundles, including unsupported and failed runs; no pass claim until executed. |
 | `40`/`41` | Flow e2e scripts + edge-case regression tests. |
