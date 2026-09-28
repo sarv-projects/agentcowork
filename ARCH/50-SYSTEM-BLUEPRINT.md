@@ -169,4 +169,46 @@ Parallelism is bounded by independence, isolation, agent limits and expected int
 
 ## 7. Viability and unresolved implementation probes
 
+### 7.1 Durable data relationships
+
+```mermaid
+erDiagram
+  MISSION ||--o{ GOAL_CONTRACT_VERSION : versions
+  GOAL_CONTRACT_VERSION ||--o{ REQUIREMENT : declares
+  MISSION ||--o{ PLAN_VERSION : versions
+  PLAN_VERSION ||--o{ PLAN_NODE : contains
+  PLAN_NODE ||--o{ WORK : attempts
+  WORK ||--o{ SESSION : binds
+  WORK ||--o{ CHECKPOINT : checkpoints
+  WORK ||--o{ WORKER_RECEIPT : reports
+  MISSION ||--o{ EVIDENCE_LINK : assesses
+  REQUIREMENT ||--o{ EVIDENCE_LINK : requires
+  ARTIFACT_VERSION ||--o{ EVIDENCE_LINK : supports
+  ARTIFACT_VERSION ||--o{ ARTIFACT_DEPENDENCY : input_to
+  ARTIFACT_VERSION ||--o{ LIBRARY_ITEM : explicitly_saved_as
+```
+
+Mission, PlanNode and Requirement are semantic truth; Work and Session are execution attempts. Artifact versions, receipts and evidence links are distinct records. A workflow definition can be invoked by a PlanNode through one Work, while its internal versioned nodes remain Workflow-owned (`06`, `35`–`37`).
+
+### 7.2 Effective extension scope
+
+```mermaid
+flowchart LR
+  C[Catalogued extension] --> I{Installed?}
+  I -->|no| V[Visible only; cannot run]
+  I -->|yes| O{Owner}
+  O -->|discovered agent native| N[Read-only inventory; native policy]
+  O -->|host| G[Host grant selector]
+  G --> W[Workspace and Mission ceiling]
+  W --> A[Agent binding compatibility]
+  A --> S[Session/Work grant]
+  S --> T[Trust decision on each mediated call]
+  T --> L[Lazy server or skill activation]
+  L --> E[Effect/evidence with owner provenance]
+```
+
+Catalog, installation, availability and activation are separate states. The UI resolves one effective row per extension and explains a collision, missing bridge, expired credential or revocation before a user relies on it (`31`, `46`, `48`).
+
+### 7.3 Probes that remain
+
 The blueprint is viable as ownership design, but the following cannot be asserted as shipped or universally available: external-agent session resume/steering/model picker, native child telemetry, injected shared MCP/skill support, Chrome user-profile attachment, lossless Office editing, every filetype preview, cloud continuation and strong local-model task performance. Each requires capability negotiation, adapter-specific probe, user-visible fallback and benchmark evidence. The right Workbench's managed Chromium surface may be implemented through a supported browser bridge rather than direct browser embedding; UI design must not assume one renderer API. Windows desktop control needs display/focus/permission probes and verified effect receipts for Core-mediated actions. Multi-agent quality requires integration and independent outcome checks, not mere process count. `39` owns implementation dependencies; `49` owns scenario oracles.

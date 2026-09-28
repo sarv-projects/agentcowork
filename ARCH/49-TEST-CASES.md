@@ -8,6 +8,18 @@ For every run record: `CASE`, input fixture digest, allowed capabilities, agent/
 
 The clock includes setup and approval delay in an end-to-end result; also report agent-active time separately. No case passes by hiding manual user work. Seed deterministic fixtures for local/API cases and capture the external state at start for live web cases. Reset fixture state between repetitions. Fault injection is part of the case, not an optional afterthought. Human studies recruit nontechnical and technical users with separate results; a strong power-user score cannot substitute for first-run comprehension.
 
+**Execution record per case and repetition:**
+
+| Field | Required entry |
+|---|---|
+| Problem | Exact user request, fixture/version and initial external state |
+| Expected | Task outcome, allowed effects, time/resource envelope and acceptance oracle from the case row |
+| Observed | What the product actually did: actions, intermediate states, output version, time/cost, user interventions, failures and recovery steps; `not run` until measured |
+| Verdict | `pass|fail|unsupported|blocked_by_access|inconclusive|not_run`, with oracle result and reviewer |
+| Evidence | Reproducible trace, artifact/diff, effect receipts or native observations, screenshots/logs where relevant, and any missing proof |
+
+No observed-result field may be filled from a marketing claim or an agent's self-report. A case row's “Expected” column is a design contract; it is not a recorded pass.
+
 ## 2. Ladder: conversation to autonomous Mission
 
 | ID / level | Problem and fixture | Expected action and pass oracle | Failure and measurement emphasis |

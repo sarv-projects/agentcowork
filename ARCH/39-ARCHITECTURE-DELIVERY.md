@@ -17,6 +17,27 @@
 
 “Existing source” means a code path was inspected, not that the proposed end-to-end behavior is implemented or benchmarked. The feature matrix remains the implementation-status authority.
 
+## Module viability audit for the final target
+
+The ownership design is viable where an interface and an honest fallback exist. The table names the dependency or proof that can still fail; a design row is not an implementation pass. Module numbers refer to the owner docs, and scenario IDs to `49`.
+
+| Owner modules | Viable design boundary | Required proof / remaining limit |
+|---|---|---|
+| `10`–`11` Kernel/Work | One canonical state and scheduler can host Mission attempts | Crash replay, bounded cancellation and budget/accounting under `TC-027/034` |
+| `12`–`14` Trust/Capability/Providers | Core-mediated tool path can be uniform; native effects stay separate | Real per-call identity/grant, lazy MCP scopes, no false receipt, connector custody under `TC-008/019/030` |
+| `15`–`18` Agents/Context/Memory/Models | External engines keep native loops while Mission rebuilds context and routes compatible workers | Adapter-by-adapter capability negotiation; no assumed resume/model picker/native child data; local-model eligibility measured under `TC-024/026/028` |
+| `19`–`20` Runtime/Workflow | Existing Work/Workflow ownership accommodates local, remote and deterministic waits | Remote executor, lease/credential boundary and schedule/event dedupe; local shutdown pauses unless remote work is assigned (`TC-023/034/036`) |
+| `21` World | Stable IDs and freshness can ground selections and resume | Platform collectors and changed-state invalidation on real Windows apps (`TC-017/018/028`) |
+| `22` Office | Typed format providers plus native fallback avoid claiming universal edit fidelity | DOCX/XLSX/PPTX/PDF round-trip, formula/chart/font/annotation oracle (`TC-010…013`) |
+| `23`–`24` Browser/Computer | Managed Chromium and structured-first desktop ladder are coherent separate runtimes | Supported Chrome bridge, login/takeover/re-snapshot, scaling/elevation and observed final state (`TC-016…018`) |
+| `25`–`27` Files/Code/Search | Identity, worktrees, index and retrieval have separate owners | Concurrent edit conflict, search revocation/freshness, code diff and tests (`TC-015/020/025`) |
+| `28`–`29` Comms/Artifacts | Scoped SaaS action and versioned artifact graph produce real deliverables | OAuth expiry/dedup, exact-version citations, stale propagation and duplicate-effect reconciliation (`TC-019/030/033/037`) |
+| `30`–`32` Events/Extensions/Channels | One event store and per-session extension grants avoid a second platform | Durable replay, native inventory/host activation distinction, collision/revoke and channel identity (`TC-007/008/026`) |
+| `34`–`38` Effect/Mission/Skill/Experience | Effect proof, goal proof and reviewed procedure learning are distinct | Independent verifier, no-progress stop, safe capture and nontechnical comprehension (`TC-021/027/029/032/038`) |
+| `46`/`48`/`50` Ecosystem/Workbench/blueprint | End-to-end route from user selection to worker/typed effect/artifact/evidence is explicit | The real UI and adapters must satisfy `TC-001…038`; no architecture diagram is a product benchmark |
+
+`ARCH/09-FEATURE-MATRIX.md` owns exact implementation status, including `implemented` versus `verified`; this table records only the target seam and its proof obligation.
+
 ## Sequencing
 
 1. Reconcile truth boundary: update invariants, governance badges, Channel-B identity, native-vs-mediated receipts and extension scope model. Preserve existing user work. Exit: no path claims tickets/audit for native effects, and a shared call identifies its actual Work/session/agent/grant.
