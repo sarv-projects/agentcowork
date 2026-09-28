@@ -158,6 +158,8 @@ CREATE TABLE memory_session_anchors (               -- the persisted anchor the 
 
 **External-agent projection** (enforced by `12-TRUST`, surfaced by `32-CHANNELS`): filtered **recall-only** — owning project scope + the agent's own session/task + user preferences; **no** org, no other projects, no `confidential` unless a loadout grants it (v1 default: project + user only). v1 exposes **no write path** to external agents, and Core never writes or mutates an external agent's native memory/config/session stores (DEC-043).
 
+**Agent-neutral recall seam (Atlas review, DEC-054-compatible).** The memory engine and retrieval contract stay below and independent of any one agent adapter. A binding that advertises a compatible pull-tool surface may request bounded recall through the filtered projection; otherwise Context may include the same eligible candidates in an explicitly enabled, task-scoped context packet. These are two delivery mechanisms for one Core-owned recall result, not separate indexes or permission systems. Resolve the effective actor, task, project identity, sensitivity ceiling, token budget and user sharing choice in Core before either delivery. An agent's private MCPs, skills, plugins, credentials, files and memory remain outside this projection. Never inject a project memory block merely because an agent was discovered or attached; its effective scope must be visible and revocable as defined by `12` and `32`.
+
 ## 5. Write path
 
 ```
@@ -301,6 +303,12 @@ Sequencing if metrics force upgrades: U1, U2 → U5, U4 → U0. Nothing is built
 ## 15. Evidence index
 
 Primary: `ARCHIVE/v1-research/memory.md` (full citation list). Strongest anchors: Codex pipeline `clone2/codex/codex-rs/memories/README.md:29-152`; Grok Build memory crate `clone2/grok-build/crates/codegen/xai-grok-memory/src/*`; NOOA non-touching read `clone2/nooa/packages/nooa-memory/src/nooa_memory/schema.py:315-331`; mem0 ADD-only `clone2/mem0/mem0/memory/main.py:879-1195`; claude-mem budget `clone2/claude-mem/src/services/context/ContextBudget.ts:4-40`; Claude Code memory docs `https://code.claude.com/docs/en/memory`; TEPA `https://arxiv.org/abs/2608.07429`; STALE `https://arxiv.org/abs/2605.06527`; LongMemEval `https://arxiv.org/abs/2410.10813`.
+
+Atlas's agent-neutral retrieval seam, bounded asynchronous indexing, typed record model, and memory UI were reviewed at the source pin recorded in `ARCH/45-REFERENCE-RESEARCH.md`. Adopt only the seam and operational patterns compatible with this module: Core-owned recall may be offered through a negotiated pull capability or a scoped Context projection; indexing/extraction stays off the turn hot path; retrieved items remain candidates with provenance. Do **not** adopt Atlas's cross-repository automatic Fact promotion (its global ledger promotes matching high-confidence facts seen in two repository roots): DEC-043/REQ-MEM-006 prohibit cross-scope promotion in v1. Do **not** harvest a discovered agent's native/private transcript; an optional future capture may consume only explicitly eligible Core-observed records under the already-defined extraction policy. Keep the accepted SQLite/FTS5, suppression, scope and provenance contracts; Atlas's MiniLM/HNSW index is not evidence to reverse DEC-018 without the evaluation trigger in §12/§13.
+
+### User-facing memory controls
+
+The Memory surface is for understanding and correcting what the product remembers, not tuning a retrieval engine. Show a plain-language list/search with each item's content, scope, source/provenance, age, sensitivity, and whether it was included in the current task; allow the user to correct, forget, inspect source, pause/disable the applicable scope, or revoke sharing. Keep graph, ranking, extractor, and index diagnostics under an optional advanced view. Do not expose an agent picker that implies Core controls native agent memory. Atlas's Graph/Policy/Shared split is useful as an inspectable pattern, but its project-only, developer-oriented presentation is not the default user experience; `48` owns the final navigation and accessible copy. Every per-task projection must identify the recipient binding and the exact effective scope before dispatch.
 
 ## 16. Requirements (`REQ-MEM-*`)
 
