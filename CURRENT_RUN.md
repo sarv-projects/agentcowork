@@ -4,6 +4,14 @@
 > **Code phase W0 IN FLIGHT (2026-09-26):** v1 docs re-frozen after P9; the W0 security/correctness wave is being implemented now (8 lanes; `TODO.md` W0). Research lanes in parallel: MCP engine (OpenCode + the three apps) and the UX completeness ledger.
 > Previous v0 handover content (≈344 KB) was replaced on 2026-09-26; it remains in git history.
 
+## Current continuation — 2026-09-28
+
+- Atlas and Eigent prior-art review is recorded in `ARCH/17-MEMORY.md`, `ARCH/36-OUTCOME-AND-RECOVERY.md`, `ARCH/45-REFERENCE-RESEARCH.md`, and `ARCH/49-TEST-CASES.md`; exact pinned upstream files are mapped from `TODO.md`. The documentation batch is commit `103d5fa`. Atlas/Eigent temporary clones were removed. Eigent review reports structural coverage honestly: 2,580 of 3,264 tracked files parsed, plus focused source/test review of cowork, delegation, scheduling, and UX paths; it is not described as manual line-by-line reading of every repository file.
+- **W0 ACP badge slice completed:** reverified FIX-07 against `DEC-049`; Channel-B availability is derived from the mounted server list. Added `governance_for_channel_b_servers` and a regression covering empty and populated lists. `TASK-CHAN-002`, FIX-07, and `ARCH/42` evidence were updated.
+- **ACP permission bridge remains open pending scope resolution:** one-time/fail-closed mapping is tested. The user selected agent-owned persistent settings as the initial direction and asked whether persistence should follow the selected lead agent. Do not add a Core-owned persistent grant or return ACP `allow_always` until the effective scope and disclosure are settled; Core still governs Core-mediated shared capabilities.
+- **Validation:** `cargo test -p agentcowork-acp --lib --test acceptance_permission_bridge` — 176 unit + 6 acceptance passed; Tauri ticket-spend test passed; new `channel_b_governance_claim_matches_the_mounted_server_list` passed. `cargo fmt --manifest-path src-tauri/Cargo.toml -- --check` reports pre-existing formatting drift across the Tauri crate (including unrelated lines/files); formatter output has no diff at the new helper/test lines, and no broad formatting rewrite was applied.
+- Preserve four pre-existing user edits in `crates/agentcowork-core/src/data_home.rs`, `crates/agentcowork-core/tests/data_home_migration.rs`, `crates/agentcowork-types/src/env_compat.rs`, and `src-tauri/Cargo.lock`.
+
 ## Active goal
 Rebuild the AgentCowork docs from scratch as **v1**: ARCH set + SPEC + UI + supporting docs, on the shoulders of the v0 corpus. v0 archived locally (`ARCHIVE/v0/`, git-ignored). `TODO.md` was exempt from the rebuild and now holds the v1 implementation plan (reworked in P7). No scope cuts.
 

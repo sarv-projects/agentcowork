@@ -1438,6 +1438,17 @@ fn channel_b_servers(state: &AppState) -> Vec<agentcowork_acp::McpServer> {
     }
 }
 
+/// The prompt's Channel-B claim must reflect the host server list actually
+/// mounted for this binding. An empty list (including lease failure) is never
+/// described as available to the external agent.
+fn governance_for_channel_b_servers(
+    servers: &[agentcowork_acp::McpServer],
+) -> agentcowork_acp::GovernedSession {
+    agentcowork_acp::GovernedSession::SelfContained {
+        channel_b: !servers.is_empty(),
+    }
+}
+
 /// Launch an agent by id: resolve its spawn plan, spawn the process, run the
 /// ACP handshake (`initialize` → `session/new`), and keep the session alive.
 ///
@@ -1677,8 +1688,8 @@ fn build_acp_prompt_with_passport(state: &State<'_, AppState>, text: &str) -> (S
     // **observed**, not assumed: a failed lease leaves no servers, and a badge
     // that claims a mounted catalog when none is mounted is a lie the agent
     // would read as permission to use it (FIX-07).
-    let channel_b = !channel_b_servers(state).is_empty();
-    let governance = agentcowork_acp::GovernedSession::SelfContained { channel_b };
+    let mounted_servers = channel_b_servers(state);
+    let governance = governance_for_channel_b_servers(&mounted_servers);
     let core_facts = {
         let relay = state.chat_relay.lock().ok();
         relay
@@ -3806,6 +3817,25 @@ fn url_host(url: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn channel_b_governance_claim_matches_the_mounted_server_list() {
+        assert_eq!(
+            governance_for_channel_b_servers(&[]),
+            agentcowork_acp::GovernedSession::SelfContained { channel_b: false }
+        );
+
+        let mounted = [agentcowork_acp::McpServer::stdio(
+            "core-tools",
+            "/usr/bin/core-tools",
+            Vec::new(),
+            Vec::new(),
+        )];
+        assert_eq!(
+            governance_for_channel_b_servers(&mounted),
+            agentcowork_acp::GovernedSession::SelfContained { channel_b: true }
+        );
+    }
 
     /// P71.12 — an agent that never negotiated `loadSession` is refused on the
     /// capability itself, before any binding record is consulted.
