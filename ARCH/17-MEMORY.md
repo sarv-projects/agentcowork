@@ -172,7 +172,7 @@ turn/task settled → (1) signal gate → (2) harvest → (3) extract (1 LLM cal
 4. **Validate (deterministic).** Normalize + hash (versioned normalization); drop duplicates (batch + store) and suppressed hashes; **secret scan → reject + log, never persist**; verify `supersedes` targets exist, are current, same-or-narrower scope; enforce the per-item byte cap and scope caps; assign `trust_tier` from provenance (`user_explicit` | `agent_asserted` | `derived_untrusted` | `import`) and apply the **monotone sensitivity floor** (an item is never less sensitive than its source scope/surface).
 5. **Persist (single transaction).** Insert items; set `superseded_by` on targets; remove any applicable suppression on explicit user re-remember; sync FTS; emit one audit event per run; update the job row (`watermark`, lease, backoff). Failure ⇒ mark error, backoff retry, never block the session.
 
-**Extraction model & disclosure (DEC-044).** Default is the session's active provider (no *new* disclosure); `confidential` scopes extract **local-only or not at all** until explicitly enabled. Every run reports cost/outcome; kill switches stop model calls and writes.
+**Extraction model & disclosure (DEC-044/054).** For a Core-owned model session, the default is its active Core provider (no new disclosure). An opaque external agent has no presumed Core provider and its native transcript is never harvested; extraction of eligible Core-owned/user-approved material requires an explicitly selected Core provider or local model. `confidential` scopes extract **local-only or not at all** until explicitly enabled. Every run reports cost/outcome; kill switches stop model calls and writes.
 
 **Explicit writes bypass extraction:** `memory.remember` is immediate (same validate step; user may raise sensitivity); `memory.forget` hard-deletes + writes suppression + audit + recovery per §7 — it never returns via extraction or import.
 
@@ -230,7 +230,7 @@ Context Controller ── memory.recall(query, scope_filter?, tokens) ──►
 
 ## 9. Security & privacy
 
-- The **extractor call is a disclosure boundary** — harvested turns leave the machine if a provider model is used; default to the active session provider (no *new* disclosure), `confidential` scopes extract local-only or not at all until enabled, and a global budget + kill switches bound cost and exposure (DEC-044).
+- The **extractor call is a disclosure boundary** — eligible Core-owned material leaves the machine if a cloud provider model is used; Core-owned sessions may default to their active Core provider, while opaque external-agent work requires an explicit Core extractor choice and never harvests a native private transcript. `confidential` scopes are local-only or off until enabled; a global budget + kill switches bound cost and exposure (DEC-044/054).
 - **Sensitivity is assigned at write and enforced at read:** one vocabulary (`public | personal | confidential`, canonical per `06` §0), default `personal`, monotone floor from source, ceiling derived from the actor binding (never a caller parameter); `confidential` items never leave their project scope (DEC-038, INV-10).
 - **External agents receive the filtered recall projection only** (§4); Core never writes or mutates their native memory/config/session stores; provider-session transcripts we do not own are never harvested (DEC-043).
 - **At rest:** the memory store is whole-DB encrypted (SQLCipher, key in the vault; WAL/temp inherit the encryption). Suppression digests are keyed, not plain content hashes, and audit records carry no item body. The erasure claim is bounded by a stated threat model — no secure erase from OS caches, backups, or flash wear-leveling (DEC-039).
@@ -285,7 +285,7 @@ Sequencing if metrics force upgrades: U1, U2 → U5, U4 → U0. Nothing is built
 
 ## 14. Open questions (`OQ-MEM-*`)
 
-1. **Engine-private memory vs Core shared memory** — **resolved (DEC-043):** the Core store is the only durable memory; an engine's private notes are session-scope memory items + the session log, not a second store.
+1. **Engine-private memory vs Core shared memory** — **resolved (DEC-043/054):** Core has one owned memory store; an external engine may independently own private native memory/notes. Core neither imports nor mutates that store through discovery, and its session log records only Core-observed events.
 2. **Rules write authority** — extractor never writes project rules; may propose a diff via approval. *(still open as UX detail)*
 3. **Extraction model** — **resolved (DEC-044):** session provider by default; `confidential` scopes local-only or off until enabled; global budget + kill switches.
 4. **Encryption at rest** — **resolved (DEC-039):** whole-DB SQLCipher (key in the vault) + erasure policy and threat model; PEND-06 closed.

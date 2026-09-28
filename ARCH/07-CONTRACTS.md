@@ -55,23 +55,23 @@
 
 ## 2. The six core contracts (owner brief)
 
-### CTR-001 `AgentEngine` — every agent runtime implements this (15)
+### CTR-001 `AgentEngine` — host adapter surface for compatible bound runtimes (15)
 ```
 createSession(options: SessionOptions) → AgentSession
-resumeSession(id) → AgentSession
+resumeSession(id) → AgentSession | Unsupported
 run(session, input: RunInput) → RunHandle
-steer(session, input: SteerInput) → void
-interrupt(session) → void
-cancel(run) → void                  // terminate the work; children cascade
-spawnSubagent(options: SubagentOptions) → SubagentRef   // immediate spawn (DEC-036); full delegation contract: CTR-021
+steer(session, input: SteerInput) → void | Unsupported
+interrupt(session) → void | Unsupported
+cancel(run) → void | Unsupported   // Core Work cancels; native termination depends on adapter
+spawnSubagent(options: SubagentOptions) → SubagentRef   // host Work delegation through CTR-021
 dispose(session) → void
 ```
-**Guarantees:** input is admitted only at turn/step boundaries (inbox); `steer` never lands mid-tool; `interrupt` is cooperative and bounded; `cancel` is terminal for the Work, cascades through host-owned child Work, and never rebuffers a completion (DEC-036); `dispose` releases host-owned environment resources. DEC-054: adapter capabilities are negotiated per binding; unsupported `resumeSession`, `steer` or native `spawnSubagent` returns a typed `Unsupported` result, while cross-engine child creation uses CTR-021/Work. Core can replace a session by starting new Work with a reconstructed packet; interchangeability does not imply identical native APIs.
+**Guarantees:** host input is durable and delivered at the adapter's negotiated safe boundary; steering never claims mid-tool delivery without support. Core `cancel` is terminal for its Work and cascades through host-owned child Work; termination of an external process is separately acknowledged or left uncertain. `dispose` releases host-owned environment resources. DEC-054: unsupported controls return typed `Unsupported`; cross-engine children use CTR-021/Work. Core can replace a session with new Work and reconstructed context; interchangeability does not imply identical native APIs.
 
 ### CTR-002 `AgentSession` + `AgentHandle` + `Inbox` (15)
 - `AgentHandle` is a **capability** (`dispose()` only) returned to the owner; the registry keeps factories, not live internals.
-- `Inbox` is a **durable projection** over session events with two admission boundaries: `next-turn` (user messages) and `next-step` (injected context / tool results).
-- Session events are append-only; nothing reads mutable session internals directly.
+- `Inbox` is a **durable Core projection** over host session events. `next-turn` and `next-step` delivery are available only when the adapter supports those boundaries; otherwise accepted input queues for the next supported turn.
+- Core session events are append-only; private engine session/transcript state remains native and is not reconstructed from the host log.
 
 ### CTR-006 `ContextProvider` + CTR-007 `ContextController` (16 / 15)
 ```

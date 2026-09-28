@@ -108,7 +108,7 @@
 | EDGE-066 | Parent cancels with nested runs | Parent-close policy (terminate/cancel/abandon) explicit per edge. |
 | EDGE-067 | Approval rejected | Condition edge (reject branch) or run fails with reason; recorded. |
 | EDGE-068 | Malformed or unsupported workflow definition | Publish gate rejects with node-level typed errors (IR schema + policy + capability census); drafts never trigger or execute (`20` §2, §9). |
-| EDGE-069 | Occurrence claim race (duplicate app instance / two loops) | Unique idempotency key + one-transaction claim ⇒ exactly-once run; the losing claim no-ops and records; leases/heartbeats resolve stale owners (`20` §4, DEC-033). |
+| EDGE-069 | Occurrence claim race (duplicate app instance / two loops) | Unique idempotency key + fenced one-transaction claim admits one **logical** run per occurrence identity; the losing claim no-ops and records. Leases/heartbeats resolve stale owners; external effects still require idempotency/reconciliation (`20` §4, DEC-057). |
 
 ## H. Events & channels (`30`/`32`)
 

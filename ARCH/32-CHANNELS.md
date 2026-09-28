@@ -38,11 +38,11 @@
 | 2 | **Capability projection** — Effective = Installed × Available × Allowed × Relevant | `13` §6 + `12` §8 |
 | 3 | **Context projection** — scoped slice (workspace root, rules, RepoMap, relevant files, git status, recent history, **memory — filtered recall projection**) | `16` §1.3 + `17` §4 (recall-only boundary, DEC-043), sensitivity-filtered |
 | 4 | **Workspace projection** — `allowed_paths` / `read_only_paths`; interception, not un-discovery | `12` §8, pathfloor |
-| 5 | **Tool/MCP subset** — only the granted subset is mounted | `13`/`14` |
+| 5 | **Tool/MCP subset** — only a granted, adapter-supported subset may be mounted; otherwise show unavailable | `13`/`14`, DEC-054 |
 | 6 | **Artifacts** — via the artifact gateway (refs; permissions) | `29` §5 |
 | 7 | **Events / task state** — filtered stream, stable subset vocabulary | `30` §6 |
 
-**Never exposed:** Core internals, stores/schema, queues, scheduler internals, vault, policy internals, model-router internals, other agents’ state (`12` §8). Session lifecycle (bindings, HITL routing) is gateway-managed; approvals route to the channel that owns the binding.
+**Never exposed through this projection:** Core internals, stores/schema, queues, scheduler internals, vault, policy internals, model-router internals, other agents’ state (`12` §8). It does not enumerate or constrain a bound engine's private native tools/session/config. Session lifecycle (bindings, HITL routing) is gateway-managed; Core-mediated approvals route to the channel that owns the binding.
 
 ## 4. ACP mapping (the coding/IDE seam)
 

@@ -82,6 +82,8 @@ Run fields: pinned `workflow_version` + digest · occurrence/trigger ref · inpu
 
 **Idempotency key shape:** `wf:<workflowId>:<versionDigest>:occ:<occurrenceId>:node:<nodeId>:a<attempt>`.
 
+`attempt` is the persisted **logical effect attempt**. Crash replay, a lost acknowledgement and transport retry reuse that attempt and its key; only an explicit, reconciled decision to start a new logical effect attempt increments it. A provider without dedupe support requires observed-state reconciliation or `needs_attention` before any new attempt. The key's presence alone does not make a real-world effect exactly once.
+
 **Misfire policy (timed local triggers):** default **Skip + record** (visible missed row); optional *Run latest missed* (never the whole backlog); grace bounded (≤ 24 h default). Event-triggered sources use their own cursor/retention window and dedupe policy, not a timer misfire rule.
 
 **Sleep & clocks:** persisted `wake_at` is “not before” (never wall-clock precision); every boot and wake re-checks persisted times; calendar schedules resolve in the stored IANA zone. A closed desktop requires an installed local service/helper or a fenced, accepted remote/cloud trigger owner; otherwise missed work is recorded according to policy (`19` §7).

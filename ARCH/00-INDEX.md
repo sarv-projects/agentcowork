@@ -74,7 +74,7 @@ v0 grew by accretion: 33 ARCH files, 55 research files, a 355 KB spec, a 606 KB 
 | 12 | `ARCH/12-TRUST.md` | Trust/Control | Policy · Guard · approvals · tickets · vault · egress · audit · external-agent projections | Frozen v1 |
 | 13 | `ARCH/13-CAPABILITY.md` | Capability | Registry · catalog · resolver · handles · affordances · guidance · capability graph | Frozen v1 |
 | 14 | `ARCH/14-PROVIDERS.md` | Capability/Execution | Provider adapter contract + native/MCP/ACP/HTTP/CLI/plugin/remote + MCP era policy | Frozen v1 |
-| 15 | `ARCH/15-AGENT-PLANE.md` | Agent plane | The `AgentEngine` contract every agent implements, delegation + subagent lifecycle, isolation modes, receipts, CLI/ACP surfaces | Frozen v1 |
+| 15 | `ARCH/15-AGENT-PLANE.md` | Agent plane | Negotiated host adapter contract for external agents, host delegation/child Work, isolation modes, receipts and native-path limits | Frozen v1; amended DEC-054 |
 | 16 | `ARCH/16-CONTEXT.md` | Context | Context infrastructure (Core) + context control (the bound engine) + projections | Frozen v1 |
 | 17 | `ARCH/17-MEMORY.md` | Memory | Durable memory: layers, write/read paths, minimal algorithm set, upgrade path | Frozen v1 |
 | 18 | `ARCH/18-MODEL-ROUTING.md` | Model plane | Model registry · router · adapters; local discovery; reasoning-effort mapping | Frozen v1 |

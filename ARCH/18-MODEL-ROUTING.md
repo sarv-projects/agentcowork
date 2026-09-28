@@ -5,13 +5,13 @@
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P2).
 > **P7 pass (2026-09-26):** line-checked; requirements seeded (`REQ-MODEL-*`, Requirements section).
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
-> **Role:** every model — cloud or local — behind **one registry and one router**. No module hard-codes a vendor (P-03, DEC-004).
+> **Role:** every **Core-owned inference model** — cloud or local — behind one registry and router. An external agent's own model/provider configuration remains native and is surfaced through negotiated adapter controls (DEC-054).
 > **Dependencies:** `10-KERNEL` · `12-TRUST` (vault) · `16-CONTEXT` (window/tokenization feeds budgets) · `30-EVENTS` (usage). **Consumers:** `15-AGENT-PLANE` · `20-WORKFLOW` (agent nodes) · `17-MEMORY` (extractor) · `24-COMPUTER-USE` (vision).
 > **Evidence:** product-owner brief (ModelAdapter surface, local discovery UX, “never hard-code Claude”) · `ARCHIVE/v1-research/agent-harness-verification.md` §A1 (resolved window + feasibility check, `codex-rs/core/src/session/mod.rs:4560-4587`), §C1 (budget vocabulary) · `ARCH/06-DATA-MODEL.md` DM-025 · `ARCH/07-CONTRACTS.md` CTR-014 · `ARCHIVE/v1-research/memory.md` §7 (extraction disclosure boundary).
 
 ## 1. Purpose & responsibilities
 
-**Owns:** the model registry (DM-025) · model adapters (implementation of CTR-014) · the router · capability normalization (context window · tool calling · reasoning · vision · streaming · structured output) · local discovery (Ollama · LM Studio · vLLM · llama.cpp · OpenAI-compatible endpoints) · reasoning-effort mapping · usage/cost accounting hooks.
+**Owns:** the Core inference model registry (DM-025) · model adapters (implementation of CTR-014) · the router · capability normalization (context window · tool calling · reasoning · vision · streaming · structured output) · local discovery (Ollama · LM Studio · vLLM · llama.cpp · OpenAI-compatible endpoints) · reasoning-effort mapping · usage/cost accounting for Core-owned calls. External agents retain native model selection and credential custody.
 **Never owns:** agent logic (`15`) · credentials (`12` owns; adapters `use` them via the vault).
 
 ## 2. ModelDescriptor (DM-025)
@@ -44,6 +44,8 @@ resolve(preferences, constraints) → ModelSelection
 
 Inputs: agent-profile default · session override · task requirements (vision? tools? reasoning? context size?) · policy (models/providers allowed per scope, `12`) · availability/health · preference weights (cost · latency · locality). Ranking is deterministic and audited; a fallback chain is declared per selection. Degrade rules are explicit: if a requirement cannot be met (e.g. vision needed, none available), the result is `GuidanceRequired`/`RequiresUserAction` — never a silent capability downgrade.
 
+The router serves Core-owned utility inference and external **harness selection** only when the binding delegates model choice through a proven adapter. It does not replace an opaque engine's model mid-turn; its native model list, sign-in and provider controls are queried from that engine where supported (`46` §2, `48` §3).
+
 The resolved window feeds the `16` pre-turn feasibility check (`window − reserves`); router and context share the same constants.
 
 ## 4. Adapters & auth
@@ -62,14 +64,14 @@ The resolved window feeds the `16` pre-turn feasibility check (`window − reser
 
 ## 5. Reasoning mapping
 
-Normalized dial: `auto · minimal · low · medium · high · extra_high` → provider-specific parameters (e.g. `reasoning_effort`; a local model's thinking budget). The model's descriptor declares which levels exist; the UI renders only supported levels (composer capability negotiation, `AGENTCOWORK-UI.md`). Raw chain-of-thought is **never** placed in the transcript — the user sees plan/status/tool activity (UI policy).
+For Core-owned inference, normalized dial `auto · minimal · low · medium · high · extra_high` maps to supported provider parameters. For a bound external engine, the composer shows only adapter-advertised native model/reasoning controls; an opaque engine's choice is labelled engine-managed. Raw chain-of-thought is never placed in the Core transcript — the user sees plan/status/tool activity (UI policy).
 
 ## 6. Local discovery & first-class locality
 
 - Probe common local endpoints (Ollama, LM Studio, vLLM, llama.cpp, generic OpenAI-compatible), list models, health-check, and register them like any other provider.
 - The common path requires no manual configuration (“pick a model and run”); manual entry exists as a fallback.
 - Discovery results persist in the provider registry across restarts (no cold re-discovery on every start); reachability is reported as health (`registered → connected → degraded → down`, DM-013) — a registry row is never treated as reachable (A11).
-- `locality: local` models carry a privacy guarantee: no egress leaves the machine (enforced by `12`).
+- `locality: local` is an enforceable zero-egress claim for a Core-owned model call through Guard. An external engine using a local model is a separate process/network boundary and cannot inherit that claim without verified containment and adapter evidence.
 
 ## 7. Accounting
 

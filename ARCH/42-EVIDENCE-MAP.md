@@ -38,7 +38,7 @@ Each doc’s claims map to a verification class; tests are sized to the claim. (
 | `12` Trust | Fail-closed tests; ticket lifecycle (issue/expire/revoke/epoch); vault isolation; denial + audit coverage; rate-limit tests. |
 | `13` Capability | Resolver/failover/guidance tests; epoch invalidation; census gate (unique ids, coverage). |
 | `14` Providers | Adapter conformance suite per class; MCP dual-era detection tests; egress enforcement; health/epochs. |
-| `15` Agent plane | Engine-parity tests (an in-process engine takes the same guard path as an external adapter); delegation receipts; adapter parity. |
+| `15` Agent plane | Binding capability-negotiation and honest unsupported outcomes; every Core-mediated call takes the same Guard path; native effects retain separate provenance; host delegation receipts and adapter parity where supported. |
 | `16` Context | Budget/feasibility tests; overflow recovery; cache-stability checks; projection filtering. |
 | `17` Memory | The §13 eval suite: write quality, update/conflict, recall golden set, budget honesty, isolation, lifecycle, ops. |
 | `18` Models | Router matrix tests; local discovery; reasoning mapping; usage accounting. |

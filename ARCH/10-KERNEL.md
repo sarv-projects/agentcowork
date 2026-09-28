@@ -29,7 +29,7 @@ Taxonomy (canonical for every boundary; extensions require a DEC):
 | `NotFound` | target does not exist or is filtered by policy | no |
 | `Conflict` | concurrent state change (lease, version, duplicate) | yes (bounded) |
 | `Unavailable` | provider/agent/environment down or degraded | yes (backoff) |
-| `Timeout` | call exceeded deadline | yes |
+| `Timeout` | call exceeded deadline | eligible after reconciliation; never blindly repeat an uncertain effect |
 | `InvalidState` | operation not valid for current state (incl. stale epochs) | no |
 | `GuidanceRequired` | capability can proceed only with user setup | no (surface guidance) |
 | `RequiresUserAction` | explicitly needs a decision/input | no (approval path) |
@@ -39,13 +39,13 @@ Rules: typed and actionable; **no secrets or user content in messages**; stable 
 
 ## 4. Configuration
 
-Layer order (later wins, each layer's source recorded):
+Preference scopes are declared by the typed Core settings registry (`CTR-032`, DEC-056). The declared precedence for a key is applied only across scopes that key permits; every effective value records its source and revision. Cosmetic device preferences may stay local; authorization, connector grants and policy are Core-owned and cannot be overridden by a later UI/session/run preference.
 
 ```
-defaults → user (global) → workspace/project → agent profile → session → run override
+defaults → permitted device/user/workspace/agent/conversation/mission preference overrides
 ```
 
-- Schemas are typed, versioned, and validated at load; unknown keys produce warnings + migration notes, never silent acceptance.
+- Schemas are typed, versioned, and validated at load. Unknown or invalid keys are rejected with an actionable migration/error report; they never become effective configuration.
 - **No secrets in config** — vault references only (INV-02).
 - Feature flags: default-safe, locally overridable, no remote dependency for core behavior.
 - Config changes that affect running work are versioned into that work's record (reproducibility).
@@ -54,8 +54,8 @@ defaults → user (global) → workspace/project → agent profile → session �
 
 - **Storage:** integer epoch milliseconds, UTC (`06` conventions). Display formatting is a boundary concern only.
 - **Durations/timeouts:** monotonic clock; never wall-clock deltas.
-- **Schedules:** absolute times + explicit timezone policy; DST resolved at the boundary; “recurring” rules are owned by `20-WORKFLOW`/automations, evaluated by the scheduler (`11`).
-- Clock skew: local-first system; no cross-machine ordering assumptions in v1 (multi-device sync is deferred, `32`).
+- **Schedules:** absolute times + explicit timezone policy; DST resolved at the boundary. `20-WORKFLOW` owns trigger evaluation and the fenced trigger owner; `11-WORK` admits resulting execution (DEC-057).
+- **Clock skew:** never infer cross-machine order from wall-clock timestamps. Remote handoff uses persisted occurrence identity, cursor and fencing epoch (`20`); channel projections may be cross-device (`32`).
 
 ## 6. Serialization & storage conventions
 
@@ -91,13 +91,13 @@ Work-owned contracts (`CTR-003` `WorkService`, `CTR-004` `SessionLog`, `CTR-026`
 1. The kernel contains no domain logic — no Office, browser, file, or agent semantics.
 2. No module may add a “just one” kernel special-case; capabilities land in their modules.
 3. Kernel surface changes require a `DEC` entry and an INV-14 checklist pass (dependency-direction check).
-4. Everything depends on the kernel; the kernel depends on nothing in `10`–`34`.
+4. Everything depends on the kernel; the kernel depends on no higher plane (`11`–`38`).
 
 ## 9. Failure modes
 
 | Failure | Behavior |
 |---|---|
-| Config parse error | Fail closed for that layer; fall back to previous layer with a surfaced warning + audit event. |
+| Config parse error | Reject that layer/key and surface the error; use a valid prior/default value only where the setting schema explicitly allows fallback. Policy and grant state never inherit a weaker fallback. |
 | Migration failure | Block the dependent feature; never run against a half-migrated store; report exact migration + error. |
 | Clock anomalies (jump backward) | Monotonic clock shields timers; schedules re-evaluate conservatively. |
 | Id collision (uuidv7) | Treated as Internal error; single-writer minting makes this a bug, not a case. |
@@ -113,7 +113,7 @@ Work-owned contracts (`CTR-003` `WorkService`, `CTR-004` `SessionLog`, `CTR-026`
 ## 11. Interop
 
 **Depends on:** nothing.
-**Exposes to:** everything in `10`–`34`.
+**Exposes to:** the higher planes in `11`–`38`.
 **DAG check:** no cycles are possible while this rule holds (INV-14).
 
 ## 12. Requirements (`REQ-KERNEL-*`)
@@ -122,10 +122,10 @@ Testable behaviors owned by this module live in `ARCH/08-REQUIREMENTS.md`; the t
 
 | REQ | Behavior (one line) |
 |---|---|
-| `REQ-KERNEL-001` | Minimal kernel — no domain logic; kernel depends on nothing in `10`–`34` (INV-14). |
+| `REQ-KERNEL-001` | Minimal kernel — no domain logic; kernel depends on no higher plane (INV-14). |
 | `REQ-KERNEL-002` | Single-writer identity — uuidv7 minted by the owning service; ids stay opaque. |
 | `REQ-KERNEL-003` | Typed, safe errors — canonical taxonomy; no secrets; no internals across boundaries. |
-| `REQ-KERNEL-004` | Configuration layering — fixed order, typed/versioned schemas, vault refs only. |
+| `REQ-KERNEL-004` | Typed settings and permitted scope precedence; Core policy/grants cannot be overridden by UI preferences; vault refs only (DEC-056). |
 | `REQ-KERNEL-005` | Time discipline — epoch-ms UTC, monotonic durations, explicit timezone policy. |
 | `REQ-KERNEL-006` | Canonical serialization and store conventions — stable JSON, SQLite WAL one-writer, forward-only migrations. |
 | `REQ-KERNEL-007` | Base envelope on every contract — actor context, cancellation, idempotency, versioned result. |

@@ -11,7 +11,7 @@
 
 An **agent engine** is a reasoning runtime that plans and acts. This document specifies what AgentCowork requires of one, and — just as load-bearing — what it refuses to do on an engine's behalf.
 
-**The engine owns:** its own loop and step admission · its own planning · context **control** for its own turn (selection/ranking/budget/prune/compact/rebuild, DEC-007) · its own tool selection and batching · its own continuation and recovery · how it thinks and what it puts in its prompt. These are the agent-native plane (`ARCH/02-THESIS.md`) and are **not** ours to specify.
+**The engine owns:** its own loop and native step admission · its own planning · context **control** for its own turn (selection/ranking/budget/prune/compact/rebuild, DEC-007) · its own tool selection and batching · its own continuation and recovery · how it thinks and what it puts in its prompt. Core can offer bounded context and request a task, but cannot guarantee the private context strategy of an opaque engine.
 
 **Core owns:** implementation and authorization of its shared capabilities (`12`–`14`) · host Work scheduling, budgets and deadlines (`11`) · Core memory (`17`) · context data services (`16` infra) · host workflows (`20`) · its surfaces and UI. The engine retains its native permission decisions, tools, stores and turn loop (DEC-054).
 
@@ -21,42 +21,44 @@ An **agent engine** is a reasoning runtime that plans and acts. This document sp
 
 ## 2. Peer contract (`AgentEngine`)
 
+This is a **host adapter contract**, not a claim that every external engine implements every method. `46` §2 owns negotiated support: `unsupported` is typed and visible; `resume`, `steer`, `interrupt`, `cancel`, checkpoint and usage are available only when the binding proves them. Host delegation creates another Work through the scheduler, regardless of whether an engine exposes native subagents.
+
 ```
 createSession(options) → AgentSession
-resumeSession(id) → AgentSession
+resumeSession(id) → AgentSession | unsupported
 run(session, input) → RunHandle
-steer(session, input) → void        interrupt(session) → void
-cancel(run) → void
-spawnSubagent(options) → SubagentRef   // immediate spawn (DEC-036); full contract: CTR-021 (§7)
+steer(session, input) → void | unsupported    interrupt(session) → void | unsupported
+cancel(run) → void | unsupported
+spawnSubagent(options) → SubagentRef   // host Work delegation via CTR-021 (§7); not an assumed native engine method
 dispose(session) → void
 ```
 
 Adapter-split discipline (verified reference: DeepSeek Harness, §D1):
 
 - Core's registry holds **factories**; the driver registers itself (`setFactory` pattern). The owner receives a capability-only `AgentHandle` (`dispose()`), never direct state.
-- Input arrives through a **durable inbox projection** over session events — not by direct mutation; a crashed process loses nothing accepted.
-- Tools / prompt sections / listeners are **scope-tagged per agent** (per-binding variance without global registries).
+- Host-accepted input arrives through a **durable inbox projection** over session events. Its delivery and external engine acknowledgement are separate; a crashed opaque process may require replay/reconciliation and may not support native resume.
+- Host-offered tools / context overlays / listeners are **scope-tagged per binding** where the adapter supports attachment. The host does not rewrite private prompt sections or native registries.
 
 **Evidence:** `agent-harness-verification.md §D1`; anchors `clone2/deepseek-harness/packages/core/agent/src/index.ts:160-203, 245-256` · `agent-loop/src/inbox.ts:27-65` · `scope/src/index.ts:1-40` · `system-prompt/src/index.ts:370-387`.
 
 ## 3. Session model
 
-`AgentSession` (internal shape): handle · session state · inbox (durable projection) · context (control side) · tool scope · capability scope · event stream · memory scope · work scope · loop driver.
+`AgentSession` is a host binding record: handle · negotiated support · durable input/outcome projection · shared capability scope · event stream · Work reference · optional external session reference. Private context, native memory, native loop driver and native tool scope remain inside the engine.
 
-- **Admission boundaries:** `next-turn` (user messages) vs `next-step` (injected context / tool results). Injected inputs wait for a wake; they never interleave mid-step.
-- **Durable log:** session events are append-only; UI history, prompt history and pending work are **projections** (§E4). Compaction is a projection boundary (DEC-027), never a rewrite.
-- Session records are Core-owned (`11-WORK`); an engine reads/writes through contracts only.
-- **Child sessions:** a subagent child is a normal durable session with `parent_session_id?` linkage; its log projections are independent of — and survive — parent compaction, and its state is a facet of its `Work` item (`kind: subagent_task`), never a second state machine (§7).
+- **Admission boundaries:** Core delivers accepted input at the adapter's negotiated safe point. `next-turn`/`next-step` semantics are promised only if that engine/protocol supports them; otherwise the input queues for the next supported turn.
+- **Durable log:** Core session events and mediated effects are append-only projections; an external engine's private prompt history and compaction remain opaque. Core never requires that transcript to reconstruct a Mission.
+- Core owns its binding/session record (`11-WORK`), while the engine owns its native session state. An opaque engine's unsupported resume is never represented as successful recovery.
+- **Host-created child Work:** carries `parent_session_id?` and its own host log projection. Agent-native children stay native; they are not fabricated as Core child sessions or Work (§7).
 
 ## 5. Context control
 
-The engine owns context **control**; Core owns context **data** (DEC-007; `16-CONTEXT`).
+The engine owns context **control**; Core owns context **data** offered to it (DEC-007; `16-CONTEXT`). The following budget/compaction techniques are adapter capabilities or guidance for engines exposing control, never mandatory rewrites of an opaque engine's private context:
 
 - Budget discipline per DEC-027: named terms (`keep` ≈ 8k retained recent tokens · `buffer`/`reserve` ≈ 20k safety margin · summary output reserve), pre-turn feasibility check, stable-prefix/dynamic-suffix assembly, bounded fragments with persisted baseline + deltas (§A2 / §E1).
 - Pipeline: retrieve → select/rank → budget → prune → checkpoint → compact-if-needed → pack.
-- Manual control: focus / pin / exclude / inspect (surfaced in UI; `AGENTCOWORK-UI.md`).
+- Manual control: focus / pin / exclude / inspect appear only when the binding advertises and proves support (`48` §3; `16` §4.1).
 - **Subagent context isolation:** each child assembles its own context; `fork_context` is an explicit per-spawn option (default: fresh + bounded inherited snapshot) — never the parent's full transcript (§B3).
-- **Memory boundary:** recall via `memory.recall()` from `17` (scopes and ceilings actor-derived, never caller-supplied); an engine's private working notes live as **session-scope memory items + the session log** — there is **no second durable memory store**, and Core never writes or mutates another agent's native memory/config/session files (DEC-043).
+- **Memory boundary:** Core's `memory.recall()` uses actor-derived scopes and ceilings. A discovered engine may have its own private memory/notes; these are outside Core's store, cannot be silently imported or governed by Core, and are disclosed as a separate custody boundary. Core never writes or mutates another agent's native memory/config/session files (DEC-043/054).
 
 ## 7. Delegation & subagents
 
@@ -65,11 +67,11 @@ Per DEC-029 (evidence §A3 / §B3 / §E7), the table and lifecycle below specify
 | Aspect | Rule |
 |---|---|
 | Child sessions | One child session per subagent, own context, own toolset/persona — never a forked prompt inside the parent. |
-| Project rules | Delivered **in full** to children, escaped so repository content cannot forge harness framing (`prompt/context.rs:152,196`; `agents_md.rs:382`). |
-| Isolation | `inprocess` (default), `worktree`, and `acp` are **per-spawn options**; cheap read-only children don't pay worktree cost; concurrent writers get isolated checkouts + write leases. ACP children run as external provider-executed agents through the `14` acp adapter and gateway (`32` §4) under a scoped capability projection (Core tickets never cross the boundary), with permission prompts routed through the parent's approval channel and the same concurrency bound (DEC-029/031); receipts are schema-validated with at most one bounded correction retry before a raw-text fallback with a typed note (REQ-AGENT-003). |
+| Project rules | Delivered to host-created children as a bounded, escaped task packet; the child engine decides how to use them. Do not promise full-rule injection when an adapter lacks it. |
+| Isolation | `shared-read`, `worktree` and adapter-specific sandbox modes are requested per host spawn and accepted only when available; parallel writers require isolated checkouts or serialized write leases. An ACP child is another bound external agent through `32`; Core tickets apply only to its shared calls. Native permission prompts remain native unless a proven adapter routes them; host mediated approvals use Trust. Receipts are schema-validated; an unavailable output schema yields a labelled report, never invented evidence. |
 | Context | `fork_context` explicit; default fresh + bounded inherited snapshot. |
 | Return value | **Worker receipt** (status · scope · summary · findings · changed files · tests · artifacts · blockers · confidence · usage · `will_wake` · `partial`) — never the transcript. |
-| Bounds | Platform enforces outer limits (max parallel · total · depth · tokens · spend); the running agent decides actual usage within them. |
+| Bounds | Core enforces host spawn concurrency, Work admission and its own mediated spend. Token/step limits inside an opaque external engine are only enforceable when adapter support or environment containment is proven; otherwise they are estimates/warnings. |
 
 ### 7.1 Optional shared capability guidance (DEC-054)
 
@@ -88,7 +90,7 @@ Overlapping writes go through workspace leases (queue / rebase / ask) — never 
 - **Concurrency:** slots are **held until closed** (not just until finished); admission is queue-on-limit by default with a `fail` opt-in; per-lane defaults + depth are declared and enforced via `11` (DEC-031).
 - **Cancellation:** cooperative and token-based — parent cancel ⇒ child cancel; session teardown ⇒ cancel with **no completion rebuffer**; explicit close cascades to descendants; cancelled runs are terminal and never wake; queued spawns are swept within a bounded interval.
 - **Report trust:** child receipts are **untrusted data** — scanned for instruction-shaped patterns and delivered under a no-authority header; background completion notices are framed as automated events, never as messages. (The studied harnesses consume child output as trusted; this divergence is deliberate — DEC-036.)
-- **Child sessions are durable:** child transcripts live in their own log projections, survive parent compaction, and are addressable by `agent_id` for resume/steer; receipt delivery is at-most-once per parent incarnation, size-capped with a full-log artifact ref; `usage` rolls up to the parent.
+- **Host child records are durable:** Core-observed events and receipts survive parent compaction. A private child transcript remains with its engine and is available for resume/steer only if negotiated. Receipt delivery is deduplicated per parent incarnation; reported usage is marked estimated when the adapter cannot provide actuals.
 
 **Child lifecycle mapping (no second enum — INV-06).** Child work items are `Work` of `kind: subagent_task` (`11` §2); subagent state is a facet of that state machine, not a parallel machine:
 
@@ -108,24 +110,24 @@ Overlapping writes go through workspace leases (queue / rebase / ask) — never 
 SubagentOptions {
   worker: AgentProfileRef | role            // required
   task: { objective, prompt?, success_conditions? }
-  context: { fork: none | bounded | full    // default per role (OQ-AGENT-02)
+  context: { fork: none | bounded           // host packet only; never native transcript
              refs[] }                        // ≤ declared ref budget; never the transcript
   tools?: loadout_ref                        // child tool scope = parent ceiling ∩ loadout ∩ agent rules
-  model?: ModelRef | inherit                 // default inherit → 18 router
-  isolation: inprocess | worktree | acp      // default inprocess
+  model?: ModelRef | inherit                 // only when bound engine accepts model selection
+  isolation: shared_read | worktree | adapter_sandbox
   limits?: { max_steps?, max_tokens?, max_spend?, wall_time_ms? }   // may narrow, never widen Core bounds
   delivery: { await?: bounded(ms) | none, wake: bool = true, surface: parent | ui }
 }
 → SubagentRef { agent_id, nickname?, session_ref, work_id, status, parent_turn_id }
 ```
 
-Depth/budget fields (`max_parallel` · `max_total_per_tree` · `max_depth` · `max_worker_tokens` · `max_session_spend` · per-lane concurrency) are **Core-owned** (`11` §3; DEC-031): a spawn may request **narrower** limits only.
+Host admission/delegation fields (`max_parallel` · `max_total_per_tree` · `max_depth` · per-lane concurrency) are Core-owned (`11` §3; DEC-031). Token/spend caps for an opaque engine are enforceable only if its adapter reports and honors them or the execution environment supplies a hard boundary. A spawn may request narrower limits only.
 
 ## 9. Model interaction
 
-- Asks `18-MODEL-ROUTING`; never hard-codes a vendor. Reasoning effort is a normalized dial mapped to provider capabilities.
-- Cache discipline: stable prefix, dynamic suffix; persisted baseline + deltas (§A2).
-- Extractor/vision/embedding calls also route through `18` — no side-channel SDK usage anywhere in the agent.
+- An external engine retains its own provider, model and reasoning configuration. Core's model picker calls a proven adapter configuration option when available; otherwise the engine opens its own supported settings/auth flow (`46` §2, `48` §3).
+- Core-owned utility inference (memory extraction, vision, embeddings) routes through `18`; that router does not intercept the external engine's private model calls.
+- Stable-prefix caching, baseline/deltas and compaction apply to Core-owned inference/context packets or adapter-supported controls; private cache behavior is not claimed.
 
 ## 10. Permissions
 
@@ -144,9 +146,9 @@ Defaults for **Core-mediated calls** (owner brief): **everyday allow** — works
 
 | Failure | Behavior |
 |---|---|
-| Model call fails/timeouts | Bounded retry → block with surfaced reason + retry path. |
+| Model call fails/timeouts | Host receives adapter status where available; native retry remains engine-owned. Work records a typed reported/observed failure or uncertainty and offers the supported retry path. |
 | Tool failure | Recovery pipeline (retry / alternate provider / replan). |
-| Context overflow | Compact-after-overflow → retry same step; never "start a new conversation". |
+| Context overflow | If adapter supports recovery, request it and reconcile; otherwise surface the engine's failure and preserve Mission/Work state for a fresh supported session. |
 | Subagent fails/blocks | Receipt with blockers; parent re-plans or escalates. |
 | Stuck loop | Stuck detector → escalation. |
 | Memory/extractor failure | Turn unaffected (`17`). |
@@ -164,7 +166,7 @@ Defaults for **Core-mediated calls** (owner brief): **everyday allow** — works
 2. `fork_context` default per worker role (researcher / coder / reviewer).
 3. Persona/assistant composition model (PEND-05).
 4. CLI binary name + command surface (with `32`).
-5. Engine-private notes vs Core-only memory — **resolved (DEC-043):** the Core store is the only durable memory; private notes are session-scope items + the session log, not a second store and not importable.
+5. Engine-private notes vs Core memory — **resolved (DEC-043/054):** Core has one owned memory store and never imports or rewrites an external engine's separately owned private memory/config/session files.
 6. Which model-specific compaction hooks ship in v1 (with `16`, `18`).
 
 ## 15. Evidence

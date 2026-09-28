@@ -5,7 +5,7 @@
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P2).
 > **P7 pass (2026-09-26):** line-checked; requirements seeded (`REQ-CAP-*`, Requirements section).
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
-> **Role:** semantic operations — **what** can be done — resolved to providers — **who** does it (DEC-004). The model sees *capabilities*, never raw tool catalogs (semantic compression; DEC-005).
+> **Role:** semantic Core-mediated operations — **what** can be done — resolved to providers — **who** does it (DEC-004). The host presents budgeted shared capabilities to compatible agents; an external agent retains its own native tool catalog and context policy (DEC-054).
 > **Dependencies:** `10-KERNEL` · `11-WORK` · `12-TRUST` (policy/tickets) · `14-PROVIDERS` (implementations) · `16-CONTEXT` (what enters prompts) · `31-SKILLS-PLUGINS` (skill→capability requirements).
 > **Evidence:** product-owner brief (`CapabilityDescriptor` / `CapabilityResult` / `CapabilityHandle`, capability graph, loading modes, “do not expose 500 raw tools”, L1/L2/L3 progressive model) · `ARCHIVE/v1-research/agent-harness-verification.md` §A2/§E1 (bounded tool fragments), §D1 (scope-tagged registrations) · `ARCH/06-DATA-MODEL.md` DM-011/012 · `ARCH/07-CONTRACTS.md` CTR-009/010 · DEC-004/005/024/025.
 
@@ -19,7 +19,7 @@ Rules:
 1. A capability describes **what**, never **who** — no protocol, vendor, or tool name appears in a capability id or descriptor.
 2. One capability ↔ many providers; one provider ↔ many capabilities (DEC-004).
 3. Capability ids are stable public API; provider assignment is **not** part of the contract.
-4. Anything the model can invoke is a capability with a descriptor, a risk class, and a verification hook (INV-19).
+4. Anything invocable **through Core's shared surface** is a registered capability with a descriptor, risk class and verification hook (INV-19). External agent-native tools are outside this registry and carry separate provenance (DEC-054).
 
 ## 2. Descriptor model (DM-011)
 
@@ -68,7 +68,7 @@ CapabilityHandle {
 
 Resolver inputs: capability id + constraints (agent, session, workspace, environment, policy snapshot, cost/latency class, health).
 
-Ranking: **health → environment fit → permission fit → cost/latency class**; ties broken deterministically and audited. Failover on provider failure advances to the next candidate. When nothing can serve but setup could enable it, the result is `guidance`/`requires_user_action` with the concrete requirement (not a dead end).
+First filter candidates by declared grant/policy and environment requirements; an ineligible provider cannot win a ranking. Rank eligible candidates by **health → environment fit → cost/latency class**; ties are deterministic and audited. Guard still decides each invocation. Failover on provider failure advances only to another eligible candidate. When setup could enable a missing provider, return `guidance`/`requires_user_action` with the concrete requirement.
 
 ## 6. Loading modes & context discipline
 
@@ -78,7 +78,7 @@ Ranking: **health → environment fit → permission fit → cost/latency class*
 | `catalog` | Known to the UI/registry, not the model | UI catalog, capability browser, agent loadout editor |
 | `on-demand` | Resolved only when invoked | Zero context cost until requested |
 
-This is the **semantic compression layer**: agents receive task-relevant capability subsets under budget (`16` §3), never a flat dump of hundreds of raw tools. Activation is scoped per agent/session/run (four-state model, DEC-024) — the registry itself is global/workspace.
+This is the **shared-plane semantic compression layer**: compatible agent sessions receive task-relevant shared capability subsets under budget (`16` §3), never a host-generated dump of hundreds of raw tools. The host cannot rewrite an external engine's private prompt or native catalog. An engine without an explicit overlay/tool-attachment mechanism shows the shared capability as unavailable for that binding; discovery alone never mounts it. Activation is scoped per binding/session/Work (four-state model, DEC-024) — the registry itself is global/workspace.
 
 **Progressive complexity (L1/L2/L3)** — generalized from the office model, adopted as a plane-wide convention: L1 semantic (read/inspect/query) → L2 structured mutation (set/add/remove/move) → L3 raw escape hatch (domain-native API). Domains document their ladder; the model prefers the lowest level that does the job.
 
@@ -101,7 +101,7 @@ Uses: dependency resolution (`requirements` pulls in other capabilities before i
 - **Census gate:** a test gate asserts unique ids, non-empty affordances/verification, and provider coverage; the census outputs a generated capability catalogue (doc generation, not hand-maintained).
 - **Review checklist for a new capability:** id naming · risk class · affordances · requirements/auth · verification hook · default loading mode · provider(s) · exposure scope.
 
-Capability ids stay protocol-neutral; the adapter owns the native-tool ↔ capability-id mapping built at discovery, and unmapped native tools are not invocable — they surface as guidance, never silent exposure (`DEC-047`; `14` §5).
+Capability ids stay protocol-neutral. The adapter owns mappings for **host-exposed** tool calls at discovery; an unmapped tool is not invocable through Core and surfaces as guidance. That restriction does not disable a bound agent's private native tools (`DEC-047/054`; `14` §5).
 
 ## 9. Failure modes
 
@@ -138,13 +138,13 @@ Testable behaviors owned by this module live in `ARCH/08-REQUIREMENTS.md`; the t
 
 | REQ | Behavior (one line) |
 |---|---|
-| `REQ-CAP-001` | No flat dump — the model sees budgeted capability subsets, never raw tool catalogs (INV-13). |
+| `REQ-CAP-001` | No host flat dump — compatible sessions receive budgeted shared-capability subsets; native agent catalogs remain agent-owned (INV-13, DEC-054). |
 | `REQ-CAP-002` | Epoch-checked handles — resolve→invoke→expire; provider epoch bump invalidates stale handles (DM-012, §4). |
 | `REQ-CAP-003` | Capabilities describe what, never who — providers attach to capabilities, never the reverse (DEC-004). |
 | `REQ-CAP-004` | Descriptor contract — every capability has a versioned descriptor with risk class and verification hook (DM-011, INV-19). |
 | `REQ-CAP-005` | Guidance is first-class — `guidance` / `requires_user_action` are results, not failures. |
-| `REQ-CAP-006` | Loading modes and semantic compression — eager/catalog/on-demand; activation scoped per agent/session/run (DEC-005/024). |
-| `REQ-CAP-007` | Deterministic resolution — health→environment→permission→cost/latency ranking; ties audited; failover named. |
+| `REQ-CAP-006` | Shared-capability loading modes and semantic compression — eager/catalog/on-demand; activation scoped per binding/session/Work (DEC-005/024/054). |
+| `REQ-CAP-007` | Permission/environment eligibility precedes deterministic health→environment→cost/latency ranking; ties audited; failover stays eligible. |
 | `REQ-CAP-008` | Capability graph — requirements resolve before invocation; blocked chains name the missing edge. |
 | `REQ-CAP-009` | Registry governance — unique ids, additive versioning, deprecation windows, census gate. |
-| `REQ-CAP-010` | Invocable ⇒ governed — anything invocable carries descriptor + risk class + verification hook (INV-03/19). |
+| `REQ-CAP-010` | Core-invocable ⇒ governed — every shared invocation carries descriptor + risk class + verification hook; native tools retain native provenance (INV-03/19, DEC-054). |

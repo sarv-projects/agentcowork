@@ -161,11 +161,11 @@ This registry answers one question per entry: **what behavior must this system e
 - **Status:** seeded
 
 #### REQ-KERNEL-004 — Configuration layering and validation
-- **Statement:** GIVEN configuration, WHEN it is loaded, THEN later layers win in the fixed order (defaults → user → workspace/project → agent profile → session → run override) with each source recorded; schemas are typed, versioned and validated at load; unknown keys warn with migration notes; secrets appear only as vault references.
+- **Statement:** GIVEN a setting, WHEN it is loaded, THEN the typed Core registry applies only that key's permitted scopes and precedence with source/revision recorded; device cosmetics may persist locally, while policy and connector grants remain Core-owned and cannot be overridden by later UI preferences; unknown/invalid keys are rejected with actionable migration/error information; secrets appear only as vault references (DEC-056).
 - **Priority:** must
 - **Source:** `ARCH/10-KERNEL.md` §4 · `ARCH/05-INVARIANTS.md` INV-02
-- **Acceptance:** layered-config tests (each layer wins); unknown-key warning test; no secret value in config stores; config changes affecting running work are versioned into that work's record.
-- **Failure cases:** parse error → fail closed for that layer, fall back to previous layer with warning + audit event; silent acceptance of unknown key → defect.
+- **Acceptance:** per-key permitted-scope precedence tests; unknown/invalid-key rejection; policy/grant override rejection; no secret value in config stores; effective configuration affecting running work is versioned into that work's record.
+- **Failure cases:** invalid layer/key → typed error and valid fallback only if schema permits; stale UI copy or run override weakens a grant/policy → rejected; silent acceptance of unknown key → defect.
 - **Tests:** pending
 - **Status:** seeded
 
@@ -374,10 +374,10 @@ This registry answers one question per entry: **what behavior must this system e
 ### Capability (`CAP`)
 
 #### REQ-CAP-001 — No flat tool dump; budgeted subsets
-- **Statement:** GIVEN a model turn with capability needs, WHEN capabilities are presented, THEN only a task-relevant semantic subset under the configured budget is shown (loading modes eager / catalog / on-demand); never a flat dump of raw tools.
+- **Statement:** GIVEN a compatible bound agent session with shared-capability needs, WHEN Core presents its shared surface, THEN only a task-relevant semantic subset under the configured budget is shown (loading modes eager / catalog / on-demand); Core never dumps its raw catalog or alters the agent's private native catalog (DEC-054).
 - **Priority:** must
 - **Source:** `AGENTCOWORK-SPEC.md` §5
-- **Acceptance:** capability payloads stay within budget; dump-all behavior is unrepresentable; loading mode is honoured per turn.
+- **Acceptance:** Core shared-capability payloads stay within budget; host dump-all behavior is unrepresentable; loading mode is honoured for supported overlays; unsupported attachment is shown as unavailable.
 - **Failure cases:** context overflow from tool lists → prevented by budget; missing capability at need → resolver serves it on demand.
 - **Tests:** pending
 - **Status:** seeded
@@ -419,19 +419,19 @@ This registry answers one question per entry: **what behavior must this system e
 - **Status:** seeded
 
 #### REQ-CAP-006 — Loading modes and semantic compression
-- **Statement:** GIVEN agent-facing capability exposure, WHEN capabilities are activated, THEN only the declared loading mode applies (eager/catalog/on-demand) within the context budget; activation is scoped per agent/session/run; raw catalogs are never dumped (L1 semantic → L2 structured → L3 raw on demand).
+- **Statement:** GIVEN a supported shared-capability overlay, WHEN Core capabilities are activated, THEN the declared loading mode applies (eager/catalog/on-demand) within the context budget; activation is scoped per binding/session/Work; Core raw catalogs are never dumped (L1 semantic → L2 structured → L3 raw on demand), while private agent tools remain agent-owned (DEC-054).
 - **Priority:** must
 - **Source:** `ARCH/04-DECISIONS.md` DEC-005/024 · `ARCH/05-INVARIANTS.md` INV-13 · `ARCH/13-CAPABILITY.md` §6 · `ARCH/16-CONTEXT.md` §3
-- **Acceptance:** budget tests; activation-scope tests; no flat dump in any prompt assembly.
+- **Acceptance:** host budget tests; binding/session/Work activation-scope tests; no flat host dump in host prompt assembly; unsupported overlay does not silently mutate native configuration.
 - **Failure cases:** catalog dump → budget violation; unscoped activation leaking across agents → defect.
 - **Tests:** pending
 - **Status:** seeded
 
 #### REQ-CAP-007 — Deterministic resolution and failover
-- **Statement:** GIVEN a capability request with constraints, WHEN providers are ranked, THEN order is health → environment fit → permission fit → cost/latency, ties are broken deterministically and audited, and provider failure fails over per policy.
+- **Statement:** GIVEN a Core capability request with constraints, WHEN providers are selected, THEN candidates lacking grant/policy or environment eligibility are filtered first; eligible candidates are ranked by health → environment fit → cost/latency, ties are broken deterministically and audited, and provider failure fails over only to another eligible candidate. Guard still authorizes each call.
 - **Priority:** must
 - **Source:** `ARCH/13-CAPABILITY.md` §5/§9
-- **Acceptance:** resolution-order tests; determinism test on tie; failover test with an unhealthy provider.
+- **Acceptance:** ineligible-provider filtering tests; resolution-order and deterministic-tie tests; failover test with an unhealthy provider; per-invocation Guard decision test.
 - **Failure cases:** nondeterministic selection → defect; no-provider → guidance path, never a dead end.
 - **Tests:** pending
 - **Status:** seeded
@@ -455,21 +455,21 @@ This registry answers one question per entry: **what behavior must this system e
 - **Status:** seeded
 
 #### REQ-CAP-010 — Invocable implies governed
-- **Statement:** GIVEN anything invocable (native tool, MCP tool, connector, domain op), WHEN it is exposed, THEN it is a registered capability with descriptor, risk class and verification hook — no unregistered invocation path exists.
+- **Statement:** GIVEN anything invocable through Core's shared surface (mapped native domain tool, MCP tool, connector or domain operation), WHEN it is exposed, THEN it is a registered capability with descriptor, risk class and verification hook; a bound external agent's private native tools remain outside that registry and are labelled with native provenance (DEC-054).
 - **Priority:** must
 - **Source:** `ARCH/05-INVARIANTS.md` INV-03/19 · `ARCH/13-CAPABILITY.md` §1
-- **Acceptance:** census test shows every invocable surface has a capability id; dispatch rejects unregistered ids.
-- **Failure cases:** unregistered tool invocable → architecture violation.
+- **Acceptance:** Core shared-surface census shows every Core-invocable tool has a capability id; Core dispatch rejects unregistered ids; private agent activity is never misrepresented as Core-governed.
+- **Failure cases:** unregistered tool invocable through Core or private tool falsely labelled as ticketed → architecture violation.
 - **Tests:** pending
 - **Status:** seeded
 
 ### Providers (`PROV`)
 
 #### REQ-PROV-001 — No protocol vocabulary above the provider layer
-- **Statement:** GIVEN any caller above the provider layer, WHEN it invokes work, THEN it speaks capability ids and never sees MCP tool names, ACP methods, HTTP paths or transport details; adapters are interchangeable behind one capability (one provider may implement many capabilities; one capability may have many providers).
+- **Statement:** GIVEN a caller of Core's shared capability path above the provider layer, WHEN it invokes a capability, THEN it speaks capability ids and does not depend on MCP tool names, ACP methods, HTTP paths or transport details; adapters are interchangeable behind one capability. This does not constrain an external agent's private/native invocations (DEC-054).
 - **Priority:** must
 - **Source:** `ARCH/14-PROVIDERS.md` §1 · `ARCH/05-INVARIANTS.md` INV-15 · `ARCH/04-DECISIONS.md` DEC-004
-- **Acceptance:** interface review finds no protocol vocabulary above the provider layer; one capability resolves to different providers without caller changes.
+- **Acceptance:** Core shared-path interface review finds no provider protocol vocabulary above the adapter boundary; one capability resolves to different providers without caller changes; native agent telemetry stays separately identified.
 - **Failure cases:** transport name leaking into capability contracts or prompts → defect; caller bound to one provider → rejected.
 - **Tests:** pending
 - **Status:** seeded
@@ -520,11 +520,11 @@ This registry answers one question per entry: **what behavior must this system e
 - **Status:** seeded
 
 #### REQ-PROV-007 — Registry entry shape and id mapping
-- **Statement:** GIVEN the provider registry, WHEN entries are stored, THEN each follows `DM-013` (id · kind · version · health · capabilities ref · environments · epoch) and carries distinct `catalog_ref` and `transport_ref` alongside the canonical id, with auth modeled as a typed method enum (api · oauth · well-known) that never holds values; the provider adapter owns the `transport_ref` + native-tool ↔ capability-id mapping built at discovery; unmapped native tools are not invocable — they surface as guidance, never silent exposure; mapping sets are epoch-checked registry data, never contract changes.
+- **Statement:** GIVEN the Core provider registry, WHEN entries are stored, THEN each follows `DM-013` and carries distinct `catalog_ref` and `transport_ref`, with auth modeled as a typed method enum that never holds values. The adapter owns mappings for tools offered through Core; an unmapped tool cannot be invoked **through Core** and yields guidance. External agent-private tools remain native and separate (DEC-047/054).
 - **Priority:** must
 - **Source:** `ARCH/14-PROVIDERS.md` §5 · `ARCH/06-DATA-MODEL.md` DM-013 · `ARCH/12-TRUST.md` §6 · `ARCH/04-DECISIONS.md` DEC-047
-- **Acceptance:** schema tests; several transports may share one catalog entry; auth-method metadata carries no secret material; a native tool without a capability mapping returns guidance and is never silently exposed.
-- **Failure cases:** credential value in registry → custody violation; canonical id aliased with a transport id → defect; an unmapped native tool invoked silently → exposure violation.
+- **Acceptance:** schema tests; several transports may share one catalog entry; auth metadata carries no secret; an unmapped host-exposed tool returns guidance and is never silently exposed by Core; agent-private tools are labelled native.
+- **Failure cases:** credential value in registry → custody violation; canonical id aliased with transport id → defect; unmapped tool invocable through Core or private tool labelled Core-governed → exposure violation.
 - **Tests:** pending
 - **Status:** seeded
 
@@ -594,16 +594,16 @@ This registry answers one question per entry: **what behavior must this system e
 - **Status:** seeded
 
 #### REQ-CTX-005 — Pre-turn feasibility, named budget terms
-- **Statement:** GIVEN a model call, WHEN the turn is prepared, THEN the usable window is computed as model_window_resolved − output_reserve − reasoning_reserve − summary_output_reserve − tool_schema_reserve − system_reserve − safety_buffer and feasibility is checked BEFORE send — overflow is never discovered from the provider; values are product-visible knobs.
+- **Statement:** GIVEN a Core-owned model call or an adapter-supported external call with a reported window, WHEN its turn is prepared, THEN the usable window is computed from the named reserves and feasibility is checked before send. For opaque external engines, Core only budgets its offered ContextPacket, labels private window/usage unknown and does not claim to prevent native overflow (DEC-054).
 - **Priority:** must
 - **Source:** `ARCH/16-CONTEXT.md` §3 · `ARCH/04-DECISIONS.md` DEC-027, DEC-045
-- **Acceptance:** budget math unit tests per model class; an oversized turn is caught pre-send and recovered (never surfaced as a provider error while recovery options remain); telemetry shows the named terms.
-- **Failure cases:** provider-side overflow after send → defect; missing reserve term → defect; silent rounding that overruns → defect.
+- **Acceptance:** Core budget math tests per model class; oversized Core call caught pre-send; telemetry shows named terms; opaque engine state is labelled unknown and supported recovery is negotiated.
+- **Failure cases:** preventable Core-side provider overflow, missing reserve term or silent rounding → defect; claiming an opaque native overflow was prechecked → false assurance.
 - **Tests:** pending
 - **Status:** seeded
 
 #### REQ-CTX-006 — Prune before compact; durable full output
-- **Statement:** GIVEN pressure on the window, WHEN the pipeline reacts, THEN pruning runs before compaction, pruned-away full output stays durable (artifact/event) and is marked reconstructable, and pruning is opt-in per agent configuration — never applied to log truth.
+- **Statement:** GIVEN pressure on a Core-owned or adapter-supported context window, WHEN its controllable pipeline reacts, THEN pruning runs before compaction, pruned-away Core output stays durable (artifact/event) and is marked reconstructable, and pruning is opt-in — never applied to log truth or an opaque engine's private context (DEC-054).
 - **Priority:** must
 - **Source:** `ARCH/16-CONTEXT.md` §4
 - **Acceptance:** pruned output retrievable from durable storage; `reconstructable` flag honored (a needed pruned target is recovered, never lost); ordering test (prune strictly precedes compact).
@@ -612,7 +612,7 @@ This registry answers one question per entry: **what behavior must this system e
 - **Status:** seeded
 
 #### REQ-CTX-007 — Compaction is a projection; log never rewritten
-- **Statement:** GIVEN a compaction trigger (auto threshold, manual “optimize now”, overflow recovery), WHEN it runs, THEN it produces a checkpoint projection over the durable session log without rewriting the log; the chain is deterministic pruning → structured checkpoint → model-written summary for non-reconstructable residue → optional provider-native path; hooks fire pre/post compaction.
+- **Statement:** GIVEN a Core-owned/adapter-supported compaction trigger, WHEN it runs, THEN it produces a checkpoint projection over the Core durable session log without rewriting it; the controllable chain is deterministic pruning → structured checkpoint → optional model-written summary for non-reconstructable residue → optional proven provider-native path. Opaque engine compaction remains native and its private log is not claimed as Core truth (DEC-054).
 - **Priority:** must
 - **Source:** `ARCH/16-CONTEXT.md` §4 · `ARCH/11-WORK.md` §4
 - **Acceptance:** post-compaction log byte-identical except appended compaction events; resume after compaction uses log + checkpoint only; checkpoint fields follow the documented shape (objective/requirements/decisions/completed/active/files/tests/artifacts/workers/blockers/next_actions).
@@ -630,7 +630,7 @@ This registry answers one question per entry: **what behavior must this system e
 - **Status:** seeded
 
 #### REQ-CTX-009 — Cache stability
-- **Statement:** GIVEN repeated model calls in a session, WHEN context is packed, THEN the stable prefix (system contract, agent identity, project rules, stable tool definitions) stays stable, dynamic content lands in a suffix, injection blocks are frozen once computed for the session (memory always-on block computed once), and turns ship baseline + deltas.
+- **Statement:** GIVEN repeated Core-owned or adapter-supported model calls, WHEN Core controls packing, THEN its stable prefix remains stable, dynamic content lands in a suffix, injection blocks are frozen until their declared invalidation, and supported turns ship baseline + deltas. An opaque engine's private prefix/cache is not attested by Core (DEC-054).
 - **Priority:** must
 - **Source:** `ARCH/16-CONTEXT.md` §5
 - **Acceptance:** prefix-stability test across turns (byte-stable until a real change); a frozen injection block is not recomputed mid-session **except on the declared memory mutation-invalidation triggers (`REQ-MEM-019`)**; cache-hit telemetry.
@@ -866,10 +866,10 @@ This registry answers one question per entry: **what behavior must this system e
 - **Status:** seeded
 
 #### REQ-MEM-024 — Extractor budget, model policy and kill switch
-- **Statement:** GIVEN background extraction, WHEN it runs, THEN it is metered against a declared global budget (calls/tokens per period) with global and per-scope kill switches; the model respects a disclosure policy (default: the provider already in use; `confidential` scopes follow the resolved local/no-extraction policy); concurrent sessions cannot exceed the budget; and cost/outcome is reported per run.
+- **Statement:** GIVEN background extraction of eligible Core-owned material, WHEN it runs, THEN it is metered against a declared global budget with global and per-scope kill switches. A Core-owned inference session may use its already active Core provider; an opaque external-agent turn has no presumed Core provider and requires an explicitly selected Core extractor or local model. Native private transcripts are not harvested; `confidential` scopes follow the local/no-extraction policy; cost/outcome is reported per run (DEC-044/054).
 - **Priority:** must
 - **Source:** `ARCH/17-MEMORY.md` §5.1/§9 · `ARCH/04-DECISIONS.md` DEC-031/044
-- **Acceptance:** budget-cap test (N+1st extraction deferred, not run); kill-switch test (zero model calls, zero writes); confidential-scope policy test; concurrent-session test; metering event per run.
+- **Acceptance:** budget-cap test (N+1st extraction deferred); kill-switch test (zero model calls/writes); opaque-agent turn has no automatic extractor call and no native transcript harvest; explicit Core provider selection is recorded; confidential-scope/concurrency tests; metering event per run.
 - **Failure cases:** unbounded extraction calls → cost/security defect; confidential content sent to a disallowed model → violation; kill switch ignored → defect.
 - **Tests:** pending
 - **Status:** seeded
@@ -904,16 +904,16 @@ This registry answers one question per entry: **what behavior must this system e
 ### Models (`MODEL`)
 
 #### REQ-MODEL-001 — One registry, one router, no hard-coded vendor
-- **Statement:** GIVEN any model — cloud or local — WHEN it is registered or selected, THEN it lives behind exactly one model registry and one router, no module hard-codes a vendor, and callers never address a provider endpoint directly.
+- **Statement:** GIVEN a Core-owned inference model — cloud or local — WHEN it is registered or selected, THEN it lives behind exactly one Core model registry/router, no Core module hard-codes a vendor, and Core callers never address a provider endpoint directly. External engines retain their own native model registries and configuration (DEC-054).
 - **Priority:** must
 - **Source:** `AGENTCOWORK-SPEC.md` §2 (P-03) · `ARCH/04-DECISIONS.md` DEC-004 · `ARCH/18-MODEL-ROUTING.md` §1
-- **Acceptance:** registry census shows every selectable model has one entry; static check finds no vendor-specific selection logic outside the router; swapping a provider changes no caller.
+- **Acceptance:** Core registry census shows every Core-selectable model has one entry; static check finds no Core vendor selection outside the router; swapping a Core provider changes no Core caller; an external engine's list is labelled agent-owned.
 - **Failure cases:** a module calling a vendor endpoint outside the router → architecture violation; a second registry or router → review failure.
 - **Tests:** pending
 - **Status:** seeded
 
 #### REQ-MODEL-002 — ModelDescriptor contract
-- **Statement:** GIVEN a registered model, WHEN its descriptor is stored, THEN it follows `DM-025` — id, provider, resolved context window and max output, tool-calling support, reasoning modes, vision, streaming, structured output, cost, latency class, locality and tokenizer ref, plus the declared lifecycle/visibility, family/release, variants/options, transport and catalog refs, prompt-cache and privacy additions — and no capability beyond the declared set is offered.
+- **Statement:** GIVEN a Core-registered model, WHEN its descriptor is stored, THEN it follows `DM-025` — id, provider, resolved context window and max output, tool-calling support, reasoning modes, vision, streaming, structured output, cost, latency class, locality and tokenizer ref, plus declared lifecycle/visibility, family/release, variants/options, transport and catalog refs, prompt-cache and privacy additions. External engine models are shown from adapter-advertised options, not manufactured Core descriptors (DEC-054).
 - **Priority:** must
 - **Source:** `ARCH/18-MODEL-ROUTING.md` §2 · `ARCH/06-DATA-MODEL.md` DM-025
 - **Acceptance:** schema validation rejects incomplete descriptors; router and UI read declared capabilities only (composer negotiation shows supported options); a privacy-flagged model is excluded from disallowed scopes.
@@ -931,7 +931,7 @@ This registry answers one question per entry: **what behavior must this system e
 - **Status:** seeded
 
 #### REQ-MODEL-004 — Deterministic routing and no silent downgrade
-- **Statement:** GIVEN a selection request with preferences and constraints, WHEN the router resolves, THEN ranking is deterministic and audited from agent-profile default, session override, task requirements, policy, availability and preference weights, the selection carries its declared fallback chain, and an unmet requirement (vision · tools · reasoning · context size) yields `GuidanceRequired`/`RequiresUserAction` — never a silent capability downgrade or emulated tool.
+- **Statement:** GIVEN a Core-owned model selection or a binding that explicitly delegates model choice, WHEN the Core router resolves, THEN ranking is deterministic and audited from permitted preferences, task requirements, policy, availability and weights; the selection carries a declared fallback chain, and unmet requirements yield guidance, never a silent downgrade. An opaque agent's model is engine-managed and cannot be silently changed by Core (DEC-054).
 - **Priority:** must
 - **Source:** `ARCH/18-MODEL-ROUTING.md` §3 · `ARCH/07-CONTRACTS.md` CTR-014
 - **Acceptance:** determinism test on identical inputs (stable order, audited tie-break); unmet-requirement test returns guidance; failover test with an unavailable provider; a policy-denied model is never selected.
@@ -958,7 +958,7 @@ This registry answers one question per entry: **what behavior must this system e
 - **Status:** seeded
 
 #### REQ-MODEL-007 — Usage and cost accounting invariant
-- **Statement:** GIVEN a completed model call, WHEN usage and cost are reported, THEN totals are inclusive with a non-overlapping breakdown (`non_cached_input` · `cache_read` · `cache_write` · `reasoning`), values are clamped and consumers never subtract; cost is cache-class-aware (read/write pricing · size tiers · >200k class), provider-reported actuals override catalog estimates, included/free plans are exactly 0, a mismatch is logged as an event, and telemetry carries no prompt or completion content.
+- **Statement:** GIVEN a completed Core-owned model call, WHEN usage and cost are reported, THEN totals are inclusive with a non-overlapping breakdown (`non_cached_input` · `cache_read` · `cache_write` · `reasoning`), values are clamped and consumers never subtract; cost is cache-class-aware, provider-reported actuals override catalog estimates, included/free plans are exactly 0, mismatch is logged, and telemetry carries no prompt/completion content. External-engine usage is `reported`, `estimated` or `unknown` per adapter evidence (DEC-054).
 - **Priority:** must
 - **Source:** `ARCH/18-MODEL-ROUTING.md` §7 · `ARCH/04-DECISIONS.md` DEC-034 · `ARCH/30-EVENTS.md` §5
 - **Acceptance:** usage-invariant tests (breakdown stays within the inclusive total; clamping test); actual-overrides-estimate test; mismatch event test; telemetry content scan clean.
@@ -967,7 +967,7 @@ This registry answers one question per entry: **what behavior must this system e
 - **Status:** seeded
 
 #### REQ-MODEL-008 — Single-owner retry discipline
-- **Statement:** GIVEN a failed model request, WHEN retries are considered, THEN exactly one layer owns each failure class — request-start transport retries (exponential + jitter, honoring `retry-after`) · pre-content stream interruptions via buffer-until-proven with discarded-attempt usage summed · post-content failures handled at the turn level; a user abort anywhere vetoes retry, and context overflow is terminal.
+- **Statement:** GIVEN a failed Core-owned model request, WHEN retries are considered, THEN exactly one Core layer owns each failure class — request-start transport retries (exponential + jitter, honoring `retry-after`) · pre-content stream interruptions via buffer-until-proven with discarded-attempt usage summed · post-content failures at the Core turn level; a user abort vetoes retry and context overflow is terminal at the transport. An external engine's native retries remain native and are not duplicated by Core (DEC-054).
 - **Priority:** must
 - **Source:** `ARCH/18-MODEL-ROUTING.md` §4 · `ARCH/04-DECISIONS.md` DEC-034
 - **Acceptance:** retry-ownership matrix test (one owner per class); user-abort veto test; usage aggregation across discarded attempts; overflow ends without retry.
@@ -985,7 +985,7 @@ This registry answers one question per entry: **what behavior must this system e
 - **Status:** seeded
 
 #### REQ-MODEL-010 — Local discovery and locality guarantee
-- **Statement:** GIVEN local model servers (Ollama · LM Studio · vLLM · llama.cpp · any OpenAI-compatible endpoint), WHEN discovery runs, THEN the runtime probes endpoints, lists and health-checks models and registers them like any other provider with no manual configuration on the common path (manual entry stays as fallback), and a model declared `locality: local` produces no egress from the machine.
+- **Statement:** GIVEN local model servers (Ollama · LM Studio · vLLM · llama.cpp · any OpenAI-compatible endpoint), WHEN Core discovery runs, THEN it probes endpoints, lists and health-checks Core-selectable models with no manual configuration on the common path; manual entry remains available. A Core-owned call declared `locality: local` has zero external egress; an external engine using a local model requires separate containment evidence for the same claim (DEC-054).
 - **Priority:** must
 - **Source:** `ARCH/18-MODEL-ROUTING.md` §6 · `ARCH/05-INVARIANTS.md` INV-05
 - **Acceptance:** discovery test against a local server; unconfigured common-path test; egress-observation test shows zero external traffic for local models; manual entry works.
@@ -994,7 +994,7 @@ This registry answers one question per entry: **what behavior must this system e
 - **Status:** seeded
 
 #### REQ-MODEL-011 — Reasoning-effort mapping
-- **Statement:** GIVEN a reasoning-capable model, WHEN reasoning effort is chosen, THEN one normalized dial (`auto · minimal · low · medium · high · extra_high`) maps to the provider's parameter, the descriptor declares which levels exist, only supported levels are offered, an unsupported choice is never silently downgraded, and raw chain-of-thought never enters the transcript.
+- **Statement:** GIVEN a Core-owned reasoning model, WHEN effort is chosen, THEN the normalized dial maps only to supported provider parameters. For an external engine, show only adapter-advertised native reasoning controls and label unsupported controls unavailable; raw chain-of-thought never enters the Core transcript (DEC-054).
 - **Priority:** must
 - **Source:** `ARCH/18-MODEL-ROUTING.md` §5 · `ARCH/04-DECISIONS.md` DEC-034
 - **Acceptance:** mapping tests per declared level; unsupported level not offered (composer negotiation); transcript scan finds no raw chain-of-thought.
@@ -1003,7 +1003,7 @@ This registry answers one question per entry: **what behavior must this system e
 - **Status:** seeded
 
 #### REQ-MODEL-012 — Resolved window feeds context feasibility
-- **Statement:** GIVEN a resolved model selection, WHEN a turn is prepared, THEN the model's resolved window and the router's reserves feed the context pre-turn feasibility check (`window − reserves`) from shared constants, and a window/estimate mismatch is resolved before send through the context recovery path — never discovered as a provider error mid-stream.
+- **Statement:** GIVEN a resolved Core-owned model selection, WHEN a turn is prepared, THEN its resolved window and reserves feed the pre-turn feasibility check from shared constants; an estimate mismatch is resolved before Core send. An opaque external engine's private window is not asserted by Core; only its offered ContextPacket is budgeted (DEC-054).
 - **Priority:** must
 - **Source:** `ARCH/18-MODEL-ROUTING.md` §3 · `ARCH/04-DECISIONS.md` DEC-027 · `ARCH/16-CONTEXT.md` §3
 - **Acceptance:** shared-constant test (router and context compute identical numbers); mismatch test triggers pre-send recovery; no provider-side overflow while recovery options remain.
@@ -1655,21 +1655,21 @@ This registry answers one question per entry: **what behavior must this system e
 > never renumbered or reused.
 
 #### REQ-AGENT-001 — Delegation contract
-- **Statement:** GIVEN a delegation request, WHEN it is dispatched, THEN it names the bound engine, the work item, the permitted scopes and the deadline, and the delegated work appears as a first-class `Work` item with its own journal — never as an opaque side effect of a turn.
+- **Statement:** GIVEN a **host-created** delegation request, WHEN it is dispatched, THEN it names the bound engine, Work item, permitted scopes and deadline, and the delegated work appears as first-class `Work` with its own host journal. An external engine's privately spawned children remain native activity with reported/observed provenance (DEC-054).
 - **Priority:** must
 - **Source:** `ARCH/15-AGENT-PLANE.md` §7 · `ARCH/11-WORK.md` · `ARCH/04-DECISIONS.md` DEC-029, DEC-031, DEC-036
 - **Acceptance:** a delegated item is queryable as `Work` while running and after completion; a cancelled parent leaves the child's terminal state honest.
 - **Failure cases:** a delegation that cannot be represented as `Work` → refused; a child outliving its deadline → reported as expired, never as completed.
 
 #### REQ-AGENT-002 — Subagent spawn and completion
-- **Statement:** GIVEN a spawn request, WHEN the child is created, THEN its lifecycle (spawned → running → terminal) is observable, its result is a receipt-bearing terminal record, and an async child is tracked by the scheduler rather than by an in-memory promise.
+- **Statement:** GIVEN a **host-created** child Work request, WHEN it is admitted, THEN its host lifecycle is observable, its terminal result is a receipt or labelled worker report with evidence refs, and the async child is tracked by Work rather than an in-memory promise. An engine-native child remains outside the host lifecycle (DEC-054).
 - **Priority:** must
 - **Source:** `ARCH/15-AGENT-PLANE.md` §7 · `ARCH/20-WORKFLOW.md` · `ARCH/04-DECISIONS.md` DEC-029, DEC-036 · `ARCH/30-EVENTS.md`
 - **Acceptance:** spawn → completion is reconstructable from the journal alone after a restart; a child that dies without a terminal record settles as uncertain, never as completed.
 - **Failure cases:** a lost child record → `uncertain`; a completion claimed without evidence → rejected.
 
 #### REQ-AGENT-003 — Subagent isolation modes
-- **Statement:** GIVEN a spawn request, WHEN isolation is chosen, THEN the mode is explicit and recorded per spawn (in-process by default for an in-process engine; worktree or ACP-bound for an external one) and the mode is visible in the work record.
+- **Statement:** GIVEN a host delegation request, WHEN isolation is chosen, THEN the requested and enforced modes are explicit and recorded per Work. Shared read, worktree or adapter-specific sandbox are available only where proven; a bound external engine is never described as in-process or stronger-isolated without evidence (DEC-054).
 - **Priority:** must
 - **Source:** `ARCH/15-AGENT-PLANE.md` §7 · `ARCH/04-DECISIONS.md` DEC-025, DEC-029 · `ARCH/19-RUNTIME-ENVIRONMENTS.md`
 - **Acceptance:** the recorded mode is the mode actually enforced; a request for a mode the runtime cannot provide is refused rather than downgraded.
@@ -2013,11 +2013,11 @@ This registry answers one question per entry: **what behavior must this system e
 - **Status:** seeded
 
 #### REQ-CODE-008 — Code execution walks the governed path
-- **Statement:** GIVEN a code execution request (`code.run` · `code.test` · `code.build` · `code.lint`), WHEN it runs, THEN it executes inside a declared environment under exec policy on the governed path with a ticket — never a direct subprocess from the agent.
+- **Statement:** GIVEN a **Core-mediated** code execution request (`code.run` · `code.test` · `code.build` · `code.lint`), WHEN it runs, THEN it executes inside a declared environment under Core exec policy with a ticket. A self-contained external agent may run native shell/tools under its own policy; Core labels and reconciles that path separately (DEC-054).
 - **Priority:** must
 - **Source:** `ARCH/26-CODE.md` §1/§7 · `AGENTCOWORK-SPEC.md` §4 · `ARCH/05-INVARIANTS.md` INV-01/INV-03 · `ARCH/03-HLD.md` §5
-- **Acceptance:** no direct agent subprocess path exists; the wrapper test shows capability handle + ticket + receipt; denial is typed and leaves no side effect.
-- **Failure cases:** direct subprocess from the agent → architecture violation; execution without a ticket → denied + audit.
+- **Acceptance:** no direct subprocess bypass exists inside the Core wrapper; the mediated wrapper shows handle + ticket + receipt; native shell activity is not mislabelled as Core-governed.
+- **Failure cases:** Core wrapper bypasses ticket → violation; native effect falsely given a Core receipt → false assurance.
 - **Tests:** pending
 - **Status:** seeded
 

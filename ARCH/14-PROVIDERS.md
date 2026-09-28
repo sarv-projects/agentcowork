@@ -5,7 +5,7 @@
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P2).
 > **P7 pass (2026-09-26):** line-checked; requirements seeded (`REQ-PROV-*`, Requirements section).
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
-> **Role:** the only layer where protocols exist. Providers implement capabilities; nothing above the Capability Plane knows the transport (INV-15).
+> **Role:** the only layer where **Core shared-capability provider** protocols exist. Providers implement Core capabilities; callers above the Capability Plane use protocol-neutral capability ids (INV-15). External agents can still use native protocols privately (DEC-054).
 > **Dependencies:** `13-CAPABILITY` (resolution) · `12-TRUST` (guard/egress/vault) · `19-RUNTIME-ENVIRONMENTS` (where adapters run) · `30-EVENTS` (health/events).
 > **Evidence:** `ARCHIVE/v1-research/mcp-provider-verification.md` (641 lines, verified citations) · `ARCHIVE/v1-research/agent-harness-verification.md` (§A4 sandbox/approval/exec layers, §B1 ACP surface, §D1 adapter patterns) · product-owner brief.
 
@@ -15,7 +15,7 @@
 **Never owns:** capability semantics (`13`) · permissions (`12`) · scheduling (`11`).
 
 1. **Adapters are interchangeable** — one provider may implement many capabilities; one capability may have many providers (DEC-004).
-2. **No protocol vocabulary above this layer** — callers speak `capability.invoke`; they never see MCP tool names, ACP methods, or HTTP paths.
+2. **No provider protocol vocabulary in Core shared-capability callers** — they speak `capability.invoke`; an external agent's private tools/protocols remain its own.
 3. **Core-owned credentials via vault only** (CTR-013, INV-02); **Core-mediated egress via Guard** (INV-05). Agent-native custody/egress stay with the external engine and are disclosed separately.
 4. **Epoch discipline:** every adapter instance has a `provider_epoch`; a restart bumps it and invalidates outstanding handles (DM-012, `13` §4).
 5. **Health is first-class:** degraded providers are skipped by the resolver before they fail a call.
@@ -67,11 +67,11 @@ Lifecycle: register (discover) → connect → serve → shutdown. `execute` rec
 ## 5. Registry, epochs, resolution
 
 - `DM-013 ProviderInfo`: id · kind · version · health · capabilities ref · environments · epoch.
-- Resolver inputs (`13`): capability id → candidate providers ranked by (health, environment fit, permission fit, cost, latency class).
-- **Loading modes** (`eager` / `catalog` / `on-demand`) define what the model sees vs what the catalog exposes vs what resolves on demand — the semantic compression layer that keeps raw tool counts out of context.
+- Resolver inputs (`13`): capability id → candidates filtered by grant/policy and environment eligibility, then ranked by health, environment fit, cost and latency class; Guard authorizes every invocation.
+- **Loading modes** (`eager` / `catalog` / `on-demand`) define what Core projects into a compatible bound session vs what its catalog exposes vs what resolves on demand. They do not control the external agent's private catalog.
 - Health events publish on `30`; the UI provider surface reads the registry (no separate store).
 
-**Id mapping (absorbed, A10):** registry entries carry distinct `catalog_ref` (catalog key) and `transport_ref` (runtime transport id) alongside the canonical provider id — several transports may share one catalog entry. The adapter owns the native-tool ↔ capability-id mapping built at discovery; unmapped native tools are not invocable — guidance, never silent exposure (`DEC-047`).
+**Id mapping (absorbed, A10):** registry entries carry distinct `catalog_ref` (catalog key) and `transport_ref` (runtime transport id) alongside the canonical provider id — several transports may share one catalog entry. The adapter owns mappings for tools offered through Core; unmapped tools cannot be invoked **through Core** and surface as guidance. This does not disable a bound agent's private native tools (`DEC-047/054`).
 
 **Auth methods (absorbed, G4):** provider auth is a typed surface — `api` (key) · `oauth` (authorize/callback/refresh/expiry) · `well-known` — with optional prompt/validation metadata. Credentials still land in the vault (`12` §6); only the *method* is modeled here.
 
@@ -131,7 +131,7 @@ Testable behaviors owned by this module live in `ARCH/08-REQUIREMENTS.md`; the t
 
 | REQ | Behavior (one line) |
 |---|---|
-| `REQ-PROV-001` | Adapters interchangeable; no protocol vocabulary above this layer (INV-15, DEC-004). |
+| `REQ-PROV-001` | Core shared-path adapters interchangeable; no provider protocol vocabulary in shared-capability callers (INV-15, DEC-004/054). |
 | `REQ-PROV-002` | `ProviderAdapter` contract + lifecycle; `execute` only with validated handle and ticket (CTR-010, INV-03). |
 | `REQ-PROV-003` | Declared adapter classes (native · mcp · acp · http · cli · plugin · remote); ACP preserves native tools (DEC-025). |
 | `REQ-PROV-004` | MCP client dual-era: modern `2026-07-28` first, legacy `2025-11-25` fallback, detection + force-legacy hatch (DEC-030). |

@@ -20,7 +20,7 @@
 | ID | Principle | One-line meaning |
 |---|---|---|
 | P-01 | **Core owns durable work truth.** | Desktop / web / CLI / IDE / mobile are projections; each external agent owns its own reasoning loop. |
-| P-02 | **Work is the universal execution abstraction.** | A chat turn, workflow run, background job, subagent task — all are `Work` with a lifecycle. |
+| P-02 | **Work is the universal host execution abstraction.** | A Core-scheduled chat turn, workflow run, background job or host-assigned subagent task is `Work`; an external agent's private child activity stays native and is observed with honest provenance (DEC-054). |
 | P-03 | **Agent ≠ Model ≠ Provider.** | None is hard-coded to another; an external engine owns its model choice unless it explicitly delegates selection to the Core model router. |
 | P-04 | **Capability ≠ Provider.** | A capability is a semantic operation (`office.spreadsheet.edit`); a provider is who implements it (native, MCP, ACP, CLI, plugin, remote). |
 | P-05 | **Protocols are adapters, never the center.** | MCP / ACP / CLI / HTTP / plugins are interoperability doors. |
@@ -55,12 +55,12 @@ The claim is earned only when a complete user task succeeds with low friction an
 
 | ID | Statement |
 |---|---|
-| S-01 | A chat turn, workflow run, subagent task, and background job all materialize as `Work` items visible in one Runs surface. |
+| S-01 | Every Core-scheduled chat turn, workflow run, host-assigned subagent task and background job materializes as `Work` in Runs; private agent children remain native activity, labelled by provenance. |
 | S-02 | Every Core-mediated externally visible effect produces a `Receipt` replayable to its inputs; native activity is labelled observed or reported. |
 | S-03 | The same capability (`office.presentation.edit`) resolves to different providers without the caller changing. |
 | S-04 | An external agent onboards through the Agent Gateway and receives only its projection: identity, capability set, scoped context, workspace paths, tools, artifacts, filtered events. |
 | S-05 | Context compaction never loses reconstructable facts — they are rebuilt deterministically from Work / Events / Git / Artifacts, not re-invented by the model. |
-| S-06 | A workflow with an 8-hour wait survives app close, logout, and reboot, then resumes at the correct node. |
+| S-06 | A workflow with an 8-hour wait persists its node and wake state across app close, logout and reboot. It resumes at the correct node when an accepted local service or remote executor owns the trigger; without a live owner it records a misfire or paused state for reconciliation on return (DEC-057). |
 | S-07 | Opening and rendering a document (PDF/DOCX/XLSX/PPTX/code) consumes zero model tokens. |
 | S-08 | No Core-mediated externally visible effect executes without Guard and a valid, scoped, time-boxed ticket; native paths are never shown with that assurance. |
 | S-09 | A capability call can return `guidance` or `requires_user_action` (“connect Google Drive first”), not only success/failure. |

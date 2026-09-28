@@ -34,7 +34,7 @@ One row per `REQ-*`. Status only from evidence.
 | `REQ-KERNEL-001` | `10-KERNEL` | none yet — no kernel crate (code-state baseline) | `INV-14` | — | `TASK-KERNEL-001` | pending | planned |
 | `REQ-KERNEL-002` | `10-KERNEL` | pending | `INV-06` | — | `TASK-KERNEL-001` | pending | planned |
 | `REQ-KERNEL-003` | `10-KERNEL` | pending | `INV-11` | — | `TASK-KERNEL-002` | pending | planned |
-| `REQ-KERNEL-004` | `10-KERNEL` | pending | `INV-02` | — | `TASK-KERNEL-003`, `TASK-TRUST-011` | pending | planned |
+| `REQ-KERNEL-004` | `10-KERNEL` | pending | `INV-02`, `DEC-056`, `CTR-032` | — | `TASK-KERNEL-003`, `TASK-TRUST-011` | pending | planned |
 | `REQ-KERNEL-005` | `10-KERNEL` | pending | — | — | `TASK-KERNEL-001` | pending | planned |
 | `REQ-KERNEL-006` | `10-KERNEL` | pending | `INV-06` | — | `TASK-KERNEL-001` | pending | planned |
 | `REQ-KERNEL-007` | `10-KERNEL` | pending | `CTR-003/004/026` | — | `TASK-KERNEL-002` | pending | planned |
@@ -57,17 +57,17 @@ One row per `REQ-*`. Status only from evidence.
 | `REQ-TRUST-008` | `12-TRUST` | pending | `DEC-009`, `INV-10/11` | — | `TASK-CHAN-002`, `TASK-TRUST-005` | pending | planned |
 | `REQ-TRUST-009` | `12-TRUST` | crates/agentcowork-guard/src/ratelimit.rs, src-tauri/src/lib.rs, crates/agentcowork-core/src/tools.rs | `INV-05` | — | `TASK-TRUST-001`, `TASK-TRUST-004`, `TASK-TRUST-011` | pending | implemented |
 | `REQ-TRUST-010` | `12-TRUST` | pending | `—` | — | `TASK-TRUST-002` | pending | planned |
-| `REQ-CAP-001` | `13-CAPABILITY` | pending | `INV-13`, `DEC-005`, `DM-011` | — | `TASK-CAP-003` | pending | planned |
+| `REQ-CAP-001` | `13-CAPABILITY` | pending | `INV-13`, `DEC-005/054`, `DM-011` | — | `TASK-CAP-003` | pending | planned |
 | `REQ-CAP-002` | `13-CAPABILITY` | pending | `DM-012`, `13` §4 | — | `TASK-CAP-002` | pending | planned |
 | `REQ-CAP-003` | `13-CAPABILITY` | pending | `DEC-004` | — | `TASK-CAP-001` | pending | planned |
 | `REQ-CAP-004` | `13-CAPABILITY` | pending | `DM-011`, `INV-19` | — | `TASK-CAP-001` | pending | planned |
 | `REQ-CAP-005` | `13-CAPABILITY` | pending | `INV-07` | — | `TASK-CAP-003` | pending | planned |
-| `REQ-CAP-006` | `13-CAPABILITY` | pending | `DEC-005/024`, `INV-13` | — | `TASK-CAP-003` | pending | planned |
-| `REQ-CAP-007` | `13-CAPABILITY` | pending | `DM-012` | — | `TASK-CAP-002` | pending | planned |
+| `REQ-CAP-006` | `13-CAPABILITY` | pending | `DEC-005/024/054`, `INV-13` | — | `TASK-CAP-003` | pending | planned |
+| `REQ-CAP-007` | `13-CAPABILITY` | pending | `DM-012`, `DEC-054` | — | `TASK-CAP-002` | pending | planned |
 | `REQ-CAP-008` | `13-CAPABILITY` | pending | `DM-011` | — | `TASK-CAP-002` | pending | planned |
 | `REQ-CAP-009` | `13-CAPABILITY` | pending | `—` | — | `TASK-CAP-001` | pending | planned |
-| `REQ-CAP-010` | `13-CAPABILITY` | pending | `INV-03/19` | — | `TASK-CAP-001` | pending | planned |
-| `REQ-PROV-001` | `14-PROVIDERS` | pending | `INV-15`, `DEC-004` | — | `TASK-PROV-004` | pending | planned |
+| `REQ-CAP-010` | `13-CAPABILITY` | pending | `INV-03/19`, `DEC-054` | — | `TASK-CAP-001` | pending | planned |
+| `REQ-PROV-001` | `14-PROVIDERS` | pending | `INV-15`, `DEC-004/054` | — | `TASK-PROV-004` | pending | planned |
 | `REQ-PROV-002` | `14-PROVIDERS` | crates/agentcowork-core/src/tools.rs, crates/agentcowork-guard/src/ticket.rs, crates/agentcowork-audit/src/receipt.rs | `CTR-010`, `INV-03` | — | `TASK-PROV-001`, `TASK-PROV-004` | pending | implemented |
 | `REQ-PROV-003` | `14-PROVIDERS` | pending | `DEC-025` | — | `TASK-PROV-004` | pending | planned |
 | `REQ-PROV-004` | `14-PROVIDERS` | crates/agentcowork-mcp/src/remote.rs, crates/agentcowork-mcp/src/store.rs, src-tauri/src/mcp_cmds.rs | `DEC-030` | — | `TASK-PROV-003`, `TASK-PROV-006`, `TASK-PROV-007`, `TASK-UI-042` | pending | implemented |

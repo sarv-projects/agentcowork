@@ -48,6 +48,8 @@ A scoped slice — workspace root, relevant rules, RepoMap, relevant files, git 
 
 ## 3. Budget discipline (DEC-027 — named terms, not magic numbers)
 
+The following calculation is enforceable for **Core-owned inference** and adapter-supported external controls with a reported window/tool schema. For an opaque engine, Core budgets its **offered ContextPacket**, while the engine owns its private prompt and actual context window. The UI labels any unavailable total or compaction control as unknown/unsupported, never as measured.
+
 ```
 usable = model_window_resolved
        − output_reserve − reasoning_reserve − summary_output_reserve
@@ -55,11 +57,13 @@ usable = model_window_resolved
 retained_recent = keep                                                (≈ 8k default)
 ```
 
-- **Pre-turn feasibility check:** estimate(system + messages + tools) ≤ window − buffer, else enter the compaction path **before** sending — never discover overflow from the provider.
+- **Pre-turn feasibility check for Core-owned calls:** estimate(system + messages + tools) ≤ window − buffer, else enter the compaction path before sending. An opaque external engine may still report its own overflow; Core preserves Mission/Work state and follows negotiated recovery instead of claiming prevention.
 - **Window resolution** comes from `18-MODEL-ROUTING` (per model/provider); constants are product-visible knobs (`buffer`, `keep`, `reserve`), defaulted per model class — absolute floors for small local models, optionally percent-of-window for large cloud models (OQ-CTX-02). A request that cannot fit even after maximal compaction is refused before send with guidance — never sent to fail at the provider (DEC-027).
 - Overflow is never surfaced as an error to the user while recovery options remain (INV: recovery-first).
 
 ## 4. Pipeline
+
+This is the Core-owned/adapter-supported assembly pipeline. For an opaque external agent, Core supplies a bounded task packet and durable host checkpoint; it does not prune or compact the engine's private context.
 
 ```
 Retrieve (search/snapshot) → Select/Rank → Budget → Prune → Checkpoint → Compact (if needed) → Pack → MODEL
@@ -67,12 +71,12 @@ Retrieve (search/snapshot) → Select/Rank → Budget → Prune → Checkpoint �
 
 1. **Select/Rank (v1):** relevance · scope match · pins · recency. Interfaces are MMR-ready; MMR/rerankers are deferred (parallel to memory U6) until a measured need.
 2. **Prune before compaction (cheapest first).** Old tool output is replaced by a compact representation + artifact reference; **full output stays durable** (artifact/event). Pruning is an opt-in transform that never touches log truth.
-3. **Compaction is a projection boundary over a durable log** (DEC-027): the session event log is never rewritten; a checkpoint is written before compaction (`11` §4) and its segment is rendered as historical context (`<conversation-checkpoint>` framing). Strategy chain:
+3. **Host compaction is a projection boundary over the host durable log** (DEC-027): the Core session event log is never rewritten; a checkpoint is written before any Core-controlled compaction (`11` §4) and its segment may be rendered as historical context (`<conversation-checkpoint>` framing) only through a supported adapter. Strategy chain for Core-owned inference:
    1. deterministic pruning (no LLM);
    2. **structured checkpoint** — deterministic reconstruction from Work/Events/Artifacts/Git (objective/requirements/decisions/completed/active/files/tests/artifacts/workers/blockers/next_actions);
    3. model-written summary for the **non-reconstructable residue** (why-decisions, preferences) — stored as checkpoint narrative, never as the sole state;
    4. provider-native compaction — **a verified shipping path exists** (Codex remote compaction v2; the correction to DEC-027's earlier evidence clause is recorded in DEC-045). Adoption is per provider behind capability detection under DEC-045's rules (Guard egress + audit + per-provider off switch; usage rolls into `18`; the deterministic checkpoint stays primary) — open item OQ-CTX-01.
-4. **Overflow recovery:** `compact-after-overflow → retry the same step`; bounded retries, then surface. Transport retries belong to `18` (single owner, DEC-034) — this is the agent's turn-level recovery, not a second retry layer.
+4. **Overflow recovery:** for Core-owned inference, `compact-after-overflow → retry the same step` with bounded retries; transport retries belong to `18` (single owner, DEC-034). For an external engine, use only its negotiated recovery/reattach method; otherwise start a fresh supported Work attempt from Mission state and label the original failure.
 5. **Hooks:** pre-compact / post-compact extension points (plugin surface, `31`).
 
 ### 4.1 User context inspector
@@ -81,7 +85,7 @@ The user-facing context inspector is a scoped projection of this infrastructure 
 
 ## 5. Cache stability (first-class)
 
-- **Stable prefix:** system contract · agent identity · project rules · stable tool definitions.
+- **Stable prefix (Core-owned/adapter-supported packing only):** system contract · agent identity · project rules · stable tool definitions.
 - **Dynamic suffix:** task · retrieved context · observations · tool results.
 - **Baseline + deltas:** persist the first full render; emit only deltas per turn (verified pattern, §A2/§E1).
 - **Injection blocks are frozen once computed:** the memory always-on block is computed once per session and reused verbatim; re-scoring it would mutate the prefix and bust the provider KV cache. **Exception (correctness wins):** a mutation of the block's member set — forget, edit, supersede, pin/unpin, disable, scope wipe — invalidates it and the next turn reflects the change; the cache-bust is accepted and measured (`17` §6).
@@ -96,10 +100,10 @@ The user-facing context inspector is a scoped projection of this infrastructure 
 
 ## 7. Manual control & visibility
 
-- User-facing: **focus · pin · exclude · inspect**; pins survive selection/compaction up to a ceiling.
-- `/eaios:context`-style command opens the **Context Inspector**; “optimize now” invokes the controller’s decision (prune / compact / no-op) — it never forces compaction.
-- Automatic compaction is a background behavior of the same controller, not a competing mechanism.
-- Inspector exposes: window/usable/current, per-source breakdown, pinned, excluded, recent checkpoint age.
+- User-facing: **focus · pin · exclude · inspect** for Core-offered context; agent-private controls appear only with proven adapter support.
+- `/cowork:context` opens the **Context Inspector**; “optimize now” invokes a supported controller decision (prune / compact / no-op) and is unavailable for an opaque private context.
+- Automatic compaction is a background behavior of a supported controller, not a competing Core mechanism imposed on native agents.
+- Inspector exposes known window/usable/current estimates, per-source breakdown, pinned, excluded and recent host checkpoint age; unknown private-engine values are labelled unknown.
 
 ## 8. Subagent context
 
