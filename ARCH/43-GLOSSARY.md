@@ -73,6 +73,10 @@
 | **Verification** | The read-only checks before a receipt; depth scales with risk class (`34`, INV-19). |
 | **Work** | The universal execution abstraction — one lifecycle for turns, jobs, workflow runs, subagent tasks, automations (DM-001, DEC-003). |
 | **Workflow** | A deterministic process definition (typed IR) that can include agent nodes; runs are pinned to a version (DM-021/022, `20`). |
+| **Machine Observer** | A local read-only service that exposes consented host/hardware/process/runtime observations and bounded local time-series history through scoped Core capabilities (`51`, DEC-058). |
+| **Observation descriptor** | A typed metric/query result including stable id, unit/schema, source/provider, observed time, freshness and per-item availability status (`51`, DM-041). |
+| **Product consent vs OS elevation** | In-app consent discloses and enables a data category; Windows UAC (or a platform-specific privilege prompt) grants an operating-system privilege for an exact operation. Neither substitutes for the other (`12`, `19`, `51`, DEC-058). |
+| **One-shot elevated helper** | A separately elevated, allowlisted process that performs one typed read after explicit user intent and exits; it does not elevate the app or run background sampling (`19`, `51`, DEC-058). |
 | **Worktree** | A git-isolated checkout provisioned per-spawn for concurrent writers (DEC-029). |
 | **World Model** | The continuously updated structural map of the machine + change stream; consumers query it instead of screenshotting (`21`). |
 | **W1…W7** | World Model collector set — W1 file inventory + deltas · W2 process/window registry · W3 UI tree on demand · W4 window capture on demand · W5 browser world · W6 devices/registry/shares (deferred) · W7 content index/OCR (deferred); defined in `ARCH/21-WORLD-MODEL.md` §2. |

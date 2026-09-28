@@ -1,24 +1,25 @@
 # 30 — Events
 
-> **DEC-054 amendment:** The one append-only store adds `mission.*`, `contract.versioned`, `requirement.*`, `plan.versioned`, `node.*`, `assumption.*`, `decision.*`, `evidence.*`, `outcome.*` and `extension.grant.*` events. Mission projections rebuild from this store; no second Mission event bus. Event payloads carry refs/redacted metadata, not secrets or entire native transcripts (`35`, `36`).
+> **DEC-054/058 amendment:** The one append-only store adds `mission.*`, `contract.versioned`, `requirement.*`, `plan.versioned`, `node.*`, `assumption.*`, `decision.*`, `evidence.*`, `outcome.*`, `extension.grant.*` and low-rate `observer.*` consent/configuration/health/alert-transition events. Mission projections rebuild from this store; no second Mission event bus. Event payloads carry refs/redacted metadata, not secrets, consent disclosure bodies, sample series or entire native transcripts (`35`, `36`, `51`).
 
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P3).
 > **P7 pass (2026-09-26):** line-checked; requirements seeded (`REQ-EVENTS-*`, Requirements section).
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
-> **Role:** **one event store + one bus**. UI projections, workflow triggers, world updates, telemetry and audit feeds all derive from it — no hidden side channels (INV-23).
+> **Role:** **one event store + one bus**. UI projections, workflow triggers, world updates, low-rate lifecycle/usage telemetry and audit feeds derive from it — no hidden side channels (INV-23). High-rate Machine Observer samples remain in its bounded local telemetry store; only consent, configuration, health and configured alert transitions are published here (DEC-058).
 > **Boundary:** `SessionEvent` (DM-007, owned by `11`) is the session-local append-only log; `Event` (DM-008, owned here) is the **published system stream**. Everything material emits ≥1 published event; session logs remain the session’s truth.
 > **Dependencies:** `10-KERNEL` · `11-WORK` (producers) · all modules (producers/consumers). **Consumers:** UI (`32`), `20` (triggers), `21` (world updates), `12` (audit feed), telemetry.
 > **Evidence:** INV-23 · DEC-027 (log + projections) · DEC-033 (workflow events) · `agent-harness-verification.md` §E3 (typed stream vocabulary) §E4 (log + projections) · `ARCH/15-AGENT-PLANE.md` §4 (typed stream), `ARCH/20-WORKFLOW.md` §4, `ARCH/21-WORLD-MODEL.md` §4.
 
 ## 1. Purpose & rules
 
-**Owns:** the append-only event store · the bus (publish/subscribe) · replay · subscription filters · the stream vocabulary · usage/cost telemetry events · the external-agent event projection.
+**Owns:** the append-only event store · the bus (publish/subscribe) · replay · subscription filters · the stream vocabulary · usage/cost telemetry events · observer lifecycle/configuration/health/alert transition events · the external-agent event projection.
 **Never owns:** session logs (`11`) · the audit chain (`12` appends its own tamper-evident entries and also consumes events) · payload data (events carry **refs**, not documents).
 
 1. **One store** — every projection (UI Runs, pending work, world state, workflow triggers) is derived; never a second source of truth.
 2. **Typed** — namespaced event types with declared payload schemas; no opaque “output chunk” events.
 3. **Refs over payloads** — large data lives in artifacts/stores; events carry ids + bounded metadata (no secrets, INV-02).
 4. **At-least-once delivery; idempotent consumers** — consumers dedupe by event id; ordering is guaranteed per work/session, not globally.
+5. **No high-rate sample mirroring** — observer sample rows are queried through its bounded store and Core capability projection; only meaningful observer state transitions enter this stream. The event store must not become a duplicate time-series database.
 
 ## 2. Event model (DM-008)
 
@@ -52,6 +53,7 @@
 | Provider | `provider.health.changed` · `provider.epoch.bumped` |
 | Channel | `channel.health.changed` (`connecting` · `live` · `reconnecting` · `auth_blocked` · `stale` · `closed`; source/reason/last-confirmed time) · `channel.approval.observed` (Core approval ref or native-reported provenance) |
 | Session | `session.forked` (parent session, origin message/checkpoint ref, new session; no Work implied) |
+| Machine Observer | `observer.consent.changed` · `observer.config.changed` · `observer.health.changed` · `observer.alert.raised` · `observer.alert.cleared` (scope/config refs, source, timestamp; never a sample value or user-content payload) |
 
 Namespacing rules: `<domain>.<noun>.<verb>`; additive evolution preferred; deprecations are declared with a window. `model.delta` (streaming tokens) is **ephemeral delivery only** — deltas are not persisted as individual events (the settled message is). Subagent events follow DEC-036: `subagent.spawned` is emitted before the first prompt dispatch, and `subagent.finished` carries status · error · tool calls · turns · duration · tokens · output · `will_wake`.
 

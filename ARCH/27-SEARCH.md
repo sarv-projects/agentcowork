@@ -22,7 +22,7 @@
 | Source | Adapter | Query powers |
 |---|---|---|
 | Files (metadata) | `25` index | lexical (names/paths) + structured filters (type/time/size) |
-| Files (content) | **deferred** (W7) | — |
+| Files/Library items (content) | Scoped extraction adapters from `22`–`24`/`29`, indexed here | Full text + exact version/page/cell/slide/line/time anchors where extraction supports them |
 | Memory | `17` FTS5 | lexical + scope/kind filters (`17` §6) |
 | Artifacts | `29` | name/type/provenance filters |
 | World objects | `21` registries | kind/attribute filters (apps · windows · tabs · processes) |
@@ -30,6 +30,12 @@
 | Events | `30` | operator-style filtered reads (bounded) |
 
 Adapters declare: supported query forms · freshness semantics · cost class. `27` composes; it never bypasses an owner’s store.
+
+### 2.1 Exact-version content indexing for Library and files (DEC-055 target)
+
+Files (`25`) supplies identity, observed version and access scope; Artifacts (`29`) supplies immutable artifact versions, Library origin and dependency status. Format adapters extract bounded text/structure with source anchors and parser confidence; Search owns the single full-text index and query path. The index key includes source identity **and version**, extractor version, scope/permission epoch, content hash and anchor. A MIME sniff and size limit select the adapter; encrypted, corrupt, unsupported or unreadable files remain metadata-only with a visible reason. OCR/transcription is a separate, consented, metered extraction step and is never silently invoked by a model-free search query.
+
+On content change, index a new version and atomically switch the current-version pointer after extraction succeeds; older versions remain queryable only when retained and authorized. On delete, scope revocation or permission change, invalidate/purge affected postings before a new query can return them; cached search/context results re-check authorization and exact version at dereference. Deduplication may share extraction work but never leak a snippet or hit count across security scopes. Parser failure or partial OCR yields `partial` coverage and confidence, never fabricated content. Results carry an exact-version ref plus page/cell/slide/line/time anchor where available, extraction status and freshness. `16` may retrieve the chosen content through its own permission-checked `context.get`; Search does not synthesize an answer.
 
 ## 3. Query model
 
@@ -68,13 +74,13 @@ Local indexes only; no network in the search path; no model calls. Targets (decl
 
 ## 9. Not in v1
 
-Semantic/vector search (trigger: recall misses) · cross-repository federation · personalized ranking · content indexing (deferred W7) · web search (that is a capability, `28`/`14`, not the local search plane — now specified in `28` §3 (Web search & fetch) as `web.search`/`web.fetch`, `DEC-037`).
+Semantic/vector search (trigger: measured lexical misses) · cross-repository federation · personalized ranking · web search (that is a capability, `28`/`14`, not the local search plane — specified in `28` §3 as `web.search`/`web.fetch`, `DEC-037`). Exact-version content indexing is the target in §2.1, not a second file index.
 
 ## 10. Open questions (`OQ-SRCH-*`)
 
 1. Per-source p95 targets and their measurement harness.
 2. Fusion/RRF trigger thresholds (when source-priority stops being enough).
-3. Content-index timing (with `25` W7).
+3. Extraction adapter coverage and OCR/transcription cost/consent thresholds for exact-version content indexing (§2.1).
 4. Global-search UI scope (single bar vs per-surface filters) — ties `AGENTCOWORK-UI.md`.
 
 ## 11. Evidence
@@ -99,3 +105,4 @@ Testable behaviors owned by this module live in `ARCH/08-REQUIREMENTS.md`; the t
 | `REQ-SEARCH-010` | NFR: metadata search p95 ≤ 50 ms at 100k files, local indexes only |
 | `REQ-SEARCH-011` | Stale indexes and adapter failures are surfaced (freshness flag + partial results + typed error), never silent |
 | `REQ-SEARCH-012` | Responses carry refs + bounded snippets only — search never synthesizes answers or resolves content without a permission check |
+| `REQ-SEARCH-013` | Exact-version file/Library content index with scoped extraction, source anchors/confidence, atomic reindex, revocation purge and permission-checked dereference (DEC-055) |

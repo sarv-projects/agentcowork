@@ -40,6 +40,7 @@
 | 2.12 UI / UX | `AGENTCOWORK-UI.md` (P5) | Settings decision table (UI-8); preview/editor/artifact surfaces; workbench model. |
 | 2.13 Docs / process / verification | `00`, `42` | Evidence-first discipline; source-frontmatter conventions (DOC-1); docs-sync gates (adopted: op-registry drift gate, `22` §3). |
 | 2.14 Telemetry / analytics / cost | `30` | Usage/cost telemetry; **micro-compaction deferred with telemetry first** (hermes self-rejection adopted as policy). |
+| 2.15 Local machine observability | `19`, `21`, `30`, `48`, `51` | Provider-per-metric hardware/process collection (System Informer, LibreHardwareMonitor, windows_exporter), bounded histories (Glances), typed OS tables (osquery), scan/cancel/treemap (WinDirStat), read-only SMART formats (smartmontools), platform-specific collection (btop/lsof); no code copied. Keep the existing AgentCowork storage walker; use on-demand least-rights process diagnostics; defer eBPF/driver tracing. See DEC-058, `ARCH/45-REFERENCE-RESEARCH.md` §Machine Observer, and `ARCH/51-MACHINE-OBSERVABILITY.md`. |
 
 ## 2. Explicit rejections (carried forward — 16)
 
@@ -85,6 +86,16 @@ From `MASTER-COMPARISON §3`, each mapped to the v1 invariant that enforces it:
 | claude-squad | AGPL-3.0 | pattern-read-only |
 | agentapi (coder) | MIT — **deprecated upstream** | pattern source only (no dependency) |
 | vibe-kanban | Apache-2.0 — **sunsetting upstream** | pattern source only (no dependency) |
+| System Informer | MIT | pattern-read-only; no source copied |
+| WinDirStat | GPL-2.0 | pattern-read-only; no source copied or linked |
+| Glances | LGPL-3.0 | pattern-read-only; no source copied or linked |
+| osquery | Apache-2.0 OR GPL-2.0-only | pattern-read-only; no source copied or linked |
+| windows_exporter | MIT | pattern-read-only; no source copied |
+| eBPF for Windows | MIT | evidence/pattern only; implementation deferred |
+| smartmontools | GPL-2.0 | pattern-read-only; no source copied or linked |
+| btop | Apache-2.0 | pattern-read-only; no source copied |
+| lsof | Custom permissive terms in upstream COPYING | pattern-read-only; no source copied; recheck exact terms before any reuse |
+| LibreHardwareMonitor | MPL-2.0 | pattern-read-only; no source copied |
 | termic / acp.el | AGPL / GPLv3 (rejected candidates) | recorded; never cloned |
 
 **Permissive-reuse set (attribution hygiene required):** codex (Apache-2.0) · opencode (MIT) · genoffice (Apache-2.0) · mem0 (Apache-2.0) · graphiti (Apache-2.0 + CLA) · nooa (Apache-2.0) · rustwright (MIT) · hermes (MIT) · obscura (Apache-2.0) · agent-browser (Apache-2.0) · deerflow (MIT) · jan (Apache-2.0) · cc-switch (MIT) · openclaw host (MIT) · openchamber (MIT) · zeroclaw (MIT OR Apache-2.0) · headroom (Apache-2.0) · ccmanager / agent-client-protocol / acpx / mosoo-agent-driver / codex-acp (MIT/Apache-2.0) · prompts.chat (MIT code + CC0 data) · everything-search skill (MIT) · open-cowork / NextCoWork / AionUi / tide / open-design / atlas / sovereign-agentic-os (MIT/Apache-2.0 grouped) · Composio (MIT) · modelcontextprotocol/registry / mcp-context-forge / dify-plugin-daemon / open-connector / Observal (Apache-2.0) · mcpm.sh (MIT) · anything-llm (MIT) · claude-mem (Apache-2.0) · cline (Apache-2.0, © 2026 Cline Bot Inc.) · grok-build (Apache-2.0 + SpaceXAI notice).
@@ -105,8 +116,8 @@ From `MASTER-COMPARISON §3`, each mapped to the v1 invariant that enforces it:
 | “Codex scheduled/review queues” | No queue in the OSS tree; `review/start` RPC only — a review queue is our own product-layer build | `agent-harness-verification.md` §A3 |
 | “OpenCode native-vs-summary compaction” | No native path in either generation; both summarize with the model | §C1 |
 | “OpenCode V2 pruning” | Pruning is V1-only at the pinned HEAD | §C2 |
-| “OfficeCLI MCP = rich tool surface” | It is **one command-string tool** — our typed-op registry is deliberately different | `office-runtime-verification.md` §1.A |
-| “OfficeCLI atomic swap is crash-safe” | Process-death safe but **not fsynced** — we add fsync | §1.A |
+| “OfficeCLI MCP = rich tool surface” | Historical study described one command-string tool; the current pinned public `3442550` repository does not expose the engine, so do not treat the old file note as reproducible implementation evidence. Our typed-op registry is a separate requirement. | `office-runtime-verification.md` §1.A (historical); `45` OfficeCLI row (current public pin) |
+| “OfficeCLI atomic swap is crash-safe” | Historical study reported a writer lacking fsync; this cannot be rechecked from the public `3442550` pin. Our fsync requirement stands independently and must be verified in our code. | §1.A (historical); `45` OfficeCLI row |
 | “HTTP+SSE deprecated ≥12 months” | Deprecated since 2025-03-26 (~18 months); removal clock = SEP-2596 (eligible ≈2026-08-18, not removed) | `mcp-provider-verification.md` |
 | “Vision is the industry fallback pattern” | Screenshot-first is the industry default; structured-first is **our** design choice | `world-model-verification.md` §1.B |
 | Browser-event / completion-chained workflow triggers | No precedent — product inventions if shipped | `workflow-engine-verification.md` §3 |

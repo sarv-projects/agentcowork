@@ -7,7 +7,7 @@
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
 > **Role:** the office domain runtime **under the universal document surface** (DEC-013) — not a sidebar mode. Progressive **L1 semantic → L2 structured mutation → L3 raw escape hatch**; documents stay **resident** for active sessions; render/validate before receipts.
 > **Dependencies:** `13`/`14` (capabilities/providers) · `19-RUNTIME-ENVIRONMENTS` · `12-TRUST` (paths/exec) · `29-ARTIFACTS` (previews/versions) · `34` (verification depth). **Consumers:** `15` (agent office work), UI (document surface).
-> **Evidence:** `ARCHIVE/v1-research/office-runtime-verification.md` (448 lines; OfficeCLI verified in source, GenOffice per-domain registries verified) · v0 corpus `ARCHIVE/v0/RESEARCH/desktop_app/28,29` · local `crates/agentcowork-office` (frozen reference) · DEC-013.
+> **Evidence:** `ARCHIVE/v1-research/office-runtime-verification.md` (448 lines; historical OfficeCLI/GenOffice source notes) · v0 corpus `ARCHIVE/v0/RESEARCH/desktop_app/28,29` · local `crates/agentcowork-office` · DEC-013. The current pinned public OfficeCLI repository `3442550` exposes README/skills/installer, not its execution engine (`45`); its older file-level notes are not an implementation source until their revision and availability are reverified.
 
 ## 1. Purpose & rules
 
@@ -15,8 +15,8 @@
 **Never owns:** UI surfaces (document surface is UI; `AGENTCOWORK-UI.md`) · artifact storage (`29`) · verification policy (`34` decides depth; Office supplies hooks).
 
 1. **One registry per format, shared by every surface** — CLI/MCP/GUI/agent/API all resolve the *same* operations; a docs-sync test gates drift (verified GenOffice pattern).
-2. **Typed ops, not a command-string tool** — unlike OfficeCLI’s single MCP command tool (verified: one string tool), our operations expose through the capability registry as typed descriptors (`13`); the model gets semantic ops, not a shell.
-3. **Resident with a lease** — one resident context per document, exclusive writer lease, flush policy, crash-safe commit (atomic swap **+ fsync** — the OfficeCLI gap we do not copy).
+2. **Typed ops, not a command-string tool** — our operations expose through the capability registry as typed descriptors (`13`); the model gets semantic ops, not a shell. The older OfficeCLI single-tool observation is historical and must be reverified before comparison.
+3. **Resident with a lease** — one resident context per document, exclusive writer lease, flush policy, crash-safe commit (atomic swap **+ fsync**). The commit guarantee is our requirement and must be measured on each platform.
 4. **No lossy re-serialization without disclosure** — formats declare engines/limits; we prefer surgical OOXML patching over whole-file re-serialization (openpyxl’s lost shapes are the cautionary proof).
 5. **Render/validate before receipts** — validation hooks run proportional to risk (`34`, INV-19).
 
@@ -48,13 +48,13 @@ Registry mechanics: each op = `{id · input/output schema · risk · executor ·
 
 - **One resident context per document + exclusive lease**; second writer gets an explicit “in use” result (no merge in any surveyed system — merge is deferred).
 - **Flush policy:** interval + dirty-marker driven; explicit flush on session end; idle eviction under memory bounds.
-- **Crash-safe commit:** write to a staging package → **fsync** → atomic swap (OfficeCLI is process-death safe but not fsynced; we add fsync) → op-log replay on recovery.
+- **Crash-safe commit:** write to a staging package → **fsync** → atomic swap → op-log replay on recovery. Any comparison to OfficeCLI's private writer remains unverified at the current public pin.
 - **Scratch isolation:** temp/work areas confined to declared roots (pathfloor; GenOffice `GENOFFICE_ALLOWED_ROOTS` pattern).
 - **Batch atomicity:** a batch applies all-or-nothing with an op log for replay/audit.
 
 ## 5. Render, validate, verify
 
-- **Render:** previews are projections (`29` §7) — HTML-screenshot via a browser shell-out (verified OfficeCLI approach) or native renderers; never model tokens (DEC-015).
+- **Render:** previews are projections (`29` §7) — a browser renderer or native renderer selected by a probed format provider; never model tokens (DEC-015). The historical OfficeCLI HTML-screenshot note is not current pinned implementation evidence.
 - **Validate (deterministic):** per-format structural checks before commit (DOCX structure/text round-trip; XLSX recalc + formula presence; PPTX slide/shape audit; PDF page/object counts), plus render-diff where useful.
 - **Verification hooks (to `34`):** risk-scaled — e.g. redact requires a post-op text-extraction check proving removal; sends of externally visible documents require a receipt with the validation result (`29` §3).
 
@@ -90,7 +90,7 @@ Pivot authoring · reflow · SmartArt/OLE editing · multi-writer merge · real-
 
 1. **Resident/lease missing** in the current crate (has commit/snapshot primitives) — the main gap for DEC-013.
 2. **PDF “redact” currently annotates** — must remove content (v0 P0 carried forward).
-3. **fsync before atomic swap** — partial: the DOCX/PDF command paths use `agentcowork_office::write_atomic` (temp → `sync_all` → rename, plus a best-effort directory fsync on POSIX), but the XLSX command path has its own `atomic_write` (`src-tauri/src/xlsx_cmds.rs:301-312`) = write + rename with **no fsync**; route it — and every new commit path — through the fsynced primitive (OfficeCLI's no-fsync trade-off is the gap we do not copy).
+3. **fsync before atomic swap** — partial: the DOCX/PDF command paths use `agentcowork_office::write_atomic` (temp → `sync_all` → rename, plus a best-effort directory fsync on POSIX), but the XLSX command path has its own `atomic_write` (`src-tauri/src/xlsx_cmds.rs:301-312`) = write + rename with **no fsync**; route it — and every new commit path — through the fsynced primitive.
 4. Declare per-engine fidelity limits in the registry (lossy ops surface as `guidance`).
 
 ## 11. Open questions (`OQ-OFFICE-*`)
@@ -103,7 +103,7 @@ Pivot authoring · reflow · SmartArt/OLE editing · multi-writer merge · real-
 
 ## 12. Evidence
 
-`ARCHIVE/v1-research/office-runtime-verification.md` — §1.A OfficeCLI (`IDocumentHandler.cs:58-104` L1/L2/L3; `ResidentFlushPolicy.cs:5-15`; `CommandBuilder.Batch.cs:187-193,473-490`; `AtomicPackageWriter.cs:45-52`; `McpServer.cs:562-600` single-tool; `HtmlScreenshot.cs:10-12` shell-out) · §1.B GenOffice (`pptx-ops/src/ops/registry.ts:1-21` + `tests/op-docs-sync.test.ts:43-60`; `cli/src/mcp/deck.ts:58-253,260-276`; `GENOFFICE_ALLOWED_ROOTS`) · §2 fidelity (openpyxl shapes/pivot docs; LibreOffice `start_parameters` + MPL-2.0) · §3 op set · §4 resident design · §6 hooks/non-goals · v0 corpus 28/29 · DEC-013.
+`ARCHIVE/v1-research/office-runtime-verification.md` — §1.A contains **historical, not currently reproducible from OfficeCLI public pin `3442550`** notes naming `IDocumentHandler.cs`, `ResidentFlushPolicy.cs`, `CommandBuilder.Batch.cs`, `AtomicPackageWriter.cs`, `McpServer.cs` and `HtmlScreenshot.cs`. Do not use those as coding anchors until a revision exposing them is pinned. §1.B GenOffice notes `pptx-ops/src/ops/registry.ts`, `tests/op-docs-sync.test.ts`, `cli/src/mcp/deck.ts` and `GENOFFICE_ALLOWED_ROOTS`; confirm exact upstream revision before reuse. §2 fidelity (openpyxl shapes/pivot docs; LibreOffice) · §3 op set · §4 resident design · §6 hooks/non-goals · v0 corpus 28/29 · DEC-013. Current exact public comparison anchor: `45` OfficeCLI row.
 
 ## 13. Requirements (`REQ-OFFICE-*`)
 

@@ -1,6 +1,6 @@
 # 21 — World Model
 
-> **DEC-055 Experience integration:** Workbench selections and Library retrieval reference World/Artifact identities plus observed version and location, never a path or window caption alone (`48` §§5–6). Browser/desktop takeover invalidates observations until a new snapshot. World facts carry source, freshness and confidence; they are context candidates, not Mission requirements or policy authority.
+> **DEC-055/058 Experience integration:** Workbench selections and Library retrieval reference World/Artifact identities plus observed version and location, never a path or window caption alone (`48` §§5–6). Browser/desktop takeover invalidates observations until a new snapshot. World facts carry source, freshness and confidence; they are context candidates, not Mission requirements or policy authority. Machine Observer (`51`) owns time-series machine readings; this World Model keeps stable machine identities and relationships only.
 
 > **DEC-054 amendment:** Mission resume queries freshness-stamped World objects and external resource versions to detect drift before mutation; it does not copy World state into Mission or grant the agent global observation. Stable file/repository identity and artifact dependency edges support selective invalidation (`35`, `36`).
 
@@ -17,8 +17,8 @@ A continuously updated **structural map** of the machine — apps, windows, proc
 
 **Framing correction (recorded):** screenshot-first is the current *industry default* (OpenAI computer tool, Anthropic computer-use, UI-TARS “solely perceives the screenshots”). Structured-first hybrids demonstrably outperform where semantics exist (Agent-S defaults to `a11y_tree` + OCR patch; open-codex is AX-first with bounded snapshots; a production browser-agent paper reports ~85% vs ~50% prior agents with AX+selective vision). **AgentCowork chooses structured-first deliberately** — it is a design choice we justify by latency/token/precision, not a description of what everyone does. Vision stays a first-class rung.
 
-**Owns:** collectors · registries (app/window/process/file/browser) · world graph · event stream · freshness/staleness · consent records · incremental update machinery.
-**Never owns:** acting on the world (capabilities do that) · file *content* indexing (`25`/`26`) · browser automation (`23`) · permission decisions (`12`).
+**Owns:** structural collectors · registries (app/window/process/file/browser and stable device/volume identities) · world graph · event stream · identity freshness/staleness · consent records for World collectors · incremental update machinery.
+**Never owns:** acting on the world (capabilities do that) · file *content* indexing (`25`/`26`) · browser automation (`23`) · permission decisions (`12`) · changing resource measurements, hardware sensor series, GPU/process performance history, SMART samples or SQL-style machine queries (`51`).
 
 ## 2. Collector set — v1 (Windows-first)
 
@@ -29,8 +29,8 @@ A continuously updated **structural map** of the machine — apps, windows, proc
 | W3 | UI tree (on demand) | UIA raw/control view, bounded nodes/depth; `AutomationId` as hint only | re-read on action; optional UIA events (pending measurement) | Per-app automation allow-list | ✅ |
 | W4 | Window capture (on demand) | window PNG (WGC → PrintWindow/ScreenDC fallback) | pull only | Screen-recording consent | ✅ (behind W3 miss/verify) |
 | W5 | Browser world | tabs/frames · AX/DOM snapshot + ephemeral refs | CDP target/navigation events; re-snapshot on action | Browser-session consent; per-origin policy | ✅ (cross-platform) |
-| W6 | Devices, registry, network shares | — | — | — | ❌ deferred |
-| W7 | Content index / OCR | — | — | — | ❌ deferred (metadata-first) |
+| W6 | World-registered device identity, selected registry facts, network shares | — | — | — | ❌ deferred; metrics and sensor inventory belong to `51` |
+| W7 | World-owned content collector / OCR | — | — | — | ❌ unnecessary as a World collector; Search `27` §2.1 owns target exact-version content indexing via format adapters |
 | M1/L1 | macOS / Linux parity | parity of W1–W5 | FSEvents / fanotify+inotify | TCC / user-session scopes | parity lanes (not v1 blockers) |
 
 Rules: no full rescan per query · event delivery never triggers unbounded work · every collector is independently enable-able/disable-able and health-reported. Browser collector ships with v1 (same CDP machinery as `23`).
@@ -68,6 +68,7 @@ Rules:
 3. **Metadata-first:** collectors never read file content; screenshots only for explicit view, action verification, or W3 miss/verify; `IsPassword`/protected fields excluded or masked.
 4. Elevated file index options (USN/MFT require admin — verified): (a) small privileged helper (Everything pattern, opt-in, no service/autostart by default), (b) per-scan elevation prompt, (c) non-admin mode = walk/RDCW only. Mode is recorded per instance; choice resolved with `12-TRUST` (OQ-WM-02).
 5. Local-first: no upload path exists in the world-model contract.
+6. Machine performance, hardware/GPU sensors, SMART history and machine queries are governed by `51` capabilities, not implicitly included when an agent receives World objects. A user-facing in-app notice explains read-only data scope and local retention; a real OS elevation prompt is requested only for an exact probed collector that needs it (`12`, `19`, `51`).
 
 ## 6. Query surface & consumers
 
@@ -95,12 +96,12 @@ Canonical use cases (why the model exists):
 ## 8. Interop
 
 **Depends on:** `10` kernel · `12` trust (consent/guard) · `19` runtime (collector hosts, helper) · `25` files (identity) · `23` browser (CDP) · `30` events (stream).
-**Exposes to:** `16` context · `20` workflow triggers · `22`–`24` domains · UI (world browser) · `32` projections.
+**Exposes to:** `16` context · `20` workflow triggers · `22`–`24` domains · `51` (identity links only) · UI (world browser) · `32` projections.
 **DAG check:** the world observes; it never executes capabilities or decides permissions.
 
 ## 9. Not in v1
 
-W6 devices/registry/network shares · W7 content index/OCR · continuous UIA event subscription (pending event-volume measurement) · macOS/Linux parity beyond the browser collector (parity lanes M1/L1) · SMB/ReFS edge cases · content search.
+World-registered device inventory/registry/network shares (W6) · a **World-owned** content collector (Search `27` §2.1 owns content retrieval/indexing) · continuous UIA event subscription (pending event-volume measurement) · macOS/Linux collector parity beyond the browser collector in the historical Windows-first build (target parity requires separate qualification) · SMB/ReFS edge cases. Machine Observer metrics are specified independently in `51`; deferring W6 must not be read as deferring those system-monitoring capabilities.
 
 ## 10. Code-phase fixes identified (frozen code, do not touch now)
 
@@ -120,7 +121,7 @@ W6 devices/registry/network shares · W7 content index/OCR · continuous UIA eve
 7. WGC readiness verification (Windows acceptance record).
 8. Continuous UIA event subscription: worth it vs on-demand reads? (measure).
 9. Vision rung: managed models vs local OCR/grounding (`24` decision; `ocr.rs` seam exists).
-10. Content-index phase (deferred; trigger = metadata index proven + product demand).
+10. World never owns content indexing; format extractor coverage, revocation and exact-version behavior are specified by `27` §2.1 and `29` §5.
 
 ## 12. Evidence
 
@@ -133,7 +134,7 @@ Testable behaviors owned by this module live in `ARCH/08-REQUIREMENTS.md`; the t
 | REQ | Behavior (one line) |
 |---|---|
 | `REQ-WORLD-001` | Structural state first: consumers query indexed world objects; capture only on demand (explicit view/verification/miss) (DEC-011) |
-| `REQ-WORLD-002` | Collector set W1–W5 with independent enable/disable + health; W6/W7 deferred; browser collector shares `23` CDP machinery |
+| `REQ-WORLD-002` | World-identity collector set W1–W5 with independent enable/disable + health; World W6 inventory/W7 content collector deferred; machine metrics are owned separately by `51`; browser collector shares `23` CDP machinery |
 | `REQ-WORLD-003` | Per-kind identity (DM-026): file `(volume, fileId, incarnation)`, process PID+start, window handle+launch, tab session-scoped, epoch-scoped UI handles |
 | `REQ-WORLD-004` | Every collector stores `(source, scope, epoch, cursor, observed_at)`; epoch reset discards the cursor and rescans |
 | `REQ-WORLD-005` | Watcher/journal gaps abort to a smallest-scope rescan + freshness anomaly event — never a silent gap (INV-20) |

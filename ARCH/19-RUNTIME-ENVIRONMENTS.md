@@ -1,6 +1,6 @@
 # 19 — Runtime & Environments
 
-> **DEC-054 amendment:** Mission checkpoints reference both cognitive state and execution-environment fingerprint (`35`, `36`). Local shutdown durably pauses local Work. Cloud/remote continuation requires an explicitly configured executor with its own identity, scopes, credential broker and ownership/lease semantics; no UI may imply local Work continues while its only executor is offline. Agent-native process effects remain under that agent's environment policy.
+> **DEC-054/058 amendment:** Mission checkpoints reference both cognitive state and execution-environment fingerprint (`35`, `36`). Local shutdown durably pauses local Work. Cloud/remote continuation requires an explicitly configured executor with its own identity, scopes, credential broker and ownership/lease semantics; no UI may imply local Work continues while its only executor is offline. Agent-native process effects remain under that agent's environment policy. Runtime also supervises the normal-user Machine Observer (`51`); any elevated helper is a separate, operation-limited process, never the app.
 
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P2).
 > **P7 pass (2026-09-26):** line-checked; requirements seeded (`REQ-RTENV-*`, Requirements section).
@@ -11,7 +11,7 @@
 
 ## 1. Purpose & responsibilities
 
-**Owns:** the process manager (spawn · monitor · stop · trees · reaping) · environments (local · sandbox · worktree · remote · cloud, with resource limits and capability probes) · sandbox execution backends · agent vs user PTYs · MCP server lifecycle *hosting* (with `14`) · the opt-in elevated helper host · process/environment health. Remote/cloud are target environment kinds, not claims of current implementation.
+**Owns:** the process manager (spawn · monitor · stop · trees · reaping) · environments (local · sandbox · worktree · remote · cloud, with resource limits and capability probes) · sandbox execution backends · agent vs user PTYs · MCP server lifecycle *hosting* (with `14`) · the opt-in elevated helper host · process/environment health · lifecycle supervision for the standalone Machine Observer child. Remote/cloud are target environment kinds, not claims of current implementation.
 **Never owns:** policy decisions (`12`) · capability semantics (`13`) · git/worktree semantics (`26`) · write leases (`25`).
 
 Rules:
@@ -60,7 +60,11 @@ Rules:
 
 ## 6. Elevated helper (opt-in)
 
-For privileged collectors (MFT/USN file index, `21` W1) the runtime hosts a small **opt-in** helper: explicit install + consent, **no service/autostart by default**, IPC over a guarded channel (`12`), every request audited. Denied helper ⇒ capabilities degrade to non-admin modes with a surfaced note — never silent elevation.
+For privileged collectors (MFT/USN file index, `21` W1; or one exact Machine Observer read, `51`) the runtime may launch a small **one-shot** helper only after explicit user intent, product consent and a genuine need reported by that exact collector. The Observer adds no install-time elevation, elevated service/autostart, driver, or background elevation. The consumer NSIS installer is configured `currentUser`. The repo pins Tauri CLI `2.11.4`; its generated WiX template sets MSI `InstallScope="perMachine"`, and this repo does not override it (`src-tauri/tauri.conf.json`, `SUPPORT-MATRIX.md`, `45`). Thus NSIS is the no-admin consumer path; label the MSI as an administrator-managed machine-wide install. Neither install path may interpret installation approval as consent to monitor. The helper uses authenticated per-user IPC over a guarded channel (`12`), a closed typed operation enum, strict request bounds and handles one read before exiting. Windows app/Core remains asInvoker. The feature control identifies the exact read and carries the UAC shield; Windows then shows its own UAC consent/credential UI. The app is never relaunched elevated. Denial/cancel leaves standard-user capabilities available and marks only the requested elevated field unavailable; a later UAC attempt requires a fresh user action.
+
+## 6.1 Machine Observer service supervision (DEC-058)
+
+Runtime launches the independently buildable services/machine-observer/ process under the current user only after the in-app notice and explicit consent for an enabled observer scope. It authenticates a versioned local pipe/socket, supplies a scoped startup lease, enforces process/resource limits, reports health and stops the service when its active scopes end. History collection is separately opted-in and stops on revoke or profile disable. The Observer has no network listener. Its one-shot helper is supervised by Runtime but is not an Observer child with ambient elevated access: after an exact user action and UAC, it invokes one typed provider read, returns one bounded result to Core, and exits. Core may pass that result to the normal-user Observer only if separate history consent covers it. Runtime does not interpret sample data or decide consent; Trust decides and Capability resolves.
 
 ## 7. Detached work & app lifecycle
 
@@ -95,7 +99,7 @@ Scheduled or event-triggered future occurrences need a **separate trigger-owner 
 ## 10. Interop
 
 **Depends on:** `10` · `11` (lifecycle) · `12` (policy/tickets/egress) · `30` (events) · OS platform APIs.
-**Exposes to:** `14` (adapter hosts, MCP servers) · `21` (collectors/helper) · `22`–`28` (domain execution) · `25`/`26` (workspace scopes; worktree provisioning handoff) · UI (diagnostics).
+**Exposes to:** `14` (adapter hosts, MCP servers) · `21` (World collectors/helper) · `51` (observer service supervision/helper) · `22`–`28` (domain execution) · `25`/`26` (workspace scopes; worktree provisioning handoff) · UI (diagnostics).
 **DAG check:** the runtime executes; it never decides *whether* to execute (that is Guard) and never interprets capability semantics.
 
 ## 11. Open questions (`OQ-RT-*`)
@@ -124,7 +128,7 @@ Testable behaviors owned by this module live in `ARCH/08-REQUIREMENTS.md`; the t
 | `REQ-RTENV-005` | Two PTY classes — agent (policy-scoped) and user (user-owned) — one manager, different policies |
 | `REQ-RTENV-006` | Full output persists bounded to artifact/event; the model sees a compact view + reference (INV-07) |
 | `REQ-RTENV-007` | MCP server hosting: epoch recorded and bumped on restart; scope-end shutdown; vault-ref-only secrets (DEC-024, INV-02) |
-| `REQ-RTENV-008` | Elevated helper is opt-in, guarded and audited; denial degrades to non-admin with a surfaced note (INV-20, INV-24) |
+| `REQ-RTENV-008` | Elevated helper is opt-in, scoped to an exact read operation, guarded and audited; denial degrades to non-admin with a surfaced note (INV-20, INV-24, INV-37) |
 | `REQ-RTENV-009` | App start/close/crash rebuild from work state + checkpoints; close decisions recorded; no environment state is authoritative (INV-16) |
 | `REQ-RTENV-010` | Health `ok`/`degraded`/`down` with reason + events; bounded resource metadata only, never payload capture |
 | `REQ-RTENV-011` | Typed spawn failures (policy denial vs OS failure); hang watchdogs end in interrupt/cancel with a reason |

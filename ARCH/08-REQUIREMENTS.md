@@ -51,6 +51,8 @@ This registry answers one question per entry: **what behavior must this system e
 | `LEARN` | Workflow/skill capture and controlled promotion | `ARCH/37-WORKFLOW-SKILL-LIFECYCLE.md` |
 | `UXQ` | Progressive control and measured quality | `ARCH/38-EXPERIENCE-QUALITY.md` |
 
+| `OBS` | Machine Observer service · sensors · system telemetry · safe OS queries · bounded history | `ARCH/51-MACHINE-OBSERVABILITY.md` |
+
 **Entry format (machine-parseable — fixed heading + field lines):**
 
 ```md
@@ -2167,6 +2169,14 @@ This registry answers one question per entry: **what behavior must this system e
 - **Tests:** pending
 - **Status:** seeded
 
+#### REQ-SEARCH-013 — Indexed content remains exact-version and permission checked
+- **Statement:** GIVEN a Library or workspace item is indexed, WHEN it changes, is re-indexed, or access is revoked, THEN extracted content and retrieval references remain bound to the exact item version and scope, and revocation removes future retrieval access.
+- **Priority:** must
+- **Source:** DEC-055; `ARCH/27-SEARCH.md` §2.1/§5; `ARCH/29-ARTIFACTS.md` §4; `ARCH/48-EXPERIENCE-SURFACES.md` §6
+- **Acceptance:** deterministic fixtures prove version-specific source anchors, bounded extraction status, atomic re-index, permission-checked dereference, and exclusion after revocation/deletion.
+- **Failure cases:** stale chunks returned as current; path-only identity; partial re-index mixed with old version; revoked content still recalled; extraction error hidden.
+- **Tests:** pending
+- **Status:** accepted
 ### Communication (`COMMS`)
 
 #### REQ-COMMS-001 — Capabilities, never a client
@@ -3099,6 +3109,107 @@ This registry answers one question per entry: **what behavior must this system e
 - **Tests:** pending
 - **Status:** accepted
 
+#### REQ-UXQ-011 — System insights are understandable and explicitly shared
+- **Statement:** GIVEN a user opens the System Workbench or an agent requests machine data, WHEN information is displayed or shared, THEN plain-language health summaries explain freshness and limitations, sensitive data scope is disclosed before access, and opening the panel alone never adds machine data to chat context.
+- **Priority:** must
+- **Source:** DEC-058; ARCH/48-EXPERIENCE-SURFACES.md §5/§7; ARCH/51-MACHINE-OBSERVABILITY.md §6/§8
+- **Acceptance:** new-user tasks identify what is collected, why, retention and agent visibility; advanced query/process controls are discoverable but hidden behind progressive detail; screen-reader and keyboard journeys pass.
+- **Failure cases:** technical jargon required for Overview; hidden data collection; dashboard opening silently injects telemetry; consent implied by OS permission; no reason shown for unsupported/denied readings.
+- **Tests:** pending
+- **Status:** accepted
+
+### Machine Observer (OBS)
+
+#### REQ-OBS-001 — Current machine snapshot is typed and fresh
+- **Statement:** GIVEN an authorized local request names supported metric ids, WHEN the Observer returns a snapshot, THEN each returned value includes a stable metric id, unit, source, observed time and freshness status.
+- **Priority:** must
+- **Source:** DEC-058; ARCH/51-MACHINE-OBSERVABILITY.md §2/§10
+- **Acceptance:** typed fixtures verify CPU, memory, volume, process summary and network rates; snapshot age and unavailable states are explicit.
+- **Failure cases:** units omitted or confused; stale values presented as current; failed sampling converted to zero; unknown fields accepted as authoritative.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-OBS-002 — Provider gaps are honest per metric
+- **Statement:** GIVEN a host lacks a sensor, driver, vendor API or permission, WHEN one provider fails, THEN only affected metrics report their typed status and reason while supported readings remain available.
+- **Priority:** must
+- **Source:** DEC-058; ARCH/51-MACHINE-OBSERVABILITY.md §4/§9
+- **Acceptance:** mixed supported/unsupported fixtures preserve provenance, provider version, observation time and independent status.
+- **Failure cases:** fabricated sensor values; one provider failure hides unrelated readings; unsupported represented as healthy zero.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-OBS-003 — Machine observation has explicit notice and least-privilege elevation
+- **Statement:** GIVEN any person or agent requests Machine Observer data, WHEN sampling or disclosure begins, THEN the user first receives a plain-language in-app notice describing the category, purpose, local recipient, cadence and retention, and explicitly grants revocable category consent; separate sensitive scopes and any agent disclosure are authorized independently, and OS elevation appears only for an exact operation whose provider requires it.
+- **Priority:** must
+- **Source:** DEC-058; INV-03/36/37; ARCH/06-DATA-MODEL.md DM-043; ARCH/12-TRUST.md; ARCH/19-RUNTIME-ENVIRONMENTS.md §6; ARCH/51-MACHINE-OBSERVABILITY.md §6
+- **Acceptance:** basic standard-user metrics work without elevation after in-app consent; Trust persists only the user's revocable local collection choice by category/scope/purpose/retention; the Observer adds no installation-time privilege/service/driver requirement; app/Core remain asInvoker; any installer UAC is attributable only to the chosen installation scope and is never treated as data consent; helper requests are typed, one-shot and expire on exit; declining product consent keeps collection off and produces at most one contextual inline explanation; denying/canceling OS elevation keeps standard readings available, records no OS grant and produces at most one scope-specific follow-up; agent disclosure always needs a separate Work-scoped capability grant.
+- **Failure cases:** UAC at startup/global polling; whole-app elevation; collection before in-app consent; installer approval treated as telemetry consent; silent read access to process/network/history metadata; caller-supplied scope treated as authority; helper accepts shell/path/query; repeated prompt/follow-up without new user intent.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-OBS-004 — Local history is bounded, consented and separate from Core events
+- **Statement:** GIVEN history categories and retention are enabled, WHEN samples are collected, THEN the service stores bounded local time-series data, exposes gaps and retention state, and publishes only lifecycle/configuration/health/alert transitions to Core Events.
+- **Priority:** must
+- **Source:** DEC-058; INV-23/36; ARCH/30-EVENTS.md §5; ARCH/51-MACHINE-OBSERVABILITY.md §5
+- **Acceptance:** configured quotas and retention prune/downsample deterministically; high-rate samples do not create event rows; process-history consent is independent and revocable.
+- **Failure cases:** unbounded growth; sampling while disabled; samples leak to event log/support bundle; retention cleanup corrupts concurrent reads; collection gap displayed as zero.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-OBS-005 — Machine queries are typed, read-only and bounded
+- **Statement:** GIVEN a user or authorized agent requests OS facts, WHEN the query runs, THEN it resolves through an allowlisted typed plan with time, row and scope limits and returns provenance plus omitted-field/status information.
+- **Priority:** must
+- **Source:** DEC-058; INV-03/36; ARCH/51-MACHINE-OBSERVABILITY.md §7/§10
+- **Acceptance:** supported process, device and connection-metadata query fixtures return only authorized fields; query limits are enforced by service, not just UI. File metadata remains owned by Files/Search.
+- **Failure cases:** write/multi-statement/PRAGMA/extension/shell execution; unbounded table scan; query bypasses Trust; file walking duplicated; command lines, secrets or payloads included by default.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-OBS-006 — Storage health reuses the sole file scanner
+- **Statement:** GIVEN storage overview or disk-health information is requested, WHEN the Observer reports volumes/SMART and the user requests a treemap, THEN volume/health observations stay read-only and directory traversal uses the existing Files/Storage scanner.
+- **Priority:** must
+- **Source:** DEC-058; ARCH/25-FILES.md; ARCH/51-MACHINE-OBSERVABILITY.md §2/§4/§11
+- **Acceptance:** volume capacity and per-device SMART support are labeled with source/permissions; treemap progress/cancel/scope come from the existing scanner with no duplicate walker.
+- **Failure cases:** unsupported drive shown healthy; disk self-test/repair/write is invoked; overlapping scanner implementation; cancellation ignored or scope widened.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-OBS-007 — GPU and local-model telemetry preserve source and attribution limits
+- **Statement:** GIVEN a supported GPU or configured local inference runtime is observed, WHEN metrics are displayed or shared, THEN device/provider/runtime measurements retain source and interval, per-process attribution is marked approximate when inferred, and prompts/completions are excluded.
+- **Priority:** must
+- **Source:** DEC-058; ARCH/18-MODEL-ROUTING.md; ARCH/51-MACHINE-OBSERVABILITY.md §4/§5
+- **Acceptance:** NVIDIA/AMD/Intel/platform test fixtures expose only supported metrics; runtime token/rate fields are accepted only from a configured metrics interface or run-scoped producer.
+- **Failure cases:** GPU load presented as tokens/sec; utilization attributed to wrong process; missing WSL metric fabricated; prompts, completions or credentials recorded.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-OBS-008 — WSL observation is explicit and never starts a distro
+- **Statement:** GIVEN WSL detail is requested, WHEN the user selects an installed distro, THEN only that already-running distro is queried under a visible scope; AgentCowork never starts, installs, or enters another distro to gather telemetry.
+- **Priority:** must
+- **Source:** DEC-058; ARCH/19-RUNTIME-ENVIRONMENTS.md; ARCH/21-WORLD-MODEL.md; ARCH/51-MACHINE-OBSERVABILITY.md §2/§4
+- **Acceptance:** stopped and unselected distributions receive no process/filesystem call; unsupported GPU/query fields are shown as unavailable with provider explanation.
+- **Failure cases:** automatic distro launch/install; implicit filesystem traversal; host GPU figures represented as per-distro GPU; distro identity ambiguity.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-OBS-009 — Observer is independently buildable and integrated through scoped Core IPC
+- **Statement:** GIVEN the Observer runs standalone or under AgentCowork, WHEN a client connects, THEN a versioned authenticated local protocol exposes only typed observation capabilities, with Core applying Trust scope and Runtime supervising the service.
+- **Priority:** must
+- **Source:** DEC-058; CTR-033; INV-36/37/38; ARCH/19-RUNTIME-ENVIRONMENTS.md §6.1; ARCH/51-MACHINE-OBSERVABILITY.md §3/§10
+- **Acceptance:** service builds without AgentCowork internal crates/UI; mismatched protocol, unauthorized pipe peer, malformed request and helper/service crash fail closed; no network listener exists by default.
+- **Failure cases:** direct agent access to telemetry store; shared secret in caller-controlled args; unbounded messages; hidden network endpoint; stale Core agent/Work grant silently restored after service restart.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-OBS-010 — Advanced process diagnostics are on-demand and least-rights
+- **Statement:** GIVEN the user requests an advanced process/service diagnostic, WHEN the Observer reads it, THEN it uses a separate explicit category grant and an allowlisted read-only field plan, requests only the minimum operating-system access rights, and reports protected or inaccessible targets without bypassing their security descriptors.
+- **Priority:** should
+- **Source:** DEC-058; INV-03/36/37/38; ARCH/12-TRUST.md §10; ARCH/51-MACHINE-OBSERVABILITY.md §2/§6/§7; [Microsoft process security and access rights](https://learn.microsoft.com/en-us/windows/win32/procthread/process-security-and-access-rights)
+- **Acceptance:** opted-in on-demand queries can return supported process owner/image/parent, thread summary, handle count, service state and module metadata; fixtures prove per-field unsupported/access-denied states, no default history, no `PROCESS_ALL_ACCESS`/handle duplication/process-memory reads, and no data leaves the device unless a separate Work-scoped share is approved. Any field needing elevation follows REQ-OBS-003's one-operation UAC flow.
+- **Failure cases:** broad access mask; protected-process bypass; command line, environment, open-file paths, memory, stack traces or kernel data collected under this requirement; diagnostic history collected without its own grant; denied field hidden as zero or success.
+- **Tests:** pending
+- **Status:** accepted
+
 ## 5. Seeding status
 
 | Domain | Seeds | Next pass |
@@ -3120,15 +3231,17 @@ This registry answers one question per entry: **what behavior must this system e
 | `CUA` (12) | drafted above + expanded in pass `24` | verified during pass `24` ✅ (2026-09-26) |
 | `FILES` (12) | drafted above + expanded in pass `25` | verified during pass `25` ✅ (2026-09-26) |
 | `CODE` (12) | drafted above + expanded in pass `26` | verified during pass `26` ✅ (2026-09-26) |
-| `SEARCH` (12) | drafted above + expanded in pass `27` | verified during pass `27` ✅ (2026-09-26) |
+| `SEARCH` (13) | 12 baseline + REQ-SEARCH-013 exact-version content indexing (DEC-055) | baseline verified during pass `27` ✅ (2026-09-26); amendment implementation pending |
 | `COMMS` (13) | drafted above + expanded in pass `28` | verified during pass `28` ✅ (2026-09-26) |
 | `ART` (12) | drafted above + expanded in pass `29` | verified during pass `29` ✅ (2026-09-26) |
 | `EVENTS` (12) | drafted above + expanded in pass `30` | verified during pass `30` ✅ (2026-09-26) |
 | `SKILL` (13) | drafted above + expanded in pass `31` | verified during pass `31` ✅ (2026-09-26) |
 | `CHAN` (14) | 13 baseline + REQ-CHAN-014 cross-device access (DEC-055) | baseline verified during pass `32` ✅ (2026-09-26); amendment implementation pending |
 | `VERIFY` (13) | drafted above + expanded in pass `34` | verified during pass `34` ✅ (2026-09-26) |
+| `UXQ` (11) | 10 baseline + REQ-UXQ-011 System Workbench (DEC-058) | implementation pending |
+| `OBS` (10) | new domain for local machine observation and on-demand process diagnostics (DEC-058) | implementation and device qualification pending |
 
-> **P9 verification (2026-09-26, historical):** registry integrity was recorded as 307 entries ↔ 307 matrix rows before later retirements. **DEC-054/055/056 amendment (2026-09-28):** current registry and matrix each contain 330 unique active `REQ-*` entries/rows (323 prior active + REQ-RTENV-012 + five DEC-056 requirements + REQ-CHAN-014). W5/W6 in `TODO.md` name implementation tasks; all associated tests/evidence remain pending. This count is an inventory, not verification of implementation.
+> **P9 verification (2026-09-26, historical):** registry integrity was recorded as 307 entries ↔ 307 matrix rows before later retirements. **DEC-054/055/056/057/058 amendment (2026-09-28):** current registry and matrix each contain 342 unique active `REQ-*` entries/rows across 31 domains (330 prior active + REQ-SEARCH-013 + REQ-UXQ-011 + REQ-OBS-001…010). W0–W6 in `TODO.md` name implementation tasks; all newly associated tests/evidence remain pending. This count is an inventory, not verification of implementation.
 
 ## 6. Related
 

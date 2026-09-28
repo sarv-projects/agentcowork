@@ -2,7 +2,7 @@
 
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P7). **This file owns links, never content:** requirements live in `ARCH/08-REQUIREMENTS.md`, designs in the module docs, tasks in `TODO.md`, evidence in `ARCH/42-EVIDENCE-MAP.md`.
 > **Purpose:** answer from one place — which requirements does a file implement · which requirements have no implementation · which acceptance tests are missing · which specs does a change affect.
-> **Current inventory (2026-09-28):** 330 unique requirement rows match the 330 active requirement headings in `08` (including remote/cloud ownership, cross-device access and DEC-056 UI reconciliation). Active `TODO.md` W0–W6 task IDs are linked below where assigned; tests and new Mission/Experience implementation evidence remain pending.
+> **Current inventory (2026-09-28):** 342 unique requirement rows match the 342 active requirement headings in `08` (including remote/cloud ownership, cross-device access, DEC-056 UI reconciliation and DEC-058 machine observation/diagnostics). Active `TODO.md` W0–W6 task IDs are linked below where assigned; new implementation tests and evidence remain pending.
 
 ---
 
@@ -236,6 +236,7 @@ One row per `REQ-*`. Status only from evidence.
 | `REQ-SEARCH-010` | `27-SEARCH` | pending | `—` | — | `TASK-SEARCH-002` | pending | planned |
 | `REQ-SEARCH-011` | `27-SEARCH` | pending | `—` | — | `TASK-SEARCH-002` | pending | planned |
 | `REQ-SEARCH-012` | `27-SEARCH` | pending | `—` | — | `TASK-SEARCH-002` | pending | planned |
+| `REQ-SEARCH-013` | `27-SEARCH`, `29-ARTIFACTS` | pending | `DEC-055`, `INV-11` | `TC-015/033` | `TASK-SEARCH-003` | `TEST-SEARCH-003` (pending) | planned |
 | `REQ-COMMS-001` | `28-COMMS` | pending | `CTR-009` | — | `TASK-COMMS-002` | pending | planned |
 | `REQ-COMMS-002` | `28-COMMS` | pending | `DEC-005`, `CTR-010` | — | `TASK-COMMS-002` | pending | planned |
 | `REQ-COMMS-003` | `28-COMMS` | crates/agentcowork-core/src/connectors/mod.rs, crates/agentcowork-core/src/connectors/{graph,gmail,calendar,workspace}.rs | `INV-02`, `CTR-013` | — | `TASK-COMMS-001`, `TASK-COMMS-002` | pending | implemented |
@@ -316,7 +317,7 @@ One row per `REQ-*`. Status only from evidence.
 | `REQ-PROD-003` | `12-TRUST` | pending | `INV-04`, `DEC-028` | — | `TASK-PROD-001` | pending | planned |
 | `REQ-PROD-004` | `15-AGENT-PLANE`, `12-TRUST` | pending | `INV-12`, `DEC-010` | — | `TASK-PROD-001`, `TASK-PROD-006` | pending | planned |
 | `REQ-PROD-005` | `AGENTCOWORK-UI`, `22-OFFICE` | pending | `INV-13`, `DEC-015` | — | `TASK-PROD-002`, `TASK-PROD-005` | pending | planned |
-| `REQ-PROD-006` | `42-EVIDENCE-MAP` | pending | `—` | — | `TASK-PROD-003`, `TASK-PROD-004` | pending | planned |
+| `REQ-PROD-006` | `42-EVIDENCE-MAP` | pending | `—` | — | `TASK-PROD-003`, `TASK-PROD-004`, `TASK-PROD-007` | `TEST-PROD-007` (pending; `TC-041`) | planned |
 | `REQ-UI-001` | `AGENTCOWORK-UI` | pending | `—` | — | `TASK-UI-002`, `TASK-UI-038` | pending | planned |
 | `REQ-UI-002` | `AGENTCOWORK-UI` | pending | `DEC-015`, `INV-13` | — | `TASK-UI-004` | pending | planned |
 | `REQ-UI-003` | `AGENTCOWORK-UI` | pending | `—` | — | `TASK-UI-003`, `TASK-UI-008`, `TASK-UI-018`, `TASK-UI-027`, `TASK-UI-042`, `TASK-WORK-008` | pending | planned |
@@ -355,7 +356,7 @@ One row per `REQ-*`. Status only from evidence.
 | `REQ-LEARN-001` | `37-WORKFLOW-SKILL-LIFECYCLE` | pending | `DEC-054`, `INV-35` | `FLOW-39/40` | `TASK-LEARN-001` | pending | planned |
 | `REQ-LEARN-002` | `20-WORKFLOW`, `37-WORKFLOW-SKILL-LIFECYCLE` | pending | `DEC-054`, `CTR-031` | `FLOW-39` | `TASK-LEARN-001` | pending | planned |
 | `REQ-UXQ-001` | `38-EXPERIENCE-QUALITY` | pending | `DEC-054`, `CTR-027/028` | `FLOW-41/46` | `TASK-UI-019`, `TASK-UXQ-002` | pending | planned |
-| `REQ-UXQ-002` | `38-EXPERIENCE-QUALITY` | pending | `DEC-054`, `DEC-057` | `TC-001…039` | `TASK-UXQ-009` | pending | planned |
+| `REQ-UXQ-002` | `38-EXPERIENCE-QUALITY` | pending | `DEC-054`, `DEC-057/058` | `TC-001…049` | `TASK-UXQ-009` | pending | planned |
 | `REQ-UXQ-003` | `48-EXPERIENCE-SURFACES` | pending | `DEC-055` | `TC-005…008` | `TASK-UI-014`, `TASK-UI-015`, `TASK-UXQ-001` | pending | planned |
 | `REQ-UXQ-004` | `48-EXPERIENCE-SURFACES`, `46-ECOSYSTEM-ARCHITECTURE` | pending | `DEC-055` | `TC-007/009/038` | `TASK-UI-030`, `TASK-UXQ-002` | pending | planned |
 | `REQ-UXQ-005` | `48-EXPERIENCE-SURFACES`, `22-OFFICE`, `23-BROWSER`, `24-COMPUTER-USE` | pending | `DEC-055` | `TC-010…018` | `TASK-UI-011`, `TASK-UI-040`, `TASK-UXQ-003` | pending | planned |
@@ -364,6 +365,17 @@ One row per `REQ-*`. Status only from evidence.
 | `REQ-UXQ-008` | `46-ECOSYSTEM-ARCHITECTURE`, `48-EXPERIENCE-SURFACES` | pending | `DEC-054/055` | `TC-007/008/026` | `TASK-UXQ-006` | pending | planned |
 | `REQ-UXQ-009` | `15-AGENT-PLANE`, `35-MISSION`, `48-EXPERIENCE-SURFACES` | pending | `DEC-054/055` | `TC-024…026/034/035` | `TASK-UXQ-007` | pending | planned |
 | `REQ-UXQ-010` | `20-WORKFLOW`, `37-WORKFLOW-SKILL-LIFECYCLE`, `48-EXPERIENCE-SURFACES` | pending | `DEC-054/055` | `TC-021…023` | `TASK-UXQ-008` | pending | planned |
+| `REQ-UXQ-011` | `48-EXPERIENCE-SURFACES`, `51-MACHINE-OBSERVABILITY` | pending | `DEC-058`, `INV-36/37` | `TC-049` | `TASK-UXQ-010` | `TEST-UXQ-010` (pending) | planned |
+| `REQ-OBS-001` | `51-MACHINE-OBSERVABILITY` | pending | `DEC-058`, `INV-36`, `DM-041`, `CTR-033` | `FLOW-048`, `TC-040` | `TASK-OBS-001` | `TEST-OBS-001` (pending) | planned |
+| `REQ-OBS-002` | `51-MACHINE-OBSERVABILITY` | pending | `DEC-058`, `INV-36`, `DM-041` | `TC-040/048` | `TASK-OBS-002` | `TEST-OBS-002` (pending) | planned |
+| `REQ-OBS-003` | `12-TRUST`, `19-RUNTIME-ENVIRONMENTS`, `48-EXPERIENCE-SURFACES`, `51-MACHINE-OBSERVABILITY` | pending | `DEC-058`, `INV-37`, `CTR-033` | `FLOW-048`, `TC-041/049` | `TASK-OBS-003` | `TEST-OBS-003` (pending) | planned |
+| `REQ-OBS-004` | `30-EVENTS`, `51-MACHINE-OBSERVABILITY` | pending | `DEC-058`, `INV-23/36`, `DM-042` | `TC-042` | `TASK-OBS-004` | `TEST-OBS-004` (pending) | planned |
+| `REQ-OBS-005` | `13-CAPABILITY`, `51-MACHINE-OBSERVABILITY` | pending | `DEC-058`, `INV-38`, `CTR-033` | `TC-043` | `TASK-OBS-005` | `TEST-OBS-005` (pending) | planned |
+| `REQ-OBS-006` | `25-FILES`, `51-MACHINE-OBSERVABILITY` | pending | `DEC-058`, `INV-36`, `DM-041` | `TC-044` | `TASK-OBS-006` | `TEST-OBS-006` (pending) | planned |
+| `REQ-OBS-007` | `18-MODEL-ROUTING`, `51-MACHINE-OBSERVABILITY` | pending | `DEC-058`, `INV-36`, `DM-041` | `TC-045` | `TASK-OBS-007` | `TEST-OBS-007` (pending) | planned |
+| `REQ-OBS-008` | `19-RUNTIME-ENVIRONMENTS`, `21-WORLD-MODEL`, `51-MACHINE-OBSERVABILITY` | pending | `DEC-058`, `INV-36/37` | `TC-046` | `TASK-OBS-008` | `TEST-OBS-008` (pending) | planned |
+| `REQ-OBS-009` | `10-KERNEL`, `12-TRUST`, `13-CAPABILITY`, `19-RUNTIME-ENVIRONMENTS`, `51-MACHINE-OBSERVABILITY` | pending | `DEC-058`, `INV-36/38`, `CTR-033` | `FLOW-048`, `TC-047/048` | `TASK-OBS-009` | `TEST-OBS-009` (pending) | planned |
+| `REQ-OBS-010` | `12-TRUST`, `13-CAPABILITY`, `51-MACHINE-OBSERVABILITY` | pending | `DEC-058`, `INV-03/36/37/38` | `FLOW-049`, `TC-050` | `TASK-OBS-010` | `TEST-OBS-010` (pending) | planned |
 
 ## 4. Maintenance
 

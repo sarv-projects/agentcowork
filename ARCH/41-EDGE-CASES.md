@@ -277,3 +277,16 @@
 ## Extension rule
 
 New edge cases are appended with the next free ID in their family, with: scenario · required behavior · owning doc. A case that changes an authority doc escalates to a `DEC`.
+
+## U. Machine observation, consent and privilege (§19, §21, §30, §48, §51, DEC-058)
+
+| ID | Scenario | Required behavior |
+|---|---|---|
+| EDGE-210 | First launch or install includes a machine-health feature | The Observer adds no install privilege/service/driver requirement. NSIS is the per-user consumer route; the pinned Tauri WiX MSI is machine-scope/admin-managed and its UAC applies only to installation. Before first sample, explain category, purpose, local recipient, sampling and retention; collect only after explicit in-app consent. |
+| EDGE-211 | User declines product consent or denies/cancels UAC for an optional exact reading | Consent decline collects nothing and shows at most one inline Enable / Keep off explanation. UAC denial preserves standard-user metrics, marks only the requested field unavailable and shows at most one contextual explanation with Try once / Keep standard access. Remember dismissal and do not repeat without new user intent. |
+| EDGE-212 | Elevated helper receives malformed, oversized or unsupported request | Reject before access; helper accepts only a closed typed read enum, one request, strict bounds, authenticated same-user IPC; no raw SQL, paths, shell, mutation or child process. |
+| EDGE-213 | Observer or telemetry store crashes, fills, locks or is corrupt | Chat and normal machine snapshot remain available when possible; stop history writes safely, report last sample/gap, never replace missing data with zero, and offer bounded repair/export/delete. |
+| EDGE-214 | GPU sensor/provider/driver supports only part of the metric set | Preserve unrelated readings; report unsupported/stale/permission-needed per metric with provider and timestamp; never infer temperature, VRAM or per-process usage from aggregate load. |
+| EDGE-215 | WSL is installed but distro is stopped or not selected | Do not start/install/enter it; host-level readings remain distinct from distro readings; show explicit unavailable reason. |
+| EDGE-216 | Service restarts after consent revocation or scope change | Old pipe grants and helper tokens are invalid; reconnect requires current Trust state, and a stale snapshot is never presented as fresh. |
+| EDGE-217 | Advanced process query targets another user, a protected process, or a field outside granted rights | Return typed per-field access-denied/unsupported status; never widen requested access, duplicate handles, read memory or infer the missing field. An exact optional elevated read still needs fresh user action and follows the one-shot helper flow. |

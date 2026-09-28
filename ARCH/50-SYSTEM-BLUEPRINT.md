@@ -1,6 +1,6 @@
 # 50 — System blueprint and ownership map
 
-> Status: DEC-054/055/056/057 target architecture map. Mermaid diagrams are navigation and review aids; canonical fields/contracts remain in `06`/`07`, requirements in `08`, module details in `10`–`38` and `46`/`48`. Every arrow below denotes a named boundary, not an extra service. The target is a modular monolith with external adapters, not a fleet of internal microservices. Diagram labels `Core-mediated` and `agent-native` must stay distinct; occurrence ownership is fenced and does not imply exactly-once external effects.
+> Status: DEC-054/055/056/057/058 target architecture map. Mermaid diagrams are navigation and review aids; canonical fields/contracts remain in `06`/`07`, requirements in `08`, module details in `10`–`38` and `46`/`48`/`51`. Every arrow below denotes a named boundary, not an extra service. The target is a modular monolith with external adapters and one independently buildable local Observer, not a fleet of internal network microservices. Diagram labels `Core-mediated` and `agent-native` must stay distinct; occurrence ownership is fenced and does not imply exactly-once external effects.
 
 ## 1. High-level ownership
 
@@ -48,6 +48,7 @@ flowchart TB
 | Connected apps | Comms `28`, providers `14` | Vault `12`, capability `13`, optional MCP; API preferred to browser/desktop |
 | Workflow/skill conversion | Workflow `20`, lifecycle `37`, extensions `31` | Work `11`, approvals `12`, versions/evals; no silent publish |
 | Settings / agent inventory | Experience `48`, ecosystem `46` | Read-only discovery, native-vs-host extension scope, credentials owner, health and capability probes |
+| System Workbench / machine data | Experience `48`, Observer `51` | In-app notice and consent, plain-language overview, provider/freshness status; no implicit chat-context injection |
 
 ## 3. Durable Mission and replaceable workers
 
@@ -116,6 +117,62 @@ flowchart LR
 ```
 
 The hierarchy API/native connector → MCP → structured browser → visual browser → desktop is a **selection preference when all are available and authorized**, not a mandate to intercept a discovered agent's private tools. A shared MCP catalog item is not globally mounted. Scope is resolved for each agent/session/workspace/Mission, and unsupported overlays fail closed with an honest status. Native effects cannot inherit a Core receipt or verification badge.
+
+## 4.1 Local machine observation and optional elevation
+
+```mermaid
+sequenceDiagram
+  actor User
+  participant UI as Workbench / Settings
+  participant Core as Core Capability + Trust
+  participant Runtime as Runtime supervisor
+  participant Observer as Normal-user Machine Observer
+  participant Store as Bounded local sample store
+  participant Priv as Allowlisted privileged provider
+  participant UAC as Windows UAC
+  participant Helper as One-shot typed helper
+  participant Events as Existing Core event store
+  User->>UI: Open System or request a machine reading
+  UI->>User: Explain category, purpose, recipient, sampling and retention
+  alt User enables this scope
+    User->>UI: Explicitly enable selected scope
+    UI->>Core: Request named metric/query with actor, Work and grant identity
+    Core->>Core: Trust validates current consent and capability scope
+    Core->>Runtime: Start/lease Observer at normal-user privilege
+    Runtime->>Observer: Authenticated versioned local IPC
+    Observer->>Observer: Read supported standard-user providers
+    Observer->>Store: Persist only separately opted-in bounded history
+    Observer-->>Core: Typed values + source + time + freshness/status
+    Core-->>UI: Plain-language view; agent projection only if separately authorized
+    opt Exact requested provider reports elevation required
+      UI->>User: Show shield-marked exact read and standard-access fallback
+      User->>UI: Choose Read this detail once
+      UI->>Core: Authorize one exact operation
+      Core->>Runtime: Launch signed helper with one-operation grant
+      Runtime->>UAC: Request elevation for this helper operation
+      UAC->>Helper: Start helper after OS approval
+      Helper->>Priv: Perform one typed read
+      Priv-->>Helper: One bounded result
+      Helper-->>Core: Result, provenance and correlation id
+      Helper->>Helper: Exit immediately
+      opt Separate history consent covers this result
+        Core->>Observer: Store this one result under normal-user privilege
+      end
+      opt User denies or cancels UAC
+        UAC-->>Core: No elevation grant
+        Core-->>UI: permission_needed; standard readings remain available
+        UI-->>User: One contextual explanation; no automatic retry
+      end
+    end
+    Core->>Events: Publish scope/config/health/alert transition only
+  else User chooses Not now
+    UI-->>User: Collect nothing; show one inline Enable / Keep off explanation
+  end
+  Note over Store,Events: Samples/history stay in the Observer store; never mirror each poll as a Core event
+  Note over UI,UAC: Observer adds no install privilege requirement. NSIS is per-user; MSI install-scope UAC, if any, is install-only and never data consent.
+```
+
+The split is intentional: product consent authorizes collection/data scope; OS elevation authorizes a specific operating-system operation. Both must pass independently. Declining product consent means no sample is taken; declining UAC is a normal partial-capability result, not a reason to relaunch or elevate the application.
 
 ## 5. User selection, artifacts and Library
 

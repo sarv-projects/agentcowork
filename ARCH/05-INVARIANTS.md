@@ -118,7 +118,7 @@
 **Verification:** budget tests (p50/p95 injected tokens vs ceiling); zero-query-hit = zero relevant-block tokens test, with the always-on block measured separately.
 
 ### INV-23 — Single event log
-**Invariant:** UI projections, workflow triggers, world updates, telemetry and audit derive from one event store. No hidden side channels for state propagation.
+**Invariant:** UI projections, workflow triggers, world updates, usage/cost telemetry and audit derive from one event store. High-frequency Machine Observer samples may live in its bounded local telemetry store; only observer lifecycle, consent, health transitions and configured alerts enter the event store. No hidden side channels for state propagation.
 **Enforcement:** `30-EVENTS`.
 **Verification:** event coverage tests; no direct cross-module state writes without events.
 
@@ -143,4 +143,7 @@ INV-01 and INV-24 quantify over **Core-mediated operations**. DEC-049's external
 | INV-32 | Discovered agent configuration and native extensions are read-only to discovery/attachment; host grants are explicit, scoped and reversible. | `46`, `31`, `32` |
 | INV-33 | Catalog visibility is not authorization; shared calls use the actual Work/session/agent/grant identity. | `46`, `12`, `13`, `32` |
 | INV-34 | Native agent effects and Core-mediated effects carry distinct provenance and assurance claims. | `12`, `34`, `36`, UI |
-| INV-35 | Learned skills/workflows/policies are versioned proposals and cannot silently change trusted active behavior. | `37`, `31`, `20` |
+| INV-35 | Learned skills/workflows/policies are versioned proposals and cannot silently change trusted active behavior. | 37, 31, 20 |
+| INV-36 | Machine observations are read-only, category-scoped, freshness-stamped, local by default and bounded by configured sampling/retention limits. | 51, 12, 19 |
+| INV-37 | In-app notice and explicit user consent precede all Machine Observer sampling, including basic readings; sensitive categories and history are separately scoped. Installer elevation is never telemetry consent; the Observer adds no installation-time admin/service/driver requirement. OS UAC is just-in-time for an exact probed operation in a separate helper while the app stays asInvoker; denial leaves standard access usable and is not retried without new user intent. A declined product scope stays off and gets at most one contextual explanation. | 12, 19, 21, 48, 51 |
+| INV-38 | Machine queries are typed/allowlisted, read-only and bounded; observer data reaches agents only through a Core capability projection. | 13, 46, 51 |

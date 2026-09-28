@@ -100,9 +100,11 @@ Never exposed: service topology, stores/schema, queues, scheduler internals, vau
 - Memory mutations are audited under the local-mutation class (DEC-042); the record carries **no item body**, and suppression digests are keyed (DEC-039).
 - Audit reads are themselves access-controlled; exports carry the chain proof.
 
-## 10. Consent (collector-facing)
+## 10. Consent (collector-facing; DEC-058)
 
-Policy evaluated by Trust; records owned by `21`. Required record fields (per collector instance): collector id+version · scope · capability required (standard/elevated/OS-permission) · what was actually granted and how · event source + epoch/cursor · data classes · start/stop + retention · revocation path · audit receipt. Deny-by-default; no persistent grants in v1; visible indicator while capture is active.
+Trust owns the product-level `ObservationConsent` record (DM-043) and evaluates it; the collector owner (`21` or `51`) records each active collection instance and its actual provider/OS state. Machine Observer's local-user category consent is persistent until the user revokes it, because bounded history/background observation must survive closing a panel; consent is versioned by category, scope, purpose and retention. This is a narrow DEC-058 exception to the baseline no-persistent-grants rule. It authorizes local collection only: every agent/work disclosure still needs its independent scoped capability grant. OS elevation and helper tickets are never persistent and never inferred from app-install/UAC consent. The UI shows active categories, recipient, last sample, retention and revoke state; revocation closes collection leases, invalidates helper grants and prevents future reads.
+
+Per collector instance, the owner records collector id+version · consent ref · effective scope · capability required (standard/elevated/OS permission) · what the OS actually granted and how · event source + epoch/cursor · data classes · start/stop + retention · revocation path · audit ref. A collector cannot convert an absent/revoked consent record into authorization. Deny-by-default; no background sampling while consent is absent; visible indicator while collection is active.
 
 ## 11. Failure modes
 
@@ -130,7 +132,7 @@ Policy evaluated by Trust; records owned by `21`. Required record fields (per co
 2. Approval routing defaults per channel and notification delivery; DEC-056 fixes the authority rule for all Core-mediated approvals, including mobile/API clients.
 3. Pathfloor/netfloor mapping to the current crate reality (code phase — `agentcowork-guard` exists; wiring fidelity to verify).
 4. Policy version storage + migration semantics.
-5. Consent-record ownership split confirmation (`21` records, Trust evaluates — assumed here).
+5. ~~Consent-record ownership split confirmation (`21` records, Trust evaluates — assumed here).~~ Resolved by DEC-058/DM-043: Trust owns the user grant and collector owners record the active collection instance.
 
 ## 14. Evidence
 

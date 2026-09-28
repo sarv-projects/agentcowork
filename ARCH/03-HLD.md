@@ -1,14 +1,14 @@
 # 03 — High-Level Architecture (HLD)
 
-> **Status:** Frozen v1 (frozen 2026-09-26; drafted P0) — architecture root for **HOW** (see `ARCH/00-INDEX.md` §2). Module docs derive from this file; conflicts escalate to a `DEC` entry.
-> **Companion docs:** `ARCH/02-THESIS.md` (identity, principles) · `ARCH/06-DATA-MODEL.md` (entities) · `ARCH/07-CONTRACTS.md` (interfaces) · `ARCH/48-EXPERIENCE-SURFACES.md` (final UX HLD/LLD) · `ARCH/50-SYSTEM-BLUEPRINT.md` (amended whole-system maps).
+> **Status:** Frozen v1 baseline, amended by DEC-054/055/056/057/058 (2026-09-28) — architecture root for **HOW** (see `ARCH/00-INDEX.md` §2). Module docs derive from this file; conflicts escalate to a `DEC` entry.
+> **Companion docs:** `ARCH/02-THESIS.md` (identity, principles) · `ARCH/06-DATA-MODEL.md` (entities) · `ARCH/07-CONTRACTS.md` (interfaces) · `ARCH/48-EXPERIENCE-SURFACES.md` (final UX HLD/LLD) · `ARCH/50-SYSTEM-BLUEPRINT.md` (amended whole-system maps) · `ARCH/51-MACHINE-OBSERVABILITY.md` (local observer service).
 > **SDD:** this doc is the L2 architecture layer — it satisfies behaviors registered in `ARCH/08-REQUIREMENTS.md` and must not contradict them; module → REQ traceability accrues in `ARCH/09-FEATURE-MATRIX.md`.
 > **Fleshed:** P7 (2026-09-26) — contract index (§3.1), failure model (§11), non-functional envelope (§12).
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
 
 ## 1. Shape
 
-> **DEC-054/055/056/057 amendment (2026-09-28):** Mission owns durable goals; Work owns execution attempts; the selected external agent owns its native reasoning loop, model, tools and private configuration. Core governs only shared Core capability calls. Workflow trigger ownership is fenced across local/cloud handoff and does not promise exactly-once external effects. `48` owns the nontechnical-first surface, and `50` provides the detailed cross-plane maps.
+> **DEC-054/055/056/057/058 amendment (2026-09-28):** Mission owns durable goals; Work owns execution attempts; the selected external agent owns its native reasoning loop, model, tools and private configuration. Core governs only shared Core capability calls. Workflow trigger ownership is fenced across local/cloud handoff and does not promise exactly-once external effects. `48` owns the nontechnical-first surface, `50` maps whole-system ownership, and `51` adds local machine telemetry without expanding the World Model.
 
 ```mermaid
 flowchart TB
@@ -30,6 +30,11 @@ flowchart TB
     V["Effect verification · receipt"]
     E["Events · artifacts · world · memory · context"]
     O["Mission outcome evaluation"]
+    OB["Observer client<br/>capability + Trust projection"]
+  end
+  subgraph LOCAL["Local observation service"]
+    OBS["Machine Observer<br/>unprivileged collectors + bounded local history"]
+    EH["Optional narrow elevated helper"]
   end
   A["External agent<br/>native reasoning · model · tools · private config"]
   N["Agent-native effects<br/>own policy and provenance"]
@@ -50,6 +55,10 @@ flowchart TB
   E --> M
   M --> O
   O --> XP
+  C -->|authorized read scope| OB
+  OB --> OBS
+  OBS -->|identity refs| E
+  OBS -. exact probed read only .-> EH
   N -.->|reported or observed, never Core receipt| E
 ```
 
@@ -71,6 +80,7 @@ flowchart TB
 | Effect Verification | Validate / render / verify / reconcile effects | Deciding what to build |
 | Receipts & Events | Durable evidence, replay, audit, projections | Live execution |
 | World Model *(cross-cutting)* | Structural state of the machine + change stream | Acting on the world |
+| Machine Observer | Current measurements, provider status and bounded local metric history | World identity, file traversal, machine mutation, Core policy |
 | Model Plane | Model catalog, routing, adapter normalization; credential **use** via vault | Holding credentials (vault owns custody) |
 
 ## 3. Module map
@@ -110,6 +120,7 @@ flowchart TB
 | 46 | Ecosystem HLD | Native-vs-shared ownership, scoped extensions and heterogeneous teams | agent, capability, trust, channels |
 | 48 | Experience surfaces | Composer, progressive Workbench, Library, settings, agents/team/attention panels | channels, mission, work, artifacts, ecosystem |
 | 50 | System blueprint | Cross-plane Mermaid ownership and lifecycle maps (navigation only) | module contracts |
+| 51 | Machine Observer | Read-only machine telemetry/history service; independent build and local protocol | runtime, trust, capability, world, files |
 | 40–42 | Cross | Flows, edge cases, evidence map | all |
 | 43 | Glossary | Canonical terms — defined once, linked back (meta) | — |
 | 44 | Absorb Register | Competitor absorb matrix + licensing ledger | archive/REPO-COMPARE evidence |

@@ -90,7 +90,7 @@ Why the boundary and not the read: the tree is a *browsing* surface, so a prompt
 
 ## 10. Not in v1
 
-Content index/OCR · thumbnails · SMB/network shares · ReFS 128-bit edge cases beyond `FileIdInfo` · fanotify permission classes · macOS kqueue parity.
+Files-local content index/OCR (the target content index belongs to `27` §2.1 and format extraction adapters) · thumbnails · SMB/network shares · ReFS 128-bit edge cases beyond `FileIdInfo` · fanotify permission classes · macOS kqueue parity.
 
 ## 11. Open questions (`OQ-FILES-*`)
 

@@ -1,6 +1,6 @@
 # 39 — Architecture delivery sequence and acceptance
 
-> Status: accepted target architecture 2026-09-28 under DEC-054/055/056/057; implementation pending. This is an architecture dependency plan; `TODO.md` W6 is the delivery-status tracker. `48` owns final interaction design, `49` outcome scenarios, and `50` cross-plane maps.
+> Status: accepted target architecture 2026-09-28 under DEC-054/055/056/057/058; implementation pending. This is an architecture dependency plan; `TODO.md` W6 is the delivery-status tracker. `48` owns final interaction design, `49` outcome scenarios, `50` cross-plane maps, and `51` Machine Observer.
 
 ## Current-state delta (source observed, not completion claims)
 
@@ -13,6 +13,8 @@
 | `src-tauri/src/mcp_cmds.rs` `McpServerRow` and `mcp_servers.json` with `auto_start=true` default | Split catalog definition, activation grant and runtime instance; migrate persisted rows | Current rows lack host/workspace/Work scope and allow lazy start on a global-looking row. Existing user-defined MCP entries must survive migration without auto-granting every agent. |
 | `crates/agentcowork-blueprint/src/crystallize.rs` workflow detector/compiled script helper | Reuse classification logic only after review; move promotion into `37` lifecycle | Source has deterministic/cognitive step split but the helper alone is not a reviewed, permissioned, versioned skill promotion. Reachability from product UI is not established by this inspection. |
 | Work/Workflow/Artifact/Event designs in `11`/`20`/`29`/`30` | Keep one owner each | Mission dispatch/evidence integrates through existing contracts and event store, not duplicate engines or microservices. |
+| Existing model-fit probe, storage scanner, app request metrics, process RSS, and WSL runtime discovery | Migrate or project through Machine Observer only where semantics overlap | `51` `11` identifies exact source owners; retain one scanner, keep request metrics distinct from host sampling, and never infer observer consent from WSL agent discovery. |
+| Machine Observer (`51`) | Add one independently buildable normal-user service with OS/vendor adapters and bounded local history | Prove consent-before-sampling, no Observer-requested install elevation, NSIS as the per-user consumer default, clearly labeled machine-scope MSI behavior, one-shot exact-operation helper, per-provider degradation, least-rights process diagnostics, IPC isolation, battery/storage bounds and extraction build on `TC-040…050`. |
 | First-party reasoning engine and unconditional plugin/MCP global load | Do not add | External agents own reasoning and native extensions; host catalog entries require scoped activation. |
 
 “Existing source” means a code path was inspected, not that the proposed end-to-end behavior is implemented or benchmarked. The feature matrix remains the implementation-status authority.
@@ -49,7 +51,7 @@ The ownership design is viable where an interface and an honest fallback exist. 
 | `28`–`29` Comms/Artifacts | Scoped SaaS action and versioned artifact graph produce real deliverables | OAuth expiry/dedup, exact-version citations, stale propagation and duplicate-effect reconciliation (`TC-019/030/033/037`) |
 | `30`–`32` Events/Extensions/Channels | One event store and per-session extension grants avoid a second platform | Durable replay, native inventory/host activation distinction, collision/revoke and channel identity (`TC-007/008/026`) |
 | `34`–`38` Effect/Mission/Skill/Experience | Effect proof, goal proof and reviewed procedure learning are distinct | Independent verifier, no-progress stop, safe capture and nontechnical comprehension (`TC-021/027/029/032/038`) |
-| `46`/`48`/`50` Ecosystem/Workbench/blueprint | End-to-end route from user selection to worker/typed effect/artifact/evidence is explicit | The real UI and adapters must satisfy `TC-001…039`; no architecture diagram is a product benchmark |
+| `46`/`48`/`50`/`51` Ecosystem/Workbench/blueprint/observer | End-to-end route from user selection to worker/typed effect/artifact/evidence is explicit | The real UI, adapters and observer must satisfy `TC-001…049`; no architecture diagram is a product benchmark |
 
 `ARCH/09-FEATURE-MATRIX.md` owns exact implementation status, including `implemented` versus `verified`; this table records only the target seam and its proof obligation.
 
@@ -62,7 +64,7 @@ The ownership design is viable where an interface and an honest fallback exist. 
 5. Add outcome evaluator, no-progress detector and resume reconciliation. Exit: crash/context reset/agent swap preserves goal and evidence; external drift invalidates only affected nodes; repeated identical failure stops; incomplete required evidence blocks completion.
 6. Connect shared browser/desktop/SaaS/office and optional external workflow providers. Exit: capability path is chosen by suitability, actual ownership is visible, OAuth actions use action scopes, and waitpoint callbacks reconcile idempotently.
 7. Add workflow capture → skill proposal → evaluation → versioned publication, plus mission-control UI and cross-device/cloud executor adapters. Exit: a recorded procedure is inspectable and rollbackable; local-offline work pauses honestly; cloud continuation requires a configured executor and shows where it runs; future schedule/event triggers move only after fenced owner/cursor/journal handoff (`TC-039`, DEC-057).
-8. Deliver the DEC-055 Experience as a coherent journey: composer and renderer, first-run/agent setup, Workbench browser/file/Office tabs, Library retrieval, team view and searchable grouped Settings. Exit: each control is bound to a real capability/contract; `TC-001…039` oracles run on pinned builds, including nontechnical and accessibility cohorts. Unsupported format or adapter behavior has an honest fallback rather than a decorative promise.
+8. Deliver the DEC-055/058 Experience as a coherent journey: composer and renderer, first-run/agent setup, Workbench browser/file/Office/System tabs, Library retrieval, team view and searchable grouped Settings. Exit: each control is bound to a real capability/contract; `TC-001…049` oracles run on pinned builds, including nontechnical and accessibility cohorts. Unsupported format or adapter behavior has an honest fallback rather than a decorative promise.
 
 Each stage can ship while later stages remain planned; capability and quality determine priority, not an arbitrary v1 label. Do not create additional network services for conceptual modules. Reuse existing crates and extract `agentcowork-mission` only when its own dependency boundary is established. Horizon Code is a future external binding, never a special path.
 

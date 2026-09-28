@@ -62,6 +62,10 @@
 | DM-039 | `AgentBinding` | `15` | One actual profile/launch/session capability negotiation with provenance | discovered → negotiated → attached → detached |
 | DM-040 | `SettingsProfile` | `48` | Named, versioned non-secret preference overrides with typed scope and effective-state preview | draft → active/archived |
 
+| DM-041 | ObservationDescriptor | 51 | Metric/provider capability, units, source, availability and required scope | available/stale/unsupported/permission_needed/disabled/error |
+| DM-042 | TelemetrySample | 51 | Local bounded time-series observation linked to an optional stable World identity | append-only until retention pruning |
+| DM-043 | ObservationConsent | 12 | Revocable local-user permission to collect a named observation category for a stated purpose and retention | enabled → revoked/superseded |
+
 ### 1.1 Core relationships (load-bearing references)
 
 ```mermaid
@@ -85,6 +89,9 @@ erDiagram
   PROVIDER ||--o{ CAPABILITY_HANDLE : "binds"
   CAPABILITY_DESCRIPTOR ||--o{ CAPABILITY_HANDLE : "resolves to"
   WORKFLOW_DEFINITION ||--o{ WORKFLOW_RUN : "pinned version"
+  OBSERVATION_DESCRIPTOR ||--o{ TELEMETRY_SAMPLE : "describes"
+  OBSERVATION_CONSENT ||--o{ TELEMETRY_SAMPLE : "authorizes local collection"
+  WORLD_OBJECT o|--o{ TELEMETRY_SAMPLE : "optional identity ref"
 ```
 
 *Association lines show load-bearing references, not every field. Epoch checks, projections, and suppression semantics live in the owner docs and §3.*
@@ -115,8 +122,15 @@ erDiagram
 **DM-025 `ModelDescriptor`** — `id` (`provider/model`) · `provider` · `context_window` · `max_output` · `tool_calling` · `reasoning_modes[]` · `vision` · `streaming` · `structured_output` · `cost {in,out}` · `latency_class` · `local|cloud`.
 **DM-026 `WorldObject` / `WorldEdge`** — `id` · `kind` (`app|window|file|process|device|browser_tab|…`) · `identity_key` (per-kind stable key) · `attributes` · `freshness` · `provenance`; edges: `kind` · `from` · `to` · `observed_at`.
 **DM-027 `Skill`** — `id` · `version` · `metadata` · `instructions_ref` · `capability_requirements[]` · `input/output contracts` · `examples_refs[]`.
+**DM-043 `ObservationConsent`** — `id` · `subject_user` · `category` · `purpose` · `local_recipient` · `scope` · `retention_policy` · `policy_version` · `granted_at` · `revoked_at?` · `source_surface`. Trust owns this local, persistent, revocable product consent for Machine Observer collection only. It does not authorize agent disclosure, a Core capability call, or OS elevation; agent sharing still needs its Work-scoped capability grant, and any privileged helper authorization is one operation and ephemeral.
+
+ObservationDescriptor fields: metric identity, category, provider id/version, unit, sensitivity, platform/device scope, availability state, permission class, refresh interval, observed time, staleness limit and an optional reason. It describes availability; it is not authorization.
+
+TelemetrySample fields: sample id, metric id, observed time, typed value, unit, optional World identity ref (process/device/volume), provider/version, quality, `observation_consent_ref`, optional Work ref and retention class. Samples live in the Observer's bounded local telemetry store, never as one Core event per sample.
 
 ## 3. Cross-entity constraints
+
+Observer samples contain no credentials, process command lines, prompt/completion content or network payload; access and retention derive from the referenced Trust consent and current Work-scoped sharing authorization. High-frequency samples are not emitted as Core Event entities (DEC-058, INV-36/37).
 
 1. Every **Core effect** `Receipt` references exactly one `Ticket` and one effect; every Core-mediated externally visible effect has a receipt (INV-07, DEC-054). Native-agent observations and reports are distinct evidence types.
 2. Every effect-bearing `Event` references its `work_id`; every `Work` outcome emits ≥1 event.

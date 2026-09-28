@@ -1,6 +1,6 @@
 # 07 — Contracts (canonical cross-module interfaces)
 
-> **Status:** Frozen v1 baseline (2026-09-26), amended by DEC-054/055/056 (2026-09-28) — the interface registry. Every named contract that crosses a module boundary lives here. **Owner** = the module that implements/stabilizes it; **consumers** = modules that call it. Module docs carry serialization/transport detail; this doc owns names, semantic signatures, and guarantees. `Draft`/`Provisional`/`Proposed` describe design maturity, not shipped implementation; implementation evidence lives in `09`/`42`.
+> **Status:** Frozen v1 baseline (2026-09-26), amended by DEC-054/055/056/057/058 (2026-09-28) — the interface registry. Every named contract that crosses a module boundary lives here. **Owner** = the module that implements/stabilizes it; **consumers** = modules that call it. Module docs carry serialization/transport detail; this doc owns names, semantic signatures, and guarantees. `Draft`/`Provisional`/`Proposed` describe design maturity, not shipped implementation; implementation evidence lives in `09`/`42`.
 > **Rules:** signatures are transport-free (adapters map transports); each Core contract takes an `actor` context (user / agent / workflow). Effect-bearing Core contracts are subject to Trust; the external agent's native operations are outside Core contracts (DEC-054).
 > **SDD:** this registry carries the L3 interface layer for behaviors in `ARCH/08-REQUIREMENTS.md`; REQ ↔ CTR links accrue in `ARCH/09-FEATURE-MATRIX.md`.
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
@@ -50,6 +50,7 @@
 | CTR-030 | `AgentBindingAdapter` (negotiate/launch/steer/status/receipt) | 15 | 35, 11, 32 | Proposed (DEC-054) |
 | CTR-031 | `ExternalWorkflowAdapter` (invoke/status/cancel/callback) | 20 | 35, 11, 37 | Proposed (DEC-054) |
 | CTR-032 | `PreferenceService` (registry/effective/snapshot/compare-and-swap/profile) | 48 with Core storage | UI, 12, 15, 32 | Proposed (DEC-056) |
+| CTR-033 | MachineObserverService (snapshot/query/history/sampling/health) | 51 service; Core adapter owns trust projection | 13, 19, 21, 48 | Proposed (DEC-058) |
 
 **Domain contracts.** Office (22), Browser (23), Computer Use (24) and Comms (28) deliberately own no named contract yet: their operations resolve through CTR-009 as capability descriptors, and a module pass registers a contract here only if a non-capability edge appears (see `ARCH/03-HLD.md` §3.1). Search (27) implements the one Core search service behind the **CTR-006 `context.search`** façade (owned by `16`) and resolves its other operations through CTR-009 — no separate Search contract is minted.
 
@@ -139,6 +140,8 @@ policies() → DelegationPolicyEntry[]
 **CTR-023 `EffectVerifier`** — `verify(effect, risk_class) → VerificationRecord`; depth scales with risk (INV-19).
 
 **CTR-032 `PreferenceService`** — `registry()` returns stable key, owner, parser, scope, default and sensitivity; `effective(context)` returns source and revision; `update(key,value,expected_revision)` validates scope and compare-and-swap semantics; `profile_create/preview/apply/archive` operate on non-secret overrides only. Device-local cosmetic state may use the same schema in the UI, but Trust policy and extension grants resolve from Core authority, never from a renderer copy (DEC-056).
+
+**CTR-033 MachineObserverService** (51) provides hello, capabilities, snapshot, typed query, history, opt-in sampling start/stop, revocation, health and shutdown operations. Requests carry Core-resolved consent/grant references, the requested scope and hard result/time bounds; a caller cannot supply consent as authority. Core authenticates local IPC and resolves Trust/Capability before each request; the service independently validates its scoped startup lease and typed schema. It returns sample/source/unit/freshness/status projections, never raw database access or credentials. It exposes no TCP/HTTP listener by default and no mutating OS operation. An optional helper is a separate process/protocol for one specific read operation and exits after returning one result; installation or UAC consent is never reused as data consent. Directory tree scans are not in this contract; Core delegates to the existing Files/Storage owner.
 
 ### Trigger and remote execution ownership
 
