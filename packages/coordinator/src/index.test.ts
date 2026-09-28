@@ -102,6 +102,16 @@ describe("index.ts — request handling", () => {
     expect(res!.error?.code).toBe(ERROR_CODES.METHOD_NOT_FOUND);
   });
 
+  test("connector query stays unavailable until connector egress is Guard-backed", () => {
+    const res = handleRequest({
+      jsonrpc: "2.0",
+      method: "connector/query",
+      params: { query: "recent messages" },
+      id: 5,
+    });
+    expect(res!.error?.code).toBe(ERROR_CODES.METHOD_NOT_FOUND);
+  });
+
   test("notification (no id) returns null — nothing to send", () => {
     const res = handleRequest({ jsonrpc: "2.0", method: "echo", params: { text: "fire" } });
     expect(res).toBeNull();

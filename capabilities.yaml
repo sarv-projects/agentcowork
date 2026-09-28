@@ -420,7 +420,7 @@
   layer: F
   name: Native adapters
   post_v1: false
-  source: **✅ APP `core-connectors` is now a live lazy coordinator dependency (`connector/list` + read/query plan); vault token resolver and write execution remain host-gated.**
+  source: **⚠️ APP `core-connectors` catalog is exposed through `connector/list`. `connector/query` is intentionally not dispatched: the coordinator has no production Guard-backed host transport, and public adapters otherwise perform direct TypeScript `fetch()`. Credentialed adapter tests cover injected mocks only. Read/write execution remains unavailable until `TASK-PROV-002` and `TASK-COMMS-001` provide and qualify the Core path.**
 
 - id: F3
   layer: F

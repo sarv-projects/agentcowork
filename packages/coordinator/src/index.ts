@@ -44,7 +44,7 @@ import {
 import { startWebhookIngress } from "./scheduler";
 import { resolveHeartbeatIntervalMs } from "./env";
 import { hydrateObservations, type DurableUsageRow } from "./observations";
-import { connectorCatalog, queryConnectors } from "./connector-bridge";
+import { connectorCatalog } from "./connector-bridge";
 import { searchExternalMcp } from "./mcp-bridge";
 import {
   governanceBadge,
@@ -283,29 +283,6 @@ export function handleRequest(req: Request): Response | null {
 
     case "connector/list": {
       response = ok(id, { connectors: connectorCatalog() });
-      break;
-    }
-
-    case "connector/query": {
-      const p = (req.params ?? {}) as { query?: unknown; activeNames?: unknown };
-      if (typeof p.query !== "string" || p.query.trim().length === 0) {
-        response = err(id, ERROR_CODES.INVALID_REQUEST, "connector/query requires a non-empty query");
-        break;
-      }
-      const activeNames = Array.isArray(p.activeNames)
-        ? p.activeNames.filter((name): name is string => typeof name === "string")
-        : undefined;
-      // Connector adapters own their authorization checks. Results are
-      // normalized and returned without exposing credential material.
-      void queryConnectors(p.query, activeNames).then(
-        (results) => {
-          if (req.id !== undefined) process.stdout.write(encodeJson(ok(req.id, { results })));
-        },
-        (e: Error) => {
-          if (req.id !== undefined) process.stdout.write(encodeJson(err(id, ERROR_CODES.INTERNAL_ERROR, e.message)));
-        },
-      );
-      response = null;
       break;
     }
 
