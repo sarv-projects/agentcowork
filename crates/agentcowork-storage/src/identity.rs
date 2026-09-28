@@ -394,6 +394,38 @@ pub fn identity_from_metadata(
     }
 }
 
+/// Resolve the platform identity of the file represented by an already-open
+/// handle and metadata obtained from that same handle.
+///
+/// This differs from [`identity_from_metadata`]: on Windows it queries the
+/// supplied handle directly instead of reopening `path`. Callers validating a
+/// file immediately before mutation should use this function so a path swap
+/// cannot make the identity query describe a different file than the handle
+/// they are about to modify.
+pub fn identity_from_file(file: &std::fs::File, meta: &std::fs::Metadata) -> FileIdentity {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::MetadataExt;
+        let _ = file;
+        FileIdentity::new(
+            IdentityPlatform::Posix,
+            meta.dev(),
+            Some(u128::from(meta.ino())),
+            Incarnation::Posix,
+            meta.nlink() as u32,
+        )
+    }
+    #[cfg(windows)]
+    {
+        windows::file_identity_from_file(file, meta)
+    }
+    #[cfg(not(any(unix, windows)))]
+    {
+        let _ = (file, meta);
+        FileIdentity::unknown(IdentityPlatform::Other, 1)
+    }
+}
+
 #[cfg(windows)]
 mod windows {
     //! The Windows identity query: volume serial + file id, metadata only.
@@ -440,6 +472,23 @@ mod windows {
         // SAFETY: the handle is valid and closed exactly once here.
         unsafe { CloseHandle(handle) };
         id
+    }
+
+    /// Query the identity of the already-open handle without resolving its
+    /// path again. The caller retains ownership of the handle.
+    pub(super) fn file_identity_from_file(
+        file: &std::fs::File,
+        meta: &std::fs::Metadata,
+    ) -> FileIdentity {
+        use std::os::windows::io::AsRawHandle;
+
+        // std::fs::File owns this live handle for the duration of the call.
+        // `query_identity` only asks the kernel for metadata and does not close
+        // it.
+        let handle = file.as_raw_handle() as HANDLE;
+        // SAFETY: the handle is borrowed from a live File and query_identity
+        // performs read-only metadata queries on it.
+        unsafe { query_identity(handle, meta) }
     }
 
     /// `CreateFileW` with `FILE_READ_ATTRIBUTES` only — no data access, so no
@@ -738,6 +787,29 @@ mod tests {
         assert_eq!(id.hardlink_key(), None, "nlink == 1 → no twin");
         assert!(id.key().is_some());
 
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn opened_handle_identity_matches_path_identity() {
+        let dir =
+            std::env::temp_dir().join(format!("agentcowork-id-handle-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("f.txt");
+        std::fs::write(&path, b"handle identity").unwrap();
+
+        let file = std::fs::OpenOptions::new().write(true).open(&path).unwrap();
+        let metadata = file.metadata().unwrap();
+        let from_handle = identity_from_file(&file, &metadata);
+        let from_path = identity_from_metadata(&path, &metadata, IdentityPolicy::Full);
+
+        assert!(
+            from_handle.is_known(),
+            "handle identity should resolve: {from_handle:?}"
+        );
+        assert_eq!(from_handle.key(), from_path.key());
+        drop(file);
         let _ = std::fs::remove_dir_all(&dir);
     }
 

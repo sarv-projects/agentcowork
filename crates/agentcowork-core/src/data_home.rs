@@ -4,9 +4,10 @@
 //! [`agentcowork_types::env_compat`] and, when the resolved home is the
 //! **legacy** path (`EVERYAIOS_HOME` / `~/.everyaios`) while the new path
 //! (`~/.agentcowork`) does not exist yet, moves the directory once:
-//! `rename` first, copy-then-remove as a cross-device fallback. The
-//! `everyaios.toml` inside moves with the directory and is renamed to
-//! `agentcowork.toml` when no new-spelling file exists yet.
+//! `rename` first, copy-then-remove as a cross-device fallback. Renamed
+//! user-authored files inside move with the directory and take their new
+//! spellings when no new-spelling file exists yet (`agentcowork.toml`,
+//! `.agentcoworkignore` — see [`env_compat::authored_path_for`]).
 //!
 //! The contract, so there is exactly one migrator and no race:
 //!
@@ -82,7 +83,7 @@ pub fn migrate_dir(legacy: &Path, dest: &Path) -> MigrationOutcome {
         return MigrationOutcome::NothingToMove;
     }
     if fs_rename(legacy, dest).is_ok() {
-        migrate_config_filename(dest);
+        migrate_authored_filenames(dest);
         return MigrationOutcome::Migrated;
     }
     // Cross-device (or otherwise un-renamable): copy, then remove the source
@@ -91,7 +92,7 @@ pub fn migrate_dir(legacy: &Path, dest: &Path) -> MigrationOutcome {
     // directory and wrongly concluding the move already happened.
     match copy_dir_all(legacy, dest) {
         Ok(()) => {
-            migrate_config_filename(dest);
+            migrate_authored_filenames(dest);
             // The destination is now complete. Removing the source is
             // best-effort: a failed removal leaves a leftover copy behind
             // but never loses data.
@@ -116,15 +117,27 @@ fn fs_rename(legacy: &Path, dest: &Path) -> std::io::Result<()> {
     std::fs::rename(legacy, dest)
 }
 
-/// Inside a just-moved home, rename the legacy `everyaios.toml` to
-/// `agentcowork.toml` when the new spelling does not exist yet. Best-effort:
-/// a failure here is non-fatal because the config loader reads the legacy
-/// filename as a fallback.
-fn migrate_config_filename(new_home: &Path) {
-    let legacy = new_home.join(env_compat::LEGACY_CONFIG_FILENAME);
-    let current = new_home.join(env_compat::CONFIG_FILENAME);
-    if legacy.is_file() && !current.exists() {
-        let _ = std::fs::rename(&legacy, &current);
+/// Inside a just-moved home, rename retired user-authored filenames into
+/// their new spellings when the new spelling does not exist yet.
+/// Best-effort: a failure here is non-fatal because every renamed file keeps
+/// a read-fallback (see [`env_compat::authored_path_for`]).
+fn migrate_authored_filenames(new_home: &Path) {
+    const RENAMED: &[(&str, &str)] = &[
+        (
+            env_compat::CONFIG_FILENAME,
+            env_compat::LEGACY_CONFIG_FILENAME,
+        ),
+        (
+            env_compat::IGNORE_FILENAME,
+            env_compat::LEGACY_IGNORE_FILENAME,
+        ),
+    ];
+    for (current, legacy) in RENAMED {
+        let legacy_path = new_home.join(legacy);
+        let current_path = new_home.join(current);
+        if legacy_path.is_file() && !current_path.exists() {
+            let _ = std::fs::rename(&legacy_path, &current_path);
+        }
     }
 }
 

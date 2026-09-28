@@ -1314,19 +1314,13 @@ impl ToolService {
             .iter()
             .rposition(|e| session_id.is_empty() || e.session_id == session_id)
             .ok_or_else(|| "nothing to undo".to_string())?;
-        let e = self.undo.remove(idx);
-        match e.before {
-            Some(bytes) => {
-                if let Some(parent) = e.path.parent() {
-                    let _ = fs::create_dir_all(parent);
-                }
-                fs::write(&e.path, bytes).map_err(|err| err.to_string())?;
-            }
-            None => {
-                let _ = fs::remove_file(&e.path);
-            }
-        }
-        Ok(e.path.display().to_string())
+        let e = &self.undo[idx];
+        let safe_path = self.floor_path(&e.path.to_string_lossy())?;
+        crate::file_undo::restore_file_to_bytes(&safe_path, e.before.as_deref())
+            .map_err(|err| err.to_string())?;
+        let restored = e.path.display().to_string();
+        self.undo.remove(idx);
+        Ok(restored)
     }
 
     pub fn set_connectivity(&self, mode: ConnectivityMode) {
@@ -4611,6 +4605,57 @@ mod tests {
         );
     }
 
+    #[test]
+    fn file_write_commit_refuses_target_mutation_since_preflight() {
+        let dir = tempfile();
+        let path = dir.join("a.txt");
+        fs::write(&path, b"before").unwrap();
+        let guard = Arc::new(Mutex::new(GuardService::new()));
+        let mut service = ToolService::new(Arc::clone(&guard), dir.clone());
+        let args = json!({"path": "a.txt", "content": "approved content"});
+        let pre = approved_preflight(&mut service, &guard, "file_ops.write", args.clone());
+
+        fs::write(&path, b"external change since approval").unwrap();
+        let result = service.handle(
+            "tool/commit",
+            &json!({
+                "toolId": "file_ops.write",
+                "ticketId": pre["ticketId"],
+                "argsHash": pre["argsHash"],
+                "args": args,
+            }),
+        );
+
+        assert!(result.unwrap_err().contains("TOCTOU"));
+        assert_eq!(fs::read(&path).unwrap(), b"external change since approval");
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn file_write_commit_refuses_target_appearing_since_preflight() {
+        let dir = tempfile();
+        let path = dir.join("new.txt");
+        let guard = Arc::new(Mutex::new(GuardService::new()));
+        let mut service = ToolService::new(Arc::clone(&guard), dir.clone());
+        let args = json!({"path": "new.txt", "content": "approved content"});
+        let pre = approved_preflight(&mut service, &guard, "file_ops.write", args.clone());
+
+        fs::write(&path, b"created after approval").unwrap();
+        let result = service.handle(
+            "tool/commit",
+            &json!({
+                "toolId": "file_ops.write",
+                "ticketId": pre["ticketId"],
+                "argsHash": pre["argsHash"],
+                "args": args,
+            }),
+        );
+
+        assert!(result.unwrap_err().contains("TOCTOU"));
+        assert_eq!(fs::read(&path).unwrap(), b"created after approval");
+        let _ = fs::remove_dir_all(&dir);
+    }
+
     /// REQ-ART-012 — an effect that could not be fully observed is recorded as
     /// a gap with a reason, never as a clean success.
     #[test]
@@ -5975,6 +6020,56 @@ mod tests {
         let restored = s.revert_last("").unwrap();
         assert!(restored.contains("w.txt"));
         assert_eq!(fs::read_to_string(dir.join("w.txt")).unwrap(), "before");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn failed_file_undo_keeps_snapshot_and_does_not_follow_symlink() {
+        use std::os::unix::fs::symlink;
+
+        let dir = tempfile();
+        fs::write(dir.join("w.txt"), "before").unwrap();
+        let mut s = svc(&dir);
+        let args = json!({"path": "w.txt", "content": "after"});
+        let pre = s
+            .handle(
+                "tool/exec",
+                &json!({"toolId": "file_ops.write", "sessionId": "s", "agentId": "a", "args": args}),
+            )
+            .unwrap();
+        let tid = pre["ticketId"].as_str().unwrap().to_string();
+        if pre["action"] == "ask" {
+            s.guard
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .approve(&tid);
+        }
+        s.handle(
+            "tool/commit",
+            &json!({
+                "toolId": "file_ops.write",
+                "ticketId": tid,
+                "argsHash": pre["argsHash"],
+                "args": args
+            }),
+        )
+        .unwrap();
+
+        let outside = dir.join("outside.txt");
+        let target = dir.join("w.txt");
+        fs::write(&outside, "outside").unwrap();
+        fs::remove_file(&target).unwrap();
+        symlink(&outside, &target).unwrap();
+
+        assert!(s.revert_last("").is_err());
+        assert_eq!(s.undo.len(), 1, "failed restore must retain its snapshot");
+        assert_eq!(fs::read_to_string(outside).unwrap(), "outside");
+        assert!(
+            fs::symlink_metadata(target)
+                .unwrap()
+                .file_type()
+                .is_symlink()
+        );
     }
 
     struct FakeSearch;

@@ -105,8 +105,8 @@ fn legacy_fallback_when_nothing_new() {
     }
 }
 
-/// 3+5. A legacy `~/.everyaios` migrates once (directory *and* the config
-/// filename inside it), and a second run is a no-op, not an error.
+/// 3+5. A legacy `~/.everyaios` migrates once (directory *and* the renamed
+///    user-authored files inside it), and a second run is a no-op, not an error.
 #[test]
 fn legacy_dir_migrates_once_and_second_run_is_noop() {
     let (_g, scratch, _env) = EnvGuard::scratch("migrate-once");
@@ -117,6 +117,8 @@ fn legacy_dir_migrates_once_and_second_run_is_noop() {
         "everyaios.toml",
         "data_dir = \".\"\nretention_days = 9\n",
     );
+    // A user-authored ignore file moves with the home, into the new spelling.
+    write(&legacy, ".everyaiosignore", "target/\n");
 
     let first = ensure_data_home();
     assert!(first.migrated, "first run moves the legacy home");
@@ -137,6 +139,13 @@ fn legacy_dir_migrates_once_and_second_run_is_noop() {
         std::fs::read_to_string(first.resolved.join("agentcowork.toml"))
             .unwrap()
             .contains("retention_days = 9")
+    );
+    // So does a user-authored ignore file.
+    assert!(first.resolved.join(".agentcoworkignore").is_file());
+    assert!(!first.resolved.join(".everyaiosignore").exists());
+    assert_eq!(
+        std::fs::read_to_string(first.resolved.join(".agentcoworkignore")).unwrap(),
+        "target/\n"
     );
 
     let second = ensure_data_home();

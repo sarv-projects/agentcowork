@@ -316,6 +316,169 @@ pub fn fs_write_file(
     Ok(serde_json::json!({ "path": path, "bytes": content.len(), "auditSeq": audit_seq }))
 }
 
+/// Resolve the exact filesystem target and bind it with the approved bytes.
+/// Existing leaf symlinks resolve to their target before the Guard ticket is
+/// minted or consumed, so retargeting one between preview and commit changes
+/// the ticket's argument hash and refuses the write.
+fn write_effect_binding(
+    path: &str,
+    content: &str,
+) -> Result<(PathBuf, String, Option<String>), String> {
+    use std::hash::{Hash, Hasher};
+
+    let floored = crate::control::floor_user_file(path)?;
+    let target = match std::fs::canonicalize(&floored) {
+        Ok(target) => target,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            // A dangling symlink is not a new file. Treating it as one would
+            // make `write` follow its target, which may be outside the floor.
+            match std::fs::symlink_metadata(&floored) {
+                Ok(meta) if meta.file_type().is_symlink() => {
+                    return Err(format!("cannot write through dangling symlink: {path}"));
+                }
+                Ok(_) => {
+                    // The target may have appeared after `canonicalize`.
+                    // Resolve it as existing so its identity is bound below.
+                    std::fs::canonicalize(&floored)
+                        .map_err(|e| format!("cannot resolve write target {path}: {e}"))?
+                }
+                Err(meta_error) if meta_error.kind() == std::io::ErrorKind::NotFound => {
+                    let parent = floored
+                        .parent()
+                        .filter(|parent| !parent.as_os_str().is_empty())
+                        .unwrap_or_else(|| std::path::Path::new("."));
+                    let leaf = floored
+                        .file_name()
+                        .ok_or_else(|| format!("invalid write target: {path}"))?;
+                    std::fs::canonicalize(parent)
+                        .map_err(|e| format!("cannot resolve write parent for {path}: {e}"))?
+                        .join(leaf)
+                }
+                Err(meta_error) => {
+                    return Err(format!("cannot inspect write target {path}: {meta_error}"));
+                }
+            }
+        }
+        Err(error) => return Err(format!("cannot resolve write target {path}: {error}")),
+    };
+
+    let target_fingerprint = match std::fs::symlink_metadata(&target) {
+        Ok(meta) if meta.file_type().is_symlink() => {
+            return Err(format!(
+                "write target changed into a symlink: {}",
+                target.display()
+            ));
+        }
+        Ok(meta) => Some(write_metadata_fingerprint(&target, &meta)?),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
+        Err(error) => {
+            return Err(format!(
+                "cannot inspect write target {}: {error}",
+                target.display()
+            ));
+        }
+    };
+
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    "editor.file_write".hash(&mut hasher);
+    target.hash(&mut hasher);
+    content.hash(&mut hasher);
+    target_fingerprint.hash(&mut hasher);
+    Ok((
+        target,
+        format!("{:016x}", hasher.finish()),
+        target_fingerprint,
+    ))
+}
+
+/// Fingerprint the existing target incarnation and freshness inputs that the
+/// editor preview authorized. Platform ids distinguish same-size replacements.
+fn write_metadata_fingerprint(
+    path: &std::path::Path,
+    meta: &std::fs::Metadata,
+) -> Result<String, String> {
+    let identity = agentcowork_storage::identity::identity_from_metadata(
+        path,
+        meta,
+        agentcowork_storage::identity::IdentityPolicy::Full,
+    );
+    write_fingerprint_from_identity(identity, meta)
+}
+
+/// Build a fingerprint only when the platform supplied a real file identity.
+/// Size and modification time alone cannot distinguish a same-size replacement.
+fn write_fingerprint_from_identity(
+    identity: agentcowork_storage::identity::FileIdentity,
+    meta: &std::fs::Metadata,
+) -> Result<String, String> {
+    use std::hash::{Hash, Hasher};
+
+    let key = identity.key().ok_or_else(|| {
+        "cannot safely authorize write: platform file identity is unavailable".to_string()
+    })?;
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    key.hash(&mut hasher);
+    meta.len().hash(&mut hasher);
+    let modified = meta.modified().map_err(|e| {
+        format!("cannot safely authorize write: modification time unavailable: {e}")
+    })?;
+    let duration = modified
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_err(|e| format!("cannot safely authorize write: invalid modification time: {e}"))?;
+    duration.as_secs().hash(&mut hasher);
+    duration.subsec_nanos().hash(&mut hasher);
+    Ok(format!("{:016x}", hasher.finish()))
+}
+
+/// Apply a previously approved write using a file handle whose identity is
+/// checked before any truncation. A newly approved file uses `create_new`, so
+/// a concurrently inserted link/file is refused instead of followed/overwritten.
+fn write_bound_target(
+    target: &std::path::Path,
+    expected_fingerprint: Option<&str>,
+    content: &[u8],
+) -> Result<(), String> {
+    use std::io::Write;
+
+    let mut file = match expected_fingerprint {
+        Some(_) => std::fs::OpenOptions::new()
+            .write(true)
+            .open(target)
+            .map_err(|e| format!("cannot open write target {}: {e}", target.display()))?,
+        None => std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(target)
+            .map_err(|e| {
+                format!(
+                    "new write target changed before creation {}: {e}",
+                    target.display()
+                )
+            })?,
+    };
+
+    if let Some(expected) = expected_fingerprint {
+        let metadata = file.metadata().map_err(|e| {
+            format!(
+                "cannot inspect opened write target {}: {e}",
+                target.display()
+            )
+        })?;
+        let identity = agentcowork_storage::identity::identity_from_file(&file, &metadata);
+        let actual = write_fingerprint_from_identity(identity, &metadata)?;
+        if actual != expected {
+            return Err(format!(
+                "write target identity or freshness changed: {}",
+                target.display()
+            ));
+        }
+        file.set_len(0)
+            .map_err(|e| format!("cannot truncate write target {}: {e}", target.display()))?;
+    }
+    file.write_all(content)
+        .map_err(|e| format!("cannot write target {}: {e}", target.display()))
+}
+
 /// P41.3 — Ticketed editor write, request half: mints a Guard-2 ticket for a
 /// buffer write (I12 — everything ticketed; no silent autosaves). The card
 /// carries a bounded before/after diff preview; the write itself happens ONLY
@@ -329,12 +492,10 @@ pub fn fs_write_ticket(
     content: String,
 ) -> Result<serde_json::Value, String> {
     use agentcowork_guard::{Operation as GuardOp, RiskLevel};
-    use std::hash::{Hash, Hasher};
 
     // The before-image (for the diff card); missing file = creation.
-    let path = crate::control::floor_user_file(&path)?
-        .display()
-        .to_string();
+    let (path, args_hash, _) = write_effect_binding(&path, &content)?;
+    let path = path.display().to_string();
     let before = std::fs::read_to_string(&path).unwrap_or_default();
     let preview = diff_preview(&before, &content);
 
@@ -347,12 +508,6 @@ pub fn fs_write_ticket(
     ))
     .with_risk(RiskLevel::Medium)
     .with_paths(vec![path.clone()]);
-
-    let mut h = std::collections::hash_map::DefaultHasher::new();
-    "editor.file_write".hash(&mut h);
-    path.hash(&mut h);
-    content.hash(&mut h);
-    let args_hash = format!("{:016x}", h.finish());
 
     let mut guard = state.guard_service.lock().map_err(|e| e.to_string())?;
     let verdict = guard.evaluate(
@@ -405,13 +560,7 @@ pub fn fs_write_commit(
     content: String,
     ticket_id: String,
 ) -> Result<serde_json::Value, String> {
-    use std::hash::{Hash, Hasher};
-
-    let mut h = std::collections::hash_map::DefaultHasher::new();
-    "editor.file_write".hash(&mut h);
-    path.hash(&mut h);
-    content.hash(&mut h);
-    let args_hash = format!("{:016x}", h.finish());
+    let (_, args_hash, _) = write_effect_binding(&path, &content)?;
 
     let mut guard = state.guard_service.lock().map_err(|e| e.to_string())?;
     guard
@@ -419,15 +568,27 @@ pub fn fs_write_commit(
         .map_err(|e| e.to_string())?;
     drop(guard); // never hold the guard lock across a disk write
 
-    let p = std::path::PathBuf::from(&path);
+    // Re-resolve and re-fingerprint after ticket consumption. A stale target
+    // spends the ticket but never receives the write; the caller must preview
+    // and authorize the new target state.
+    let (current_target, current_hash, current_fingerprint) =
+        write_effect_binding(&path, &content)?;
+    if current_hash != args_hash {
+        return Err(format!("write target changed after authorization: {path}"));
+    }
+
     let bytes = content.len();
-    std::fs::write(&p, content.as_bytes()).map_err(|e| format!("{path}: {e}"))?;
+    write_bound_target(
+        &current_target,
+        current_fingerprint.as_deref(),
+        content.as_bytes(),
+    )?;
     let audit_seq = crate::control::record_mutation(
         &state,
         crate::control::AuthKind::AgentTicket,
         "fs.write_commit",
         serde_json::json!({
-            "path": path,
+            "path": current_target.display().to_string(),
             "bytes": bytes,
             "ticketId": ticket_id,
         }),
@@ -481,21 +642,21 @@ pub fn fs_undo_restore(
     state: State<'_, AppState>,
     path: String,
 ) -> Result<serde_json::Value, String> {
-    let p = std::path::PathBuf::from(&path);
+    let p = crate::control::floor_user_file(&path)?;
     let mut undos = state.file_undos.lock().map_err(|e| e.to_string())?;
     // Newest-first match on the exact path (later mutations supersede).
     let idx = undos
         .iter()
         .rposition(|u| u.path == p)
         .ok_or_else(|| format!("no pending snapshot for {path}"))?;
-    let undo = undos.remove(idx);
+    let undo = &undos[idx];
     let before_len = undo.before.as_ref().map(|b| b.len()).unwrap_or(0);
     let undo_path = undo.path.display().to_string();
     let undo_session = undo.session_id.clone();
-    drop(undos);
-
-    agentcowork_core::restore_file_to_bytes(&p, undo.before.as_deref())
+    agentcowork_core::restore_file_to_bytes(&undo.path, undo.before.as_deref())
         .map_err(|e| format!("{path}: {e}"))?;
+    undos.remove(idx);
+    drop(undos);
     let seq = crate::control::record_mutation(
         &state,
         crate::control::AuthKind::HumanGesture,
@@ -603,6 +764,117 @@ mod read_scope_tests {
         std::fs::write(base.join("workspace/.everyaios/permissions.toml"), b"# p").unwrap();
         std::fs::write(base.join("outside/secret.txt"), b"SECRET").unwrap();
         base
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn write_ticket_binding_changes_when_leaf_symlink_target_changes() {
+        use std::os::unix::fs::symlink;
+
+        let base = scratch("write_ticket_symlink_swap");
+        let parent = base.join("workspace/src");
+        let first = parent.join("first.txt");
+        let second = parent.join("second.txt");
+        let link = parent.join("active.txt");
+        std::fs::write(&first, b"first before-image").unwrap();
+        std::fs::write(&second, b"second before-image").unwrap();
+        symlink(&first, &link).unwrap();
+
+        let (approved_path, approved_hash, _) =
+            write_effect_binding(&link.to_string_lossy(), "approved replacement")
+                .expect("the in-scope symlink target can be bound");
+
+        std::fs::remove_file(&link).unwrap();
+        symlink(&second, &link).unwrap();
+        let (commit_path, commit_hash, _) =
+            write_effect_binding(&link.to_string_lossy(), "approved replacement")
+                .expect("the retargeted in-scope symlink remains a valid path");
+
+        assert_ne!(approved_path, commit_path);
+        assert_ne!(approved_hash, commit_hash);
+        let _ = std::fs::remove_dir_all(&base);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn write_ticket_binding_rejects_dangling_leaf_symlink() {
+        use std::os::unix::fs::symlink;
+
+        let base = scratch("write_ticket_dangling_symlink");
+        let parent = base.join("workspace/src");
+        let link = parent.join("not-yet-created.txt");
+        symlink(base.join("outside/missing.txt"), &link).unwrap();
+
+        assert!(
+            write_effect_binding(&link.to_string_lossy(), "must not escape").is_err(),
+            "a dangling leaf symlink must not be treated as a new regular file"
+        );
+        let _ = std::fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn write_ticket_binding_changes_when_missing_target_appears() {
+        let base = scratch("write_ticket_missing_to_existing");
+        let path = base.join("workspace/src/new.txt");
+        let (_, missing_hash, _) =
+            write_effect_binding(&path.to_string_lossy(), "approved replacement").unwrap();
+        std::fs::write(&path, b"created after preview").unwrap();
+        let (_, existing_hash, _) =
+            write_effect_binding(&path.to_string_lossy(), "approved replacement").unwrap();
+
+        assert_ne!(missing_hash, existing_hash);
+        let _ = std::fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn write_fingerprint_fails_closed_without_platform_identity() {
+        let base = scratch("write_fingerprint_unknown_identity");
+        let path = base.join("workspace/src/a.rs");
+        let metadata = std::fs::metadata(&path).unwrap();
+        let unknown = agentcowork_storage::identity::FileIdentity::unknown(
+            agentcowork_storage::identity::IdentityPlatform::Other,
+            1,
+        );
+
+        assert!(write_fingerprint_from_identity(unknown, &metadata).is_err());
+        let _ = std::fs::remove_dir_all(&base);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn new_file_created_as_symlink_after_preview_is_not_followed() {
+        use std::os::unix::fs::symlink;
+
+        let base = scratch("write_create_symlink_race");
+        let target = base.join("workspace/src/new.txt");
+        let outside = base.join("outside/secret.txt");
+        let (_, _, fingerprint) =
+            write_effect_binding(&target.to_string_lossy(), "approved").unwrap();
+        assert!(fingerprint.is_none());
+        symlink(&outside, &target).unwrap();
+
+        assert!(write_bound_target(&target, None, b"must not escape").is_err());
+        assert_eq!(std::fs::read(&outside).unwrap(), b"SECRET");
+        let _ = std::fs::remove_dir_all(&base);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn replaced_existing_target_is_verified_before_truncation() {
+        use std::os::unix::fs::symlink;
+
+        let base = scratch("write_existing_symlink_race");
+        let target = base.join("workspace/src/a.rs");
+        let outside = base.join("outside/secret.txt");
+        let (resolved, _, fingerprint) =
+            write_effect_binding(&target.to_string_lossy(), "approved").unwrap();
+        let fingerprint = fingerprint.expect("existing file has an identity");
+        std::fs::remove_file(&target).unwrap();
+        symlink(&outside, &target).unwrap();
+
+        assert!(write_bound_target(&resolved, Some(&fingerprint), b"must not escape").is_err());
+        assert_eq!(std::fs::read(&outside).unwrap(), b"SECRET");
+        let _ = std::fs::remove_dir_all(&base);
     }
 
     #[test]

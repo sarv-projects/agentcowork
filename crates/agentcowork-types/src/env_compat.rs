@@ -46,6 +46,14 @@ pub const CONFIG_FILENAME: &str = "agentcowork.toml";
 /// data home by Core).
 pub const LEGACY_CONFIG_FILENAME: &str = "everyaios.toml";
 
+/// The current user-authored ignore filename (DEC-053 amendment: same
+/// rename-with-fallback rule as the config file).
+pub const IGNORE_FILENAME: &str = ".agentcoworkignore";
+/// The retired user-authored ignore filename: still read as a fallback and
+/// renamed into the new spelling when Core migrates the data home — never
+/// written by current code.
+pub const LEGACY_IGNORE_FILENAME: &str = ".everyaiosignore";
+
 /// The new spelling of a variable: `AGENTCOWORK_<REST>`.
 pub fn new_name(rest: &str) -> String {
     format!("{NEW_PREFIX}{rest}")
@@ -223,15 +231,26 @@ pub fn data_home() -> PathBuf {
 /// config), else `agentcowork.toml` as the fresh default. Pure path
 /// computation; the caller decides whether to create what is missing.
 pub fn config_path_for(data_dir: &Path) -> PathBuf {
-    let current = data_dir.join(CONFIG_FILENAME);
-    if current.exists() {
-        return current;
+    authored_path_for(data_dir, CONFIG_FILENAME, LEGACY_CONFIG_FILENAME)
+}
+
+/// Resolve a user-authored filename inside `dir`: the new spelling when
+/// present, else the legacy spelling when present (an existing install keeps
+/// working), else the new spelling as the fresh default. The one rule every
+/// renamed on-disk filename follows ([`config_path_for`] is this function
+/// with the config pair), so a future reader — Rust or otherwise — resolves
+/// workspace- and home-level authored files the same way. Pure path
+/// computation; nothing is created or moved here.
+pub fn authored_path_for(dir: &Path, current: &str, legacy: &str) -> PathBuf {
+    let current_path = dir.join(current);
+    if current_path.exists() {
+        return current_path;
     }
-    let legacy = data_dir.join(LEGACY_CONFIG_FILENAME);
-    if legacy.exists() {
-        return legacy;
+    let legacy_path = dir.join(legacy);
+    if legacy_path.exists() {
+        return legacy_path;
     }
-    current
+    current_path
 }
 
 #[cfg(test)]
@@ -426,6 +445,40 @@ mod tests {
         // Migrated install: the new file wins once it exists.
         std::fs::write(dir.join(CONFIG_FILENAME), "retention_days = 9\n").unwrap();
         assert_eq!(config_path_for(&dir), dir.join(CONFIG_FILENAME));
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn authored_ignore_file_prefers_new_keeps_legacy() {
+        // DEC-053 amendment: `.agentcoworkignore` with a read-fallback to
+        // the legacy `.everyaiosignore` — the same rule as the config file.
+        let dir = std::env::temp_dir().join(format!(
+            "agentcowork-env-compat-ignore-{}",
+            std::process::id()
+        ));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+
+        // Fresh: the new spelling is the default.
+        assert_eq!(
+            authored_path_for(&dir, IGNORE_FILENAME, LEGACY_IGNORE_FILENAME),
+            dir.join(IGNORE_FILENAME)
+        );
+
+        // Existing install: the legacy file keeps working.
+        std::fs::write(dir.join(LEGACY_IGNORE_FILENAME), "target/\n").unwrap();
+        assert_eq!(
+            authored_path_for(&dir, IGNORE_FILENAME, LEGACY_IGNORE_FILENAME),
+            dir.join(LEGACY_IGNORE_FILENAME)
+        );
+
+        // Migrated install: the new file wins once it exists.
+        std::fs::write(dir.join(IGNORE_FILENAME), "dist/\n").unwrap();
+        assert_eq!(
+            authored_path_for(&dir, IGNORE_FILENAME, LEGACY_IGNORE_FILENAME),
+            dir.join(IGNORE_FILENAME)
+        );
 
         let _ = std::fs::remove_dir_all(&dir);
     }

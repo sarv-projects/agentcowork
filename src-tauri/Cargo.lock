@@ -113,6 +113,7 @@ dependencies = [
 name = "agentcowork-cdp"
 version = "0.1.0"
 dependencies = [
+ "agentcowork-types",
  "base64 0.22.1",
  "futures-util",
  "serde",
@@ -143,6 +144,7 @@ dependencies = [
 name = "agentcowork-computeruse"
 version = "0.1.0"
 dependencies = [
+ "agentcowork-types",
  "image",
  "serde",
  "serde_json",
@@ -254,6 +256,7 @@ name = "agentcowork-mcp"
 version = "0.1.0"
 dependencies = [
  "agentcowork-guard",
+ "agentcowork-types",
  "base64 0.22.1",
  "rand 0.8.7",
  "serde",
@@ -278,6 +281,7 @@ dependencies = [
 name = "agentcowork-office"
 version = "0.1.0"
 dependencies = [
+ "agentcowork-types",
  "calamine",
  "ironcalc",
  "lopdf",
@@ -342,6 +346,7 @@ name = "agentcowork-vault"
 version = "0.1.0"
 dependencies = [
  "agentcowork-guard",
+ "agentcowork-types",
  "base64 0.22.1",
  "rand 0.8.7",
  "rusqlite",

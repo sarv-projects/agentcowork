@@ -111,12 +111,27 @@ pub fn reverify_path(binding: &FileBinding, roots: &[&str]) -> Result<(), Toctou
     if now != binding.canonical {
         return Err(ToctouError::IdentityDrift(binding.canonical.clone()));
     }
-    if let (Some(ino), Some(dev)) = (binding.ino, binding.dev) {
-        let cur = identity_of(Path::new(&binding.canonical))
-            .ok_or_else(|| ToctouError::IdentityDrift(binding.canonical.clone()))?;
-        if cur.ino != ino || cur.dev != dev {
+    let target = Path::new(&binding.canonical);
+    let had_file_identity = binding.ino.is_some() && binding.dev.is_some();
+    match std::fs::symlink_metadata(target) {
+        Ok(_) if !had_file_identity => {
+            // A target absent at ticket time (or whose identity could not be
+            // read) must not become a writable existing target at commit.
             return Err(ToctouError::IdentityDrift(binding.canonical.clone()));
         }
+        Ok(_) => {
+            let cur = identity_of(target)
+                .ok_or_else(|| ToctouError::IdentityDrift(binding.canonical.clone()))?;
+            if Some(cur.ino) != binding.ino
+                || Some(cur.dev) != binding.dev
+                || binding.size.is_some_and(|size| cur.size != size)
+                || binding.mtime_ns.is_some_and(|mtime| cur.mtime_ns != mtime)
+            {
+                return Err(ToctouError::IdentityDrift(binding.canonical.clone()));
+            }
+        }
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound && !had_file_identity => {}
+        Err(_) => return Err(ToctouError::IdentityDrift(binding.canonical.clone())),
     }
     if let (Some(pino), Some(pdev)) = (binding.parent_ino, binding.parent_dev) {
         let cur = identity_of(Path::new(&binding.parent_canonical))
@@ -349,6 +364,54 @@ mod tests {
         std::fs::remove_file(&f).unwrap();
         std::fs::rename(&other, &f).unwrap();
         let err = reverify_path(&b, &[&root]).unwrap_err();
+        assert!(matches!(err, ToctouError::IdentityDrift(_)), "{err:?}");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn in_place_size_change_is_refused() {
+        let dir = tmp();
+        let f = dir.join("a.txt");
+        std::fs::write(&f, b"before").unwrap();
+        let root = dir.to_string_lossy().to_string();
+        let binding = bind_path(&f.to_string_lossy(), &[&root]).unwrap();
+
+        std::fs::write(&f, b"different-size-after").unwrap();
+
+        let err = reverify_path(&binding, &[&root]).unwrap_err();
+        assert!(matches!(err, ToctouError::IdentityDrift(_)), "{err:?}");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn same_size_modification_time_change_is_refused() {
+        let dir = tmp();
+        let f = dir.join("a.txt");
+        std::fs::write(&f, b"same-size").unwrap();
+        let root = dir.to_string_lossy().to_string();
+        let binding = bind_path(&f.to_string_lossy(), &[&root]).unwrap();
+        let file = std::fs::OpenOptions::new().write(true).open(&f).unwrap();
+        let future = std::time::SystemTime::now() + std::time::Duration::from_secs(5);
+        file.set_times(std::fs::FileTimes::new().set_modified(future))
+            .unwrap();
+
+        let err = reverify_path(&binding, &[&root]).unwrap_err();
+        assert!(matches!(err, ToctouError::IdentityDrift(_)), "{err:?}");
+        drop(file);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn target_appearing_after_missing_target_binding_is_refused() {
+        let dir = tmp();
+        let f = dir.join("new.txt");
+        let root = dir.to_string_lossy().to_string();
+        let binding = bind_path(&f.to_string_lossy(), &[&root]).unwrap();
+        assert!(binding.ino.is_none(), "a missing target binds no file id");
+
+        std::fs::write(&f, b"appeared after approval").unwrap();
+
+        let err = reverify_path(&binding, &[&root]).unwrap_err();
         assert!(matches!(err, ToctouError::IdentityDrift(_)), "{err:?}");
         let _ = std::fs::remove_dir_all(&dir);
     }

@@ -2,7 +2,7 @@
 //! `agent/interrupt-response` mutate live AppState (chat cancel / cockpit
 //! undo / plan respond). Tauri commands call the same helpers.
 
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::path::PathBuf;
 use tauri::{AppHandle, Manager};
 
@@ -86,19 +86,12 @@ pub fn undo_session(app: &AppHandle, session_id: &str) -> Result<(), String> {
             .iter()
             .rposition(|e| session_id.is_empty() || e.session_id == session_id)
         {
-            let e = stack.remove(idx);
-            match e.before {
-                Some(bytes) => {
-                    if let Some(parent) = e.path.parent() {
-                        let _ = std::fs::create_dir_all(parent);
-                    }
-                    std::fs::write(&e.path, bytes).map_err(|err| err.to_string())?;
-                }
-                None => {
-                    let _ = std::fs::remove_file(&e.path);
-                }
-            }
+            let e = &stack[idx];
+            let safe_path = floor_user_file(&e.path.to_string_lossy())?;
+            agentcowork_core::restore_file_to_bytes(&safe_path, e.before.as_deref())
+                .map_err(|err| err.to_string())?;
             restored.push(e.path.display().to_string());
+            stack.remove(idx);
         }
     }
     if let Ok(relay) = state.chat_relay.lock() {
@@ -133,7 +126,7 @@ pub fn undo_session(app: &AppHandle, session_id: &str) -> Result<(), String> {
 /// users open documents under home / mounts — but it closes the
 /// self-documented xlsx/office bypass of `agentcowork-guard::pathfloor`.
 pub fn floor_user_file(path: &str) -> Result<PathBuf, String> {
-    use agentcowork_guard::pathfloor::{enforce_floor, FloorVerdict};
+    use agentcowork_guard::pathfloor::{FloorVerdict, enforce_floor};
     let p = PathBuf::from(path);
     let parent = p
         .parent()
