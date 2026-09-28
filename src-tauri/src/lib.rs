@@ -92,6 +92,18 @@ fn control_plane_limiter() -> &'static agentcowork_guard::RateLimiter {
     LIMITER.get_or_init(agentcowork_guard::RateLimiter::with_defaults)
 }
 
+/// Return the Tauri-created webview label used as the IPC rate-limit principal.
+/// Renderer request headers are attacker-controlled and must never partition
+/// the admission buckets; a script could otherwise rotate a claimed caller
+/// name and obtain a fresh per-caller allowance on every request.
+fn ipc_rate_limit_principal(webview_label: &str) -> &str {
+    if !webview_label.is_empty() && webview_label.len() <= 64 {
+        webview_label
+    } else {
+        "renderer"
+    }
+}
+
 /// Wrap the IPC handler with the control-plane admission gate.
 ///
 /// Trust infrastructure fails closed (`ARCH/12-TRUST.md` §11,
@@ -112,17 +124,10 @@ where
 {
     move |invoke: tauri::ipc::Invoke| {
         let command = invoke.message.command();
-        let caller = invoke.message.headers().get("x-agentcowork-caller");
-        // The header is an attribution hint for the audit row only. It is never
-        // trusted for authorization (a caller can set it), it is bounded, and a
-        // missing one falls back to the single renderer identity — so the
-        // per-caller tier degrades to the per-command tier instead of
-        // inventing a bucket per spoofed name.
-        let caller = caller
-            .and_then(|v| v.to_str().ok())
-            .map(|s| s.trim())
-            .filter(|s| !s.is_empty() && s.len() <= 64)
-            .unwrap_or("renderer");
+        // The webview label is created by the host. Request headers and payload
+        // fields are renderer-controlled, so they cannot create rate-limit
+        // principals or evade a bucket by rotating caller names.
+        let caller = ipc_rate_limit_principal(invoke.message.webview_ref().label());
         match control_plane_limiter().check(caller, command) {
             Ok(()) => inner(invoke),
             Err(denied) => {
@@ -942,30 +947,25 @@ mod tests {
     //! FIX-02 — the control-plane gate's decision contract.
     //!
     //! The gate wraps a real `tauri::ipc::Invoke`, which cannot be constructed
-    //! in a unit test, so what is pinned here is the pure part: the caller
-    //! attribution rule and the failure mode of the limiter itself. The
+    //! in a unit test, so what is pinned here is the principal-selection rule
+    //! and the failure mode of the limiter itself. The
     //! limiter's token-bucket behaviour is covered in
     //! `agentcowork_guard::ratelimit`'s own tests.
 
-    use super::control_plane_limiter;
+    use super::{control_plane_limiter, ipc_rate_limit_principal};
     use agentcowork_guard::{RateLimitConfig, RateLimiter};
 
-    /// A missing / oversized / blank caller header collapses to the single
-    /// renderer identity, so a spoofed header cannot mint a fresh bucket per
-    /// request (which would defeat the per-caller tier entirely).
+    /// The host-created webview label is the rate-limit principal; caller
+    /// headers cannot mint fresh buckets by changing their claimed identity.
     #[test]
-    fn caller_attribution_is_bounded_and_never_trusted_for_authorization() {
-        // The rule the gate applies, mirrored here so it is pinned.
-        let attribute = |raw: Option<&str>| -> &str {
-            raw.map(str::trim)
-                .filter(|s| !s.is_empty() && s.len() <= 64)
-                .unwrap_or("renderer")
-        };
-        assert_eq!(attribute(None), "renderer");
-        assert_eq!(attribute(Some("   ")), "renderer");
-        assert_eq!(attribute(Some("")), "renderer");
-        assert_eq!(attribute(Some(&"x".repeat(65))), "renderer");
-        assert_eq!(attribute(Some("agent-a")), "agent-a");
+    fn renderer_supplied_identity_does_not_partition_rate_limit_buckets() {
+        let principal = ipc_rate_limit_principal("main");
+        assert_eq!(principal, "main");
+        // Any `x-agentcowork-caller` header is intentionally absent from this
+        // function's inputs and therefore cannot change the bucket identity.
+        assert_eq!(ipc_rate_limit_principal("main"), principal);
+        assert_eq!(ipc_rate_limit_principal(""), "renderer");
+        assert_eq!(ipc_rate_limit_principal(&"x".repeat(65)), "renderer");
     }
 
     /// Fail closed: with the budget spent, the gate's limiter refuses rather

@@ -1410,10 +1410,13 @@ impl ToolService {
         // the canonical `Unavailable` code with a `retry_after_ms` backoff and
         // it happens before any work, so a throttled call never mints a ticket.
         // Fail-closed: there is no fallback path around this check.
-        let caller = str_param(params, "sessionId")
-            .or_else(|| str_param(params, "agentId"))
-            .unwrap_or("tool-anonymous");
-        if let Err(denied) = self.rate_limiter.check(caller, method) {
+        // The method parameters are supplied by the peer/agent and are not an
+        // authenticated identity. In particular, rotating `sessionId` or
+        // `agentId` must not mint a fresh per-caller bucket. A ToolService is
+        // the host-owned admission boundary, so all calls through this
+        // instance share its stable principal; caller/session fields remain
+        // available below for routing and provenance only.
+        if let Err(denied) = self.rate_limiter.check("tool-service", method) {
             return Err(format!(
                 "{} ({}, retry after {}ms)",
                 denied,
@@ -4883,15 +4886,22 @@ mod tests {
         assert!(s.handle("tool/list", &params).is_ok());
         assert!(s.handle("tool/list", &params).is_ok());
         let err = s
-            .handle("tool/list", &params)
+            .handle(
+                "tool/list",
+                &json!({"sessionId": "rotated-session", "agentId": "rotated-agent"}),
+            )
             .expect_err("the third call must be refused");
         assert!(err.contains("rate limit exceeded"), "{err}");
         assert!(
             err.contains("Unavailable") || err.contains("retry after"),
             "{err}"
         );
-        // A different caller has its own budget (the refusal is per caller).
-        assert!(s.handle("tool/list", &json!({"sessionId": "s2"})).is_ok());
+        // Claimed session/agent identities cannot evade this service's bucket.
+        assert!(
+            s.handle("tool/list", &json!({"sessionId": "s2", "agentId": "other"}))
+                .expect_err("rotating caller claims must not create a fresh bucket")
+                .contains("rate limit exceeded")
+        );
     }
 
     /// `TASK-TRUST-011` — the kernel tool gate and the shell's IPC gate read the
