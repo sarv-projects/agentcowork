@@ -1370,12 +1370,12 @@ This registry answers one question per entry: **what behavior must this system e
 - **Tests:** pending
 - **Status:** seeded
 
-#### REQ-OFFICE-009 — XLSX formula integrity: recalculate before commit
-- **Statement:** GIVEN an XLSX mutation, WHEN the workbook is committed, THEN formulas are recalculated through the declared engine (IronCalc-class) before commit so stored cached values match the formulas — a workbook never commits stale computed values.
+#### REQ-OFFICE-009 — XLSX formula integrity: supported recalculate before commit
+- **Statement:** GIVEN an XLSX mutation, WHEN the workbook is committed, THEN a probed provider that supports its formulas/features recalculates and verifies cached values before commit. If no provider can do so, the app blocks a verified save and offers an explicit native-app handoff or reviewed derivative; it never corrupts/overwrites unsupported formula caches.
 - **Priority:** must
 - **Source:** `ARCH/22-OFFICE.md` §2/§3 · `ARCH/04-DECISIONS.md` DEC-023
-- **Acceptance:** recalc-before-commit test; an edited formula yields the updated cached value; recalc failure blocks the commit with a typed error.
-- **Failure cases:** commit without recalc → defect; stale cached value after a formula edit → defect.
+- **Acceptance:** recalc-before-commit test for supported formulas; an edited formula yields the updated cached value; unsupported functions and recalc failure block verified commit with typed reason and fallback.
+- **Failure cases:** commit without a valid recalc → defect; unsupported formula silently recalculated incorrectly → defect; stale cached value after a formula edit → defect.
 - **Tests:** pending
 - **Status:** seeded
 
@@ -2964,6 +2964,78 @@ This registry answers one question per entry: **what behavior must this system e
 - **Tests:** pending
 - **Status:** accepted
 
+#### REQ-UXQ-003 — Composer controls and durable draft
+- **Statement:** GIVEN a conversation, WHEN the user composes or work is active, THEN `+`, `@`, `/`, agent, conditional model, access, voice where available, Send/Stop, Queue/Steer, attachments and draft persistence follow `48` §3.
+- **Priority:** must
+- **Source:** DEC-055; `48` §3
+- **Acceptance:** `TC-005…008` pass with keyboard and crash/navigation restore; unsupported model/access controls explain why.
+- **Failure cases:** native command collision, lost draft, invented model choice, silent worker switch.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-UXQ-004 — Approachable navigation and agent setup
+- **Statement:** GIVEN a new user, WHEN opening the app or configuring an agent, THEN primary navigation is outcome-based and agent sign-in/provider/extension choices reflect probed support and custody.
+- **Priority:** must
+- **Source:** DEC-055; `48` §§2, 7
+- **Acceptance:** `TC-007`, `TC-009` and `TC-038` pass; discovery does not block first prompt.
+- **Failure cases:** catalog entry shown ready, unsupported API key prompt, jargon required for first task.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-UXQ-005 — Universal Workbench with honest format support
+- **Statement:** GIVEN a file, URL, artifact or agent, WHEN opened beside chat, THEN a stable tab, typed selection and inspect/edit/takeover control are offered only at probed capability, with reader or native fallback otherwise.
+- **Priority:** must
+- **Source:** DEC-055; `48` §5
+- **Acceptance:** `TC-010…018` pass including conflict and unsupported-format paths.
+- **Failure cases:** silent file flattening, wrong selection target, browser control without resnapshot.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-UXQ-006 — Complete and safe answer rendering
+- **Statement:** GIVEN text, math, tables, images, citations, diagrams or an interactive artifact, WHEN rendered or streamed, THEN it is responsive, accessible, stable and isolated according to `48` §4.
+- **Priority:** must
+- **Source:** DEC-055; `48` §4
+- **Acceptance:** `TC-003`, `TC-004`, `TC-014`, `TC-038` pass.
+- **Failure cases:** raw HTML privileges, broken image layout, math without accessible fallback.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-UXQ-007 — Library metadata and exact-version retrieval
+- **Statement:** GIVEN generated, uploaded, imported or linked material, WHEN filtered or retrieved, THEN origin, version, permissions, index status and provenance remain distinct; citations identify exact source location.
+- **Priority:** must
+- **Source:** DEC-055; `29` §4; `48` §6
+- **Acceptance:** `TC-015`, `TC-033` pass under version change, parser failure and revocation.
+- **Failure cases:** stale retrieval presented current, unindexed content invented, revoked item exposed.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-UXQ-008 — Scoped extensions and truthful native inventory
+- **Statement:** GIVEN a discovered or installed agent and host MCP/skill/plugin, WHEN configured, THEN catalog/install/active states and effective agent/session/workspace/Mission scope are visible; native config remains owned by its agent.
+- **Priority:** must
+- **Source:** DEC-054/055; `46`; `48` §7
+- **Acceptance:** extension collision, revoke and unsupported overlay cases pass `TC-007`, `TC-008`, `TC-026`.
+- **Failure cases:** global auto-mount, native config mutation, Core receipt claimed for native effect.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-UXQ-009 — Team visibility and bounded collaboration
+- **Statement:** GIVEN host-delegated or native child agents, WHEN work runs, THEN the UI distinguishes their provenance and supports bounded host delegation, independent integration and branch-local blocking.
+- **Priority:** must
+- **Source:** DEC-054/055; `15`; `35`; `48` §8
+- **Acceptance:** `TC-024…026`, `TC-034`, `TC-035` pass.
+- **Failure cases:** native child shown as controlled Work, unbounded swarm, completion without integration.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-UXQ-010 — Workflow and skill conversion is reviewable
+- **Statement:** GIVEN a successful repeated procedure or a workflow, WHEN converted, THEN the candidate skill/workflow is versioned, scoped, sanitized and evaluated before publish; running execution keeps its declared owner.
+- **Priority:** must
+- **Source:** DEC-054/055; `37`; `48` §8
+- **Acceptance:** `TC-021…023` pass including secret removal and selector drift.
+- **Failure cases:** silent publish, permission widening, second scheduler.
+- **Tests:** pending
+- **Status:** accepted
+
 ## 5. Seeding status
 
 | Domain | Seeds | Next pass |
@@ -2993,7 +3065,7 @@ This registry answers one question per entry: **what behavior must this system e
 | `CHAN` (13) | drafted above + expanded in pass `32` | verified during pass `32` ✅ (2026-09-26) |
 | `VERIFY` (13) | drafted above + expanded in pass `34` | verified during pass `34` ✅ (2026-09-26) |
 
-> **P9 verification (2026-09-26, historical):** registry integrity was recorded as 307 entries ↔ 307 matrix rows before later retirements. **DEC-054 amendment (2026-09-28):** current registry and matrix each contain 315 unique active `REQ-*` entries/rows (298 pre-amendment + 17 new), all new task/test links visibly pending because `TODO.md` is outside this pass. This count is an inventory, not verification of implementation.
+> **P9 verification (2026-09-26, historical):** registry integrity was recorded as 307 entries ↔ 307 matrix rows before later retirements. **DEC-054/055 amendment (2026-09-28):** current registry and matrix each contain 323 unique active `REQ-*` entries/rows (298 pre-amendment + 17 Mission/ecosystem + 8 Experience). W6 in `TODO.md` names the implementation tasks; all associated tests/evidence remain pending. This count is an inventory, not verification of implementation.
 
 ## 6. Related
 

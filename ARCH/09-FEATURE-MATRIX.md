@@ -2,7 +2,7 @@
 
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P7). **This file owns links, never content:** requirements live in `ARCH/08-REQUIREMENTS.md`, designs in the module docs, tasks in `TODO.md`, evidence in `ARCH/42-EVIDENCE-MAP.md`.
 > **Purpose:** answer from one place — which requirements does a file implement · which requirements have no implementation · which acceptance tests are missing · which specs does a change affect.
-> **DEC-054 inventory (2026-09-28):** 315 unique requirement rows match the 315 active requirement headings in `08`; the 17 new rows remain unplanned with task/test pending. `TODO.md` is intentionally unchanged.
+> **DEC-055 inventory (2026-09-28):** 323 unique requirement rows match the 323 active requirement headings in `08` (315 prior + 8 Experience requirements). New design work is tracked in `TODO.md` W6; all tests and implementation evidence remain pending.
 
 ---
 
@@ -332,23 +332,31 @@ One row per `REQ-*`. Status only from evidence.
 
 | REQ | Module (doc) | Code paths | Design (DEC/DM/CTR) | Flow/Edge | Task (`TODO.md`) | Test | Status |
 |---|---|---|---|---|---|---|---|
-| `REQ-MISSION-001` | `35-MISSION` | pending | `DEC-054`, `INV-25/26`, `DM-028`, `CTR-027` | pending | pending | pending | unplanned |
-| `REQ-MISSION-002` | `35-MISSION` | pending | `DEC-054`, `INV-27`, `DM-029/032` | pending | pending | pending | unplanned |
-| `REQ-MISSION-003` | `35-MISSION`, `11-WORK` | pending | `DEC-054`, `INV-26`, `DM-038` | pending | pending | pending | unplanned |
-| `REQ-MISSION-004` | `36-OUTCOME-AND-RECOVERY` | pending | `DEC-054`, `INV-28/30`, `CTR-028` | pending | pending | pending | unplanned |
-| `REQ-MISSION-005` | `36-OUTCOME-AND-RECOVERY` | pending | `DEC-054`, `INV-29`, `CTR-029` | pending | pending | pending | unplanned |
-| `REQ-MISSION-006` | `36-OUTCOME-AND-RECOVERY` | pending | `DEC-054`, `INV-31` | pending | pending | pending | unplanned |
-| `REQ-MISSION-007` | `35-MISSION`, `12-TRUST` | pending | `DEC-054`, `CTR-012/027` | pending | pending | pending | unplanned |
-| `REQ-ECO-001` | `46-ECOSYSTEM-ARCHITECTURE`, `32-CHANNELS` | pending | `DEC-054`, `INV-32`, `DM-014/039`, `CTR-030` | pending | pending | pending | unplanned |
-| `REQ-ECO-002` | `46-ECOSYSTEM-ARCHITECTURE`, `31-SKILLS-PLUGINS` | pending | `DEC-054`, `INV-32/33`, `DM-037` | pending | pending | pending | unplanned |
-| `REQ-ECO-003` | `32-CHANNELS`, `12-TRUST` | src-tauri/src/channel_b.rs (gap) | `DEC-054`, `INV-33` | pending | pending | pending | unplanned |
-| `REQ-ECO-004` | `12-TRUST`, `34-EFFECT-VERIFICATION` | pending | `DEC-049/054`, `INV-34` | pending | pending | pending | unplanned |
-| `REQ-ECO-005` | `15-AGENT-PLANE`, `35-MISSION` | pending | `DEC-054`, `CTR-021/027/030` | pending | pending | pending | unplanned |
-| `REQ-ECO-006` | `13-CAPABILITY`, `23-BROWSER`, `24-COMPUTER-USE` | pending | `DEC-054`, `INV-34` | pending | pending | pending | unplanned |
-| `REQ-LEARN-001` | `37-WORKFLOW-SKILL-LIFECYCLE` | pending | `DEC-054`, `INV-35` | pending | pending | pending | unplanned |
-| `REQ-LEARN-002` | `20-WORKFLOW`, `37-WORKFLOW-SKILL-LIFECYCLE` | pending | `DEC-054`, `CTR-031` | pending | pending | pending | unplanned |
-| `REQ-UXQ-001` | `38-EXPERIENCE-QUALITY` | pending | `DEC-054`, `CTR-027/028` | pending | pending | pending | unplanned |
-| `REQ-UXQ-002` | `38-EXPERIENCE-QUALITY` | pending | `DEC-054` | pending | pending | pending | unplanned |
+| `REQ-MISSION-001` | `35-MISSION` | pending | `DEC-054`, `INV-25/26`, `DM-028`, `CTR-027` | `FLOW-25` | `TASK-MISSION-001` | pending | planned |
+| `REQ-MISSION-002` | `35-MISSION` | pending | `DEC-054`, `INV-27`, `DM-029/032` | `FLOW-26` | `TASK-MISSION-001` | pending | planned |
+| `REQ-MISSION-003` | `35-MISSION`, `11-WORK` | pending | `DEC-054`, `INV-26`, `DM-038` | `FLOW-27/28` | `TASK-MISSION-001` | pending | planned |
+| `REQ-MISSION-004` | `36-OUTCOME-AND-RECOVERY` | pending | `DEC-054`, `INV-28/30`, `CTR-028` | `FLOW-34/35` | `TASK-MISSION-002` | pending | planned |
+| `REQ-MISSION-005` | `36-OUTCOME-AND-RECOVERY` | pending | `DEC-054`, `INV-29`, `CTR-029` | `FLOW-31/32` | `TASK-MISSION-003` | pending | planned |
+| `REQ-MISSION-006` | `36-OUTCOME-AND-RECOVERY` | pending | `DEC-054`, `INV-31` | `FLOW-33` | `TASK-MISSION-002` | pending | planned |
+| `REQ-MISSION-007` | `35-MISSION`, `12-TRUST` | pending | `DEC-054`, `CTR-012/027` | `FLOW-29` | `TASK-MISSION-003` | pending | planned |
+| `REQ-ECO-001` | `46-ECOSYSTEM-ARCHITECTURE`, `32-CHANNELS` | pending | `DEC-054`, `INV-32`, `DM-014/039`, `CTR-030` | `FLOW-44` | `TASK-ECO-001` | pending | planned |
+| `REQ-ECO-002` | `46-ECOSYSTEM-ARCHITECTURE`, `31-SKILLS-PLUGINS` | pending | `DEC-054`, `INV-32/33`, `DM-037` | `FLOW-44` | `TASK-ECO-001` | pending | planned |
+| `REQ-ECO-003` | `32-CHANNELS`, `12-TRUST` | src-tauri/src/channel_b.rs (gap) | `DEC-054`, `INV-33` | `FLOW-44` | `TASK-ECO-001` | pending | planned |
+| `REQ-ECO-004` | `12-TRUST`, `34-EFFECT-VERIFICATION` | pending | `DEC-049/054`, `INV-34` | `FLOW-46` | `TASK-ECO-002` | pending | planned |
+| `REQ-ECO-005` | `15-AGENT-PLANE`, `35-MISSION` | pending | `DEC-054`, `CTR-021/027/030` | `FLOW-36/46` | `TASK-ECO-002` | pending | planned |
+| `REQ-ECO-006` | `13-CAPABILITY`, `23-BROWSER`, `24-COMPUTER-USE` | pending | `DEC-054`, `INV-34` | `FLOW-43` | `TASK-ECO-002` | pending | planned |
+| `REQ-LEARN-001` | `37-WORKFLOW-SKILL-LIFECYCLE` | pending | `DEC-054`, `INV-35` | `FLOW-39/40` | `TASK-LEARN-001` | pending | planned |
+| `REQ-LEARN-002` | `20-WORKFLOW`, `37-WORKFLOW-SKILL-LIFECYCLE` | pending | `DEC-054`, `CTR-031` | `FLOW-39` | `TASK-LEARN-001` | pending | planned |
+| `REQ-UXQ-001` | `38-EXPERIENCE-QUALITY` | pending | `DEC-054`, `CTR-027/028` | `FLOW-41/46` | `TASK-UXQ-002` | pending | planned |
+| `REQ-UXQ-002` | `38-EXPERIENCE-QUALITY` | pending | `DEC-054` | `TC-001…038` | `TASK-UXQ-009` | pending | planned |
+| `REQ-UXQ-003` | `48-EXPERIENCE-SURFACES` | pending | `DEC-055` | `TC-005…008` | `TASK-UXQ-001` | pending | planned |
+| `REQ-UXQ-004` | `48-EXPERIENCE-SURFACES`, `46-ECOSYSTEM-ARCHITECTURE` | pending | `DEC-055` | `TC-007/009/038` | `TASK-UXQ-002` | pending | planned |
+| `REQ-UXQ-005` | `48-EXPERIENCE-SURFACES`, `22-OFFICE`, `23-BROWSER`, `24-COMPUTER-USE` | pending | `DEC-055` | `TC-010…018` | `TASK-UXQ-003` | pending | planned |
+| `REQ-UXQ-006` | `48-EXPERIENCE-SURFACES` | pending | `DEC-055` | `TC-003/004/014/038` | `TASK-UXQ-004` | pending | planned |
+| `REQ-UXQ-007` | `29-ARTIFACTS`, `48-EXPERIENCE-SURFACES` | pending | `DEC-055` | `TC-015/033` | `TASK-UXQ-005` | pending | planned |
+| `REQ-UXQ-008` | `46-ECOSYSTEM-ARCHITECTURE`, `48-EXPERIENCE-SURFACES` | pending | `DEC-054/055` | `TC-007/008/026` | `TASK-UXQ-006` | pending | planned |
+| `REQ-UXQ-009` | `15-AGENT-PLANE`, `35-MISSION`, `48-EXPERIENCE-SURFACES` | pending | `DEC-054/055` | `TC-024…026/034/035` | `TASK-UXQ-007` | pending | planned |
+| `REQ-UXQ-010` | `20-WORKFLOW`, `37-WORKFLOW-SKILL-LIFECYCLE`, `48-EXPERIENCE-SURFACES` | pending | `DEC-054/055` | `TC-021…023` | `TASK-UXQ-008` | pending | planned |
 
 ## 4. Maintenance
 

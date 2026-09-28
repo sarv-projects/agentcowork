@@ -1,5 +1,7 @@
 # AgentCowork v1 — support matrix
 
+> **DEC-054/055 distinction:** This matrix records the currently planned/qualified **release artifact**, not a capability ceiling for the final architecture. Remote/cloud and additional desktop platforms remain target executor/surface options subject to implementation and acceptance. A discovered external agent keeps native credential custody and policy; the Rust vault claim below covers Core-managed provider credentials only.
+
 > **What this file is.** The published statement of which platforms v1 ships for, what is verified on each, and
 > what is explicitly **not** in v1. It is the product-facing half of the platform decision recorded in
 > [`AGENTCOWORK-SPEC.md`](AGENTCOWORK-SPEC.md) §1 (v1.0 scope: Windows-first desktop) and
@@ -55,7 +57,7 @@ other workflow publishes (`P70.A1`, asserted by `scripts/check-release-matrix.mj
   `bun build --compile`; see [`PACKAGING.md`](PACKAGING.md) §2). Rust, Node, Bun and pnpm are
   **build-time** tools and are never required on a user's machine (`P70.A3`).
 - **Agents:** any installed ACP agent runs as a normal user process; WSL-hosted agents are launched through
-  their distro. Provider credentials live only in the Rust vault — never in a sidecar or a config file.
+  their distro. Core-managed provider credentials live only in the Rust vault — never in the sidecar; a discovered agent retains its own native credential custody (DEC-054).
 - **Distro coverage (WSL):** in-tree examples use the Ubuntu LTS class (settings fixtures, terminal tests);
   distro-version coverage beyond "a WSL2 distro the user has installed" is unqualified and is not claimed.
 - **Sandbox posture:** **Ambient** on Windows. The only confined backend in the tree is the Linux `bwrap`

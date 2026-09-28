@@ -1,6 +1,6 @@
 # 39 — Architecture delivery sequence and acceptance
 
-> Status: accepted target architecture 2026-09-28 under DEC-054; implementation pending. This is an architecture dependency plan; `TODO.md` remains the delivery-status tracker and is intentionally unchanged in this review.
+> Status: accepted target architecture 2026-09-28 under DEC-054/055; implementation pending. This is an architecture dependency plan; `TODO.md` W6 is the delivery-status tracker. `48` owns final interaction design, `49` outcome scenarios, and `50` cross-plane maps.
 
 ## Current-state delta (source observed, not completion claims)
 
@@ -26,6 +26,7 @@
 5. Add outcome evaluator, no-progress detector and resume reconciliation. Exit: crash/context reset/agent swap preserves goal and evidence; external drift invalidates only affected nodes; repeated identical failure stops; incomplete required evidence blocks completion.
 6. Connect shared browser/desktop/SaaS/office and optional external workflow providers. Exit: capability path is chosen by suitability, actual ownership is visible, OAuth actions use action scopes, and waitpoint callbacks reconcile idempotently.
 7. Add workflow capture → skill proposal → evaluation → versioned publication, plus mission-control UI and cross-device/cloud executor adapters. Exit: a recorded procedure is inspectable and rollbackable; local-offline work pauses honestly; cloud continuation requires a configured executor and shows where it runs.
+8. Deliver the DEC-055 Experience as a coherent journey: composer and renderer, first-run/agent setup, Workbench browser/file/Office tabs, Library retrieval, team view and searchable grouped Settings. Exit: each control is bound to a real capability/contract; `TC-001…038` oracles run on pinned builds, including nontechnical and accessibility cohorts. Unsupported format or adapter behavior has an honest fallback rather than a decorative promise.
 
 Each stage can ship while later stages remain planned; capability and quality determine priority, not an arbitrary v1 label. Do not create additional network services for conceptual modules. Reuse existing crates and extract `agentcowork-mission` only when its own dependency boundary is established. Horizon Code is a future external binding, never a special path.
 

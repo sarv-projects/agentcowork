@@ -1,5 +1,7 @@
 # AgentCowork Design System (P11.1)
 
+> **DEC-055 target amendment:** This file remains the current token/component and shipped-shell inventory. `ARCH/48-EXPERIENCE-SURFACES.md` supersedes its frozen v1 interaction layout, three-control composer, first-party Native card and 22 peer Workbench viewports where they conflict. Reuse the existing semantic tokens while implementing the final progressive left navigation, composer, right Workbench and grouped Settings; do not treat the inventory below as proof of the target UI.
+
 > **What this is:** the implementable surrogate of the "Figma/design file with
 > all components + layouts" item. A real Figma file is a design-tool artifact
 > this repo cannot host; this document is the source of truth that *would*

@@ -3,7 +3,7 @@
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P2). **Amended 2026-09-27 (DEC-052):** the first-party native agent is removed; this document now specifies the agent plane only.
 > **P7 pass (2026-09-26):** line-checked; requirements seeded (now `REQ-AGENT-*`, Requirements section).
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
-> **Role:** the agent plane — the contract **every** agent engine implements and the obligations AgentCowork holds over it. No first-party engine ships in v1 (DEC-052): engines are external, and a first-party engine developed outside this repository is bound afterwards as an ordinary binding — same `AgentEngine` contract, same Guard, no privileged path (DEC-010, INV-12).
+> **Role:** the agent plane — the adapter contract each compatible external engine implements and the obligations AgentCowork holds over shared calls. No first-party reasoning engine is owned here (DEC-052). Engines keep native tools and policy; the same Core Guard applies to their shared Core calls (DEC-054, INV-12).
 > **Dependencies:** `11-WORK`, `16-CONTEXT`, `17-MEMORY`, `13-CAPABILITY`, `14-PROVIDERS`, `18-MODEL-ROUTING`, `19-RUNTIME-ENVIRONMENTS`, `12-TRUST`.
 > **Evidence:** `ARCHIVE/v1-research/agent-harness-verification.md` — 8 VERIFIED / 3 PARTIAL / 0 WRONG (claims, corrections and pinned clone HEADs recorded there) + product-owner brief (2026-09-26). Anchors cited inline.
 
@@ -13,11 +13,11 @@ An **agent engine** is a reasoning runtime that plans and acts. This document sp
 
 **The engine owns:** its own loop and step admission · its own planning · context **control** for its own turn (selection/ranking/budget/prune/compact/rebuild, DEC-007) · its own tool selection and batching · its own continuation and recovery · how it thinks and what it puts in its prompt. These are the agent-native plane (`ARCH/02-THESIS.md`) and are **not** ours to specify.
 
-**Core owns, always:** capability implementation (`13`/`14`) · permissions and every authorization decision (`12`) · work scheduling, budgets and deadlines (`11`) · the durable memory store (`17`) · context data services (`16` infra) · deterministic multi-step processes (`20`) · the CLI/ACP surfaces it is reachable through · the UI.
+**Core owns:** implementation and authorization of its shared capabilities (`12`–`14`) · host Work scheduling, budgets and deadlines (`11`) · Core memory (`17`) · context data services (`16` infra) · host workflows (`20`) · its surfaces and UI. The engine retains its native permission decisions, tools, stores and turn loop (DEC-054).
 
 **The line (DEC-054):** an engine is a *peer*, not a privileged Core component. For shared Core capabilities it proposes and Core disposes (INV-01); native agent tools remain under the engine's own policy and environment. It receives Core projections, never another agent's state (INV-11). Every binding takes the same Guard/ticket path **when invoking a shared Core capability** (DEC-010, INV-12).
 
-**Bounded tools, never a flat dump (DEC-028, REQ-CAP-001):** an engine sees a bounded, Guard-mapped set of task-shaped tool façades — never a flattened dump of every MCP, plugin or native tool. Every effect-bearing call resolves through the capability/Guard/ticket path, read-only tools carry path scopes, and tool outputs are bounded (a preview plus a durable artifact ref; lossy success is forbidden — DEC-032). **How** an engine loads, searches and batches its tools is the engine's own design; the long tail is reachable, the wire is never flooded.
+**Bounded shared loadout, never a flat dump (DEC-028/054, REQ-CAP-001):** Core offers a task-relevant, granted set of shared tool façades. Every Core-mediated effect call resolves through Capability/Guard/Ticket; Core tool outputs are bounded by a preview plus durable artifact ref. Native tools remain the engine's own catalog and choice. Core does not inject or flatten the engine's private MCP/skill/plugin set.
 
 ## 2. Peer contract (`AgentEngine`)
 
@@ -60,7 +60,7 @@ The engine owns context **control**; Core owns context **data** (DEC-007; `16-CO
 
 ## 7. Delegation & subagents
 
-Per DEC-029 (evidence §A3 / §B3 / §E7):
+Per DEC-029 (evidence §A3 / §B3 / §E7), the table and lifecycle below specify **host-created delegated Work**. A discovered agent's native children remain agent-owned and may expose only reported/observed telemetry (DEC-054):
 
 | Aspect | Rule |
 |---|---|
@@ -71,21 +71,11 @@ Per DEC-029 (evidence §A3 / §B3 / §E7):
 | Return value | **Worker receipt** (status · scope · summary · findings · changed files · tests · artifacts · blockers · confidence · usage · `will_wake` · `partial`) — never the transcript. |
 | Bounds | Platform enforces outer limits (max parallel · total · depth · tokens · spend); the running agent decides actual usage within them. |
 
-### 7.1 Capability-affinity steering (superseded by DEC-054)
+### 7.1 Optional shared capability guidance (DEC-054)
 
-**Target contract:** A discovered external engine retains native tool choice. The four mandatory rankings below describe the currently shipped prompt block and its current assertion, **not** the target behavior. Replace it with a bounded, task-specific description of available shared capabilities and their actual grants. The engine may choose native tools. Show the selected path and its governance class. Do not claim `office.*`, `browser.*`, `computer_use.*` or `delegate.*` is always superior to an engine-native operation. The prompt-steering assertion must be revised with the implementation; until then this is a documented code/spec gap.
+An external engine retains its native tool choice. Core describes only available, task-relevant shared capabilities and their grants through a supported session overlay. The agent may prefer a native tool; Core records the path actually used and the associated assurance class. The currently shipped mandatory `COWORK_AFFINITY_STEERING` block and its assertion in `scripts/check-prompt-steering.mjs` conflict with this target and must be retired together during implementation. Neither prompt text nor capability ranking grants access.
 
-A bound engine that can reach the shared cowork plane is told, in its own prompt, that the native capability façades outrank the generic shell. This is the published form of `COWORK_AFFINITY_STEERING` (`crates/agentcowork-acp/src/chief.rs`, asserted by `scripts/check-prompt-steering.mjs`), in the same order:
-
-1. **Spreadsheets (`.xlsx`) & documents (`.docx`/`.pptx`)** — always `office.*` (`office.open`, `office.inspect`, `office.edit`, `office.calculate`); never hand-written Python or CLI tools in a shell to modify office files.
-2. **Web browsing & research** — always `browser.*` (`browser.research`, `browser.operate`, `browser.extract`) rather than raw `curl` or a headless script.
-3. **Desktop UI automation** — `computer_use.*` (`computer_use.see`, `computer_use.act`).
-4. **Subagent delegation** — `delegate.spawn`, for subtasks that belong in an isolated child.
-
-The order is a contract, not formatting: the ranking is what the block exists to express, so reordering it is a behavior change, and `check-prompt-steering.mjs` fails when the document and the shipped constant disagree. The block is **steering, not authority** — it ranks capabilities inside a projection the engine already holds, so an engine without the Office façade is never told to use one. Tool exposure itself is `13` (capability resolution, DEC-025 native-first) and `12` (Trust); nothing here grants a capability.
-| Modes | `automatic` · `preferred` · `manual` · `disabled`, plus routing rules (task type / language / capability / cost). |
-| Main context | Sees only a compact worker catalog (role, skills, model, relative cost) — never each worker's full prompt. |
-| Review queue | **Not borrowed from Codex** (absent from its source, §A3). If wanted, it is our own product-layer build (OQ-AGENT-01). |
+Host delegation modes are `automatic`, `preferred`, `manual` and `disabled`, with task/capability/budget routing rules. The lead sees a compact worker catalog, not every worker prompt. A review queue is a host product feature if built, not an assumed external-agent capability. Agent-native child sessions remain owned by that agent; the host lifecycle and receipt contract below apply only to **host-created** child Work. Native child progress is displayed as reported/observed if exposed, with its provenance and missing controls shown honestly.
 
 Overlapping writes go through workspace leases (queue / rebase / ask) — never silent overwrite.
 
@@ -139,7 +129,7 @@ Depth/budget fields (`max_parallel` · `max_total_per_tree` · `max_depth` · `m
 
 ## 10. Permissions
 
-Defaults (owner brief): **everyday allow** — workspace read/write/edit, normal commands and tests, normal deps, local git read/write, browser navigation, office editing, MCP reads · **dangerous ask** — permanent deletion, destructive shell, credential access, OS/security changes, disk operations, mass external writes, destructive git · **full access** — user-activated, with an irreducible catastrophic-operation gate. Enforcement lives in Guard (`12-TRUST`) across **three layers** (DEC-028); the agent requests, never decides.
+Defaults for **Core-mediated calls** (owner brief): **everyday allow** — workspace read/write/edit, normal commands and tests, normal deps, local git read/write, browser navigation, office editing, MCP reads · **dangerous ask** — permanent deletion, destructive shell, credential access, OS/security changes, disk operations, mass external writes, destructive git · **full access** — user-activated, with an irreducible catastrophic-operation gate. Core enforcement lives in Guard (`12-TRUST`) across **three layers** (DEC-028); the external agent's native policy remains separate and the UI labels it.
 
 ## 11. Surfaces
 

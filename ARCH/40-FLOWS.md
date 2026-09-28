@@ -200,3 +200,23 @@
 
 ### FLOW-40 — Controlled skill improvement
 **Actors:** feedback · evaluator · skill store. **Steps:** draft versioned patch → run historical and side-effect regression evals → compare against current → policy/human promotion gate → pin new activations. **Terminal:** promoted/rejected. **Failure:** regression → old version remains active.
+
+## DEC-055 Experience flows
+
+### FLOW-41 — Composer reference and agent selection
+**Actors:** Experience · agent registry · context · Trust. **Steps:** persist draft → `+`/`@` picks a scoped identity/version/selection → `/` resolves host/native namespace → agent picker shows probed readiness → conditional model and access chips show effective capability → send Work request. **Terminal:** accepted Work or typed setup need. **Failure:** stale selection/agent disconnect → keep draft and ask to refresh; no silent switch or command collision (`48` §3).
+
+### FLOW-42 — Workbench edit from conversation
+**Actors:** Experience · Artifact/Files · domain provider · Trust. **Steps:** open stable tab → select typed range → agent receives exact-version ref → preview edit/diff → check external version/lease → save atomically as new version → render/verify → update dependencies and chat artifact card. **Terminal:** current version or conflict. **Failure:** unsupported fidelity → read-only/native fallback; corrupt save → old version preserved (`48` §5, `29`).
+
+### FLOW-43 — Browser or desktop takeover
+**Actors:** user · Browser/Computer runtime · Work. **Steps:** user takes control → worker yields input and records observation epoch → user acts → user returns control → fresh snapshot/reconcile → worker may resume. **Terminal:** resumed or waiting. **Failure:** session/bridge lost → no stale coordinate/ref reuse (`23`, `24`, `48`).
+
+### FLOW-44 — Agent setup and scoped extension
+**Actors:** user · agent registry · extension registry · Trust. **Steps:** staged read-only discovery → probe supported model/auth/overlay features → user signs in through actual owner → select per-scope host MCP/skill/plugin grants → resolve collision and lazy startup → attach session overlay if supported. **Terminal:** ready or explicitly unavailable. **Failure:** unsupported injection never triggers a native config edit (`46`, `48` §7).
+
+### FLOW-45 — Library retrieval and staleness
+**Actors:** Library · Files/Search · Artifact graph · Context. **Steps:** register origin/version/metadata → extract/index with coverage → permission-filter search → cite exact version and location → changed input invalidates downstream. **Terminal:** current cited result or stated gap. **Failure:** revoked/unindexed/corrupt source is excluded or marked uncertain; never invented (`29`, `48` §6).
+
+### FLOW-46 — Team handoff and integration view
+**Actors:** Mission · Work · external agents · Experience. **Steps:** assign independent bounded nodes → show host children separately from native-reported children → collect structured handoffs → integrate and verify outcome → expose per-worker status/evidence in right pane. **Terminal:** verified Mission node or explicit conflict. **Failure:** unbounded swarm/opaque child cannot receive host controls (`15`, `35`, `48` §8).

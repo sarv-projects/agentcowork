@@ -1,6 +1,6 @@
 # 38 — Experience and quality contract
 
-> Status: accepted target architecture 2026-09-28 under DEC-054; implementation pending. Product UI source remains `AGENTCOWORK-UI.md`; this is the architectural requirement for Mission and ecosystem projections.
+> Status: accepted target architecture 2026-09-28 under DEC-054/055; implementation pending. `48-EXPERIENCE-SURFACES.md` owns final interaction HLD/LLD; `AGENTCOWORK-UI.md` is the earlier v1 baseline where conflicting.
 
 ## Progressive interaction
 

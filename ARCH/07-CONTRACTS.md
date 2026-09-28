@@ -10,7 +10,7 @@
 - **IDs:** `CTR-###`, stable.
 - **Async by default**; every long-running call accepts a cancellation handle and declares a default timeout + retryability.
 - **Typed errors** only: `AuthorizationDenied · NotFound · Conflict · Unavailable · Unsupported · Timeout · InvalidState · GuidanceRequired · RequiresUserAction · Internal`. `guidance`/`requires_user_action` are **results**, not errors (a capability may answer “connect Google Drive first”).
-- **Effects:** any contract that can cause an externally visible effect MUST require a `Ticket` (INV-03) and SHOULD return/append a `Receipt` ref (INV-07).
+- **Effects:** any Core contract that can cause an externally visible effect MUST require a `Ticket` (INV-03) and return/append a `Receipt` ref (INV-07). Native agent tools are outside this contract and produce separately labelled evidence.
 - **No store exposure:** contracts return projections, handles and refs — never internal stores, vault values, or other modules' mutable state (INV-11).
 - **Versioning:** breaking signature changes require a `DEC`; additive changes are minor.
 
@@ -133,14 +133,14 @@ policies() → DelegationPolicyEntry[]
 
 ## 4. Evidence spine
 
-**CTR-018 `ArtifactService` + `ReceiptService`** — `create/version/get/link/export` for artifacts; `record/get/replay` for receipts. Immutable versions; provenance mandatory; receipts reference tickets and verification (INV-07/INV-18).
+**CTR-018 `ArtifactService` + `ReceiptService`** — `create/version/get/link/export`, `resolveSelection(artifact_id,version,typed_location)`, `list(filters,scope)` and `dependencyStatus(version)` for artifacts; `record/get/replay` for Core-effect receipts. Immutable versions; provenance mandatory; index state and exact-version location accompany retrieval; Core-effect receipts reference tickets and verification; native observations/reports use distinct evidence types (INV-07/INV-18, DEC-054/055). Rendering/editing remains in domain providers and the Experience surface, never in this store contract.
 **CTR-019 `EventBus`/`EventStore`** — `publish(event)` · `subscribe(filter) → Stream` · `read(range)` · `replay(from)`. One log; all projections derive from it (INV-23).
 **CTR-023 `EffectVerifier`** — `verify(effect, risk_class) → VerificationRecord`; depth scales with risk (INV-19).
 
 ## 5. Cross-contract rules
 
-1. **Ticket first:** no effect-bearing contract executes without a valid ticket; contracts never accept raw provider handles to bypass this.
-2. **Receipts:** every mutation returns a receipt ref or a typed error; receipts are the evidence, not logs.
+1. **Ticket first:** no effect-bearing Core capability contract executes without a valid ticket; contracts never accept raw provider handles to bypass this. Native agent tools are not Core capability contracts.
+2. **Receipts:** every Core-mediated externally visible mutation returns a receipt ref or a typed error; native agent observations and self-reports are distinct evidence, not forged receipts.
 3. **Cancellation:** every long-running call accepts a cancellation handle; cancellation is cooperative, bounded, and leaves durable state consistent (INV-16).
 4. **Idempotency:** effect invocations carry idempotency keys derived from `work_id + ticket` so retries cannot double-apply where providers support dedupe.
 5. **Epoch binding:** tickets and handles are bound to `provider_epoch` + `environment_id`.

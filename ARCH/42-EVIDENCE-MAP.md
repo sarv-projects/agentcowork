@@ -5,6 +5,8 @@
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
 > **Rule:** no claim ships without evidence; a passing unit test proves that behavior only (never “it works”); readiness claims require real platform acceptance records.
 
+> **DEC-055 documentation audit (2026-09-28):** A repository-wide Markdown structural scan covered 71 non-archived Markdown files and 15,305 lines at the last check (H1, code-fence balance, trailing whitespace); the one trailing-space finding in the UI baseline was corrected. `node scripts/check-doc-refs.mjs` passes, and active requirement headings/matrix rows match 323/323 with unique IDs. `node scripts/check-doc-sync.mjs` remains red before content checking because it still opens removed `DESKTOP-APP-SPEC.md`; `TODO.md` `TASK-PROD-005` owns that repair. These checks establish structure/traceability, not semantic proof of every statement or implementation quality. The accepted DEC-054/055 cross-plane contradictions and source-grounded comparator findings are recorded in `04`, `45` and `47`; scenario implementation evidence is still pending.
+
 ## 1. Evidence rules (recap)
 
 - **External claims:** `path:line` for clones, URL for primary docs; confidence H/M/L; `[inference]` labeled; `UNVERIFIED` allowed only temporarily and must say what would verify it.
@@ -55,6 +57,10 @@ Each doc’s claims map to a verification class; tests are sized to the claim. (
 | `31` Skills/Plugins | Activation relevance; review gate; crash-loop auto-disable; version skew. |
 | `32` Channels | Gateway 7-item projection tests; ACP mapping; approval routing. |
 | `34` Verification | Risk→depth matrix tests; unverified-state surfacing; repair paths. |
+| `35`/`36` Mission | Contract/plan versioning, Work replacement, drift invalidation, independent outcome checks and stop decisions; `TC-027…036`. |
+| `46` Ecosystem | Read-only discovery, supported overlay negotiation, native/Core evidence separation, extension scope/collision/revocation and heterogeneous child handoff. |
+| `48` Experience | First-run comprehension, composer controls, responsive/accessible renderer, Workbench edit/takeover, Library retrieval, truthful Settings and child-state display; `TC-001…038`. |
+| `49` Test cases | Pinned fixture/scorer/run metadata and raw result bundles, including unsupported and failed runs; no pass claim until executed. |
 | `40`/`41` | Flow e2e scripts + edge-case regression tests. |
 | `AGENTCOWORK-SPEC` / `AGENTCOWORK-UI` | Product acceptance criteria + UI checks (defined by the product + UI docs). |
 

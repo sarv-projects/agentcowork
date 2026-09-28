@@ -11,7 +11,7 @@
 
 ## 1. Purpose & responsibilities
 
-**Owns:** the process manager (spawn · monitor · stop · trees · reaping) · environments (local · sandbox · worktree · remote-later · cloud-later, with resource limits) · sandbox execution backends · agent vs user PTYs · MCP server lifecycle *hosting* (with `14`) · the opt-in elevated helper host · process/environment health.
+**Owns:** the process manager (spawn · monitor · stop · trees · reaping) · environments (local · sandbox · worktree · remote · cloud, with resource limits and capability probes) · sandbox execution backends · agent vs user PTYs · MCP server lifecycle *hosting* (with `14`) · the opt-in elevated helper host · process/environment health. Remote/cloud are target environment kinds, not claims of current implementation.
 **Never owns:** policy decisions (`12`) · capability semantics (`13`) · git/worktree semantics (`26`) · write leases (`25`).
 
 Rules:
@@ -25,7 +25,7 @@ Rules:
 | Field | Meaning |
 |---|---|
 | `id` | environment identity — appears in capability handles (`13` §4) |
-| `kind` | `local` · `sandbox` · `worktree` · `remote`* · `cloud`* (*later) |
+| `kind` | `local` · `sandbox` · `worktree` · `remote` · `cloud`; availability is probed per installed executor |
 | `platform` | windows · linux · macos |
 | `confinement` | profile ref (policy id + backend actually in use) |
 | `limits` | cpu · memory · disk · network (declared; enforced) |

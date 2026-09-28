@@ -1,16 +1,18 @@
 # 25 — Files
 
+> **DEC-055 Library/Workbench amendment:** Files owns identity, metadata, watcher freshness, scoped file access and write-conflict control. `27-SEARCH` owns full-text index/query; format providers in `22`–`24` and extraction adapters provide content/OCR/transcript data. `29` owns artifact versions, Library inventory and dependencies; `48` owns file tree/editor interaction. Content indexing is a target integration of these owners, not a second index inside Files. Exact-version selection and revocation must propagate to Search/Context before retrieval.
+
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P3).
 > **P7 pass (2026-09-26):** line-checked; requirements seeded (`REQ-FILES-*`, Requirements section).
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
-> **Role:** the filesystem as structured state — **identity · watchers · deltas · write leases · metadata index**. Content indexing is deliberately deferred (metadata-first, `21` W7).
+> **Role:** the filesystem as structured state — **identity · watchers · deltas · write leases · metadata index**. Full-text content indexing is owned by Search (`27`) and fed through scoped extraction providers; Files remains metadata-first.
 > **Dependencies:** `10-KERNEL` · `12-TRUST` (path scopes) · `19-RUNTIME-ENVIRONMENTS` (helper/leases hosts) · `21-WORLD-MODEL` (W1 collector) · `30-EVENTS` (deltas). **Consumers:** `16`, `26-CODE` (worktrees), `29` (artifact locations), `15`.
 > **Evidence:** `ARCHIVE/v1-research/world-model-verification.md` §3 (identity, cursors, freshness; MS `FILE_ID_INFO` / MFT / USN docs) · local `crates/agentcowork-storage` (`walk.rs:131-157`, `dedup.rs:106-118`, `usn.rs:77-90`, `usn_winapi.rs`) · DEC-029 · INV-20.
 
 ## 1. Purpose & rules
 
 **Owns:** file identity (per platform, with incarnation) · watchers/deltas (USN journal · RDCW · inotify/fanotify · FSEvents) · the cursor/epoch model · the metadata index (names · IDs · size · times · attrs · links) · **write leases** for overlapping edits · workspace/project identity (DM-024) · path scopes for policy.
-**Never owns:** content indexing/OCR (deferred) · the world graph (`21`) · policy decisions (`12`) · git semantics (`26`).
+**Never owns:** content indexing/OCR (owned by `27` and format/extraction providers) · the world graph (`21`) · policy decisions (`12`) · git semantics (`26`).
 
 1. **Metadata-first** — the collector never reads file content (`21` §5).
 2. **Identity before path** — paths are labels; identity is `(volume, file id, incarnation)` / `(dev, ino, nlink)`.

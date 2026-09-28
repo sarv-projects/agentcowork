@@ -1,5 +1,7 @@
 # 14 — Providers
 
+> **DEC-054 ownership amendment:** This registry governs **Core capability providers**. A discovered external agent's native model/tools/MCP/credentials/network remain outside this provider registry and their own policy; an ACP agent used as a host capability executor returns a worker report plus separately observed evidence, never a fabricated ticket for its internal actions. The vault/Guard rules below apply to Core-owned adapter calls and Core-held credentials. Host MCP catalog definitions are not globally active; `46` owns scoped attachment.
+
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P2).
 > **P7 pass (2026-09-26):** line-checked; requirements seeded (`REQ-PROV-*`, Requirements section).
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
@@ -14,7 +16,7 @@
 
 1. **Adapters are interchangeable** — one provider may implement many capabilities; one capability may have many providers (DEC-004).
 2. **No protocol vocabulary above this layer** — callers speak `capability.invoke`; they never see MCP tool names, ACP methods, or HTTP paths.
-3. **Credentials via vault only** (CTR-013, INV-02); **egress via Guard** (INV-05).
+3. **Core-owned credentials via vault only** (CTR-013, INV-02); **Core-mediated egress via Guard** (INV-05). Agent-native custody/egress stay with the external engine and are disclosed separately.
 4. **Epoch discipline:** every adapter instance has a `provider_epoch`; a restart bumps it and invalidates outstanding handles (DM-012, `13` §4).
 5. **Health is first-class:** degraded providers are skipped by the resolver before they fail a call.
 

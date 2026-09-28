@@ -1,0 +1,86 @@
+# 48 — Experience surfaces and interaction contracts
+
+> Status: DEC-055 target design; implementation and usability evidence pending. This document owns the final user-facing HLD/LLD. `AGENTCOWORK-UI.md` describes the earlier v1 baseline where it conflicts. Requirements live in `08`, architecture ownership in `03`, and tests in `49`. Capability availability must be shown from a live probe, never inferred from a provider name.
+
+## 1. Experience rule
+
+The first screen is an ordinary conversation: ask, attach, send. A question gets an answer. A request for work becomes a visible task. A durable or parallel goal becomes a Mission. The user can expand detail at any time; the product also exposes detail when work, risk or uncertainty makes it useful. No user must understand Work, ACP, DAGs, MCP or tickets to complete an ordinary task. These terms are available in an Advanced view and diagnostics. One conversation can contain answers, tasks and Missions without forcing a separate product mode.
+
+The UI has three resizable regions: left navigation, conversation, right Workbench. On a narrow window, navigation becomes a drawer and Workbench becomes a full-width tab or sheet; neither is silently discarded. A persistent status strip shows running work, a needs-you count and the location of execution (this computer, remote host, or external agent). Every visible state must distinguish planned, running, waiting, reported complete and independently verified. A worker's self-report never earns a verified badge.
+
+## 2. Primary navigation and first-run
+
+| Area | Default content | Expansion |
+|---|---|---|
+| Home | New conversation, recent work, resume card and three outcome examples | Templates and pinned projects |
+| Conversations | Searchable recent threads, running/waiting badges, grouped by project | Filters, archive, export, lineage |
+| Tasks | Current and scheduled work with simple status, result and needs-you | Mission graph, agents, costs, timeline and evidence |
+| Files | Workspace folders and recent files | Worktrees, versions, indexing and storage |
+| Automations | Saved routines, schedules and triggers | Workflow editor, runs, waits and failures |
+| Library | Generated, uploaded, imported and linked artifacts; saved skills/templates | Provenance, dependencies, indexing, versions |
+
+The left sidebar contains the primary destinations above, current project/workspace switcher, New button, search, running task badges and recent conversations. Account/profile at bottom opens Settings. It is collapsible and keyboard navigable. Agents, Connections, extensions and diagnostics are reached through Settings, contextual controls and command search; they do not crowd first-run navigation. A user may pin any advanced destination to the left sidebar.
+
+First-run sequence: choose a workspace or begin with chat; discover local agents in the background; show only verified ready agents; offer a guided connection when an action needs one; demonstrate one reversible local task; show permission and data-location explanation at the point of use. Slow CLI probing cannot block the first interactive prompt. Empty states explain a concrete outcome, not platform jargon.
+
+## 3. Composer contract
+
+The composer is one box with a multiline editor, attachment chips and a compact footer. Default footer, in reading order: `+`, agent selector (`Auto` unless pinned), model selector only when the selected agent supports choosing models, autonomy/access chip, voice control when installed and authorized, Send/Stop. Running work also exposes Queue and Steer; sending while active asks whether the message steers now or queues next, with an undo window. Enter sends, Shift+Enter adds a line; accessible shortcuts are configurable. The draft, attachments and selections survive navigation, questions, agent changes and crashes.
+
+| Control | Behavior and failure state |
+|---|---|
+| `+` | Add local files/folders, image, screenshot, clipboard, URL, Library item, current Workbench selection, or connect an app. Recent sources first; show size, sensitivity and upload/index scope before attaching. Folder attachment means a scoped reference, not dumping all bytes into a prompt. |
+| Agent | Lists ready/recent agents plus `Auto`; each row shows local/remote, ready/needs sign-in/unavailable and verified abilities. A gear opens that agent's Settings detail. Picker never silently switches an active worker. |
+| Model | Shows advertised models for this agent and account, searchable with cost/availability when known. If the agent controls its own model, show `Managed by agent` and link to native settings. Never pretend a model picker can control an external CLI that does not expose one. |
+| Autonomy/access | Plain choices: `Ask before changes`, `Allow workspace work`, `Custom`. A detail sheet shows effective file, network, connector, browser and desktop grants; native-agent policy is shown separately. Temporary grants have scope and expiry. A label must not promise Core control over native calls. |
+| `@` | Insert a structured reference to file/folder, Library artifact, project, open Workbench tab or selection, person/connected resource, or a ready agent for a directed task. Search is scoped and privacy filtered; insertion stores an identity/version/selection range, not only a display name. Missing or stale references are flagged before send. |
+| `/` | Search command palette with namespaces: app actions `/cowork:*` (for example `/cowork:plan`, `/cowork:agents`, `/cowork:attach`, `/cowork:skill`, `/cowork:resume`) and supported native agent commands under that agent's own namespace. Never hijack an agent's native slash command; unknown commands remain ordinary text until explicitly chosen. Suggestions disclose effects and shortcuts. |
+
+Agent and model choices are per conversation by default; an explicit task override applies only to that task. Picker changes during a Mission create a replacement or future-assignment proposal and preserve current work until the user confirms the action. Disabled controls explain why (offline, missing capability, auth, policy). The footer stays compact; advanced effort, context, budget and routing controls live in an expandable detail popover. Never expose a decorative toggle that has no execution effect.
+
+## 4. Conversation and results
+
+Message rendering supports CommonMark/GFM, syntax-highlighted copyable code blocks, tables that scroll horizontally, inline/display math with accessible source and fallback text, citations that open their source, and properly sized responsive image cards with caption, alt text and a lightbox. Diagrams use a sandboxed Mermaid renderer with source fallback. HTML, SVG, scripts and interactive artifacts run in isolated preview contexts with explicit capability grants; untrusted content cannot inherit app privileges. Streaming keeps completed blocks stable and does not steal scroll focus when the user is reading history. A long run collapses noisy tool events into human-scale progress with drill-down traces.
+
+Every answer with generated media or files presents an artifact card beside its explanation, with Open in Workbench, Save to Library, version, source and verification state. A user can edit a draft response or artifact, compare versions, restore a version, copy/export and ask the chat to change the exact selection. Citations are claim-linked where feasible. Failed preview is an explicit fallback/download action, not a blank pane. Voice, images and attachments must preserve transcript/draft and have keyboard equivalents.
+
+## 5. Right Workbench
+
+The right pane is a dockable, resizable multi-tab Workbench. Opening a chat citation, file, browser state, artifact, diff or agent automatically creates/focuses a tab while preserving other tabs. Tabs have type icon, title, dirty/unsaved indicator, version and close confirmation. Split view supports two items side by side. The chat can refer to the active tab or selected text/cells/slide/DOM element via structured references; the scope is visible above the composer. Selection changes must not silently redirect an already-running agent.
+
+| Tab | Minimum behavior | Editing and verification boundary |
+|---|---|---|
+| Browser | Managed Chromium tab with URL, navigation, history, download shelf, screenshots, DOM/accessibility selection, agent action markers and Take over/Return control | Use a managed profile for reliable automation. Attaching a user's Chrome requires supported remote-debug/extension bridge and explicit consent; arbitrary Chrome embedding in the Tauri webview is not assumed. Auth handoff and session ownership are visible. |
+| Files/tree | Current workspace or isolated worktree tree, search, breadcrumbs, file status and diff badges; click opens a suitable tab | Save uses file identity, conflict check and atomic write; native-app open fallback for unsupported formats. External native-agent edits can be observed but not retroactively ticketed. |
+| Text/code | Large-file virtualization, syntax and diff, line references, edit/save/undo | Concurrent changes prompt compare/merge; code changes can be reviewed as patch/worktree. |
+| PDF | Fast pagination, thumbnails, bookmarks, search, text selection, annotation and citation/page anchors | Editing is annotation or explicit transformation into a new artifact unless a provider supports structural PDF edit; scanned PDFs require OCR with confidence shown. |
+| DOCX | Paged reader with headings, comments/changes and print preview | Editing uses a capable provider or native app; round-trip fidelity check shows unsupported features before save. |
+| XLSX/Sheets | Grid, sheets, formulas, charts, filters, ranges and recalculation status | Typed cell/range edits, formula recalc and validation; macros/external links are not executed merely by preview. Unsupported pivots/visuals get an honest warning/native fallback. |
+| PPTX | Slide thumbnails, speaker notes, master-aware preview and presentation mode | Edit via provider with render comparison; unsupported animations/media are flagged. |
+| Image/media | Zoom/pan and metadata; time-based media player and transcript if available | Edit operations make a new version; source and generated status stay visible. |
+| Mission/agents | Goal, current step, per-worker status, child tree, blocker, timeline, cost and evidence | Steer, pause, replace, inspect or take over at supported boundaries. Native subagents without a reported lifecycle are shown only as reported/observed, not invented. |
+| Workflow/artifact | Workflow graph or artifact viewer with versions, dependencies and input sources | Draft changes and run previews; publish requires validation and applicable policy. |
+
+“Any file” means a universal **entry point and explicit fallback**, not a promise of lossless in-app editing for every MIME type. Probe MIME/content and provider support, offer read-only preview or native-app launch when needed, and never silently corrupt or flatten a file. The Workbench's browser shares a controlled session with the agent only when the binding supports it; otherwise it displays a live/recorded observation with the limitation stated. The user can always stop/take over an active managed browser/desktop run. When takeover ends, the worker must resnapshot state before acting.
+
+## 6. Library, knowledge and retrieval
+
+Library filters: All, Generated, Uploaded, Imported, Linked, Saved templates, Skills and Workflows, with project/source/type/date/verification/staleness facets. Items show title, type, size, author/source, creation/update time, active version, origin Mission/Work, permissions, indexed status, input dependencies and downstream use. Search covers names and extracted content only for permitted/indexed items. Preview and metadata work while extraction is pending. OCR/transcription/extraction record version, parser, coverage and errors; retrieval cites the exact artifact version and location (page, cell, slide, line or time span). Re-index on content/version change; revocation or deletion removes retrieval exposure and caches according to retention policy. Uploaded bytes are never treated as trusted instructions. Saving an artifact to Library is explicit; derived versions remain linked to original inputs.
+
+## 7. Settings, agents and extensions
+
+Settings uses a searchable grouped index, not a wall of equal-weight tabs: Personal (General, Appearance, Accessibility, Notifications); Work (Agents & models, Connected apps, Browser & computer, Tasks & automations); Data and access (Files & Library, Privacy & permissions, Secrets); Advanced (MCP/skills/plugins, diagnostics, storage, import/export). Each page has a plain-language summary, effective state, source and reset/revoke where meaningful.
+
+Agents page shows Ready, Needs setup, Discovered and Disabled lists. Each detail displays executable/source/version, health/probe time, verified capabilities, supported transports, actual model/provider choices, native auth state, Core-managed account option if compatible, allowed workspaces, default roles, concurrent sessions, quotas if known, native extension inventory (read-only when discovery supports it), and shared capability grants. Sign-in invokes the agent's supported native flow; API key entry is only offered for a verified supported provider and is held by the owning agent or Core vault according to custody. Never advertise every vendor for every agent. Install is isolated and reversible; discovery is read-only and never rewrites the user's agent config. Reprobe, disable, update and remove show impact on running and saved Missions. Horizon Code is a future external binding, not a shipped agent.
+
+MCP servers, skills and plugins have three separate states: catalogued, installed, and active for a specific agent/session/workspace/Mission. Effective access is the intersection of owner scope, package permissions, agent compatibility, task grant and policy. A discovered agent's native extensions remain native; the host may inventory them with provenance but does not merge/override their config. Host extensions are scoped overlays injected only through an agent-supported session mechanism. Server startup is lazy, with per-server health, credential custody, action scope, timeout and revocation. Namespaces resolve collisions; preview shows which tool/skill will actually run. Plugin pages list bundled skills/tools/agents/UI, dependencies, versions and permissions before enablement. Revocation stops future calls and reconciles running work. Global install is never synonymous with global active access.
+
+## 8. Teams, long work and automations
+
+The user sees one lead and a task list by default. Expanding Agents shows host-assigned workers and child relationships, assigned outcomes, current action, handoff, artifacts, usage and blockers. A lead may request a different-engine specialist (for example an external coding agent, GUI agent or local-model worker); Mission allocates a bounded PlanNode/Work with a contract and isolated resources. The lead's **native** subagents are not intercepted; report them only if the agent exposes lifecycle events. Host-level collaboration uses task handoff, scoped artifact refs and result mailboxes, with integration and independent verification before a shared outcome is marked done. Parallelism is chosen for independent work; no unbounded “swarm” toggle. The user can cap concurrency and replace a worker without losing the Mission.
+
+Automations show Saved, Running, Scheduled and Needs attention. A recorded browser/desktop sequence can become a candidate skill with steps, selectors, inputs, secrets removed, scopes, expected results and failure conditions. A stable procedure can be compiled into a versioned workflow; a workflow can be packaged as a skill describing when/how to invoke it. Conversion never silently publishes or grants wider access. Managed browser/desktop steps remain capability calls with verification, while external agent-native steps retain their separate provenance. Events and schedules resume through existing Work/Workflow ownership; there is no additional execution loop.
+
+## 9. Interaction and quality acceptance
+
+At minimum, validate: a new user can send a normal message and open an artifact without learning architecture terms; agent/provider/auth limitations are accurately displayed; `+`, `@`, `/`, picker and access chip work by keyboard and screen reader; generated vs uploaded and indexed vs unindexed remain distinct; Workbench edits target the selected version and survive interruption; safe fallback exists for unsupported office content; active task/agent/child state is visible without reading traces; a takeover re-snapshots; and all claimed verification links to evidence. Measure task completion, time, errors, user interventions, comprehension and accessibility on nontechnical and technical cohorts separately. `ARCH/49-TEST-CASES.md` specifies reproducible scenario oracles and reporting.

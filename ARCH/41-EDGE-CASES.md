@@ -250,6 +250,21 @@
 | EDGE-194 | Local machine shuts down during detached Mission | Durable pause; cloud continues only if explicitly configured and assigned. |
 | EDGE-195 | Captured workflow contains a secret or unstable UI step | Redact/reject unsafe candidate; require review and robust fallback. |
 
+## S. Experience and Workbench amendment (`48`–`50`)
+
+| ID | Scenario | Required behavior |
+|---|---|---|
+| EDGE-196 | Agent/model picker changes while a worker is active | Apply to future Work or explicit replacement with checkpoint; no silent live swap; keep composer draft. |
+| EDGE-197 | `@` selection points to a replaced file, page or artifact version | Reject stale identity/version with refresh or diff; never pass an ambiguous text label as a live selection. |
+| EDGE-198 | Host `/` command collides with an agent-native command | Namespaced host command and preview; native grammar remains intact. |
+| EDGE-199 | User Chrome attach lacks supported bridge or consent | Disable user-profile attach with reason and offer managed Chromium; do not promise cookie/login transfer. |
+| EDGE-200 | User takes over browser/desktop then returns control | Worker drops old AX/DOM/UIA refs and coordinates; resnapshot and reconcile before acting. |
+| EDGE-201 | Office file contains unsupported macro, chart, pivot, animation or font | Reader/native fallback or explicit fidelity warning; never silently flatten/overwrite the source. |
+| EDGE-202 | Library extraction/index fails or access is revoked | Metadata stays inspectable to authorized owner; retrieval excludes missing/revoked content and reports index gap. |
+| EDGE-203 | Workbench file changes externally during unsaved edit | Conflict/merge prompt with both versions; no silent overwrite or wrong-target save. |
+| EDGE-204 | Native subagent is opaque or reports false completion | UI labels report provenance and missing controls; Mission requires independent acceptance evidence. |
+| EDGE-205 | A fast agent produces ten workers with shared resources | Bounds/isolation/integration cost prevent waste or conflict; no unbounded parallel admission. |
+
 ## Extension rule
 
 New edge cases are appended with the next free ID in their family, with: scenario · required behavior · owning doc. A case that changes an authority doc escalates to a `DEC`.

@@ -1,5 +1,7 @@
 # 22 — Office
 
+> **DEC-055 Workbench amendment:** `48` owns the visible reader/editor and format support disclosure. Provider ability is probed per document and operation; preview, structural edit, recalc, native-app fallback and round-trip fidelity are separate capabilities. “Open any file” means a universal entry point and honest fallback, not guaranteed lossless editing. A provider that cannot faithfully round-trip a feature must refuse or create a reviewed derivative, never silently flatten the original.
+
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P3).
 > **P7 pass (2026-09-26):** line-checked; requirements seeded (`REQ-OFFICE-*`, Requirements section).
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
@@ -23,7 +25,7 @@
 | Format | Primary (native) | Fallback / external | Notes |
 |---|---|---|---|
 | DOCX | `agentcowork-office` OOXML patcher | LibreOffice headless (convert/render, MPL-2.0) | Surgical edits preferred; re-serialization declared when unavoidable |
-| XLSX | IronCalc (recalc) + patcher | LibreOffice headless | **Always recalc via IronCalc** before commit (formula integrity) |
+| XLSX | IronCalc (supported-formula recalc) + patcher | LibreOffice or compatible installed spreadsheet provider | Recalc with a provider that supports the workbook's formulas/features before commit; an unsupported or inconsistent recalc blocks verified save or requires explicit native-app handoff. Never overwrite cached values with an unprobed engine. |
 | PPTX | OOXML patcher + staged deck builder | LibreOffice headless | Charts/images: subset; SmartArt/OLE deferred |
 | PDF | Native PDF runtime | LibreOffice/mutool-class tools | Redact must **remove** content, not annotate (code-phase P0) |
 
@@ -117,6 +119,6 @@ Testable behaviors owned by this module live in `ARCH/08-REQUIREMENTS.md`; the t
 | `REQ-OFFICE-006` | Declared engine limits; unsupported fidelity returns typed `guidance` naming the limitation — no silent lossy path |
 | `REQ-OFFICE-007` | Previews are token-free projections (DEC-015); per-format structural validation runs before commit |
 | `REQ-OFFICE-008` | Risk-scaled verification hooks (INV-19): redact proves removal; externally visible sends receipt the validation result |
-| `REQ-OFFICE-009` | XLSX always recalculates (IronCalc-class engine) before commit — never stale cached formula values |
+| `REQ-OFFICE-009` | XLSX commit uses a provider probed for that workbook's formulas/features and verifies cached values; unsupported recalc blocks verified save with explicit fallback |
 | `REQ-OFFICE-010` | Templates and staged deck builds validate check-before-write at each stage; a failed stage leaves no partial artifact |
 | `REQ-OFFICE-011` | Corrupt inputs quarantine with a typed error and untouched original; huge documents use bounded/streaming loads |

@@ -1,5 +1,7 @@
 # AgentCowork — Product Specification (SPEC)
 
+> **DEC-054/055 target amendment (2026-09-28):** The frozen v1 text below records its historical baseline. The final product contract now includes durable Missions, agent-native ownership, scoped ecosystem and the outcome-first Experience in `ARCH/35-MISSION.md`, `ARCH/46-ECOSYSTEM-ARCHITECTURE.md`, `ARCH/48-EXPERIENCE-SURFACES.md` and `ARCH/50-SYSTEM-BLUEPRINT.md`. Those accepted decisions supersede contrary baseline wording, including absolute governance of self-contained external-agent native effects, a first-party Native engine, and scope-based deferrals. The target is a local/cloud capable architecture; actual cloud execution and every adapter require implementation evidence. `ARCH/08-REQUIREMENTS.md` and `TODO.md` carry the amended work. No current superiority claim is made.
+
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P5). **Authority:** root for **WHAT** the product must be (`ARCH/00-INDEX.md` §2). HOW lives in `ARCH/03-HLD.md` and the module docs; schemas in `ARCH/06-DATA-MODEL.md`/`07-CONTRACTS.md`; flows in `ARCH/40-FLOWS.md`.
 > **P7 pass (2026-09-26):** line-checked; requirements registry (`ARCH/08-REQUIREMENTS.md`) cross-referenced.
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
@@ -17,12 +19,12 @@ Working positioning: *one workspace, every model, every tool.* It is an AI-nativ
 
 | # | Principle |
 |---|---|
-| P-01 | Core is the brain; every surface is a projection. |
+| P-01 | Core owns durable Mission, Work and shared-plane truth; each external agent owns its reasoning loop; every UI surface is a projection. |
 | P-02 | Work is the universal execution abstraction. |
 | P-03 | Agent ≠ Model ≠ Provider. |
 | P-04 | Capability describes *what*; provider describes *who*. |
 | P-05 | Protocols (MCP/ACP/CLI/HTTP/plugins) are adapters, never the center. |
-| P-06 | One governed path for every externally visible effect; control path bounded, effect path asynchronous. |
+| P-06 | One governed path for every Core-mediated externally visible effect; a self-contained external agent's native effects have distinct observed/reported provenance and remain under its own policy. |
 | P-07 | Artifacts and receipts are first-class, durable, versioned. |
 | P-08 | Domain runtimes own specialized complexity; the kernel stays small. |
 | P-09 | Context: infrastructure in Core, control in the agent. |

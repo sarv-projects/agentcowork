@@ -1,5 +1,7 @@
 # 21 — World Model
 
+> **DEC-055 Experience integration:** Workbench selections and Library retrieval reference World/Artifact identities plus observed version and location, never a path or window caption alone (`48` §§5–6). Browser/desktop takeover invalidates observations until a new snapshot. World facts carry source, freshness and confidence; they are context candidates, not Mission requirements or policy authority.
+
 > **DEC-054 amendment:** Mission resume queries freshness-stamped World objects and external resource versions to detect drift before mutation; it does not copy World state into Mission or grant the agent global observation. Stable file/repository identity and artifact dependency edges support selective invalidation (`35`, `36`).
 
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P2).

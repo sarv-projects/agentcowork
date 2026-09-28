@@ -20,6 +20,7 @@
 |---|---|
 | `id` · `name` · `type` · `mime_type` | identity + classification |
 | `source` | `agent` · `workflow` · `user` · `worker` |
+| `origin` | `generated` · `uploaded` · `imported` · `linked`; orthogonal to producing `source` |
 | owner refs | `session_id?` · `run_id?` · `workflow_id?` · `agent_id?` · `workspace_id?` |
 | `version` | immutable per version; `parent_artifact?` for lineage (e.g. derived reports) |
 | `location` | storage URI (managed store or workspace-file reference) |
@@ -51,6 +52,8 @@ Rules:
 
 ## 4. Library (DM-023)
 
+**DEC-055 target:** The user-facing Library is one searchable place for generated, uploaded, imported and linked work products as well as saved templates, skills and workflows. Artifact origin is separate from Library membership: an uploaded file can be visible in the workspace inventory without being promoted to a reusable template. Every item exposes source kind, active version, MIME/type, size, creator/importer, origin Work/Mission, permissions, extraction/index status, validation status and dependency/staleness status. Filters apply to both metadata and permitted full-text search. Exact-version retrieval includes page/cell/slide/line/time anchors and parser confidence; extraction errors never become invented content. Content changes re-index the new version and invalidate downstream derivations. Revocation, deletion and workspace switching remove the item from unauthorized search results and agent context. `48` owns presentation; `25` owns file identity/freshness, format/extraction providers yield content, `27` owns indexing/query; this module owns inventory/version/provenance and dependency edges.
+
 | Field | Meaning |
 |---|---|
 | `kind` | `agent` · `skill` · `workflow` · `connector` · `plugin` · `template` · `prompt` · `saved_artifact` |
@@ -71,6 +74,8 @@ Exchange via refs only: `artifact_id` · `mime_type` · `uri`. Supported verbs (
 - Explicit delete is a user/authorized operation and is audited (INV-24); Library items may outlive their originating work.
 
 ## 7. Previews & rendering handoff
+
+**Workbench contract (DEC-055):** `48` owns tab identity, layout, selection and user interaction. This module returns immutable version refs and preview/provider capability metadata. A selected range is `(artifact identity, version, typed location)` rather than a pasted caption. Office/PDF/image preview support is independent of edit/round-trip support; an unsupported editor offers read-only preview or native-app fallback with an explicit warning. Edit/save creates a new version only after the domain provider validates its result; no UI control may imply lossless editing of an unprobed format. Managed artifact previews use isolated renderers and cannot inherit app or vault privileges.
 
 Previews are **projections** (thumbnail/render refs) produced by domains (`22`–`24`) — artifacts store refs, not pixels. The UI opens them through the universal document surface (`AGENTCOWORK-UI.md`); opening/rendering consumes zero model tokens (DEC-015).
 

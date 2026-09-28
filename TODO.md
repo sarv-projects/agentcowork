@@ -316,6 +316,29 @@ Re-cut by owning behaviour from the ledger's 24-line P0 register; the register's
 - **Eleven study claims about our code are wrong** (ledger §7.1) and produced no task. Three resolved to `present` and are not rows at all (`UXL-150` the event self-routing test exists at `lib/chat-event-routing.test.ts:86`; `UXL-116` the nav is 44 sections, counted at `store.ts:893-945`; `UXL-111` committed turns are editable and forkable). Three were false `title`-only positives and were dropped at the ledger (`message-bubble.tsx:534-582`, `tool-chip.tsx:266-286`). One survives only as its corrected residual (`UXL-117`, the no-results state already exists at `settings-panel.tsx:342-354`). The one contradiction that *creates* work — the missing error boundary — is `TASK-UI-029`, held at `[!]` with its exact check.
 - **`REQ: gap — needs a new REQ` is a finding, not a placeholder.** 16 tasks in this wave have no registered requirement covering part or all of their behaviour (and `TASK-UI-024` / `TASK-UI-023` / `TASK-TRUST-009` add a `DM-*` / `CTR-*` on top); the gap is recorded so `ARCH/08` can be extended under `AGENTS.md` §16 rather than worked around.
 
+### W6 — Mission and final experience (DEC-054/055; design accepted, implementation pending)
+
+This wave is the implementation backlog for the amended architecture. The historical W0–W5 plan and completed code claims remain as recorded; no row below is marked done merely because its design is written. Dependency order: stabilize existing Work/events/trust/artifacts → bind external agents and scoped ecosystem → Mission dispatch/recovery → Workbench/Library and workflows → run `ARCH/49-TEST-CASES.md` on pinned builds. The release gate is evidence in `ARCH/42-EVIDENCE-MAP.md`, not a paper checklist.
+
+| ID | Task | REQ | Owner / dependency | Test slot | Status |
+|---|---|---|---|---|---|
+| `TASK-MISSION-001` | Durable GoalContract, requirements, PlanNodes, plan versions and Work attempt links | `REQ-MISSION-001…003` | `35`, existing Work/events | `TEST-MISSION-001` (pending) | `[ ]` |
+| `TASK-MISSION-002` | Outcome/evidence evaluator, requirement impact/invalidation and honest stop decision | `REQ-MISSION-004`, `REQ-MISSION-006` | `36`, `34`, artifacts | `TEST-MISSION-002` (pending) | `[ ]` |
+| `TASK-MISSION-003` | Environment fingerprint, restart reconciliation, bounded retry/no-progress, branch-local human wait | `REQ-MISSION-005`, `REQ-MISSION-007` | `36`, Work/runtime | `TEST-MISSION-003` (pending) | `[ ]` |
+| `TASK-ECO-001` | Read-only staged agent discovery, capability negotiation and safe session overlays | `REQ-ECO-001…003` | `46`, ACP/channels, agent adapters | `TEST-ECO-001` (pending) | `[ ]` |
+| `TASK-ECO-002` | Native-vs-Core provenance, scoped MCP/skills/plugins and heterogeneous child handoff/integration | `REQ-ECO-004…006` | `46`, Trust, agent plane, Mission | `TEST-ECO-002` (pending) | `[ ]` |
+| `TASK-LEARN-001` | Capture successful procedure, sanitize and evaluate candidate skill/workflow; external n8n/Activepieces provider integration | `REQ-LEARN-001…002` | `37`, workflow, skill registry | `TEST-LEARN-001` (pending) | `[ ]` |
+| `TASK-UXQ-001` | Composer `+`/`@`/`/`, agent and conditional model picker, access chip, voice/send/steer/queue and durable drafts | `REQ-UXQ-003` | `48`, agent binding, Trust | `TEST-UXQ-001` (pending) | `[ ]` |
+| `TASK-UXQ-002` | Outcome-based left navigation, first-run journey, searchable Settings and truthful agent/provider sign-in panel | `REQ-UXQ-001`, `REQ-UXQ-004` | `48`, `46`, channels | `TEST-UXQ-002` (pending) | `[ ]` |
+| `TASK-UXQ-003` | Resizable Workbench with browser/takeover, file tree/worktree, PDF/Office/code/media tabs, typed selection, edit conflict/fallback | `REQ-UXQ-005` | `48`, files/browser/computer/office/artifacts | `TEST-UXQ-003` (pending) | `[ ]` |
+| `TASK-UXQ-004` | Safe complete chat renderer: math, images, tables, citations, diagrams, interactive artifact isolation and accessible streaming | `REQ-UXQ-006` | `48`, UI renderer | `TEST-UXQ-004` (pending) | `[ ]` |
+| `TASK-UXQ-005` | Library source filters, metadata, indexed exact-version retrieval, permissions, dependencies and stale propagation | `REQ-UXQ-007` | `29`, files/search/context/world | `TEST-UXQ-005` (pending) | `[ ]` |
+| `TASK-UXQ-006` | Effective per-agent/session/workspace/Mission extension scope, native inventory and collision/revocation UI | `REQ-UXQ-008` | `46`, `31`, `48`, Trust | `TEST-UXQ-006` (pending) | `[ ]` |
+| `TASK-UXQ-007` | Agents/subagents panel, bounded heterogeneous team dispatch, result integration, child provenance and branch-local blockers | `REQ-UXQ-009` | `15`, `35`, `48` | `TEST-UXQ-007` (pending) | `[ ]` |
+| `TASK-UXQ-008` | Workflow-to-skill and recorded-procedure lifecycle with review, versioning and trigger/run UI | `REQ-UXQ-010` | `20`, `37`, `48` | `TEST-UXQ-008` (pending) | `[ ]` |
+| `TASK-UXQ-009` | Run the model-agnostic product ladder and matched competitor study; publish raw outcomes, failure cases and accessibility results | `REQ-UXQ-002` | `49`, `47`, `42`; requires implementation above | `TEST-UXQ-009` (pending) | `[ ]` |
+| `TASK-PROD-005` | Re-home `scripts/check-doc-sync.mjs` from archived `DESKTOP-APP-SPEC.md` to live `AGENTCOWORK-SPEC.md`/`ARCH` ownership and update its expected capability chain | Infrastructure gate; no user-facing REQ (the existing `REQ-PROD-005` is token discipline) | doc sync gate, product/architecture registries | `TEST-PROD-005` (pending) | `[ ]` |
+
 ## History
 
 > **Non-authoritative.** The v0-era ledger was reworked in P7 because its phase structure (Stage 0 · HARDENING · PHASE 0–12 · P13–P71 queues) and its copied v0 spec contradict the v1 document set: nothing below is a contract, and the v1 authorities win. `TODO.md` was exempt from the v1 archive (`ARCH/00-INDEX.md` §10) precisely so this record could be carried forward, not rewritten.

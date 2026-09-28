@@ -1,5 +1,7 @@
 # AGENTCOWORK-UI — UI Architecture: shell · DocumentSurface · chat · composer
 
+> **DEC-055 target amendment (2026-09-28):** `ARCH/48-EXPERIENCE-SURFACES.md` is the final interaction HLD/LLD. This document is the frozen v1 baseline and source-path inventory. Where it prescribes a first-party Native picker, obligatory Work mode, permanently exposed model/reasoning/context controls, `/eaios:*` host commands, or a separate older shell, `48` supersedes it. New UI work follows `48`, the requirement registry, and the scenario oracles in `ARCH/49-TEST-CASES.md`.
+
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P5).
 > **P7 pass (2026-09-26):** line-checked; requirements proposed (`REQ-UI-*`, Requirements section).
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
@@ -110,7 +112,7 @@ The 22 viewports are a *capability* count, not a *navigation* count (`ev: eviden
 | **Browser** | Guard-mediated browsing | `views/browse-view.tsx`; navigation routes through `openInBrowser` (never a bare webview navigation) |
 | **Terminal** | Session terminal | `views/shell-view.tsx` |
 | **Runs** | The one run surface + the runs list | `views/run-view.tsx` (+ §6) |
-| **Context** | Context inspector (window/usable/current, per-source breakdown, pins, excludes, checkpoint age) | **New panel**; data specified in `ARCH/16-CONTEXT.md` §7; `StreamStats.ctxPct` already exists (`ev: ui/src/lib/store.ts:265-269`) | 
+| **Context** | Context inspector (window/usable/current, per-source breakdown, pins, excludes, checkpoint age) | **New panel**; data specified in `ARCH/16-CONTEXT.md` §7; `StreamStats.ctxPct` already exists (`ev: ui/src/lib/store.ts:265-269`) |
 
 Remaining viewports — Progress · Trajectory · Blueprint · Kanban · Audit · Storage · Timeline · Generative UI · Artifact · Computer use · Tool output · Local Server · the four Office views — remain openable from the `+` launcher, the palette, and drill-down links (the `Run` view already routes to them through the store's own `addView`, `ev: ui/src/components/views/run-view.tsx:1-21`; `ev: evidence §1.3`).
 

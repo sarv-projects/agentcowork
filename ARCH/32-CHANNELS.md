@@ -1,5 +1,7 @@
 # 32 — Channels (Surfaces & Protocols)
 
+> **DEC-055 target amendment:** Mobile/remote are target experience projections when a real remote/cloud executor and authenticated channel exist; “later” below is the frozen v1 implementation phase, not a capability exclusion. `48` owns user-facing navigation/composer/Workbench and `46` owns non-invasive external-agent attachment. Projection claims apply to Core-mediated surfaces; native agent tools/config remain owned by the agent.
+
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P3).
 > **P7 pass (2026-09-26):** line-checked; requirements seeded (`REQ-CHAN-*`, Requirements section).
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).

@@ -15,7 +15,7 @@
 1. **Structural parsing is first-class** — tree-sitter + LSP + ripgrep + git; the module picks the cheapest accurate answer per query.
 2. **RepoMap is a projection under a token budget** — never the whole repository.
 3. **Worktrees are per-spawn options** (DEC-029); merges are explicit review steps, never silent.
-4. **Code execution walks the governed path** — capabilities + environments + exec policy; never a direct subprocess from the agent.
+4. **Core-mediated code execution walks the governed path** — capabilities + environments + exec policy. A self-contained external coding agent may run native shell/tools under its own policy; its effects have separate provenance and are reconciled for Mission acceptance (DEC-054).
 5. **Heuristic ≠ certain** — inferred graph edges are labeled as inferred (repo guidance).
 
 ## 2. RepoGraph (index model)

@@ -1,14 +1,14 @@
 # 03 — High-Level Architecture (HLD)
 
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P0) — architecture root for **HOW** (see `ARCH/00-INDEX.md` §2). Module docs derive from this file; conflicts escalate to a `DEC` entry.
-> **Companion docs:** `ARCH/02-THESIS.md` (identity, principles) · `ARCH/06-DATA-MODEL.md` (entities) · `ARCH/07-CONTRACTS.md` (interfaces).
+> **Companion docs:** `ARCH/02-THESIS.md` (identity, principles) · `ARCH/06-DATA-MODEL.md` (entities) · `ARCH/07-CONTRACTS.md` (interfaces) · `ARCH/48-EXPERIENCE-SURFACES.md` (final UX HLD/LLD) · `ARCH/50-SYSTEM-BLUEPRINT.md` (amended whole-system maps).
 > **SDD:** this doc is the L2 architecture layer — it satisfies behaviors registered in `ARCH/08-REQUIREMENTS.md` and must not contradict them; module → REQ traceability accrues in `ARCH/09-FEATURE-MATRIX.md`.
 > **Fleshed:** P7 (2026-09-26) — contract index (§3.1), failure model (§11), non-functional envelope (§12).
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
 
 ## 1. Shape
 
-> **DEC-054 amendment (2026-09-28):** A durable Mission Plane sits between Experience and Work for substantial goals. It owns versioned intent, requirements, adaptive PlanNodes, evidence and stop/recovery decisions (`35`, `36`). It dispatches attempts to the existing Work scheduler; an agent still owns its internal turn plan and native tools. The diagram below is the original lower-plane view. Its `AGX → CAP → TRUST` path describes **shared Core capability calls only**; a self-contained agent's native tool path remains outside Core governance and must be represented separately (`46` §1). The unqualified “every effect” claim elsewhere in this HLD is superseded by DEC-054's mediated-effect boundary.
+> **DEC-054/055 amendment (2026-09-28):** A durable Mission Plane sits between Experience and Work for substantial goals. It owns versioned intent, requirements, adaptive PlanNodes, evidence and stop/recovery decisions (`35`, `36`). It dispatches attempts to the existing Work scheduler; an agent still owns its internal turn plan and native tools. The diagram below is the original lower-plane view; `50` is the amended whole-system diagram and places external agents outside Core. Its `AGX → CAP → TRUST` path describes **shared Core capability calls only**; a self-contained agent's native tool path remains outside Core governance (`46`). The unqualified “every effect” claim elsewhere in this HLD is superseded by DEC-054's mediated-effect boundary. `48` owns the nontechnical-first user surface.
 
 ```mermaid
 flowchart TB
@@ -64,7 +64,7 @@ flowchart TB
 | Experience | Rendering, input, presentation, view state | Domain logic, execution, policy |
 | Work | Lifecycle, checkpoints, scheduling, budgets, cancellation | Reasoning, execution |
 | Orchestration | Delegation, agent graph, workflow control flow | Raw execution |
-| Agent Runtime | Reasoning, context control, planning, model calls | Capability implementation, policy |
+| Agent Runtime / external binding | Adapter normalizes lifecycle and handoffs; the external agent owns reasoning, turn context, native planning/tools/model calls | Core capability implementation or Core policy; Core does not own the agent's native internals |
 | Capability | Semantic operation catalog, resolution, handles, affordances, guidance | Model reasoning |
 | Trust / Control | Policy, permissions, approvals, tickets, egress, custody (vault), audit | Domain logic |
 | Execution | Running provider calls, environments, sandbox, process lifecycle | Deciding *whether* to run |
@@ -169,9 +169,9 @@ USER INTENT
    → EVENT (published)
 ```
 
-- **No shortcuts.** Not `agent → raw MCP tool → side effect`; not `UI → special-cased Office backend`; not `browser feature → its own permission system`; not `external agent adapter → its own capability semantics`.
+- **No shortcuts within Core.** A shared Core capability cannot bypass Guard through an MCP, UI, domain or adapter. An external agent may use its own native tools under its own policy; those effects receive native provenance, never a Core receipt (DEC-054).
 - **Verification depth scales with risk class** (`safe` / `sensitive` / `dangerous`) — defined in `ARCH/34-EFFECT-VERIFICATION.md`.
-- **Receipts are mandatory for externally visible effects.**
+- **Receipts are mandatory for Core-mediated externally visible effects.**
 
 ## 6. Scoping model
 

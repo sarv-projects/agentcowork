@@ -1,5 +1,7 @@
 # 31 — Skills & Plugins
 
+> **DEC-054/055 target amendment:** The host registry owns only host extensions. A discovered agent's native MCPs, skills and plugins remain in its namespace and are at most inventoried read-only. Catalogued, installed, activated and executing are distinct states; effective grant is resolved for each agent binding/session/workspace/Mission and cannot exceed Trust policy. A plugin's bundled components require separate grants. Workflow-to-skill conversion and publication live in `37`, with user controls in `48`; no global auto-mount or silent native-config rewrite is allowed.
+
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P3).
 > **P7 pass (2026-09-26):** line-checked; requirements seeded (`REQ-SKILL-*`, Requirements section).
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).

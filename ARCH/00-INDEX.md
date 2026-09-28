@@ -27,7 +27,7 @@ v0 grew by accretion: 33 ARCH files, 55 research files, a 355 KB spec, a 606 KB 
 - **a pass protocol** that checks architecture viability after every pass (§4, §5),
 - **module-by-module development** — each module doc must state what it owns, what it depends on, what it exposes, and how it fails (§3).
 
-**Kept from v0 (direction that survived verification):** Work-first runtime; one governed execution path for every effect; Capability ≠ Provider; custody invariants (sidecar proposes / Core disposes; keys never leave the vault); native-first capability resolution for agents.
+**Kept from v0 (direction that survived verification):** Work-first runtime; one governed execution path for every Core-mediated effect; Capability ≠ Provider; custody invariants (sidecar proposes / Core disposes for Core-mediated calls; Core-held keys never leave the vault); agent-native tools retain their agent's ownership under DEC-054.
 **Rebuilt or added in v1:** naming layer (AgentCowork / Core); memory architecture (new); world model; workflow engine as Core infrastructure; context split (infrastructure vs control); UI architecture incl. chat rendering; module-by-module interop checks; canonical data-model + contracts as separate shared docs.
 
 ---
@@ -36,13 +36,13 @@ v0 grew by accretion: 33 ARCH files, 55 research files, a 355 KB spec, a 606 KB 
 
 | Layer | Document | Authority over |
 |---|---|---|
-| Product | `AGENTCOWORK-SPEC.md` | **WHAT** the product must be: behavior, contracts, acceptance. Root authority. |
+| Product | `AGENTCOWORK-SPEC.md` + accepted `DEC-054/055` amendments | **WHAT** the product must be: behavior, contracts, acceptance. Frozen baseline is superseded on named boundaries by the later decisions. |
 | Requirements | `ARCH/08-REQUIREMENTS.md` | **WHAT must be verified**: testable behaviors (`REQ-*`) derived from the SPEC, each with acceptance + failure cases. |
 | Traceability | `ARCH/09-FEATURE-MATRIX.md` | The `REQ → design → task → test` map. Owns links only, never content. |
 | Architecture | `ARCH/03-HLD.md` | **HOW** the system is structured. Module docs derive from it. |
 | Module LLD | `ARCH/10..34` | Their module only. MUST NOT contradict HLD/SPEC/contracts. |
 | Shared | `ARCH/06-DATA-MODEL.md`, `ARCH/07-CONTRACTS.md` | Canonical shared entities (DM-*) and interfaces (CTR-*). Module docs own local details only. |
-| UI | `AGENTCOWORK-UI.md` | UI/UX architecture, chat rendering, interaction model. Derives from SPEC + Experience plane. |
+| UI | `ARCH/48-EXPERIENCE-SURFACES.md`; `AGENTCOWORK-UI.md` baseline | Final interaction HLD/LLD is `48`; root UI is source-path/baseline evidence where it conflicts with DEC-055. |
 | Meta | `ARCH/00..05, 40..44` | Navigation, naming, thesis, decisions, invariants, flows, edge cases, evidence, glossary. |
 | Delivery | `TODO.md` | Implementation status only — never a design authority. |
 | Evidence | `ARCHIVE/v0/**`, `ARCHIVE/v1-research/**`, `REPO-COMPARE/**` | Historical/working evidence — never authority. |
@@ -53,7 +53,7 @@ v0 grew by accretion: 33 ARCH files, 55 research files, a 355 KB spec, a 606 KB 
 
 ## 3. Document map
 
-> **DEC-054 amendment (2026-09-28):** The 2026-09-26 frozen baseline is preserved as historical status, then superseded on the named boundaries by DEC-054. New target docs: `35-MISSION` (durable semantic layer), `36-OUTCOME-AND-RECOVERY`, `37-WORKFLOW-SKILL-LIFECYCLE`, `38-EXPERIENCE-QUALITY`, `39-ARCHITECTURE-DELIVERY`, `45-REFERENCE-RESEARCH`, `46-ECOSYSTEM-ARCHITECTURE`, `47-MARKET-AND-BENCHMARKS`. The source-pinned evidence ledger is `45`; official product comparison is `47`; target HLD is `03` + `35` + `46`; Mission LLD is `35`–`37`; requirements and traceability remain `08`/`09`. `TODO.md` is deliberately not updated in this architecture pass. Legacy count statements in this document refer to the frozen baseline, not the amended registry.
+> **DEC-054/055 amendment (2026-09-28):** The 2026-09-26 frozen baseline is historical status, superseded on named boundaries by DEC-054/055. Target HLD is `03` + `35` + `46` + `50`; Mission LLD is `35`–`37`; Experience HLD/LLD is `48`; model-agnostic scenario oracles are `49`; evidence ledger is `45`, market comparison `47`; requirements/matrix are `08`/`09` and implementation work is `TODO.md` W6. Historical count statements below refer to earlier freezes, not the amended registry.
 
 | ID | File | Scope | Purpose | Status |
 |---|---|---|---|---|
@@ -104,8 +104,11 @@ v0 grew by accretion: 33 ARCH files, 55 research files, a 355 KB spec, a 606 KB 
 | 45 | `ARCH/45-REFERENCE-RESEARCH.md` | Evidence | Pinned source observations and limits | DEC-054 evidence |
 | 46 | `ARCH/46-ECOSYSTEM-ARCHITECTURE.md` | HLD | External agent ownership, scoped ecosystem, heterogeneous teams | DEC-054 target |
 | 47 | `ARCH/47-MARKET-AND-BENCHMARKS.md` | Evidence | Official competitor capability snapshot and comparison protocol | DEC-054 evidence |
+| 48 | `ARCH/48-EXPERIENCE-SURFACES.md` | Experience | Final composer, navigation, Workbench, Library, settings and team interaction HLD/LLD | DEC-055 target |
+| 49 | `ARCH/49-TEST-CASES.md` | Quality | Model-agnostic product scenario ladder and pass oracles | DEC-055 target |
+| 50 | `ARCH/50-SYSTEM-BLUEPRINT.md` | Cross | Mermaid ownership, lifecycle, effect, artifact and team maps | DEC-055 target |
 | — | `AGENTCOWORK-SPEC.md` | Product | Product contract (WHAT) — root authority | Frozen v1 |
-| — | `AGENTCOWORK-UI.md` | UI | UI architecture + chat rendering spec | Frozen v1 |
+| — | `AGENTCOWORK-UI.md` | UI | Frozen baseline and source-path inventory; `48` supersedes conflicting target interactions | Frozen v1 baseline |
 | — | `README.md` (root) | Product | Repo landing page — v1 sync | Frozen v1 |
 | — | `AGENTS.md` (root) | Process | Agent operating instructions — v1 synced 2026-09-26 | Done |
 

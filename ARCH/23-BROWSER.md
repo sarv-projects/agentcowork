@@ -16,13 +16,13 @@
 **Never owns:** anti-bot/CAPTCHA evasion (`DEC-016`, `INV-21` — never a design goal) · general computer use (`24`) · network policy (`12`) · artifact storage (`29`).
 
 1. **Managed Chromium default** — predictable version, isolated profile, fast launch, reliable automation, headless/background operation; no dependency on the user's setup.
-2. **Adapters are integrations, not forks** — Chrome/Edge attach/launch the user's browser (existing logins, consent-gated); Firefox is an automation target; Opera is a Chromium-based adapter. Capability differences are declared per adapter.
+2. **Adapters are integrations, not forks** — Chrome/Edge attachment or launch is offered only when a supported debugging/extension bridge is probed and the user consents. Existing logins may not be transferable. Firefox/Opera adapters are capability-probed targets, not assumed parity. Differences are declared per adapter.
 3. **Structured-first inside the browser** — connectors/APIs (`28`) → DOM/AX structured ops → CDP trusted input → screenshot vision (`24`) only when structure fails.
 4. **Refs are ephemeral and not a security boundary** — every ref is best-effort until the next event.
 
 ## 2. Runtime model
 
-- **Instances** are environments (`19`): per-workspace/per-task profiles; isolated cookies/storage by default; an explicit “user browser” mode attaches to the user's Chrome/Edge with its profile.
+- **Instances** are environments (`19`): per-workspace/per-task managed profiles; isolated cookies/storage by default. An explicit “user browser” mode attaches to Chrome/Edge only through a supported, consented bridge; failure leaves the managed profile path available.
 - **Lifecycle:** launch → ready → operate → park (hibernate) → close; crash recovery re-launches and re-establishes targets; tabs survive where the profile allows.
 - **Visibility:** headless for background work; headful with a visible indicator when the agent operates; **user takeover** is supported (user and agent share the tab; the agent yields input).
 - **Downloads/uploads:** downloads land in a managed staging area and become artifacts (29); uploads are user-gated or policy-gated.
