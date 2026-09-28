@@ -50,6 +50,8 @@
 | World | `world.file.changed` · `world.tab.navigated` · `world.window.focused` · `world.rescan` |
 | Comms | `email.arrived` · `message.received` · `calendar.event.upcoming` |
 | Provider | `provider.health.changed` · `provider.epoch.bumped` |
+| Channel | `channel.health.changed` (`connecting` · `live` · `reconnecting` · `auth_blocked` · `stale` · `closed`; source/reason/last-confirmed time) · `channel.approval.observed` (Core approval ref or native-reported provenance) |
+| Session | `session.forked` (parent session, origin message/checkpoint ref, new session; no Work implied) |
 
 Namespacing rules: `<domain>.<noun>.<verb>`; additive evolution preferred; deprecations are declared with a window. `model.delta` (streaming tokens) is **ephemeral delivery only** — deltas are not persisted as individual events (the settled message is). Subagent events follow DEC-036: `subagent.spawned` is emitted before the first prompt dispatch, and `subagent.finished` carries status · error · tool calls · turns · duration · tokens · output · `will_wake`.
 

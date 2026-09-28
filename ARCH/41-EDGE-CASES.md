@@ -121,7 +121,7 @@
 | EDGE-074 | Send outcome uncertain | `needs_attention` + receipt of the attempt; **never duplicate sends**. |
 | EDGE-075 | Surface crash | Isolated; Core and other surfaces unaffected. |
 | EDGE-076 | Event storm saturates the bus | Bounded subscriber queues with lag markers and pull-based catch-up; producers backpressure; memory never grows unbounded (`30` §4, `11` §3). |
-| EDGE-077 | External agent disconnects mid-run (ACP/API drop) | Work continues as durable Work; the gateway session is held; re-attach replays the filtered stream from the last ack — no orphaned internal state (`32` §3, §7; `30` §4; `11` §4). |
+| EDGE-077 | External agent disconnects mid-run (ACP/API drop) | Work identity and recorded progress persist. Reattach replays the filtered stream from the last ack if supported. Execution continues only under a confirmed live executor; otherwise Work becomes uncertain and is reconciled before retry or completion (`32` §5/§7; `19` §Remote/cloud execution handoff; `11` §4). |
 | EDGE-078 | Two surfaces act on one session concurrently | One foreground lane per session; surfaces are projections and cannot fork state; ordering derives from the sequence log — no dual-writer (`11` §3, `32` §1, INV-06). |
 | EDGE-079 | External-agent event vocabulary changed underneath a client | The projection is a declared stable subset with deprecation windows; clients get a typed version error naming the supported window — never a silently missing stream (`30` §3, §6; `32` §8). |
 

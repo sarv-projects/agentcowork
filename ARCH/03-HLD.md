@@ -8,7 +8,7 @@
 
 ## 1. Shape
 
-> **DEC-054/055 amendment (2026-09-28):** A durable Mission Plane sits between Experience and Work for substantial goals. It owns versioned intent, requirements, adaptive PlanNodes, evidence and stop/recovery decisions (`35`, `36`). It dispatches attempts to the existing Work scheduler; an agent still owns its internal turn plan and native tools. The diagram below is the original lower-plane view; `50` is the amended whole-system diagram and places external agents outside Core. Its `AGX → CAP → TRUST` path describes **shared Core capability calls only**; a self-contained agent's native tool path remains outside Core governance (`46`). The unqualified “every effect” claim elsewhere in this HLD is superseded by DEC-054's mediated-effect boundary. `48` owns the nontechnical-first user surface.
+> **DEC-054/055/056 amendment (2026-09-28):** Mission owns durable goals; Work owns execution attempts; the selected external agent owns its native reasoning loop, model, tools and private configuration. Core governs only shared Core capability calls. `48` owns the nontechnical-first surface, and `50` provides the detailed cross-plane maps.
 
 ```mermaid
 flowchart TB
@@ -19,40 +19,38 @@ flowchart TB
     CH["Channels · API · Mobile"]
   end
 
-  subgraph CORE["Core"]
-    WORK["Work Plane<br/>Work · Step · Task · Session · Run · Checkpoint · Scheduler"]
-    ORCH["Orchestration<br/>Delegation · Agent Graph"]
-    AGX["Agent Runtime<br/>bound engine + external adapters"]
-    CTX["Context Infrastructure + Memory"]
-    MODELS["Model Plane<br/>registry · router · adapters"]
-    CAP["Capability Plane<br/>Registry · Resolver · Handles · Affordances · Guidance"]
-    TRUST["Trust / Control<br/>Policy · Guard · Approvals · Tickets · Vault"]
-    EXEC["Execution Plane<br/>Providers · Environments · Sandbox"]
-    DOM["Domain Runtimes<br/>Office · Browser · Computer · Files · Code · Search · Comms"]
-    WF["Workflow Engine"]
-    WORLD["World Model<br/>scanner · registries · graph · events"]
-    VER["Effect Verification<br/>validate · render · reconcile"]
-    ART["Artifacts + Receipts"]
-    EVT["Events"]
+  subgraph CORE["Core modular monolith"]
+    M["Mission<br/>contract · PlanNodes · evidence · stop"]
+    W["Work<br/>attempts · sessions · checkpoints · scheduler"]
+    B["Agent binding<br/>lifecycle · capability probe · context projection"]
+    WF["Workflow<br/>version-pinned operational DAG"]
+    C["Shared capability resolver"]
+    T["Trust<br/>policy · approval · tickets · vault"]
+    P["Provider and environment adapters"]
+    V["Effect verification · receipt"]
+    E["Events · artifacts · world · memory · context"]
+    O["Mission outcome evaluation"]
   end
+  A["External agent<br/>native reasoning · model · tools · private config"]
+  N["Agent-native effects<br/>own policy and provenance"]
 
-  XP --> WORK
-  WORK --> ORCH
-  ORCH --> AGX
-  ORCH --> WF
-  AGX --> CTX
-  AGX --> MODELS
-  AGX --> CAP
-  WF --> CAP
-  CAP --> TRUST
-  TRUST --> EXEC
-  EXEC --> DOM
-  DOM --> VER
-  VER --> ART
-  ART --> EVT
-  WORLD --> CTX
-  WORLD --> WF
-  EVT --> WORLD
+  XP --> M
+  XP --> W
+  M --> W
+  W --> B
+  W --> WF
+  B --> A
+  A -->|proposes shared call| C
+  A -.->|native tool call| N
+  WF --> C
+  C --> T
+  T --> P
+  P --> V
+  V --> E
+  E --> M
+  M --> O
+  O --> XP
+  N -.->|reported or observed, never Core receipt| E
 ```
 
 *The diagram shows primary flow, not every edge. The authoritative edge list is the module map (§3) plus each module doc's contract section.*
@@ -62,9 +60,10 @@ flowchart TB
 | Plane | Owns | Never owns |
 |---|---|---|
 | Experience | Rendering, input, presentation, view state | Domain logic, execution, policy |
+| Mission | Versioned goal contracts, semantic PlanNodes, requirement/evidence truth, replanning and stop | Agent turn reasoning, Work scheduling, native agent tools |
 | Work | Lifecycle, checkpoints, scheduling, budgets, cancellation | Reasoning, execution |
-| Orchestration | Delegation, agent graph, workflow control flow | Raw execution |
-| Agent Runtime / external binding | Adapter normalizes lifecycle and handoffs; the external agent owns reasoning, turn context, native planning/tools/model calls | Core capability implementation or Core policy; Core does not own the agent's native internals |
+| Agent binding | Adapter normalizes lifecycle and handoffs; the external agent owns reasoning, turn context, native planning/tools/model calls | Core capability implementation or Core policy; Core does not own the agent's native internals |
+| Workflow | Reusable, version-pinned operational graph, triggers and waits | Mission goal/requirement truth or native agent reasoning |
 | Capability | Semantic operation catalog, resolution, handles, affordances, guidance | Model reasoning |
 | Trust / Control | Policy, permissions, approvals, tickets, egress, custody (vault), audit | Domain logic |
 | Execution | Running provider calls, environments, sandbox, process lifecycle | Deciding *whether* to run |
@@ -109,6 +108,8 @@ flowchart TB
 | 37 | Workflow–Skill Lifecycle | Capture, proposal, evaluation and promotion; external workflow adapters | workflow, skills, trust, eval |
 | 38 | Experience Quality | Progressive Mission Control, transparency and quality measurement | channels, mission, evidence |
 | 46 | Ecosystem HLD | Native-vs-shared ownership, scoped extensions and heterogeneous teams | agent, capability, trust, channels |
+| 48 | Experience surfaces | Composer, progressive Workbench, Library, settings, agents/team/attention panels | channels, mission, work, artifacts, ecosystem |
+| 50 | System blueprint | Cross-plane Mermaid ownership and lifecycle maps (navigation only) | module contracts |
 | 40–42 | Cross | Flows, edge cases, evidence map | all |
 | 43 | Glossary | Canonical terms — defined once, linked back (meta) | — |
 | 44 | Absorb Register | Competitor absorb matrix + licensing ledger | archive/REPO-COMPARE evidence |
@@ -141,33 +142,37 @@ Every cross-module edge is named in `ARCH/07-CONTRACTS.md`. A module with no own
 | Skills & Plugins (31) | CTR-020 `SkillResolver` |
 | Channels (32) | CTR-022 `AgentGateway` |
 | Effect Verification (34) | CTR-023 `EffectVerifier` |
+| Mission (35) | CTR-027 `MissionService` · CTR-028 `PlanService` |
+| Outcome & Recovery (36) | CTR-029 `OutcomeEvaluator` · CTR-030 `RecoveryCoordinator` |
+| Workflow–Skill Lifecycle (37) | CTR-031 `ProcedureLifecycle` |
+| Experience settings (48) | CTR-032 `PreferenceService` |
 | Cross (40–42) · Register (44) | — |
 
 ## 4. Dependency rules
 
-1. **Direction is downward only:** Experience → Work/Orchestration → Agent/Capability → Trust → Execution → Domains; cross-cutting services (events, artifacts, memory, world) are leaves others may depend on, never the reverse.
+1. **Ownership follows named contracts:** Experience → Mission or bounded Work → agent binding/workflow → shared Capability → Trust → provider/effect verification. Events, artifacts, memory and world are shared substrates with explicit read/write contracts; Mission consumes their projections. External agents remain outside Core.
 2. **Kernel stays small.** No domain logic, no orchestration, no policy in the kernel.
-3. **One implementation per responsibility.** No second orchestrator, registry, scheduler, provider system, or permission system — including “temporary” ones.
+3. **One owner per responsibility.** Mission owns semantic planning; Work owns execution admission; Workflow owns version-pinned operational graphs. Do not duplicate any of their schedulers, registries, provider systems or permission systems — including “temporary” ones.
 4. **Adapters at the edge.** MCP/ACP/CLI/HTTP/remote live only in Providers/Channels; nothing above Capability knows the transport.
 5. **Domains never govern themselves.** Domain runtimes execute; Trust decides; the kernel never special-cases a domain's permission path.
 6. **External agents are clients of the public contract** — they MUST NOT be given internal module access to make integration easier.
 
 ## 5. The governed execution path
 
+```mermaid
+flowchart LR
+  U[User intent] --> M[Mission or bounded Work]
+  M --> A[Bound agent or workflow]
+  A -->|shared Core action| C[Resolve semantic capability and provider handle]
+  C --> G[Guard: allow, ask or deny]
+  G --> T[Scoped, expiring ticket]
+  T --> X[Asynchronous execution]
+  X --> V[Validate, render and reconcile]
+  V --> R[Receipt and event]
+  R --> M
 ```
-USER INTENT
-   → WORK (create/resume)                     ◄── control path: bounded, synchronous
-   → CAPABILITY (resolve semantic operation)
-   → PROVIDER (resolver picks implementation)
-   → HANDLE (cached, epoch-checked)                control path target:
-   → GUARD (ALLOW | ASK | DENY)                    p50 < 2 ms · p95 < 10 ms · p99 < 25 ms
-   → TICKET (scoped, time-boxed authorization)
-   → EXECUTE (enqueued)                        ◄── effect path: async, observable
-   → EFFECT
-   → VERIFY (validate / render / reconcile)
-   → RECEIPT (durable evidence)
-   → EVENT (published)
-```
+
+The cached, guarded **control path** targets p50 < 2 ms, p95 < 10 ms and p99 < 25 ms; the effect path is asynchronous and observable. These targets exclude an external agent's native tool path.
 
 - **No shortcuts within Core.** A shared Core capability cannot bypass Guard through an MCP, UI, domain or adapter. An external agent may use its own native tools under its own policy; those effects receive native provenance, never a Core receipt (DEC-054).
 - **Verification depth scales with risk class** (`safe` / `sensitive` / `dangerous`) — defined in `ARCH/34-EFFECT-VERIFICATION.md`.
@@ -185,7 +190,7 @@ USER INTENT
 | Executing | Is it running right now? | An actual tool call / session / worker |
 
 **Five scopes** (outer → inner): **Global/User → Workspace/Project → Agent → Session → Run/Task.**
-Resources are installed/available at Global or Workspace and never duplicated per agent; only activation and execution are scoped narrowly.
+These states/scopes govern **host-owned** resources. Installation/catalog visibility may be Global or Workspace; effective grants and activation are resolved per binding, Session and Work. A discovered agent's native extensions stay in its own configuration and policy domain (`46`); the host may show a read-only inventory but does not merge those resources into a global grant.
 
 ## 7. Cross-cutting subsystems
 
@@ -194,7 +199,7 @@ Resources are installed/available at Global or Workspace and never duplicated pe
 - **World Model** (`21`): the machine explains itself — registries + graph + event stream; consumers query, they do not screenshot by default.
 - **Events** (`30`): one event store; UI projections, workflow triggers, world updates, audit, and usage/cost telemetry all derive from it.
 - **Artifacts & Receipts** (`29`): outputs of work vs reusable inventory (Library); promotion is explicit.
-- **Model Plane** (`18`): one catalog, one router; every engine and every internal consumer asks the router, never a vendor SDK directly.
+- **Model Plane** (`18`): one catalog/router for Core-owned model consumers and explicit agent bindings that support host model selection. A discovered agent can retain its own model configuration and native provider path (`46`).
 
 ## 8. Module interop matrix (first cut — expanded per module in P2/P3, verified in P6; re-verified in P9)
 
@@ -202,6 +207,7 @@ Resources are installed/available at Global or Workspace and never duplicated pe
 |---|---|---|
 | Kernel | types, ids, errors, config | all |
 | Work | Work service, lanes, checkpoints | agents, workflows, UI, scheduler consumers |
+| Mission | contract/plan versions, PlanNode readiness, outcome status | Experience, Work dispatcher, evidence and recovery |
 | Trust | Guard decisions, tickets, approvals, projections | capability, providers, channels, domains |
 | Capability | resolve/invoke, handles, descriptors | agents, workflows, UI (deterministic ops) |
 | Providers | adapter registry, health, events | capability |
@@ -219,15 +225,9 @@ Resources are installed/available at Global or Workspace and never duplicated pe
 | Channels | Agent Gateway, surface mappings | external agents, UI/CLI/IDE |
 | Verification | validated effects + render/verify results | capability (pre-receipt) |
 
-## 9. Implementation order (after docs freeze; not current work)
+## 9. Implementation order
 
-1. **Six core contracts first:** `AgentEngine` (CTR-001), `AgentSession` (CTR-002), `ContextController` + `ContextProvider` (CTR-007/006), `CapabilityBroker` (CTR-009), `DelegationService` (CTR-021), `ModelAdapter` (CTR-014).
-2. **Minimal native runtime:** model streaming, tool loop, project rules, RepoGraph/RepoMap, filesystem, shell, git, parallel workers, background execution, structured-checkpoint compaction, Core capability access.
-3. **Bolt on domains:** browser, Office, computer-use, MCP provider adapter, plugins/skills, ACP server.
-4. **Workflow Engine** wired to Capability Plane and World Model events.
-5. **World Model** — scanner, registries, graph, incremental updates.
-6. **Experience Plane** — shell, Workbench, universal document surface, composer with the namespace protocol.
-7. **Multi-surface** — CLI, IDE/ACP, API, mobile, cloud/remote handoff.
+`ARCH/39-ARCHITECTURE-DELIVERY.md` and `TODO.md` own the ordered implementation plan. The dependency sequence is: stabilize shared Work/Trust/capability/event/artifact contracts; bind and probe external agents without replacing their native loop; add Mission atop Work; complete Office/browser/desktop/files/connected-app capability providers; deliver the progressive Experience surfaces; then extend durable remote/cloud handoff and cross-device channels. Each stage must demonstrate its user-facing acceptance criteria before being called delivered. Horizon Code is a future external binding, not a Core reasoning engine (DEC-052/054).
 
 ## 10. Architecture risks to resolve in module passes
 

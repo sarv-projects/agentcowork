@@ -49,6 +49,7 @@
 | CTR-029 | `MissionRecovery` (fingerprint/impact/reopen) | 36 | 35, 11, 19, 29 | Proposed (DEC-054) |
 | CTR-030 | `AgentBindingAdapter` (negotiate/launch/steer/status/receipt) | 15 | 35, 11, 32 | Proposed (DEC-054) |
 | CTR-031 | `ExternalWorkflowAdapter` (invoke/status/cancel/callback) | 20 | 35, 11, 37 | Proposed (DEC-054) |
+| CTR-032 | `PreferenceService` (registry/effective/snapshot/compare-and-swap/profile) | 48 with Core storage | UI, 12, 15, 32 | Proposed (DEC-056) |
 
 **Domain contracts.** Office (22), Browser (23), Computer Use (24) and Comms (28) deliberately own no named contract yet: their operations resolve through CTR-009 as capability descriptors, and a module pass registers a contract here only if a non-capability edge appears (see `ARCH/03-HLD.md` §3.1). Search (27) implements the one Core search service behind the **CTR-006 `context.search`** façade (owned by `16`) and resolves its other operations through CTR-009 — no separate Search contract is minted.
 
@@ -136,6 +137,8 @@ policies() → DelegationPolicyEntry[]
 **CTR-018 `ArtifactService` + `ReceiptService`** — `create/version/get/link/export`, `resolveSelection(artifact_id,version,typed_location)`, `list(filters,scope)` and `dependencyStatus(version)` for artifacts; `record/get/replay` for Core-effect receipts. Immutable versions; provenance mandatory; index state and exact-version location accompany retrieval; Core-effect receipts reference tickets and verification; native observations/reports use distinct evidence types (INV-07/INV-18, DEC-054/055). Rendering/editing remains in domain providers and the Experience surface, never in this store contract.
 **CTR-019 `EventBus`/`EventStore`** — `publish(event)` · `subscribe(filter) → Stream` · `read(range)` · `replay(from)`. One log; all projections derive from it (INV-23).
 **CTR-023 `EffectVerifier`** — `verify(effect, risk_class) → VerificationRecord`; depth scales with risk (INV-19).
+
+**CTR-032 `PreferenceService`** — `registry()` returns stable key, owner, parser, scope, default and sensitivity; `effective(context)` returns source and revision; `update(key,value,expected_revision)` validates scope and compare-and-swap semantics; `profile_create/preview/apply/archive` operate on non-secret overrides only. Device-local cosmetic state may use the same schema in the UI, but Trust policy and extension grants resolve from Core authority, never from a renderer copy (DEC-056).
 
 ## 5. Cross-contract rules
 

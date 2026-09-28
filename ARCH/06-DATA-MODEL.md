@@ -60,6 +60,7 @@
 | DM-037 | `ExtensionGrant` | `46` | Explicit binding/workspace/Work activation of host MCP/skill/plugin component | active → revoked/expired |
 | DM-038 | `PlanNode` | `35` | Durable semantic unit whose Work attempts can be replaced | proposed → ready/running/verifying → completed/invalidated/superseded |
 | DM-039 | `AgentBinding` | `15` | One actual profile/launch/session capability negotiation with provenance | discovered → negotiated → attached → detached |
+| DM-040 | `SettingsProfile` | `48` | Named, versioned non-secret preference overrides with typed scope and effective-state preview | draft → active/archived |
 
 ### 1.1 Core relationships (load-bearing references)
 

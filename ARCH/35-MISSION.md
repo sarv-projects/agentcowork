@@ -1,6 +1,6 @@
 # 35 — Mission plane
 
-> Status: accepted target architecture 2026-09-28 under DEC-054; implementation pending. Owner: new `agentcowork-mission` module in the existing modular monolith. This is the durable semantic layer above `11-WORK`; it does not own an agent's reasoning loop or a second execution scheduler.
+> Status: accepted target architecture 2026-09-28 under DEC-054; implementation pending. Owner: a Mission module in the existing Rust modular monolith; extract a dedicated crate only if dependency boundaries require it (`39` §Sequencing). This is the durable semantic layer above `11-WORK`; it does not own an agent's reasoning loop or a second execution scheduler.
 
 ## Purpose and boundaries
 

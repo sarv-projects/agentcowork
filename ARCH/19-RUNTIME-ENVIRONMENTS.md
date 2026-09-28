@@ -65,8 +65,12 @@ For privileged collectors (MFT/USN file index, `21` W1) the runtime hosts a smal
 ## 7. Detached work & app lifecycle
 
 - **App start:** process registry rehydrates from work/event state; detached processes are adopted/monitored; strays detected and reconciled (killed or re-attached per policy).
-- **App close:** policy decides per work kind — keep (detached workflow run), suspend, or stop; the decision is recorded.
+- **App close:** policy decides per work kind and records the result. A local Work can continue only if a separately installed, healthy local service/helper has explicitly taken ownership; otherwise it pauses. Remote/cloud Work continues only after an authenticated executor has accepted ownership. A detached record by itself is not a running process.
 - **Crash recovery:** environments are rebuilt from work state + checkpoints (`11` §4); no environment state is authoritative.
+
+### Remote/cloud execution handoff
+
+A remote executor advertises platform, supported capabilities, policy and runtime version, locality, heartbeat interval and available resources. Dispatch requires an authenticated executor identity, a Work lease and idempotency key, a scoped environment manifest, artifact/input references with explicit transfer policy, and delegated credentials issued for that Work only. Core records `offered → accepted → running` before the UI claims continuation; an offer timeout leaves Work local and paused. Heartbeat expiry marks ownership uncertain, reconciles the executor and external effects, and only then reassigns Work. Local file, browser-profile and desktop capabilities do not silently follow Work to cloud: the UI shows unavailable dependencies or requests an explicit sync/remote-desktop path. Remote output returns as event/artifact refs under the same Work and Mission identity; late results from an expired lease cannot overwrite newer accepted results. Revocation stops future access and asks the executor to terminate, with uncertainty displayed until acknowledged. Cross-device clients read authenticated projections and steer through Core; they do not become a second scheduler.
 
 ## 8. Health & observability
 
@@ -96,7 +100,7 @@ For privileged collectors (MFT/USN file index, `21` W1) the runtime hosts a smal
 
 1. Detached semantics across app close vs platform constraints (shared with OQ-WORK-01; helper/service options).
 2. Helper packaging/update channel + consent UX (with `12`/`21`).
-3. Remote/cloud environment timing (post-v1 path; keep the abstraction only).
+3. Remote/cloud executor packaging, hosting and operating cost; the target handoff contract above is binding, while implementation evidence remains pending.
 4. Resource-limit defaults per environment kind.
 5. PTY surface details (agent vs user terminals in UI; with `32`).
 6. Backend preference tuning per platform (e.g. bwrap vs landlock availability).
@@ -122,3 +126,4 @@ Testable behaviors owned by this module live in `ARCH/08-REQUIREMENTS.md`; the t
 | `REQ-RTENV-009` | App start/close/crash rebuild from work state + checkpoints; close decisions recorded; no environment state is authoritative (INV-16) |
 | `REQ-RTENV-010` | Health `ok`/`degraded`/`down` with reason + events; bounded resource metadata only, never payload capture |
 | `REQ-RTENV-011` | Typed spawn failures (policy denial vs OS failure); hang watchdogs end in interrupt/cancel with a reason |
+| `REQ-RTENV-012` | Remote/cloud Work is called continuing only after authenticated executor acceptance; leases, idempotency, heartbeat reconciliation, explicit resource transfer and late-result fencing govern handoff |

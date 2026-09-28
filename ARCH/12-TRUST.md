@@ -127,7 +127,7 @@ Policy evaluated by Trust; records owned by `21`. Required record fields (per co
 ## 13. Open questions (`OQ-TRUST-*`)
 
 1. Granular approval category list for v1.
-2. Approval routing defaults per channel (desktop first; mobile/API later).
+2. Approval routing defaults per channel and notification delivery; DEC-056 fixes the authority rule for all Core-mediated approvals, including mobile/API clients.
 3. Pathfloor/netfloor mapping to the current crate reality (code phase — `agentcowork-guard` exists; wiring fidelity to verify).
 4. Policy version storage + migration semantics.
 5. Consent-record ownership split confirmation (`21` records, Trust evaluates — assumed here).

@@ -11,13 +11,13 @@
 
 ## 1. Purpose & rules
 
-**Owns:** the surface set (desktop · CLI · ACP · A2A · API · mobile-later) · the **Agent Gateway** (identity · sessions · projections · artifact gateway · event filter · approval routing) · protocol mappings onto the internal Agent Runtime Contract · per-surface capability declarations · **the ACP protocol implementation itself — the `agentcowork-acp` crate in the Rust kernel** (wire codec · typed messages · client/session lifecycle · the `Chief` session manager that owns one connection per session and hosts the turn driver).
+**Owns:** the surface set (desktop · CLI · ACP · A2A · API · mobile/remote projection) · the **Agent Gateway** (identity · sessions · projections · artifact gateway · event filter · approval routing) · protocol mappings onto the internal Agent Runtime Contract · per-surface capability declarations · **the ACP protocol implementation itself — the `agentcowork-acp` crate in the Rust kernel** (wire codec · typed messages · client/session lifecycle · the connection manager and protocol turn relay). The relay does not own an external agent's reasoning loop (DEC-052/054).
 **Never owns:** business logic · the contracts themselves (`07`) · policy (`12`).
 
 1. **No second brain** — surfaces render, request and subscribe; they never own state (P-01).
 2. **One contract, many mappings** — ACP/A2A/API/CLI all map onto the same CTRs (`07`); no protocol-specific semantics leak inward (INV-15).
 3. **Projections only for external agents** — the 7-item model is the entire surface (§3).
-4. **Channel capability negotiation** — each surface declares what it supports (e.g. approval prompts: desktop yes; mobile later); UI/composer behavior follows declarations (`AGENTCOWORK-UI.md`).
+4. **Channel capability negotiation** — each surface declares what it actually supports; UI/composer behavior follows those declarations (`ARCH/48-EXPERIENCE-SURFACES.md`).
 
 ## 2. Surface map
 
@@ -26,9 +26,9 @@
 | **Desktop UI** | Richest projection: sessions, composer, Workbench, approvals, Runs, Context inspector | UI doc owns rendering; this module owns the contract mapping |
 | **CLI** | `agentcowork` (placeholder): `-p "<prompt>"` · `--workspace` · `serve --acp` · status/approvals | Same contracts; no privileged path |
 | **IDE via ACP** | any adapter as an ACP **server** | Verified pattern: session manager + tool registry + typed updates |
-| **A2A (remote agents)** | Task/message/artifact exchange; remote agents stay **opaque** | Interface defined now; full implementation post-v1 (OQ-CHN-01) |
+| **A2A (remote agents)** | Task/message/artifact exchange; remote agents stay **opaque** | Target transport; present only after authenticated adapter and reconciliation pass `REQ-CHAN-008` |
 | **AgentCowork API (Work API)** | First-party/advanced automation: create/inspect work, runs, approvals | Same gateway rules as external agents |
-| **Mobile / remote (later)** | Approvals + monitoring + lightweight prompts first; sessions live in Core | Multi-device handoff = same session, different surface |
+| **Mobile / remote** | Approvals, monitoring, steering and prompts over authenticated Core projections | Target experience; availability requires an online Core endpoint and a real Work executor |
 
 ## 3. The Agent Gateway (`CTR-022`) — the 7-item projection
 
@@ -58,15 +58,17 @@
 
 ## 5. A2A & remote agents
 
-Remote agents remain **opaque**: exchange tasks/messages/artifacts; their internals stay theirs (the A2A philosophy). Remote runs materialize as `Work` items like everything else; network passes egress (`12` §7). v1: the interface + registry entries ship; the remote transport implementation is explicitly post-v1.
+Remote agents remain **opaque**: exchange tasks/messages/artifacts; their internals stay theirs (the A2A philosophy). Remote runs materialize as `Work` items like everything else; network passes egress (`12` §7). The target includes an authenticated, capability-probed A2A adapter with status, cancellation and reconciliation. Until that adapter is operational, a registry entry cannot claim a remote run is launchable. Remote execution ownership and leases belong to `19` and `11` (`REQ-RTENV-012`).
 
 ## 6. CLI surface
 
-`agentcowork` (placeholder name, OQ-005): run a prompt with a workspace, serve ACP for editors, inspect work/runs/approvals, trigger workflows. The CLI is a thin projection — no separate state, same gateway rules, and it must work when the desktop UI is closed (detached work continues, `11` §3/§7). Memory writes from CLI/detached runs route through the single-writer mechanism (`17` §8) — same store rules, never a second writer.
+`agentcowork` (placeholder name, OQ-005): run a prompt with a workspace, serve ACP for editors, inspect work/runs/approvals, trigger workflows. The CLI is a thin projection — no separate state, same gateway rules. It can access Core while a local service or remote executor is running; merely closing the desktop UI does not establish that detached local Work continues (`19` §7). Memory writes from CLI/detached runs route through the single-writer mechanism (`17` §8) — same store rules, never a second writer.
 
 ## 7. Approvals & interaction routing
 
 Approvals (`DEC-021`) route to the channel bound to the session/work: desktop prompts, CLI prompts, or API callbacks; if no interactive channel is available, the request waits durably (`11`, `20` §7) and surfaces on the next channel attach. Notification ≠ receipt (REQ-CHAN-006).
+
+DEC-056: a Core-mediated approval always enters the one Trust decision record. A request or answer arriving through CLI, web/mobile, ACP or API carries the authenticated channel identity and is reconciled idempotently; the resulting decision and receipt reference are visible in the local approval history. A native agent's private approval may be displayed as an observed/reported native event but cannot be represented as a Core decision. Disconnection leaves the Core request pending, with expiry and next eligible channel visible.
 
 ## 8. Failure modes
 
@@ -76,7 +78,7 @@ Approvals (`DEC-021`) route to the channel bound to the session/work: desktop pr
 | Projection leak attempt | Denied by `12`; logged; session flagged. |
 | Channel disconnect mid-approval | Approval stays durable; re-surfaces on attach. |
 | Protocol version mismatch | Typed error + supported-window message. |
-| External agent disconnects mid-run (ACP/API drop) | Work continues as durable Work; the gateway session is held; re-attach replays the filtered stream from the last ack — no orphaned internal state (EDGE-077). |
+| External agent disconnects mid-run (ACP/API drop) | Work identity and events remain durable. If the executor is still alive, reconcile and reattach from last acknowledgement where supported; if liveness is unknown, mark Work uncertain and follow the adapter's recovery contract. Never claim execution continues solely because the gateway kept a record (EDGE-077). |
 | Surface crash | Isolated; Core and other surfaces unaffected (work is async). |
 
 ## 9. Interop
@@ -87,10 +89,10 @@ Approvals (`DEC-021`) route to the channel bound to the session/work: desktop pr
 
 ## 10. Open questions (`OQ-CHN-*`)
 
-1. A2A implementation timing (post-v1 trigger).
+1. A2A adapter interoperability profile and qualification fixtures; target timing follows capability/quality dependencies, not the historical v1 deferral.
 2. Gateway auth model for remote/API binds (token minting via `12`).
 3. CLI final name + command surface (OQ-005).
-4. Mobile scope for v1.5 (approvals-only first?).
+4. Mobile/web interaction sequence and authenticated projection availability (monitoring, approvals, steering and lightweight prompts are target capabilities).
 5. Notification system boundaries (OS notifications vs in-app) — UI tie.
 
 ## 11. Evidence
@@ -114,11 +116,12 @@ Testable behaviors owned by this module live in `ARCH/08-REQUIREMENTS.md`; the t
 | `REQ-CHAN-005` | Gateway-issued, audited identity; local stdio trust vs token binds for remote/API |
 | `REQ-CHAN-006` | Approvals route to the owning channel and wait durably when none is attached (DEC-021) |
 | `REQ-CHAN-007` | ACP server maps the typed stream; ACP clients register adapters via a factory |
-| `REQ-CHAN-008` | A2A remote agents stay opaque; runs materialize as Work; transport is post-v1 |
-| `REQ-CHAN-009` | CLI is a thin projection with no separate state that works detached (`11` §3/§7) |
+| `REQ-CHAN-008` | A2A agents remain opaque; authenticated, capability-probed transport creates Work only when operational and reconciles remote status |
+| `REQ-CHAN-009` | CLI is a thin projection; detached execution requires a live local service or accepted remote executor (`19` §7) |
 | `REQ-CHAN-010` | Channel capability negotiation: surfaces declare support; UI follows declarations |
 | `REQ-CHAN-011` | A surface crash is isolated; Core and other surfaces are unaffected (EDGE-075) |
 | `REQ-CHAN-012` | Protocol version mismatch → typed error naming the supported window (EDGE-079) |
-| `REQ-CHAN-013` | External-agent disconnect: durable work + stream replay from last ack — no orphans (EDGE-077) |
+| `REQ-CHAN-013` | External-agent disconnect retains durable identity; reattach only if live, otherwise mark uncertain and reconcile (EDGE-077) |
+| `REQ-CHAN-014` | Authenticated web/mobile clients inspect and steer Missions through Core projections; unsupported local-only actions remain unavailable |
 
 MCP version negotiation itself is **not** restated here: the dual-era rules — the persisted force-legacy hatch, the effective era plus its source as a read-only projection, era caching per origin (HTTP) and per command fingerprint (stdio), the 10 s probe budget, and the lease-less, method-restricted `initialize` exemption that `REQ-CHAN-012`'s refusal is served from — are owned by `ARCH/14-PROVIDERS.md` §4 and `ARCH/04-DECISIONS.md` DEC-048.

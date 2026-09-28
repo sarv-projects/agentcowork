@@ -78,6 +78,7 @@ Rules:
 - **Retention classes** (provisional naming): `interactive` (long) · `job` (medium) · `ephemeral` (short).
 - Hibernation folds volatile state into the log + a checkpoint; archives keep the log + artifact refs (no content duplication).
 - Session ownership: Core owns records; agents read/write via CTR-002/004 (never direct store access).
+- A user fork creates a new Session with `parent_session_id`, origin message/checkpoint reference and `session.forked` event (DEC-056). It remains navigable even before a turn is run. Work is created only for actual execution; a missing or out-of-scope parent remains a typed unavailable lineage reference, not a fabricated Work.
 
 ## 8. Runs projection & observability
 
@@ -130,3 +131,4 @@ Testable behaviors owned by this module live in `ARCH/08-REQUIREMENTS.md`; the t
 | `REQ-WORK-006` | Cancellation semantics — interrupt / cancel / dispose, cooperative, parent→child, reason recorded. |
 | `REQ-WORK-007` | Checkpoint cadence and side-effect safety — step boundaries; before waits/compaction/handoff. |
 | `REQ-WORK-008` | Runs projection — work-tree view from typed events; every terminal state has a reason. |
+| `REQ-WORK-009` | Forking a session preserves parent/child lineage; a new Work is created only when the fork executes. |

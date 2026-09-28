@@ -1,6 +1,6 @@
 # 39 — Architecture delivery sequence and acceptance
 
-> Status: accepted target architecture 2026-09-28 under DEC-054/055; implementation pending. This is an architecture dependency plan; `TODO.md` W6 is the delivery-status tracker. `48` owns final interaction design, `49` outcome scenarios, and `50` cross-plane maps.
+> Status: accepted target architecture 2026-09-28 under DEC-054/055/056; implementation pending. This is an architecture dependency plan; `TODO.md` W6 is the delivery-status tracker. `48` owns final interaction design, `49` outcome scenarios, and `50` cross-plane maps.
 
 ## Current-state delta (source observed, not completion claims)
 
@@ -16,6 +16,21 @@
 | First-party reasoning engine and unconditional plugin/MCP global load | Do not add | External agents own reasoning and native extensions; host catalog entries require scoped activation. |
 
 “Existing source” means a code path was inspected, not that the proposed end-to-end behavior is implemented or benchmarked. The feature matrix remains the implementation-status authority.
+
+### Retirement and replacement register
+
+No whole-codebase wipe is justified. Preserve working Core, Guard, Vault, Work, ACP, browser, Office and UI primitives. The following paths are **candidates** for targeted retirement after their production callers and persisted data have been traced (`TODO.md` `TASK-PROD-006`):
+
+| Candidate | Source observation | Required disposition before deletion |
+|---|---|
+| `crates/agentcowork-core/src/chat.rs` legacy relay | `ChatRelay::start_stream` has no non-test caller in the 2026-09-28 static search; its header still describes archived loop ownership | Retain any reusable budget/preflight functions with real callers, then remove dead relay entrypoints and stale comments; do not delete the module by line count alone. |
+| `packages/coordinator/src/{stream-session,resumable,waterfall,channel-a,fleet,goal,budget,guard,surfaces,h32,fabric,router}.ts` | Older inventory reports no production consumer for these modules; this pass has not proven every transitive package export unreachable | Use import graph plus package entrypoints and runtime registration before deleting; re-home only shared-plane functions under their live owner. |
+| `packages/core-ai` inference machinery | Package remains a coordinator dependency, though no production import was found in the focused scan | Resolve package-level and dynamic imports; remove only if build/runtime reachability and data migration permit. |
+| `packages/core-search/src/mcp-client.ts` | Duplicate MCP client path is already tracked by `TASK-PROV-007` | Retire after Rust MCP client is the sole runtime consumer and parity is qualified. |
+| `crates/agentcowork-acp/src/chief.rs` `COWORK_AFFINITY_STEERING` | The block is injected at line 832 and conflicts with optional shared-capability guidance (DEC-054) | Replace the forced prompt block and its checker together; retain useful capability advertisement without tool ranking coercion. |
+| `src-tauri/src/mcp_cmds.rs` global-looking `auto_start=true` and `src-tauri/src/channel_b.rs` placeholder identity | Current defaults and literal `channel-b`/`external` remain in source | Migrate existing user definitions without auto-granting all agents; replace placeholder identity with authenticated binding/Work/session/grant before enabling scoped policy. |
+
+This is a code-change queue, not permission to remove user configuration or historical Work. A source search alone is insufficient proof for dynamic imports, Tauri command registration, persisted formats or external integrations.
 
 ## Module viability audit for the final target
 

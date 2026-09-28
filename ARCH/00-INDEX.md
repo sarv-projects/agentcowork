@@ -3,11 +3,11 @@
 > **Doc set:** AgentCowork architecture **v1** — rebuilt from scratch on the shoulders of v0.
 > **Status:** **v1 FROZEN (2026-09-26)** — docs 00–44 + `AGENTCOWORK-SPEC.md` + `AGENTCOWORK-UI.md` frozen after the P7 SDD wave (`DEC-038…045` promoted to `Locked`; independent review reconciled). Further changes require a superseding `DEC` (`ARCH/04-DECISIONS.md`). **Re-frozen (2026-09-26, after the owner-directed P9 verification pass):** every doc read line-by-line, understood and fixed (architect-style); clashes reconciled with back-propagation; `DEC-046`/`DEC-047` added and promoted to `Locked`; changes again require a superseding `DEC`.
 > **Date:** 2026-09-26 · **Repo:** `desktop_app` · **Branch:** `main`
-> **Code:** v1 docs are frozen (2026-09-26) — implementation now proceeds spec-driven, tracked in `TODO.md` (W0–W4) and accepted per `ARCH/42-EVIDENCE-MAP.md`.
+> **Code:** the 2026-09-26 v1 freeze is a baseline record; implementation follows the amended requirements and `TODO.md` W0–W6 with acceptance in `ARCH/42-EVIDENCE-MAP.md` and scenario oracles in `ARCH/49-TEST-CASES.md`.
 > **v0 archive:** `ARCHIVE/v0/` (local, git-ignored) — see `ARCHIVE/v0/MANIFEST.md`. Nothing in the archive is a contract.
 > **Exempt:** `TODO.md` stays the live delivery tracker and is not part of this rebuild.
 >
-> **v1 FROZEN (2026-09-26):** owner decision after the P7 SDD wave — spec layer (`ARCH/08-REQUIREMENTS.md`, 307 `REQ-*`), traceability (`ARCH/09-FEATURE-MATRIX.md`, 307 rows), `TODO.md` reworked into `TASK-*` units (W0–W4), independent review reconciled; `DEC-038…045` promoted to `Locked` (`DEC-020` stays `Provisional` — branding).
+> **Current target (2026-09-28):** the frozen 2026-09-26 baseline is amended by DEC-052/054/055/056. `ARCH/08-REQUIREMENTS.md` and `ARCH/09-FEATURE-MATRIX.md` each contain 330 active requirements/rows across 30 domains; `TODO.md` tracks W0–W6. Historical P7/P9 completion records below describe their dated baseline, not proof that the amended set has passed a new line-by-line semantic audit.
 >
 > **Re-frozen after verification (2026-09-26, owner-directed):** full architect-style pass across `AGENTCOWORK-SPEC.md` + `AGENTCOWORK-UI.md` + `ARCH/00–44` — read → understand → fix completed; schema/architecture/LLD clashes reconciled with back-propagation; missing pieces added; independent review applied; v1 re-frozen.
 >
@@ -36,7 +36,7 @@ v0 grew by accretion: 33 ARCH files, 55 research files, a 355 KB spec, a 606 KB 
 
 | Layer | Document | Authority over |
 |---|---|---|
-| Product | `AGENTCOWORK-SPEC.md` + accepted `DEC-054/055` amendments | **WHAT** the product must be: behavior, contracts, acceptance. Frozen baseline is superseded on named boundaries by the later decisions. |
+| Product | `AGENTCOWORK-SPEC.md` + accepted `DEC-054/055/056` amendments | **WHAT** the product must be: behavior, contracts, acceptance. Frozen baseline is superseded on named boundaries by the later decisions. |
 | Requirements | `ARCH/08-REQUIREMENTS.md` | **WHAT must be verified**: testable behaviors (`REQ-*`) derived from the SPEC, each with acceptance + failure cases. |
 | Traceability | `ARCH/09-FEATURE-MATRIX.md` | The `REQ → design → task → test` map. Owns links only, never content. |
 | Architecture | `ARCH/03-HLD.md` | **HOW** the system is structured. Module docs derive from it. |
@@ -53,7 +53,9 @@ v0 grew by accretion: 33 ARCH files, 55 research files, a 355 KB spec, a 606 KB 
 
 ## 3. Document map
 
-> **DEC-054/055 amendment (2026-09-28):** The 2026-09-26 frozen baseline is historical status, superseded on named boundaries by DEC-054/055. Target HLD is `03` + `35` + `46` + `50`; Mission LLD is `35`–`37`; Experience HLD/LLD is `48`; model-agnostic scenario oracles are `49`; evidence ledger is `45`, market comparison `47`; requirements/matrix are `08`/`09` and implementation work is `TODO.md` W6. Historical count statements below refer to earlier freezes, not the amended registry.
+> **DEC-054/055/056 amendment (2026-09-28):** The 2026-09-26 frozen baseline is historical status, superseded on named boundaries by DEC-054/055/056. Target HLD is `03` + `35` + `46` + `50`; Mission LLD is `35`–`37`; Experience HLD/LLD is `48`; model-agnostic scenario oracles are `49`; research ledger is `45`, market comparison `47`; requirements/matrix are `08`/`09` and implementation work is `TODO.md` W0–W6. Historical count statements below refer to earlier freezes, not the amended registry.
+
+> **DEC-056 reconciliation:** The older module headings “Not in v1” record a 2026-09-26 implementation sequence, not exclusions from the final product. For final capability conflicts, accepted DEC-054/055/056 and the amended requirements prevail. `TODO.md` W0–W6 is the current delivery tracker; its History section and the older UI baseline are provenance only. Remote/cloud continuation, cross-device projections, artifact knowledge retrieval, scoped extensions and advanced Workbench editing require explicit implementation and qualification even where an older module lists them as deferred. No checked P9 historical box certifies a fresh semantic audit of later amendments.
 
 | ID | File | Scope | Purpose | Status |
 |---|---|---|---|---|

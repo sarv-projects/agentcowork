@@ -75,6 +75,10 @@ Retrieve (search/snapshot) → Select/Rank → Budget → Prune → Checkpoint �
 4. **Overflow recovery:** `compact-after-overflow → retry the same step`; bounded retries, then surface. Transport retries belong to `18` (single owner, DEC-034) — this is the agent's turn-level recovery, not a second retry layer.
 5. **Hooks:** pre-compact / post-compact extension points (plugin surface, `31`).
 
+### 4.1 User context inspector
+
+The user-facing context inspector is a scoped projection of this infrastructure and of the bound engine's *advertised* context controls (DEC-054/056). Pin, exclude, focus and compact actions appear only when an adapter supports them; Core never claims to mutate an external agent's private prompt or native context. Composer and Workbench open the same snapshot with source, scope, token estimate where known, and staleness time. Opening the inspector is read-only and cannot trigger compaction. `REQ-CTX-011` and `ARCH/48-EXPERIENCE-SURFACES.md` own acceptance and interaction.
+
 ## 5. Cache stability (first-class)
 
 - **Stable prefix:** system contract · agent identity · project rules · stable tool definitions.
@@ -158,3 +162,4 @@ Testable behaviors owned by this module live in `ARCH/08-REQUIREMENTS.md`; the t
 | `REQ-CTX-008` | Checkpoints are reconstructable; `rebuild` prefers live state over stale checkpoints |
 | `REQ-CTX-009` | Cache stability: stable prefix, dynamic suffix, frozen injection blocks, baseline+deltas |
 | `REQ-CTX-010` | Projections are scoped slices, deny-by-default for external agents (DEC-009, INV-11) |
+| `REQ-CTX-011` | The inspector shows only observable context and adapter-supported controls; native private context remains opaque. |

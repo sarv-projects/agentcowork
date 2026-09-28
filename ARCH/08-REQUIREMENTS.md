@@ -270,6 +270,15 @@ This registry answers one question per entry: **what behavior must this system e
 - **Tests:** pending
 - **Status:** seeded
 
+#### REQ-WORK-009 — Fork lineage is durable and truthful
+- **Statement:** GIVEN a conversation or checkpoint fork, WHEN a branch is created, THEN the new Session records its parent and origin and emits a lineage event; no Work is created until the fork executes a turn; the UI can navigate both directions.
+- **Priority:** should
+- **Source:** DEC-056 · `ARCH/11-WORK.md` §Sessions · `ARCH/48-EXPERIENCE-SURFACES.md` §Navigation
+- **Acceptance:** lineage survives restart and archive/restore; the parent and child are reachable in the rail; a fork without a turn has no phantom Work.
+- **Failure cases:** missing parent/origin → typed failure; source deleted/hidden → lineage remains with an unavailable marker; cross-scope fork denied.
+- **Tests:** pending
+- **Status:** accepted
+
 ### Trust (`TRUST`)
 
 #### REQ-TRUST-001 — Egress fail-closed
@@ -637,6 +646,15 @@ This registry answers one question per entry: **what behavior must this system e
 - **Failure cases:** unscoped projection leak → verification failure; sensitivity-filter bypass → violation.
 - **Tests:** pending
 - **Status:** seeded
+
+#### REQ-CTX-011 — Context inspector reflects actual bound-engine capabilities
+- **Statement:** GIVEN a user opens context detail from the composer or Workbench, WHEN an agent supports context inspection or pin/exclude/focus, THEN one scoped inspector shows those actions and their effective result; unsupported native-agent controls are disabled with a reason and cannot imply that Core controls private context.
+- **Priority:** should
+- **Source:** DEC-054/056 · `ARCH/16-CONTEXT.md` §Context control · `ARCH/48-EXPERIENCE-SURFACES.md` §Composer
+- **Acceptance:** composer and Workbench open the same inspected snapshot; pin/exclude/focus use negotiated support; optimize/compact is an explicit request, not an automatic side effect of opening the panel.
+- **Failure cases:** stale snapshot after agent switch → refresh; native context unavailable → truthful limitation; out-of-scope item → denied.
+- **Tests:** pending
+- **Status:** accepted
 
 ### Memory (`MEM`)
 
@@ -1093,6 +1111,15 @@ This registry answers one question per entry: **what behavior must this system e
 - **Failure cases:** retry loop on policy denial → defect; hang without an abort reason → defect; OS failure reported as policy denial (or vice versa) → defect.
 - **Tests:** pending
 - **Status:** seeded
+
+#### REQ-RTENV-012 — Remote/cloud continuation has real ownership
+- **Statement:** GIVEN local Work is moved to a configured remote/cloud executor, WHEN the local app closes or the remote lease changes, THEN only an authenticated accepted owner may run it; input/credential scopes and unavailable local dependencies are explicit; heartbeat loss triggers effect reconciliation before reassignment; cross-device clients observe and steer the same Work and Mission.
+- **Priority:** must
+- **Source:** DEC-054/055 · `ARCH/19-RUNTIME-ENVIRONMENTS.md` §7 · `ARCH/35-MISSION.md` §Recovery · `ARCH/32-CHANNELS.md` §5
+- **Acceptance:** offline handoff continues only after acceptance; remote result attaches to the same Work/Mission; late lease result cannot overwrite the winner; local-only browser/file dependency blocks or takes an explicit transfer path; mobile/web steering reaches the current owner.
+- **Failure cases:** app closes before acceptance → Work pauses; heartbeat loss with unknown side effect → reconcile before retry; revoked credential or missing input → blocked with reason; disconnected client does not silently cancel remote execution.
+- **Tests:** pending
+- **Status:** accepted
 
 ### Workflow (`WF`)
 
@@ -1782,6 +1809,33 @@ This registry answers one question per entry: **what behavior must this system e
 - **Failure cases:** content jumping as a timer ticks → defect; a readout slot resizing on state change → defect; a diagram collapsing to a placeholder on re-render → defect.
 - **Tests:** pending
 - **Status:** seeded
+
+#### REQ-UI-015 — Typed settings, profiles and safe editing
+- **Statement:** GIVEN any user-visible setting, WHEN it is read or changed, THEN one registry defines its key, parser, owner, scope, effective source and revision; policy state is Core-owned; named profiles hold only non-secret overrides; dirty navigation offers Save/Discard/Cancel.
+- **Priority:** must
+- **Source:** DEC-056 · DM-040 · CTR-032 · `ARCH/48-EXPERIENCE-SURFACES.md` §Settings
+- **Acceptance:** unknown/invalid keys reject; stale policy write rejects; a device-only cosmetic preference does not change another device; profile preview names every effective change; no secret value is copied into a profile.
+- **Failure cases:** unsaved change lost silently, stale overwrite, profile credential copy or permission widening → defect.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-UI-016 — Render and boot failure recovery
+- **Statement:** GIVEN a renderer exception or slow/failed boot, WHEN the app cannot present the normal workspace, THEN it shows a bounded recovery surface with Reload and copyable redacted diagnostics rather than a blank window.
+- **Priority:** must
+- **Source:** DEC-056 · `ARCH/38-EXPERIENCE-QUALITY.md` §Progressive interaction · `ARCH/48-EXPERIENCE-SURFACES.md` §Interaction and quality acceptance
+- **Acceptance:** simulated render exception and boot timeout each expose a keyboard-reachable recovery action; draft state is restored after reload where durable.
+- **Failure cases:** blank window, infinite spinner, secret in copied diagnostic or unrecoverable focus trap → defect.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-UI-017 — Searchable settings and one shortcut dispatch registry
+- **Statement:** GIVEN a settings search or keyboard shortcut, WHEN the user invokes it, THEN search resolves labels/synonyms to the owning control and the shortcut catalogue is generated from the same collision-checked dispatch registry as the handlers.
+- **Priority:** should
+- **Source:** DEC-056 · `ARCH/48-EXPERIENCE-SURFACES.md` §Settings
+- **Acceptance:** matched field opens and highlights; a protected/conflicting chord is rejected; every displayed shortcut has a handler and every user shortcut appears in the catalogue.
+- **Failure cases:** dead shortcut entry, hidden handler, unresolved synonym or unsafe collision → defect.
+- **Tests:** pending
+- **Status:** accepted
 
 ### Files (`FILES`)
 
@@ -2574,7 +2628,7 @@ This registry answers one question per entry: **what behavior must this system e
 ### Channels (`CHAN`)
 
 #### REQ-CHAN-001 — Surfaces are projections; Core is the only brain
-- **Statement:** GIVEN any surface (desktop · CLI · ACP · A2A · API · mobile-later), WHEN it renders, requests or subscribes, THEN it never owns state — all surfaces project the same Core and the same `AgentEngine` contract.
+- **Statement:** GIVEN any surface (desktop · CLI · ACP · A2A · API · web/mobile), WHEN it renders, requests or subscribes, THEN it never owns Mission/Work truth — all surfaces use authenticated scoped Core projections and the same `AgentEngine` contract.
 - **Priority:** must
 - **Source:** `ARCH/32-CHANNELS.md` §1 · `AGENTCOWORK-SPEC.md` §2 (P-01)/§3
 - **Acceptance:** no surface-local durable state; a surface restart loses nothing; two surfaces observe identical state.
@@ -2637,19 +2691,19 @@ This registry answers one question per entry: **what behavior must this system e
 - **Status:** seeded
 
 #### REQ-CHAN-008 — A2A keeps remote agents opaque
-- **Statement:** GIVEN a remote agent, WHEN it exchanges work, THEN tasks/messages/artifacts are exchanged while its internals stay private; remote runs materialize as Work items like everything else; v1 ships the interface + registry entries only — the transport is explicitly post-v1.
+- **Statement:** GIVEN a configured remote agent, WHEN it exchanges work, THEN tasks/messages/artifacts are exchanged through an authenticated transport while its internals stay private; remote runs materialize as Work items like everything else. An unavailable transport is reported as unavailable, never simulated by a registry entry.
 - **Priority:** must
 - **Source:** `ARCH/32-CHANNELS.md` §2/§5 · `AGENTCOWORK-SPEC.md` §15
-- **Acceptance:** no remote internal state is imported; a remote run appears as regular Work; the transport is absent behind the interface in v1.
+- **Acceptance:** no remote internal state is imported; a remote run appears as regular Work; a configured authenticated A2A transport can dispatch, observe, cancel and reconcile the run, while an unavailable transport reports that limitation explicitly (DEC-055 target).
 - **Failure cases:** importing remote internals → violation; a second execution model for remote runs → violation.
 - **Tests:** pending
 - **Status:** seeded
 
-#### REQ-CHAN-009 — The CLI is a thin projection that works detached
-- **Statement:** GIVEN the CLI, WHEN it runs a prompt/workspace/serve/status command, THEN it is a thin projection with no separate state and the same gateway rules, and it works when the desktop UI is closed — detached work continues.
+#### REQ-CHAN-009 — The CLI is a thin projection independent of the desktop UI
+- **Statement:** GIVEN the CLI, WHEN it runs a prompt/workspace/serve/status command, THEN it uses the same Core state and gateway rules without a CLI-local store; it works with the desktop UI closed when a local service or remote executor is actually available, and otherwise reports paused/unavailable Work truthfully.
 - **Priority:** must
 - **Source:** `ARCH/32-CHANNELS.md` §2/§6 · `ARCH/11-WORK.md` §3/§7
-- **Acceptance:** CLI-driven work continues with the UI closed; no CLI-local state store; the same policy decisions as the desktop surface.
+- **Acceptance:** CLI-driven work continues with the UI closed only under a healthy accepted executor; without one it pauses with a reason; no CLI-local state store; the same policy decisions as the desktop surface.
 - **Failure cases:** CLI privileged shortcut → violation; CLI-local session state → violation.
 - **Tests:** pending
 - **Status:** seeded
@@ -2682,13 +2736,22 @@ This registry answers one question per entry: **what behavior must this system e
 - **Status:** implemented
 
 #### REQ-CHAN-013 — External-agent disconnects leave no orphaned state
-- **Statement:** GIVEN an ACP/API drop mid-run, WHEN the client re-attaches, THEN work continues as durable Work, the gateway session is held, and the filtered stream replays from the last ack — no orphaned internal state.
+- **Statement:** GIVEN an ACP/API drop mid-run, WHEN the client re-attaches, THEN Work identity and recorded progress remain durable and the filtered stream replays from the last acknowledgement. Execution continues only if its independently tracked executor remains alive; unknown liveness is reconciled before retry or completion.
 - **Priority:** must
 - **Source:** `ARCH/32-CHANNELS.md` §3/§7 · `ARCH/41-EDGE-CASES.md` EDGE-077 · `ARCH/11-WORK.md` §4 · `ARCH/30-EVENTS.md` §4
-- **Acceptance:** a drop/re-attach test replays from the last ack; Work completes without the client; no state is orphaned by the drop.
-- **Failure cases:** a client disconnect aborting the run → violation; a replay gap → defect.
+- **Acceptance:** a drop/re-attach test replays from the last ack; a live executor may complete without the client; a dead or unconfirmed executor settles to a typed uncertain/recovery state; no state is orphaned by the drop.
+- **Failure cases:** a client disconnect silently discards Work → violation; replay gap or false claim of continued execution → defect.
 - **Tests:** pending
 - **Status:** seeded
+
+#### REQ-CHAN-014 — Authenticated cross-device Mission access
+- **Statement:** GIVEN an online Core endpoint and a configured Work executor, WHEN a user switches between desktop, web and mobile clients, THEN each authenticated surface reads the same scoped Mission/Work state, can steer or answer an eligible wait, and receives a completion/needs-input notification without creating a second session truth.
+- **Priority:** must
+- **Source:** DEC-055 · `ARCH/32-CHANNELS.md` §2/§7 · `ARCH/19-RUNTIME-ENVIRONMENTS.md` §Remote/cloud execution handoff
+- **Acceptance:** device switch preserves draft/attachment scope and task identity; a remote steer reaches current Work owner; denied/revoked device cannot read or approve; notification links to the exact item.
+- **Failure cases:** offline Core or no executor → honest unavailable/paused state; stale/replayed approval → rejected; native-agent private state never copied into a client projection.
+- **Tests:** pending
+- **Status:** accepted
 
 ### Effect Verification (`VERIFY`)
 
@@ -3041,15 +3104,15 @@ This registry answers one question per entry: **what behavior must this system e
 | Domain | Seeds | Next pass |
 |---|---|---|
 | `PROD` (6) | drafted above | verified during the P9 verification pass ✅ (2026-09-26) |
-| `CTX` (10) | drafted above + expanded in pass `16` | verified during pass `16` ✅ (2026-09-26) |
+| `CTX` (11) | 10 baseline + REQ-CTX-011 (DEC-056 inspector) | baseline verified during pass `16` ✅ (2026-09-26); amendment implementation pending |
 | `TRUST` (10), `CAP` (10) | drafted above + expanded in passes `12`/`13` | verified during passes `12` ✅ / `13` ✅ (2026-09-26) |
 | `PROV` (10) | drafted above + expanded in pass `14` | verified during pass `14` ✅ (2026-09-26) |
 | `AGENT` (4) | drafted 2026-09-27 from the retired `AGX` set (DEC-052) | pending — no engine binding exists yet |
-| `UI` (14) | drafted above + expanded in the P7 UI merge | verified during the P7 UI merge ✅ (2026-09-26) |
-| `KERNEL` (7), `WORK` (8) | drafted above | verified during passes `10` ✅ / `11` ✅ (2026-09-26) |
+| `UI` (17) | 14 baseline + REQ-UI-015…017 (DEC-056) | baseline verified during the P7 UI merge ✅ (2026-09-26); amendment implementation pending |
+| `KERNEL` (7), `WORK` (9) | baseline + REQ-WORK-009 lineage (DEC-056) | baseline verified during passes `10` ✅ / `11` ✅ (2026-09-26); amendment implementation pending |
 | `MEM` (27) | drafted above + expanded in pass `17` and the P7 memory merge (`REQ-MEM-013…027`) | verified during pass `17` ✅ / P7 memory merge ✅ (2026-09-26) |
 | `MODEL` (12) | drafted above + expanded in pass `18` | verified during pass `18` ✅ (2026-09-26) |
-| `RTENV` (11) | drafted above + expanded in pass `19` | verified during pass `19` ✅ (2026-09-26) |
+| `RTENV` (12) | 11 baseline + REQ-RTENV-012 remote/cloud ownership (DEC-055) | baseline verified during pass `19` ✅ (2026-09-26); amendment implementation pending |
 | `WF` (11) | drafted above + expanded in pass `20` | verified during pass `20` ✅ (2026-09-26) |
 | `WORLD` (11) | drafted above + expanded in pass `21` | verified during pass `21` ✅ (2026-09-26) |
 | `OFFICE` (11) | drafted above + expanded in pass `22` | verified during pass `22` ✅ (2026-09-26) |
@@ -3062,10 +3125,10 @@ This registry answers one question per entry: **what behavior must this system e
 | `ART` (12) | drafted above + expanded in pass `29` | verified during pass `29` ✅ (2026-09-26) |
 | `EVENTS` (12) | drafted above + expanded in pass `30` | verified during pass `30` ✅ (2026-09-26) |
 | `SKILL` (13) | drafted above + expanded in pass `31` | verified during pass `31` ✅ (2026-09-26) |
-| `CHAN` (13) | drafted above + expanded in pass `32` | verified during pass `32` ✅ (2026-09-26) |
+| `CHAN` (14) | 13 baseline + REQ-CHAN-014 cross-device access (DEC-055) | baseline verified during pass `32` ✅ (2026-09-26); amendment implementation pending |
 | `VERIFY` (13) | drafted above + expanded in pass `34` | verified during pass `34` ✅ (2026-09-26) |
 
-> **P9 verification (2026-09-26, historical):** registry integrity was recorded as 307 entries ↔ 307 matrix rows before later retirements. **DEC-054/055 amendment (2026-09-28):** current registry and matrix each contain 323 unique active `REQ-*` entries/rows (298 pre-amendment + 17 Mission/ecosystem + 8 Experience). W6 in `TODO.md` names the implementation tasks; all associated tests/evidence remain pending. This count is an inventory, not verification of implementation.
+> **P9 verification (2026-09-26, historical):** registry integrity was recorded as 307 entries ↔ 307 matrix rows before later retirements. **DEC-054/055/056 amendment (2026-09-28):** current registry and matrix each contain 330 unique active `REQ-*` entries/rows (323 prior active + REQ-RTENV-012 + five DEC-056 requirements + REQ-CHAN-014). W5/W6 in `TODO.md` name implementation tasks; all associated tests/evidence remain pending. This count is an inventory, not verification of implementation.
 
 ## 6. Related
 

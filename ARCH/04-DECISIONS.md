@@ -64,6 +64,7 @@
 | DEC-053 | Code identifiers are unfrozen and renamed: `everyaios-*` → `agentcowork-*` (crates, packages, scopes, imports, strings) · the data home `~/.everyaios` → `~/.agentcowork` and env vars `EVERYAIOS_*` → `AGENTCOWORK_*` **with a legacy fallback and a one-time migration owned solely by Core**, so existing local data is never orphaned · supersedes DEC-020's identifier freeze | Locked | 01, 10, 12 |
 | DEC-054 | Durable Mission above Work; external agents retain native architecture and config; Core governs its own shared effects with truthful provenance; scoped extension activation; heterogeneous teams; independent outcome evaluation; workflow/skill lifecycle | Accepted target, implementation pending | 03, 05–09, 11–17, 20, 29–32, 34–46, AGENTS |
 | DEC-055 | Outcome-first, progressively disclosed desktop experience: simple chat and task entry, one contextual Workbench, agent-owned configuration, approachable permissions, explicit proof and recovery; advanced controls remain reachable | Accepted target, implementation pending | 00, 03, 08, 09, 29, 32, 38, 48–50, UI, TODO |
+| DEC-056 | Reconcile final Experience with the older UI backlog: typed settings scope and profiles, Core-owned channel health/mediated approvals, explicit session-fork lineage, and a multi-tab Workbench in place of a fixed six-slot launcher | Accepted target, implementation pending | 06–09, 11, 30, 32, 48, TODO |
 
 ## 2. Details
 
@@ -400,6 +401,14 @@ Background extraction defaults to the session's active provider (no *new* disclo
 
 **Evidence and delivery:** `49-TEST-CASES.md` defines scenario acceptance from basic chat to long-horizon heterogeneous work; `50-SYSTEM-BLUEPRINT.md` maps the final ownership and data flow. `47` retains market comparisons. The earlier architecture-only file restriction is superseded by the owner's explicit request in this pass to reconcile the UI spec and TODO as well; unrelated code and `CURRENT_RUN.md` remain untouched.
 
+### DEC-056 — Resolve the final Experience's planning gaps
+
+**Decision (2026-09-28):** A Core-owned settings registry declares one key, typed parser, owner and scope per setting. Cosmetic device preferences may persist locally, but authorization, connector grants and other policy state are Core-owned, revisioned and never accepted from a stale UI copy. Named profiles contain only versioned, non-secret preference overrides; secret values remain vault references and switching a profile previews its effective changes. Unsaved settings use Save/Discard/Cancel. The Settings UI is searchable and grouped; the Workbench is multi-tab and dockable. Neither a fixed six-slot rail nor a fixed count of Settings sections is an architectural requirement.
+
+The event store owns `channel.health.changed` with source, phase, reason and last-confirmed time; the UI derives no confident running state from a silent channel. Every Core-mediated approval is decided by the one Trust owner, even when requested or answered through another channel, and the same decision record is visible locally. A native agent's private approval remains native and is only observed/reported with that provenance. Forking a conversation creates a new Session with a parent Session and origin reference plus a lineage event; Work is created only when that fork executes a turn. This avoids inventing a running Work merely to display a branch. `TASK-AGX-015` is retired without reuse; the engine-neutral work belongs to `TASK-AGENT-002`.
+
+**Reason:** W5's frozen-baseline UI backlog contains five decision blocks and one retired agent task that otherwise permit mutually incompatible implementations. DEC-055 already selected the final interaction shape; this decision supplies the missing state and authority contracts. The resulting behavior is testable without adding a second scheduler, event store, permission decider or native-agent configuration path.
+
 ## 3. Pending decisions
 
 | ID | Decision needed | Inform by | Affects |
@@ -407,7 +416,7 @@ Background extraction defaults to the session's active provider (no *new* disclo
 | PEND-01 | ~~MCP era policy~~ → resolved as DEC-030 | ✅ `lib-4` (2026-09-26) | 14 |
 | PEND-02 | ~~Compaction strategy priority + cache-stability rules~~ → resolved as DEC-027 | ✅ `gen-21` (2026-09-26) | 16 |
 | PEND-03 | ~~Scheduler lanes + global limits~~ → resolved as DEC-031 | ✅ `11-WORK` (2026-09-26) | 11, 15 |
-| PEND-04 | First-release surfaces (desktop + CLI minimum? ACP timing) | 32, SPEC | 32 |
+| PEND-04 | ~~First-release surfaces (desktop + CLI minimum? ACP timing)~~ → superseded by DEC-055's capability/quality target and `32`'s channel requirements | ✅ DEC-055 (2026-09-28) | 32 |
 | PEND-05 | Agent profile / "assistant" composition model naming | 15, UI doc | 15 |
 | PEND-06 | ~~Memory encryption at rest (SQLCipher vs plaintext; item-level for confidential)~~ → resolved as DEC-039 | ✅ `17-MEMORY` (2026-09-26) | 17 |
 | PEND-07 | ~~Artifact storage layout + retention policy~~ → resolved as DEC-032 | ✅ `29-ARTIFACTS` (2026-09-26) | 29 |
