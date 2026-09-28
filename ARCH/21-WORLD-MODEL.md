@@ -68,7 +68,7 @@ Rules:
 3. **Metadata-first:** collectors never read file content; screenshots only for explicit view, action verification, or W3 miss/verify; `IsPassword`/protected fields excluded or masked.
 4. Elevated file index options (USN/MFT require admin — verified): (a) small privileged helper (Everything pattern, opt-in, no service/autostart by default), (b) per-scan elevation prompt, (c) non-admin mode = walk/RDCW only. Mode is recorded per instance; choice resolved with `12-TRUST` (OQ-WM-02).
 5. Local-first: no upload path exists in the world-model contract.
-6. Machine performance, hardware/GPU sensors, SMART history and machine queries are governed by `51` capabilities, not implicitly included when an agent receives World objects. A user-facing in-app notice explains read-only data scope and local retention; a real OS elevation prompt is requested only for an exact probed collector that needs it (`12`, `19`, `51`).
+6. Machine performance, hardware/GPU sensors, SMART history and machine queries are governed by `51` capabilities, not implicitly included when an agent receives World objects. First explicit System Workbench use shows in-app consent before sampling; scope and local retention are explained separately from agent disclosure and any exact operation-level OS elevation (`12`, `19`, `48`, `51`).
 
 ## 6. Query surface & consumers
 

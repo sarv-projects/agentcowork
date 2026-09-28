@@ -3001,6 +3001,15 @@ This registry answers one question per entry: **what behavior must this system e
 - **Tests:** pending
 - **Status:** accepted
 
+#### REQ-ECO-007 — Bounded same-task candidate comparison
+- **Statement:** GIVEN the user chooses Compare approaches, WHEN compatible workers are dispatched, THEN each candidate receives the same immutable contract, input versions and acceptance criteria; its actual harness, capability loadout and policy are recorded; write isolation is claimed only when the binding enforces it; and Core-mediated effects remain gated until selection and normal Trust authorization.
+- **Priority:** must
+- **Source:** DEC-059 · INV-39 · ARCH/35-MISSION.md · ARCH/46-ECOSYSTEM-ARCHITECTURE.md §5
+- **Acceptance:** at least two eligible candidates run under a finite user/policy budget and Work concurrency limit; candidates share a pinned contract/input/criteria digest; every actual harness/model, native/Core capability loadout and policy is attached to its result, with non-equivalent candidates labeled as a worker-system comparison; each writable candidate has verified isolation or is excluded/read-only; each result is evaluated against the same criteria with criterion-level evidence; partial failure does not discard successful siblings; Core-mediated effects remain blocked until selection and normal Trust authorization; any integration is a separate Work from a clean baseline. Native side effects are governed by their agent's policy, surfaced before dispatch, and candidates with opaque/unbounded native mutation cannot enter the default safe comparison.
+- **Failure cases:** candidate receives a different requirement/input revision without disclosure; capability/policy differences are hidden or a model-only claim is made across different harnesses; write-capable candidates share mutable workspace; unsupported candidate silently runs without isolation; an external agent's native policy is falsely represented as Core-controlled; concurrency/cost is unbounded; a score automatically triggers a Core-mediated merge/send/publish/deploy; evaluator ranks by model brand without outcome evidence.
+- **Tests:** pending
+- **Status:** accepted
+
 #### REQ-LEARN-001 — Reviewable workflow-to-skill promotion
 - **Statement:** GIVEN a demonstration or successful workflow, WHEN proposed as a skill, THEN deterministic steps, adaptive guidance, permissions, inputs, provenance and version are reviewable before publication.
 - **Priority:** must
@@ -3112,7 +3121,7 @@ This registry answers one question per entry: **what behavior must this system e
 #### REQ-UXQ-011 — System insights are understandable and explicitly shared
 - **Statement:** GIVEN a user opens the System Workbench or an agent requests machine data, WHEN information is displayed or shared, THEN plain-language health summaries explain freshness and limitations, sensitive data scope is disclosed before access, and opening the panel alone never adds machine data to chat context.
 - **Priority:** must
-- **Source:** DEC-058; ARCH/48-EXPERIENCE-SURFACES.md §5/§7; ARCH/51-MACHINE-OBSERVABILITY.md §6/§8
+- **Source:** DEC-058/059; ARCH/48-EXPERIENCE-SURFACES.md §5/§7; ARCH/51-MACHINE-OBSERVABILITY.md §6/§8
 - **Acceptance:** new-user tasks identify what is collected, why, retention and agent visibility; advanced query/process controls are discoverable but hidden behind progressive detail; screen-reader and keyboard journeys pass.
 - **Failure cases:** technical jargon required for Overview; hidden data collection; dashboard opening silently injects telemetry; consent implied by OS permission; no reason shown for unsupported/denied readings.
 - **Tests:** pending
@@ -3138,12 +3147,12 @@ This registry answers one question per entry: **what behavior must this system e
 - **Tests:** pending
 - **Status:** accepted
 
-#### REQ-OBS-003 — Machine observation has explicit notice and least-privilege elevation
-- **Statement:** GIVEN any person or agent requests Machine Observer data, WHEN sampling or disclosure begins, THEN the user first receives a plain-language in-app notice describing the category, purpose, local recipient, cadence and retention, and explicitly grants revocable category consent; separate sensitive scopes and any agent disclosure are authorized independently, and OS elevation appears only for an exact operation whose provider requires it.
+#### REQ-OBS-003 — Machine observation has explicit consent and least-privilege elevation
+- **Statement:** GIVEN the user first opens System Workbench or a user/agent requests machine data without valid consent, WHEN any Machine Observer sampling would begin, THEN Experience presents a plain-language in-app consent dialog before the first sample and explains category, purpose, local recipient, cadence and retention; an agent request cannot grant consent; consent is revocable and scoped; sensitive categories and any agent disclosure are authorized independently; OS elevation appears only for an exact operation whose provider requires it.
 - **Priority:** must
-- **Source:** DEC-058; INV-03/36/37; ARCH/06-DATA-MODEL.md DM-043; ARCH/12-TRUST.md; ARCH/19-RUNTIME-ENVIRONMENTS.md §6; ARCH/51-MACHINE-OBSERVABILITY.md §6
-- **Acceptance:** basic standard-user metrics work without elevation after in-app consent; Trust persists only the user's revocable local collection choice by category/scope/purpose/retention; the Observer adds no installation-time privilege/service/driver requirement; app/Core remain asInvoker; any installer UAC is attributable only to the chosen installation scope and is never treated as data consent; helper requests are typed, one-shot and expire on exit; declining product consent keeps collection off and produces at most one contextual inline explanation; denying/canceling OS elevation keeps standard readings available, records no OS grant and produces at most one scope-specific follow-up; agent disclosure always needs a separate Work-scoped capability grant.
-- **Failure cases:** UAC at startup/global polling; whole-app elevation; collection before in-app consent; installer approval treated as telemetry consent; silent read access to process/network/history metadata; caller-supplied scope treated as authority; helper accepts shell/path/query; repeated prompt/follow-up without new user intent.
+- **Source:** DEC-058/059; INV-03/36/37; ARCH/06-DATA-MODEL.md DM-043; ARCH/12-TRUST.md; ARCH/19-RUNTIME-ENVIRONMENTS.md §6; ARCH/51-MACHINE-OBSERVABILITY.md §6
+- **Acceptance:** first explicit System Workbench use or first request for an unconsented category presents the dialog before sampling (never at app launch or for installation); before service/provider start Core returns typed `authorization_required{missing_grants}` with `consent_required` and/or `work_grant_required`, including both when both are absent, and `sampled=false`; a dialog may present independent choices together, but granting one never satisfies the other and an incomplete request stays held; Experience, not the agent, asks the user; the dialog names cadence and when collection is active; basic overview sampling is on demand or while the System page is open, while history/background sampling after it closes requires a separate grant with its own cadence and retention; basic standard-user metrics work without OS elevation after product consent; Trust persists only the user's revocable local collection choice by category/scope/purpose/cadence/retention; the Observer adds no installation-time privilege/service/driver requirement; app/Core remain asInvoker; installer UAC is attributable only to the chosen installation scope and never treated as data consent; helper requests are typed, one-shot and expire on exit; declining keeps collection off and offers one contextual Enable / Keep off explanation; denying/canceling OS elevation keeps standard readings available, records no OS grant and produces at most one non-modal, scope-specific Try this read once / Keep standard access follow-up; Core Observer sharing needs a separate Work-scoped capability grant; the UI identifies external-agent native access as governed by that agent's own policy and does not imply Observer consent can constrain it.
+- **Failure cases:** agent request treated as consent; agent is allowed to approve its own data access; provider is queried before consent; UAC at startup/global polling; whole-app elevation; installer approval treated as telemetry consent; silent read access to process/network/history metadata; Core consent presented as blocking native-agent tools; native tools presented as covered by the Observer's Core grant; caller-supplied scope treated as authority; helper accepts shell/path/query; repeated prompt/follow-up without new user intent.
 - **Tests:** pending
 - **Status:** accepted
 
@@ -3238,10 +3247,13 @@ This registry answers one question per entry: **what behavior must this system e
 | `SKILL` (13) | drafted above + expanded in pass `31` | verified during pass `31` ✅ (2026-09-26) |
 | `CHAN` (14) | 13 baseline + REQ-CHAN-014 cross-device access (DEC-055) | baseline verified during pass `32` ✅ (2026-09-26); amendment implementation pending |
 | `VERIFY` (13) | drafted above + expanded in pass `34` | verified during pass `34` ✅ (2026-09-26) |
-| `UXQ` (11) | 10 baseline + REQ-UXQ-011 System Workbench (DEC-058) | implementation pending |
-| `OBS` (10) | new domain for local machine observation and on-demand process diagnostics (DEC-058) | implementation and device qualification pending |
+| `MISSION` (7) | durable goal, adaptive plan, recovery and branch-local waits (DEC-054) | implementation pending |
+| `ECO` (7) | discovered-agent ecosystem and bounded candidate comparison (DEC-054/059) | implementation pending |
+| `LEARN` (2) | workflow/skill promotion and evaluation (DEC-054) | implementation pending |
+| `UXQ` (11) | 10 baseline + REQ-UXQ-011 System Workbench (DEC-058/059) | implementation pending |
+| `OBS` (10) | local machine observation and on-demand process diagnostics (introduced by DEC-058; consent UX refined by DEC-059) | implementation and device qualification pending |
 
-> **P9 verification (2026-09-26, historical):** registry integrity was recorded as 307 entries ↔ 307 matrix rows before later retirements. **DEC-054/055/056/057/058 amendment (2026-09-28):** current registry and matrix each contain 342 unique active `REQ-*` entries/rows across 31 domains (330 prior active + REQ-SEARCH-013 + REQ-UXQ-011 + REQ-OBS-001…010). W0–W6 in `TODO.md` name implementation tasks; all newly associated tests/evidence remain pending. This count is an inventory, not verification of implementation.
+> **P9 verification (2026-09-26, historical):** registry integrity was recorded as 307 entries ↔ 307 matrix rows before later retirements. **DEC-054/055/056/057/058/059 amendment (2026-09-28):** current registry and matrix each contain 343 unique active `REQ-*` entries/rows across 31 domains (330 prior active + REQ-SEARCH-013 + REQ-UXQ-011 + REQ-OBS-001…010 + REQ-ECO-007). W0–W6 in `TODO.md` name implementation tasks; all newly associated tests/evidence remain pending. This count is an inventory, not verification of implementation.
 
 ## 6. Related
 

@@ -113,12 +113,12 @@ flowchart TB
 | 31 | Skills & Plugins | Skill registry/loader/resolver; plugin surfaces (capabilities, providers, agents, models, channels, UI) | capability, work, trust |
 | 32 | Channels | Surfaces & protocols: desktop, CLI, ACP, A2A, API, mobile; agent gateway | everything above (thin) |
 | 34 | Effect Verification | Validate/render/verify/reconcile pipeline; receipt policy per risk | domains, artifacts, events |
-| 35 | Mission | Versioned goal/requirements, adaptive PlanNodes, semantic readiness, dispatch through Work | work, context, artifacts, events, outcome |
+| 35 | Mission | Versioned goal/requirements, adaptive PlanNodes, semantic readiness, team and candidate-comparison dispatch through Work | work, context, artifacts, events, outcome |
 | 36 | Outcome & Recovery | Requirement evidence evaluation, drift reconciliation, recovery ladder and stop | mission, work, artifacts, runtime, effect verification |
 | 37 | Workflow–Skill Lifecycle | Capture, proposal, evaluation and promotion; external workflow adapters | workflow, skills, trust, eval |
 | 38 | Experience Quality | Progressive Mission Control, transparency and quality measurement | channels, mission, evidence |
-| 46 | Ecosystem HLD | Native-vs-shared ownership, scoped extensions and heterogeneous teams | agent, capability, trust, channels |
-| 48 | Experience surfaces | Composer, progressive Workbench, Library, settings, agents/team/attention panels | channels, mission, work, artifacts, ecosystem |
+| 46 | Ecosystem HLD | Native-vs-shared ownership, scoped extensions, heterogeneous teams and bounded same-task comparison | agent, capability, trust, channels, mission, work |
+| 48 | Experience surfaces | Composer, progressive Workbench, Library, settings, agents/team/Compare/attention panels | channels, mission, work, artifacts, ecosystem |
 | 50 | System blueprint | Cross-plane Mermaid ownership and lifecycle maps (navigation only) | module contracts |
 | 51 | Machine Observer | Read-only machine telemetry/history service; independent build and local protocol | runtime, trust, capability, world, files |
 | 40–42 | Cross | Flows, edge cases, evidence map | all |

@@ -1,6 +1,6 @@
 # 50 — System blueprint and ownership map
 
-> Status: DEC-054/055/056/057/058 target architecture map. Mermaid diagrams are navigation and review aids; canonical fields/contracts remain in `06`/`07`, requirements in `08`, module details in `10`–`38` and `46`/`48`/`51`. Every arrow below denotes a named boundary, not an extra service. The target is a modular monolith with external adapters and one independently buildable local Observer, not a fleet of internal network microservices. Diagram labels `Core-mediated` and `agent-native` must stay distinct; occurrence ownership is fenced and does not imply exactly-once external effects.
+> Status: DEC-054/055/056/057/058/059 target architecture map. Mermaid diagrams are navigation and review aids; canonical fields/contracts remain in `06`/`07`, requirements in `08`, module details in `10`–`38` and `46`/`48`/`51`. Every arrow below denotes a named boundary, not an extra service. The target is a modular monolith with external adapters and one independently buildable local Observer, not a fleet of internal network microservices. Diagram labels `Core-mediated` and `agent-native` must stay distinct; occurrence ownership is fenced and does not imply exactly-once external effects.
 
 ## 1. High-level ownership
 
@@ -48,7 +48,7 @@ flowchart TB
 | Connected apps | Comms `28`, providers `14` | Vault `12`, capability `13`, optional MCP; API preferred to browser/desktop |
 | Workflow/skill conversion | Workflow `20`, lifecycle `37`, extensions `31` | Work `11`, approvals `12`, versions/evals; no silent publish |
 | Settings / agent inventory | Experience `48`, ecosystem `46` | Read-only discovery, native-vs-host extension scope, credentials owner, health and capability probes |
-| System Workbench / machine data | Experience `48`, Observer `51` | In-app notice and consent, plain-language overview, provider/freshness status; no implicit chat-context injection |
+| System Workbench / machine data | Experience `48`, Observer `51` | First-use in-app consent dialog before sampling, plain-language overview, provider/freshness status; no implicit chat-context injection |
 
 ## 3. Durable Mission and replaceable workers
 
@@ -124,7 +124,8 @@ The hierarchy API/native connector → MCP → structured browser → visual bro
 sequenceDiagram
   actor User
   participant UI as Workbench / Settings
-  participant Core as Core Capability + Trust
+  participant Core as Core Capability Gateway
+  participant Trust as Trust Authority
   participant Runtime as Runtime supervisor
   participant Observer as Normal-user Machine Observer
   participant Store as Bounded local sample store
@@ -132,12 +133,31 @@ sequenceDiagram
   participant UAC as Windows UAC
   participant Helper as One-shot typed helper
   participant Events as Existing Core event store
-  User->>UI: Open System or request a machine reading
-  UI->>User: Explain category, purpose, recipient, sampling and retention
-  alt User enables this scope
-    User->>UI: Explicitly enable selected scope
-    UI->>Core: Request named metric/query with actor, Work and grant identity
-    Core->>Core: Trust validates current consent and capability scope
+  User->>UI: Open System or ask an agent to read machine data
+  UI->>Core: Resolve category + Work-scoped request; do not sample yet
+  Core->>Trust: Validate local consent + (if agent request) Work share grant
+  alt One or more required grants missing
+    Trust-->>Core: Complete typed missing-grant set; sampled=false
+    Core-->>UI: authorization_required{missing_grants}; no service/provider invocation
+    UI->>User: Explain exact fields, purpose, recipient and retention
+    Note over UI,User: Local collection and sharing with this Work are separate, unchecked choices
+    alt User enables one or more scopes
+      User->>UI: Choose local collection and/or exact Work share independently
+      UI->>Trust: Store only the selected revocable/scoped grants
+      Trust-->>UI: Grants recorded
+      alt All request grants are now valid
+        UI->>Core: Resume the held request
+      else One or more request grants remain missing
+        Core-->>UI: authorization_required with remaining missing_grants
+        UI-->>User: Keep this Work waiting; no provider was started
+      end
+    else User declines every requested scope
+      UI-->>User: No provider starts; keep this Work waiting and unrelated work running
+    end
+  else All required grants already valid
+    Trust-->>Core: Authorized for this category and Work
+  end
+  opt Required grants are valid
     Core->>Runtime: Start/lease Observer at normal-user privilege
     Runtime->>Observer: Authenticated versioned local IPC
     Observer->>Observer: Read supported standard-user providers
@@ -165,14 +185,13 @@ sequenceDiagram
       end
     end
     Core->>Events: Publish scope/config/health/alert transition only
-  else User chooses Not now
-    UI-->>User: Collect nothing; show one inline Enable / Keep off explanation
   end
   Note over Store,Events: Samples/history stay in the Observer store; never mirror each poll as a Core event
-  Note over UI,UAC: Observer adds no install privilege requirement. NSIS is per-user; MSI install-scope UAC, if any, is install-only and never data consent.
+  Note over Core,UI: This gate covers Core Observer access only; external agent-native OS tools keep their separately disclosed policy
+  Note over UI,UAC: No consent dialog at install or app launch; Observer adds no install privilege requirement. NSIS is per-user; MSI install-scope UAC, if any, is install-only and never data consent.
 ```
 
-The split is intentional: product consent authorizes collection/data scope; OS elevation authorizes a specific operating-system operation. Both must pass independently. Declining product consent means no sample is taken; declining UAC is a normal partial-capability result, not a reason to relaunch or elevate the application.
+The split is intentional: product consent authorizes local collection scope; a Work grant authorizes sharing specified fields with that task; OS elevation authorizes a specific operating-system operation. All required grants must pass independently. Declining product consent means no sample is taken; declining the Work grant leaves that request waiting/denied without exposing data; declining UAC is a normal partial-capability result, not a reason to relaunch or elevate the application.
 
 ## 5. User selection, artifacts and Library
 
@@ -210,6 +229,49 @@ flowchart TB
   Q -->|answer| N2
   N1 -.->|continues while N2 waits| H
 ```
+
+```mermaid
+sequenceDiagram
+  actor User
+  participant Mission
+  participant Work as Existing Work scheduler
+  participant Adapter as Candidate Agent Adapter
+  participant Native as Agent-native loop and tools
+  participant Core as Shared Core capabilities
+  participant Evaluator
+  participant Trust
+  User->>Mission: Compare approaches + selected/suggested workers
+  Mission->>Mission: Freeze contract, input digest, criteria, candidate/budget limits
+  loop Each eligible candidate
+    Mission->>Adapter: Inspect actual harness, tools and native/Core policies
+    Adapter-->>Mission: Capability and policy profile
+    Mission->>Mission: Exclude, make read-only, or confirm enforceable isolation
+    Mission->>Work: Create Work attempt with same input baseline and bound budget
+    Work->>Adapter: Dispatch candidate Work
+    Adapter->>Native: Run agent using its own loop and native tool policy
+    Adapter->>Core: Use shared capabilities only through Core authorization
+    Native-->>Adapter: Native result and reported activity
+    Core-->>Adapter: Core-mediated receipts and observed effects
+    Adapter-->>Work: Candidate receipt, output, evidence, usage and cost
+    Work-->>Mission: Preserve candidate provenance and independent status
+  end
+  Mission->>Evaluator: Compare every candidate against the same criteria
+  Evaluator-->>User: Results, evidence gaps, latency and cost
+  User->>Mission: Select candidate or request integration
+  opt Separate integration requested
+    Mission->>Work: Start integration Work from clean baseline
+    Work-->>Mission: Integrated candidate + evidence
+    Mission->>Evaluator: Independently verify acceptance criteria
+  end
+  opt Selected result proposes Core-mediated external side effect
+    Mission->>Trust: Normal ticket/approval path after selection
+    Trust-->>Mission: Allow / ask / deny
+  end
+  Note over Adapter,Native: Native effects stay under the agent policy; Core cannot suppress or claim governance over them.
+  Note over Mission,Work: Claim write isolation only when the binding can enforce it.
+```
+
+Candidate comparison is a bounded strategy over Mission PlanNodes and ordinary Work attempts, distinct from team decomposition. Every candidate shares immutable task inputs and criteria, while harness/model/tool/policy differences stay visible. Writable state is isolated only when the binding proves isolation. A failed candidate remains visible; it does not cancel successful candidates. Selection alone does not authorize a Core-mediated external effect; native effects are never represented as Core-governed.
 
 ```mermaid
 flowchart LR

@@ -7,7 +7,7 @@
 > **v0 archive:** `ARCHIVE/v0/` (local, git-ignored) — see `ARCHIVE/v0/MANIFEST.md`. Nothing in the archive is a contract.
 > **Delivery tracker:** `TODO.md` is not an architecture authority, but this amendment includes it in the traceability pass: active `TASK-*` rows point to their exact requirement, owner section, current/new code path, reviewed source file where applicable, and pending test slot.
 >
-> **Current target (2026-09-28):** the frozen 2026-09-26 baseline is amended by DEC-052/054/055/056/057/058. `ARCH/08-REQUIREMENTS.md` and `ARCH/09-FEATURE-MATRIX.md` each contain 342 active requirements/rows across 31 domains; `TODO.md` tracks W0–W6. Historical P7/P9 completion records below describe their dated baseline, not proof that the amended set has passed a new line-by-line semantic audit.
+> **Current target (2026-09-28):** the frozen 2026-09-26 baseline is amended by DEC-052/054/055/056/057/058/059. `ARCH/08-REQUIREMENTS.md` and `ARCH/09-FEATURE-MATRIX.md` each contain 343 active requirements/rows across 31 domains; `TODO.md` tracks W0–W6. Historical P7/P9 completion records below describe their dated baseline, not proof that the amended set has passed a new line-by-line semantic audit.
 >
 > **Re-frozen after verification (2026-09-26, owner-directed):** full architect-style pass across `AGENTCOWORK-SPEC.md` + `AGENTCOWORK-UI.md` + `ARCH/00–44` — read → understand → fix completed; schema/architecture/LLD clashes reconciled with back-propagation; missing pieces added; independent review applied; v1 re-frozen.
 >
@@ -109,7 +109,7 @@ v0 grew by accretion: 33 ARCH files, 55 research files, a 355 KB spec, a 606 KB 
 | 48 | `ARCH/48-EXPERIENCE-SURFACES.md` | Experience | Final composer, navigation, Workbench, Library, settings and team interaction HLD/LLD | DEC-055 target |
 | 49 | `ARCH/49-TEST-CASES.md` | Quality | Model-agnostic product scenario ladder and pass oracles | DEC-055 target |
 | 50 | `ARCH/50-SYSTEM-BLUEPRINT.md` | Cross | Mermaid ownership, lifecycle, effect, artifact and team maps | DEC-055 target |
-| 51 | `ARCH/51-MACHINE-OBSERVABILITY.md` | Local service | Read-only system/hardware/GPU/storage/history/query capability and extractable service boundary | DEC-058 target |
+| 51 | `ARCH/51-MACHINE-OBSERVABILITY.md` | Local service | Read-only system/hardware/GPU/storage/history/query capability and extractable service boundary | DEC-058/059 target |
 | — | `AGENTCOWORK-SPEC.md` | Product | Product contract (WHAT) — root authority | Frozen v1 |
 | — | `AGENTCOWORK-UI.md` | UI | Frozen baseline and source-path inventory; `48` supersedes conflicting target interactions | Frozen v1 baseline |
 | — | `README.md` (root) | Product | Repo landing page — v1 sync | Frozen v1 |

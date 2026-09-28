@@ -1,6 +1,6 @@
 # 51 — Machine Observer: system health, hardware and local runtime telemetry
 
-> **Status:** DEC-058 target architecture, 2026-09-28; implementation pending. This is a product capability and an independently buildable local service, not an expansion of the World Model. Requirements are `REQ-OBS-*` in `08`; the friendly Workbench surface is `48` §5 and `REQ-UXQ-011`; source evidence and exact reviewed paths are in `45`/`44`; tasks are `TODO.md` W6.
+> **Status:** DEC-058/059 target architecture, 2026-09-28; implementation pending. This is a product capability and an independently buildable local service, not an expansion of the World Model. Requirements are `REQ-OBS-*` in `08`; the friendly Workbench surface is `48` §5 and `REQ-UXQ-011`; source evidence and exact reviewed paths are in `45`/`44`; tasks are `TODO.md` W6.
 > **Purpose:** let a person understand their own computer and let an authorized agent answer bounded machine-state questions, without elevating the whole application, silently collecting, or turning this into a remote management tool.
 > **Dependencies:** `12` Trust · `13` Capability · `19` Runtime · `21` World Model · `25` Files/Storage · `30` Events · `48` Experience. **Consumers:** local-user dashboard, Core capability calls, local-model diagnostics, authorized agent Work.
 
@@ -10,7 +10,7 @@ Build one small, read-only **Machine Observer** service that can ship inside Age
 
 The service observes the local host. It does not change settings, kill/suspend processes, install drivers, repair disks, open files, inspect prompts, or execute arbitrary user-supplied commands. Core decides which observer capability a user or agent can access. An external agent's own tools remain its own; it receives Machine Observer data only through an explicit Core capability grant and a scoped projection.
 
-The standalone build has an interactive local-owner consent path. Only AgentCowork integration calls can receive agent/Work context through Core. The standalone build must present its own local-owner notice/consent before sampling; that local consent is never accepted as agent authorization.
+The standalone build has an interactive local-owner consent path. Only AgentCowork integration calls can receive agent/Work context through Core. The standalone build must present its own local-owner notice/consent before sampling; that local consent is never accepted as agent authorization. Live readings run on demand or while the view is open; collection after closing it requires a separate history/background choice that names cadence and retention.
 
 **World Model (`21`) owns identity and relationships** such as a process identity `(pid, start_time)`, device identity, volume identity and freshness. **Machine Observer owns changing measurements and their bounded history**: CPU, memory, I/O, GPU, sensors, disk-health observations and local-runtime activity. World Model may link to a sample stream; it does not store or query time-series data. The existing Files/Storage owner remains responsible for file-tree scans and treemaps.
 
@@ -34,7 +34,7 @@ The standalone build has an interactive local-owner consent path. Only AgentCowo
 flowchart LR
   UI[Workbench System tab / Settings] -->|user intent + visible scope| CORE[Core Capability Broker]
   AG[Bound agent] -->|typed observer capability request| CORE
-  CORE --> TRUST[Trust: data scope, consent, optional admin approval]
+  CORE --> TRUST[Trust: local consent + Work-scoped disclosure]
   TRUST -->|scoped read request| HOST[Runtime service supervisor]
   HOST --> OBS[Machine Observer: unprivileged local process]
   OBS --> COL[Platform and vendor collectors]
@@ -58,7 +58,7 @@ flowchart LR
 
 **Process layout:** one normal-user observer executable, supervised by existing Runtime `19`; platform/vendor collectors are modules in that process and can fail independently. On Windows, a distinct minimal elevated helper exists only if a selected operation genuinely needs it. The desktop shell and Core remain `asInvoker`. The helper accepts a closed set of typed read operations, never arbitrary paths/commands, handles one user-requested read and exits. Linux/macOS use their native permission model and the same per-capability disclosure; do not display Windows UAC language on other platforms.
 
-**Extraction seam:** put the portable service host and its protocol under `services/machine-observer/`, with its own manifest, entry point, protocol version, storage schema, docs and tests. It must not import AgentCowork internal crates or UI types. Core owns only a client/adapter that maps service observations into `13` capability results and `21` World identity refs. Keep the wire contract and service policy portable; OS-specific providers sit behind interfaces in the service subtree. The standalone build must work without the Tauri app. This is one service with modules, not a set of network services.
+**Extraction seam:** put the portable service host and its protocol under `services/machine-observer/`, with its own manifest, entry point, protocol version, storage schema, docs and tests. It must not import Core, Trust, app-storage or UI/business-logic crates. Its sole repository-local dependency is the pure wire-contract crate `crates/agentcowork-types`; when extracted, include that small contract crate unchanged in the standalone workspace so there is still one canonical DTO definition and the service builds without the AgentCowork application. Core owns only a client/adapter that maps service observations into `13` capability results and `21` World identity refs. Keep the wire contract and service policy portable; OS-specific providers sit behind interfaces in the service subtree. The standalone build must work without Tauri or Core. This is one service with modules, not a set of network services.
 
 ## 4. Collector and provider strategy
 
@@ -80,7 +80,7 @@ The provider registry returns a metric descriptor before sampling: stable metric
 
 ## 5. Sampling, history and local-model attribution
 
-**Live mode:** refresh visible dashboards at a bounded, user-configurable cadence; pause high-cost collectors when the view is closed unless the user explicitly enabled history. **History mode:** user explicitly chooses collection categories and retention. Initial target: keep 24 hours of high-resolution basic resource samples and 30 days of one-minute rollups; calibrate CPU, disk, SQLite growth and battery impact on representative Windows hardware before freezing. Keep process-name/PID history disabled by default and separately consented. Show collection status and stop/purge controls.
+**Live mode:** refresh visible dashboards at a bounded, user-configurable cadence; stop live polling when the view is closed. **History/background mode:** user explicitly chooses collection categories, cadence and retention, which are shown before enabling; it may continue with the view closed. Initial target: keep 24 hours of high-resolution basic resource samples and 30 days of one-minute rollups; calibrate CPU, disk, SQLite growth and battery impact on representative Windows hardware before freezing. Keep process-name/PID history disabled by default and separately consented. Show active scope, cadence, collection status and stop/purge controls.
 
 The observer's sample store is local and bounded. It is not the event log. `30` receives only lifecycle/configuration/consent changes, health transitions, collector gaps and configured threshold alerts with references; high-rate sample payloads stay in the observer store. Mission/task evidence stores references plus requested snapshots, not an unbounded stream.
 
@@ -92,24 +92,24 @@ A sample is never described as causal proof. If a GPU provider reports device ut
 
 Do not make Machine Observer a reason to elevate the installer, install a privileged service/driver, or run the application as administrator. The consumer NSIS route is configured for a per-user install. This repo pins Tauri CLI `2.11.4`; its generated WiX template sets `InstallScope="perMachine"`, and the repo does not override that template. Label the MSI as an administrator-managed, machine-wide installation; its UAC applies only to installation. NSIS is the no-admin default consumer path. Any installer approval applies only to placing the application at the selected install scope; it never enables telemetry. Monitoring remains useful without elevation. A separate OS privilege request is deferred until a user requests a specific optional reading that its probed provider cannot deliver otherwise.
 
-There are three independent decisions; none implies either of the others:
+At runtime there are three independent decisions; none implies either of the others. Installer scope is separate and implies none of them:
 
-The first-use notice applies to the whole System observation surface, including basic CPU/memory readings; detailed categories below need their own grants. Consent is a product-level disclosure and can be revoked in settings. It must never be described as an OS permission or as Windows administrator approval. If the user chooses Not now, no sample is collected; the System tab stays usable as an explanation and displays one contextual inline note about the optional local overview, with Enable / Keep off. After Keep off or dismissal, do not repeat unless the user explicitly reopens the permission control.
+On the user's first explicit visit to System Workbench—or before fulfilling any user/agent request for an unconsented category or ungranted Work share—show an in-app consent dialog before any sample, including basic CPU/memory readings. Core returns typed `authorization_required` with the complete `missing_grants` set (`consent_required` for local observation and/or `work_grant_required` for that Work) and `sampled=false`, without starting the service or querying a provider; if both are missing, report both. Experience may combine their presentation, but each choice is independent, and a request remains held until every required grant is valid. An agent cannot grant either permission. Explain that basic overview reads are on demand or while the System page is open; collection after closing it requires a separate history/background grant naming its cadence and retention. Do not show the dialog during install, app launch or background startup. The dialog is a product-level disclosure and can be revoked in settings; it is never an OS permission or Windows administrator approval. If the user chooses Not now, collect nothing; the System tab stays usable as an explanation and displays one contextual inline note about the optional local overview, with Enable / Keep off. After Keep off or dismissal, do not repeat unless the user explicitly reopens the permission control.
 
-Suggested first-use copy: “See how your computer is doing. AgentCowork reads basic performance values and keeps any history you enable on this device. Nothing is shared with your agent unless you separately allow it for a task. You can change this in Privacy & permissions.” Actions: **Enable local overview** / **Not now**. After declining, the single inline follow-up says what is unavailable and offers **Enable** / **Keep off**; it does not block chat or other work.
+Suggested first-use copy: “See how your computer is doing. AgentCowork reads basic performance values while this page is open. Optional history can continue on this device at the cadence and retention you choose. Nothing is shared with your agent unless you separately allow it for a task. You can change this in Privacy & permissions.” Actions: **Enable local overview** / **Not now**. If declined, the single inline follow-up explains the practical value without implying that it is required: “Enable the overview to see live CPU, memory, storage and supported GPU readings. History and sharing stay off until you choose them.” It offers **Enable** / **Keep off** and does not block chat or other work.
 
 | Scope | Examples | Default |
 |---|---|---|
-| Basic system status | CPU/memory load, volume capacity, network byte rates, device summary | Show notice before first read; user explicitly enables local overview |
+| Basic system status | CPU/memory load, volume capacity, network byte rates, device summary | Show consent dialog before first read; on-demand/while visible only |
 | Process summary | process name, PID generation, CPU/memory/I/O and supported GPU usage | Separate consent; history separately off by default |
 | Advanced process diagnostics | owner/image/parent, thread summary, handle count, service state and supported module metadata | Separate on-demand consent; no history by default; inaccessible/protected processes are reported, never bypassed |
 | Highly sensitive process internals | command line, environment, handle duplication/object paths, memory contents, open-file paths, stack capture | Not collected in this baseline; requires a separate product/security decision and exact data scope |
 | Network metadata | connection endpoints/process association, never packet content | Separate consent; no connection history unless enabled |
 | Hardware details | sensor, temperature, power, fan, SMART health | Category consent; per-provider and platform gaps displayed |
-| History | time series, process identity/name history, thresholds | Separate category and retention; process history off by default |
+| History | time series, process identity/name history, thresholds | Separate category, cadence and retention; process history off by default |
 | WSL | selected distro status and metrics | Explicit per-distro opt-in; never start a stopped distro |
 
-1. **Data-access notice and consent** — AgentCowork tells the user what category will be read, which scope, why, collection cadence, local retention and whether an agent will receive the result. This is required even for read-only access to process, network, device or history data. It is recorded through the single Trust owner `12`; consent is per category/scope and may be revoked. A first-use explanation is not a claim that the OS has granted privileges.
+1. **Data-access dialog and consent** — AgentCowork tells the user what category will be read, which scope, why, collection cadence, local retention and whether an agent will receive the result. The first System visit or first user/agent request for an unconsented category asks for local overview consent before even basic readings; basic reads are on demand or while the page is open, and background history is a separate scope with its own cadence and retention; sensitive categories remain separate. For an agent request, local collection consent and the exact Work-scoped share grant are separate user choices; if both are absent they may be shown together, but the Work waits until all required grants are present. Granting only one does not start the provider or release data. The agent request only triggers a user-facing gate and never supplies consent. Consent is recorded through the single Trust owner `12`; it is per category/scope and may be revoked. Product consent is not a claim that the OS has granted privileges.
 2. **OS elevation or platform permission** — requested only when the exact collector reports that it needs an OS privilege. The exact field/action is labeled with the Windows UAC shield and names the read and why before the user activates it; Windows then displays its own UAC consent/credential UI. The application itself is never relaunched elevated. On denial/cancel, keep ordinary metrics working and mark that collector `permission_needed`.
 3. **Agent/Work disclosure** — local dashboard consent never exposes readings to an agent. A user must separately grant the exact Machine Observer capability and fields to a specific Work/session through Core and Trust. An external agent's native tools or local permissions do not count as this grant; native activity remains under the agent's own policy and provenance.
 
@@ -119,9 +119,9 @@ Do not ask the user to “grant admin to monitor everything.” Most read-only m
 
 For a helper, use an authenticated per-user IPC channel (Windows named pipe ACL; Unix-domain socket permissions on supported POSIX hosts), protocol version, strict message-size/time limits, closed operation enum and explicit grant expiry. The helper cannot launch subprocesses, write files/settings, access arbitrary paths, control processes, install a driver or accept a raw query. Its process and grant exist for one user-requested operation only, then exit; there is no elevated session or sampling loop. Standard-user denial degrades cleanly. No hidden always-on admin service is part of the default product.
 
-DEC-058 tightens this helper rule: it is launched only after consent and an actual provider need, handles one enumerated read request, returns the result and exits. It never samples in the background at elevated privilege. A metric unavailable to the standard-user observer stays permission_needed until the user explicitly requests that exact read again; denial does not trigger another UAC prompt without a new user action.
+DEC-058 establishes this helper boundary and DEC-059 clarifies its consent UX: launch only after product consent and an actual provider need; handle one enumerated read request, return the result and exit. The helper never samples in the background at elevated privilege. A metric unavailable to the standard-user observer stays permission_needed until the user explicitly requests that exact read again; denial does not trigger another UAC prompt without a new user action.
 
-If the user declines UAC, show one contextual in-panel follow-up (not an error modal or a second approval prompt) that explains which reading remains unavailable and what that exact read adds. Offer “Try this read once” and “Keep standard access”; persist dismissal for that scope as non-authoritative UI preference only, and do not repeat it during polling or future launches. An explicit later attempt is new intent and may show UAC again; no dismissal preference grants access. Keep the feature usable at standard-user privilege. This is product guidance after a denied OS prompt, not another OS prompt.
+If the user declines UAC, show one contextual in-panel follow-up (not an error modal or a second approval prompt) that explains which reading remains unavailable and what that exact read adds. Use calm, specific copy such as: “Allowing this one read adds [field] to the process details. Your CPU, memory and storage overview still works if you skip it.” Offer **Try this read once** and **Keep standard access**; persist dismissal for that scope as non-authoritative UI preference only, and do not repeat it during polling or future launches. An explicit later attempt is new intent and may show UAC again; no dismissal preference grants access. Keep the feature usable at standard-user privilege. This is product guidance after a denied OS prompt, not another OS prompt.
 
 ## 7. Query, capability and privacy contract
 
@@ -139,6 +139,8 @@ Add a **System** tab to the right Workbench with a nontechnical default Overview
 
 Advanced drill-down tabs: Processes, Hardware & GPU, Storage, Network, History, Query. The Storage page composes live volume/SMART observations with the existing Files/Storage treemap and marks which path scopes were scanned. Settings adds System Monitoring controls under Privacy & permissions and Diagnostics: category grants, history/retention, sampling cadence, per-provider health, platform limitations, WSL distro opt-in, elevated helper status, revoke and delete-history. The user's current request/selection can attach a timestamped observation ref to chat; the agent gets only the authorized fields. Opening the System panel does not automatically send metrics to the current agent.
 
+**UI integration seams (planned; not implemented):** add the System view id to `ui/src/lib/store.ts` (`ViewId`), its label/icon and render case to `ui/src/components/shell/right-rail.tsx` (`VIEW_META` / `renderView`), and a new `ui/src/components/views/system-view.tsx`. The existing `ui/src/App.tsx` mounts `RightViewport`; it does not dispatch individual view types. Add consent/settings controls to `PrivacySection` in `ui/src/components/panels/settings-sections-extra.tsx`, registered by `ui/src/components/panels/settings-panel.tsx`. These paths are the verified extension points, not claims that the feature already exists.
+
 ## 9. Safety, cost and failure behavior
 
 - Read-only means no OS mutation; a directory scan may consume I/O, so it is cancellable, bounded, visibly active and uses the existing storage scanner.
@@ -152,25 +154,25 @@ Advanced drill-down tabs: Processes, Hardware & GPU, Storage, Network, History, 
 
 ## 10. Versioned service protocol (LLD)
 
-The protocol is transport-neutral and versioned; local transport is a current-user named pipe on Windows and a permissioned Unix-domain socket on POSIX. It exposes no TCP/HTTP listener by default.
+The protocol is transport-neutral and versioned; canonical request/result DTOs and status enums live in a pure `agentcowork-types` module shared by the Core adapter and Observer. Keep that module free of I/O and business logic. The service may depend on this contract crate plus platform/provider libraries, but not Core, Trust, app storage, command handlers or UI. Local transport is a current-user named pipe on Windows and a permissioned Unix-domain socket on POSIX. It exposes no TCP/HTTP listener by default. Core returns `authorization_required{missing_grants}` before launching the service or invoking any provider. These are Core/Trust gate results, not Observer authority; the Observer receives only a scoped startup lease and returns `LeaseInvalid`/`ScopeDenied` if it is absent, expired or revoked.
 
 ```text
 ObserverHello(protocol_min, protocol_max, app_instance, requested_scopes)
   -> ServiceHello(protocol_version, service_version, host, provider_descriptors[])
 
-GetSnapshot(scope, metric_ids[], max_age_ms)
+GetSnapshot(scoped_lease_id, metric_ids[], max_age_ms)
   -> Snapshot(observed_at, entries[], provider_status[])
 
-Query(typed_plan, result_limit, timeout_ms)
+Query(scoped_lease_id, typed_plan, result_limit, timeout_ms)
   -> QueryResult(normalized_plan, rows[], observed_at, omitted_fields[], provider_status[])
 
 GetHistory(metric_ids[], entity_refs[], from, to, max_points)
   -> HistorySeries(series[], retention_status)
 
-StartSampling(profile_id, categories[], cadence, retention, grant_ref)
+StartSampling(profile_id, categories[], cadence, retention, scoped_lease_id)
   -> SamplingHandle(status, next_sample_at)
 
-StopSampling(handle) / RevokeScope(grant_ref)
+StopSampling(handle) / RevokeScope(scoped_lease_id)
   -> ServiceStatus
 
 Health() / Shutdown(reason)
@@ -182,6 +184,8 @@ Requests are actor/work scoped by Core and include a correlation id, not a secre
 ## 11. Current code reuse and migration ownership
 
 The repository already has useful pieces, so the new service must converge rather than duplicate them:
+
+The shared wire types belong in the existing pure Rust schema crate (`crates/agentcowork-types/src/machine_observer.rs`, new; exported from `src/lib.rs`). The service can depend on that contract but not on Core business crates. The UI's TypeScript shape is a projection validated against Rust-serialized fixtures; do not add a second authoritative schema or a new general code-generation framework for this one service.
 
 | Existing code | Current capability | Target disposition |
 |---|---|---|
@@ -214,7 +218,7 @@ Canonical behavior lives in `08` and maps in `09`. This table is navigation only
 |---|---|
 | `REQ-OBS-001` | Current typed read-only host snapshot and freshness |
 | `REQ-OBS-002` | Per-metric/provider support, provenance, status and limitation |
-| `REQ-OBS-003` | Data notice, scoped consent, least-privilege elevation and denial fallback |
+| `REQ-OBS-003` | First-use in-app consent dialog, scoped consent, least-privilege elevation and denial fallback |
 | `REQ-OBS-004` | Bounded local history, retention and event separation |
 | `REQ-OBS-005` | Safe typed/allowlisted query over OS facts |
 | `REQ-OBS-006` | Disk capacity/health plus reuse of the single existing treemap scanner |
@@ -222,7 +226,7 @@ Canonical behavior lives in `08` and maps in `09`. This table is navigation only
 | `REQ-OBS-008` | Explicit WSL/distro selection and no silent start/install |
 | `REQ-OBS-009` | Standalone service protocol and scoped Core integration |
 | `REQ-OBS-010` | On-demand, least-rights process/service diagnostics with honest protected-process gaps |
-| `REQ-UXQ-011` | Approachable System Workbench and point-of-use permission notice |
+| `REQ-UXQ-011` | Approachable System Workbench and first-use consent dialog |
 
 ## 14. Research sources and source-use boundary
 

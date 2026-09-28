@@ -58,7 +58,7 @@
 | DM-035 | `EvidenceLink` | `36` | Requirement/node/claim to artifact/receipt/verification with validity | current → stale/invalid |
 | DM-036 | `OutcomeEvaluation` | `36` | Independent requirement and mission result | immutable versioned result |
 | DM-037 | `ExtensionGrant` | `46` | Explicit binding/workspace/Work activation of host MCP/skill/plugin component | active → revoked/expired |
-| DM-038 | `PlanNode` | `35` | Durable semantic unit whose Work attempts can be replaced | proposed → ready/running/verifying → completed/invalidated/superseded |
+| DM-038 | `PlanNode` | `35` | Durable semantic unit whose Work attempts can be replaced; may pin a bounded candidate-comparison strategy without introducing another queue | proposed → ready/running/verifying → completed/invalidated/superseded |
 | DM-039 | `AgentBinding` | `15` | One actual profile/launch/session capability negotiation with provenance | discovered → negotiated → attached → detached |
 | DM-040 | `SettingsProfile` | `48` | Named, versioned non-secret preference overrides with typed scope and effective-state preview | draft → active/archived |
 
@@ -122,7 +122,7 @@ erDiagram
 **DM-025 `ModelDescriptor`** — `id` (`provider/model`) · `provider` · `context_window` · `max_output` · `tool_calling` · `reasoning_modes[]` · `vision` · `streaming` · `structured_output` · `cost {in,out}` · `latency_class` · `local|cloud`.
 **DM-026 `WorldObject` / `WorldEdge`** — `id` · `kind` (`app|window|file|process|device|browser_tab|…`) · `identity_key` (per-kind stable key) · `attributes` · `freshness` · `provenance`; edges: `kind` · `from` · `to` · `observed_at`.
 **DM-027 `Skill`** — `id` · `version` · `metadata` · `instructions_ref` · `capability_requirements[]` · `input/output contracts` · `examples_refs[]`.
-**DM-043 `ObservationConsent`** — `id` · `subject_user` · `category` · `purpose` · `local_recipient` · `scope` · `retention_policy` · `policy_version` · `granted_at` · `revoked_at?` · `source_surface`. Trust owns this local, persistent, revocable product consent for Machine Observer collection only. It does not authorize agent disclosure, a Core capability call, or OS elevation; agent sharing still needs its Work-scoped capability grant, and any privileged helper authorization is one operation and ephemeral.
+**DM-043 `ObservationConsent`** — `id` · `subject_user` · `category` · `purpose` · `local_recipient` · `scope` (`on_demand|foreground_live|background_history`) · `sampling_policy` (cadence, active condition, foreground/background) · `retention_policy` · `policy_version` · `granted_at` · `revoked_at?` · `source_surface`. Trust owns this local, persistent, revocable product consent for Machine Observer collection only. Basic live readings are sampled only on demand or while the System Workbench is open. Continuing collection after it closes requires a separate history/background grant with its own cadence and retention. It does not authorize agent disclosure, a Core capability call, or OS elevation; agent sharing still needs its Work-scoped capability grant, and any privileged helper authorization is one operation and ephemeral.
 
 ObservationDescriptor fields: metric identity, category, provider id/version, unit, sensitivity, platform/device scope, availability state, permission class, refresh interval, observed time, staleness limit and an optional reason. It describes availability; it is not authorization.
 
