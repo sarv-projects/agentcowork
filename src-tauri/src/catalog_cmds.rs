@@ -421,6 +421,10 @@ impl ResolveCtx {
                     .resolve(provider)
                     .map(|r| matches!(r.auth, Auth::Keyless))
                     .unwrap_or(false),
+            // Preserve ProviderEndpoint::default's local-runtime policy: local
+            // loopback endpoints are allowed, private/LAN destinations are not.
+            allow_loopback: true,
+            allow_private: false,
         })
     }
 
