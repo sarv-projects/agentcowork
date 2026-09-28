@@ -1,5 +1,7 @@
 # 29 — Artifacts & Receipts
 
+> **DEC-054 amendment:** Artifact versions gain explicit `mission_id`, `plan_node_id`, input artifact/resource versions and downstream dependency edges; a changed input marks dependent outputs stale pending review (`36`). Core effect receipts and agent-reported/native-observed evidence remain different evidence classes. No inferred native effect receives a Core ticket or verification badge.
+
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P2).
 > **P7 pass (2026-09-26):** line-checked; requirements seeded (`REQ-ART-*`, Requirements section).
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
@@ -42,7 +44,7 @@ Receipt {
 ```
 
 Rules:
-- **Mandatory** for every externally visible effect (INV-07); emitted inside the governed path (`12` → `13` → `34` → receipt).
+- **Mandatory** for every Core-mediated externally visible effect (INV-07, DEC-054); emitted inside the governed path (`12` → `13` → `34` → receipt). Native agent reports and observations are different evidence records, not Core effect receipts.
 - **Immutable**; receipts are the product-facing evidence chain.
 - **Replay = evidence replay**, not re-execution: `replay(receipt)` reconstructs inputs + shows what verification ran and what changed; re-doing the action is a **new work item** (never a silent re-fire).
 - Emission also writes an event (`30`) and an audit entry (`12`) — three views of one fact, never duplicated state.
@@ -123,7 +125,7 @@ Testable behaviors owned by this module live in `ARCH/08-REQUIREMENTS.md`; the t
 |---|---|
 | `REQ-ART-001` | Artifact versions are immutable; every edit creates a new version with lineage (DM-019, INV-18) |
 | `REQ-ART-002` | Provenance is mandatory on every artifact (INV-18) |
-| `REQ-ART-003` | Receipts are mandatory for externally visible effects, emitted inside the governed path (INV-07, DEC-022) |
+| `REQ-ART-003` | Receipts are mandatory for Core-mediated externally visible effects, emitted inside the governed path (INV-07, DEC-022/054) |
 | `REQ-ART-004` | Receipts are immutable; `replay` is evidence replay, never re-execution (CTR-018) |
 | `REQ-ART-005` | A receipt emission writes event + audit — three views of one fact, never duplicated state (INV-23/24) |
 | `REQ-ART-006` | Library promotion is explicit; artifacts are work-scoped, the Library global and durable (DEC-014, DM-023) |

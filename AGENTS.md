@@ -160,10 +160,10 @@ L0  External Agents    peer agents (DEC-010), MCP servers, browsers
 
 ### The One Invariant (summary)
 
-**Surfaces propose; Core disposes.** Every externally visible mutating effect
-requires an authorization ticket minted in Core; local persistent mutations
+**Surfaces propose; Core disposes for Core-mediated calls.** Each mutating effect
+through a Core capability requires an authorization ticket minted in Core; local persistent mutations
 (in-store memory writes, DEC-042) are policy-gated and audited. Provider
-credentials never leave the vault ([`INV-01`](ARCH/05-INVARIANTS.md),
+credentials held by Core never leave the vault ([`INV-01`](ARCH/05-INVARIANTS.md),
 [`INV-02`](ARCH/05-INVARIANTS.md)).
 The full invariant set lives in [`ARCH/05-INVARIANTS.md`](ARCH/05-INVARIANTS.md).
 
@@ -297,13 +297,13 @@ scripts/                         # CI gates, codegen, tools
 
 ## 15. Security Rules
 
-- Provider API keys live ONLY in the Rust vault (`agentcowork-vault`)
+- Provider API keys held by Core live ONLY in the Rust vault (`agentcowork-vault`); discovered external agents retain custody of their native credentials (DEC-054)
 - The sidecar NEVER holds credentials
-- All outbound network goes through Guard-2 (`agentcowork-guard`)
+- All Core-mediated outbound network goes through Guard-2 (`agentcowork-guard`); a self-contained external agent's native network remains under its own policy and environment (DEC-054)
 - Path traversal is blocked by `pathfloor` (Guard-2)
 - SSRF is blocked by `netfloor` (Guard-2)
 - Sandboxed execution via `sandbox` (Guard-2)
-- Audit trail: every mutating operation is logged to `agentcowork-audit`
+- Audit trail: every Core-mediated mutating operation is logged to `agentcowork-audit`; native agent activity has distinct observed/reported provenance (DEC-054)
 
 ## 16. Spec-driven development (SDD)
 
@@ -327,3 +327,11 @@ to satisfy them.
   and tests (`test:`).
 - **Protocol:** [`.agents/docs/spec-driven-development.md`](.agents/docs/spec-driven-development.md) ·
   template: [`.agents/templates/SPEC.template.md`](.agents/templates/SPEC.template.md).
+
+## 17. Architecture amendment (2026-09-28)
+
+The frozen v1 baseline is amended by [`DEC-054`](ARCH/04-DECISIONS.md) for the durable Mission layer and external-agent ecosystem. Read [`ARCH/35-MISSION.md`](ARCH/35-MISSION.md), [`ARCH/36-OUTCOME-AND-RECOVERY.md`](ARCH/36-OUTCOME-AND-RECOVERY.md), and [`ARCH/46-ECOSYSTEM-ARCHITECTURE.md`](ARCH/46-ECOSYSTEM-ARCHITECTURE.md) before work on missions, delegation, MCP/skill/plugin scoping, or agent discovery. [`ARCH/45-REFERENCE-RESEARCH.md`](ARCH/45-REFERENCE-RESEARCH.md) records source pins and evidence limits; [`ARCH/39-ARCHITECTURE-DELIVERY.md`](ARCH/39-ARCHITECTURE-DELIVERY.md) records dependencies, not completed implementation.
+
+Preserve an external agent's native reasoning loop, model choice, tools, MCPs, skills, plugins and private configuration. Discovery is read-only; attachment may add a scoped shared capability only through a supported, explicit session overlay. Core guarantees Guard tickets and audit for **Core-mediated calls**; a discovered self-contained agent's native effects stay under its own policy and must be labelled with honest provenance. The new Mission controller owns persistent goal/plan/evidence truth, while the existing Work scheduler owns execution attempts and the agent owns its internal turn. Never add a second scheduler, reasoning engine, credential store or event log to implement Mission. Horizon Code is a future external binding.
+
+The owner directed this architecture pass to edit only `ARCH/*.md` and this file, leaving `TODO.md` and `CURRENT_RUN.md` unchanged. Treat outdated root product/UI wording as a recorded reconciliation item, not permission to silently alter those files in this pass.

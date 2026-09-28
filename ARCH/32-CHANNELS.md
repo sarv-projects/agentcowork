@@ -99,6 +99,8 @@ Product-owner brief (three protocol surfaces; 7-item projection; “surfaces are
 
 ## 12. Requirements (`REQ-CHAN-*`)
 
+> **DEC-054 amendment:** Channel-B shared tool calls need the real `session_id`, `agent_binding_id`, `work_id`, grant and trace id at admission. The current `src-tauri/src/channel_b.rs` placeholder session/agent values do not meet this contract. A catalog MCP is not automatically mounted or granted to every session; `46` defines resolution and native-config preservation. The `SelfContained` classification in §4 remains truthful for agent-native effects.
+
 Testable behaviors owned by this module live in `ARCH/08-REQUIREMENTS.md`; the traceability chain is in `ARCH/09-FEATURE-MATRIX.md`. This table is a pointer, not a second copy.
 
 | REQ | Behavior (one line) |

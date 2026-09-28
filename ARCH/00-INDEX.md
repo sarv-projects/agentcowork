@@ -53,6 +53,8 @@ v0 grew by accretion: 33 ARCH files, 55 research files, a 355 KB spec, a 606 KB 
 
 ## 3. Document map
 
+> **DEC-054 amendment (2026-09-28):** The 2026-09-26 frozen baseline is preserved as historical status, then superseded on the named boundaries by DEC-054. New target docs: `35-MISSION` (durable semantic layer), `36-OUTCOME-AND-RECOVERY`, `37-WORKFLOW-SKILL-LIFECYCLE`, `38-EXPERIENCE-QUALITY`, `39-ARCHITECTURE-DELIVERY`, `45-REFERENCE-RESEARCH`, `46-ECOSYSTEM-ARCHITECTURE`, `47-MARKET-AND-BENCHMARKS`. The source-pinned evidence ledger is `45`; official product comparison is `47`; target HLD is `03` + `35` + `46`; Mission LLD is `35`–`37`; requirements and traceability remain `08`/`09`. `TODO.md` is deliberately not updated in this architecture pass. Legacy count statements in this document refer to the frozen baseline, not the amended registry.
+
 | ID | File | Scope | Purpose | Status |
 |---|---|---|---|---|
 | 00 | `ARCH/00-INDEX.md` | Meta | This file: authority, doc map, passes, conventions, evidence | Frozen v1 |
@@ -89,11 +91,19 @@ v0 grew by accretion: 33 ARCH files, 55 research files, a 355 KB spec, a 606 KB 
 | 31 | `ARCH/31-SKILLS-PLUGINS.md` | Extensibility | Skill registry/loader/resolver; plugin surfaces | Frozen v1 |
 | 32 | `ARCH/32-CHANNELS.md` | Surfaces | Desktop/CLI/ACP/A2A/API/mobile projections; agent gateway; owns the ACP crate (`agentcowork-acp`) | Frozen v1 |
 | 34 | `ARCH/34-EFFECT-VERIFICATION.md` | Verification | Validate · render · verify · reconcile; receipt policy | Frozen v1 |
+| 35 | `ARCH/35-MISSION.md` | Mission | Durable goal, contract, requirements, adaptive plan, controller | DEC-054 target |
+| 36 | `ARCH/36-OUTCOME-AND-RECOVERY.md` | Mission | Outcome evaluation, evidence validity, long-horizon recovery | DEC-054 target |
+| 37 | `ARCH/37-WORKFLOW-SKILL-LIFECYCLE.md` | Extensibility | Capture, workflow-to-skill promotion, external workflow adapters | DEC-054 target |
+| 38 | `ARCH/38-EXPERIENCE-QUALITY.md` | Experience | Progressive Mission Control and measurable quality | DEC-054 target |
+| 39 | `ARCH/39-ARCHITECTURE-DELIVERY.md` | Delivery design | Dependency sequence and acceptance gates | DEC-054 target |
 | 40 | `ARCH/40-FLOWS.md` | Cross | End-to-end sequences (`FLOW-*`) | Frozen v1 |
 | 41 | `ARCH/41-EDGE-CASES.md` | Cross | Edge-case catalog (`EDGE-*`) + resolutions | Frozen v1 |
 | 42 | `ARCH/42-EVIDENCE-MAP.md` | Cross | Evidence map + acceptance mapping for implementation | Frozen v1 |
 | 43 | `ARCH/43-GLOSSARY.md` | Meta | Terms | Frozen v1 |
 | 44 | `ARCH/44-ABSORB-REGISTER.md` | Meta | Competitor absorb register + licensing ledger | Frozen v1 |
+| 45 | `ARCH/45-REFERENCE-RESEARCH.md` | Evidence | Pinned source observations and limits | DEC-054 evidence |
+| 46 | `ARCH/46-ECOSYSTEM-ARCHITECTURE.md` | HLD | External agent ownership, scoped ecosystem, heterogeneous teams | DEC-054 target |
+| 47 | `ARCH/47-MARKET-AND-BENCHMARKS.md` | Evidence | Official competitor capability snapshot and comparison protocol | DEC-054 evidence |
 | — | `AGENTCOWORK-SPEC.md` | Product | Product contract (WHAT) — root authority | Frozen v1 |
 | — | `AGENTCOWORK-UI.md` | UI | UI architecture + chat rendering spec | Frozen v1 |
 | — | `README.md` (root) | Product | Repo landing page — v1 sync | Frozen v1 |
@@ -120,7 +130,7 @@ v0 grew by accretion: 33 ARCH files, 55 research files, a 355 KB spec, a 606 KB 
 
 ## 5. Viability checklist (per doc, and for the whole set at freeze)
 
-- [x] **One governed path:** every externally visible effect flows `Work → Capability → Provider → Handle → Guard → Ticket → Execute → Effect → Verify → Receipt → Event`.
+- [x] **One governed Core path:** every Core-mediated externally visible effect flows `Work → Capability → Provider → Handle → Guard → Ticket → Execute → Effect → Verify → Receipt → Event`; external agents' native effects carry separate provenance (DEC-054).
 - [x] **One owner per responsibility:** no duplicated engines/registries/schedulers/provider systems.
 - [x] **Acyclic dependencies:** every module edge has a named contract (`CTR-*`).
 - [x] **Module interop:** doc states depends-on, exposes-to, and failure behavior.

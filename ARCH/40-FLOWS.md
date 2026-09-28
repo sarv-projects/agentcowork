@@ -150,3 +150,53 @@
 **Steps:** dangerous capability (send/redact/delete/mass-write) → possible ASK approval → ticket → execute → **deep verification** (redact⇒extraction check; send⇒delivery receipt; delete⇒count+audit; mass-write⇒sample diff) → receipt with verification record; mismatch → repair/`needs_attention`.
 **Terminal:** verified receipt or explicit unverified/unresolved state.
 **Failure branches:** verifier unavailable → effect blocked (dangerous class) or human-confirmed; repeat mismatch → escalation.
+
+## DEC-054 Mission and ecosystem flows
+
+### FLOW-25 — Mission creation
+**Actors:** user · Experience · Mission · Work. **Steps:** classify request complexity → capture original request ref → draft proportional GoalContract and requirements → user may correct → commit contract v1 and Mission event → create initial milestone proposal. **Terminal:** draft/active. **Failure:** ambiguity affecting irreversible work → dependent branch waits; simple chat stays Work-only.
+
+### FLOW-26 — Versioned plan
+**Actors:** lead agent · Mission. **Steps:** propose nodes/dependencies/acceptance → submit PlanPatch with base version → validate cycle, scope, budget, contract → atomically commit PlanVersion → publish readiness. **Terminal:** committed/rejected. **Failure:** stale base → typed conflict and rebase, never last-writer-wins.
+
+### FLOW-27 — PlanNode dispatch
+**Actors:** Mission · Work scheduler · agent/workflow. **Steps:** ready node → choose adapter/runtime by verified capabilities and budget → create Work with node/attempt refs → build bounded ContextPacket and grants → scheduler admits → record Work link. **Terminal:** running/waiting. **Failure:** no eligible adapter → blocked with missing capability, not a false launch.
+
+### FLOW-28 — Worker replacement
+**Actors:** Mission · Work · adapters. **Steps:** failed Work settles with receipt/failure class → node remains → reconcile side effects → create fresh attempt/session with prior evidence → resume. **Terminal:** retrying/blocked. **Failure:** ambiguous irreversible effect → needs_attention, no blind retry.
+
+### FLOW-29 — Goal-contract change
+**Actors:** user · Mission · Work. **Steps:** capture instruction → classify as information/priority/constraint/stop → commit new contract version → impact analysis → steer or interrupt affected active Work → retain unaffected branches. **Terminal:** active/waiting. **Failure:** contradictory input → ask at affected gate.
+
+### FLOW-30 — Invalidation
+**Actors:** Mission · Artifact · Evidence. **Steps:** changed requirement/input/assumption → traverse dependency closure → mark evidence/artifacts stale → reopen affected nodes → propose PlanPatch. **Terminal:** reconciled. **Failure:** unknown dependency → conservative review-needed flag.
+
+### FLOW-31 — Dormant resume
+**Actors:** user · Mission · Runtime. **Steps:** load latest contract/plan → rebuild projections → inspect environment fingerprint and external refs → invalidate drifted closure → replan ready nodes → dispatch. **Terminal:** active/waiting. **Failure:** missing auth/browser/profile → scoped blocker.
+
+### FLOW-32 — Environment drift
+**Actors:** Runtime · World · Mission. **Steps:** compare repo head/dirty hash, resource versions and provider epochs → emit drift report → verify affected assumptions/evidence → invalidate selectively. **Terminal:** current/review-needed. **Failure:** inaccessible resource → status unknown, no mutation.
+
+### FLOW-33 — No-progress escalation
+**Actors:** Work · Mission. **Steps:** fingerprint attempts and material delta → detect repeated failure → apply typed recovery ladder within budget → change strategy or stop branch. **Terminal:** retrying/blocked/no_progress. **Failure:** heartbeat alone never resets progress counter.
+
+### FLOW-34 — Mission outcome verification
+**Actors:** Mission · independent OutcomeEvaluator. **Steps:** load current criteria and evidence → deterministic checks → bounded semantic review where needed → record per-requirement result → Stop Controller decides. **Terminal:** completed/partial/blocked. **Failure:** self-report-only or stale proof → not_tested.
+
+### FLOW-35 — Partial termination
+**Actors:** Mission · user. **Steps:** identify unmet criteria and active side effects → settle children safely → create evidence bundle with partial results and recovery options → record terminal reason. **Terminal:** completed_partial/budget_exhausted/failed. **Failure:** pending effect cannot be called completed.
+
+### FLOW-36 — Heterogeneous integration
+**Actors:** lead · child agents · Mission. **Steps:** dispatch independent nodes to compatible agents → isolate writers/profiles → collect receipts → integration node resolves conflicts → independent verifier checks combined outcome. **Terminal:** integrated/blocked. **Failure:** incompatible outputs → explicit conflict/rework, not blind concatenation.
+
+### FLOW-37 — Provider failover
+**Actors:** Work · adapter registry · Mission. **Steps:** classify failure → checkpoint/reconcile → choose compatible alternate agent → rebuild packet → new attempt under same node. **Terminal:** resumed/blocked. **Failure:** required capability absent → no downgrade.
+
+### FLOW-38 — Artifact dependency invalidation
+**Actors:** Artifact · Mission. **Steps:** upstream version changes → traverse edges → mark downstream stale → offer/dispatch regeneration with grants → re-verify. **Terminal:** current/stale. **Failure:** inaccessible source → show uncertainty.
+
+### FLOW-39 — Skill proposal from work
+**Actors:** user · Work/Workflow · Skill store. **Steps:** opt-in capture → redact → separate deterministic/adaptive steps → draft skill/workflow → review grants → dry-run/evaluate → publish version. **Terminal:** published/rejected. **Failure:** secret or unscoped effect → reject.
+
+### FLOW-40 — Controlled skill improvement
+**Actors:** feedback · evaluator · skill store. **Steps:** draft versioned patch → run historical and side-effect regression evals → compare against current → policy/human promotion gate → pin new activations. **Terminal:** promoted/rejected. **Failure:** regression → old version remains active.

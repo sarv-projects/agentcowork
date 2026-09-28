@@ -62,6 +62,7 @@
 | DEC-050 | Base-envelope actor context carries a permissions **reference**, not a snapshot: `permissions_ref` is resolved by the Trust owner at admission (INV-11), because the envelope crosses a trust boundary and an in-envelope snapshot would be a second, unaudited copy of an authorization decision — clarifies the `10-KERNEL` §7 and `REQ-KERNEL-007` prose to the canonical shape already stated in that section; no envelope field, contract or trust rule changes | Locked | 10, 08, 07, 05 |
 | DEC-052 | The first-party native agent is **not** an AgentCowork component: the engine is developed outside this repository and bound afterwards as an ordinary binding — same `AgentEngine`, same Guard, no privileged path (DEC-010's parity rule generalized to every engine and unchanged in force) · `ARCH/15-AGENT-X.md` becomes `ARCH/15-AGENT-PLANE.md` (the agent plane) · `REQ-AGX-001…013` and `TASK-AGX-001…014` are retired (never reused) and the engine-agnostic subset is re-seeded as `REQ-AGENT-001…004` · W4 is retired · INV-12 becomes engine parity | Locked | 01, 15, 05, 08, 09, 03, 02 |
 | DEC-053 | Code identifiers are unfrozen and renamed: `everyaios-*` → `agentcowork-*` (crates, packages, scopes, imports, strings) · the data home `~/.everyaios` → `~/.agentcowork` and env vars `EVERYAIOS_*` → `AGENTCOWORK_*` **with a legacy fallback and a one-time migration owned solely by Core**, so existing local data is never orphaned · supersedes DEC-020's identifier freeze | Locked | 01, 10, 12 |
+| DEC-054 | Durable Mission above Work; external agents retain native architecture and config; Core governs its own shared effects with truthful provenance; scoped extension activation; heterogeneous teams; independent outcome evaluation; workflow/skill lifecycle | Accepted target, implementation pending | 03, 05–09, 11–17, 20, 29–32, 34–46, AGENTS |
 
 ## 2. Details
 
@@ -371,6 +372,20 @@ Background extraction defaults to the session's active provider (no *new* disclo
 **Status note:** Locked (2026-09-27).
 
 **Affects:** `01-NAMING`, `10-KERNEL`, `12-TRUST`, `29-ARTIFACTS`, `17-MEMORY`.
+
+### DEC-054 — Durable Mission, native-agent autonomy and scoped shared ecosystem
+
+**Owner direction (2026-09-28):** capability, quality and user appeal govern the target architecture. External agents retain their own agentic architecture, model, native tools, MCPs, skills, plugins and private state. AgentCowork adds shared capabilities, durable missions, heterogeneous teams, workflows, evidence and human control. Horizon Code is a future external engine binding. No first-party reasoning engine is added here.
+
+**Decision 1 — Mission above Work.** Introduce a first-class durable `Mission` with versioned GoalContract, individually addressable requirements, milestone/PlanNode graph, decisions, assumptions, evidence, outcome evaluation and stop/recovery control (`35`, `36`). PlanNode is semantic intent; Work is an attempt. Mission proposes Work through the existing scheduler and uses the one event store. It does not own a model loop, session transcript, separate queue or credential system. Mission graph is adaptive; `20` Workflow IR remains version-pinned executable process. This extends DEC-003/008/027 without replacing them.
+
+**Decision 2 — truthful trust boundary.** DEC-049 `SelfContained` remains the correct default for an external agent with native effects. Core Trust governs **Core-mediated effects**; it cannot attest to authorization/audit of an agent's own file/shell/network/MCP calls. For native activity, record `agent_reported` or `native_observed` evidence with its provenance, never a Core receipt. A managed/mediated binding is opt-in and requires a verified enforcement boundary before it can claim stronger coverage. This supersedes absolute wording in INV-01/24, `03`, `12`, `13`, `15`, `32` and the product spec wherever it appears; it does not weaken the Core-mediated ticket path or vault rule. DEC-052 stays in force.
+
+**Decision 3 — non-invasive discovery and scoped extensions.** Discovering an installed agent is read-only. Preserve its native config and extensions. Host-installed engines may use a reviewed private profile. Shared MCP/skill/plugin catalog visibility never implies activation or grant. Resolve per agent binding, workspace and Work, attenuate child grants, namespace collisions, start servers on demand and carry actual session/work/agent identity through Channel-B. An optional ephemeral overlay requires protocol support; no silent global configuration edit. `46` owns the HLD; `31`/`32` own LLD.
+
+**Decision 4 — reuse and verification.** Retain one embedded Work/Workflow substrate; optional n8n/Activepieces adapters invoke their own engines and connectors. Workflow-to-skill promotion is versioned and evaluated (`37`). Mission outcome verification is separate from effect verification (`36`). One progressive UI exposes actual agent/native/shared ownership and evidence (`38`). Build sequence is `39`; source ledger is `45`. Cloud/mobile/team surfaces are target capabilities, with truthful availability and explicit executors, not deferred by an arbitrary release label.
+
+**Status:** Accepted architecture direction; implementation not claimed. **Affects:** `00`, `03`, `05`–`09`, `11`–`17`, `20`, `29`–`32`, `34`–`42`, `AGENTS.md` and the product/UI specs when those authorities are next revised. User requested only `ARCH/` and `AGENTS.md` edits in this pass, so root product/UI specs are flagged for later reconciliation rather than silently changed.
 
 ## 3. Pending decisions
 

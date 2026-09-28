@@ -1,7 +1,7 @@
 # 07 — Contracts (canonical cross-module interfaces)
 
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P1) — the interface registry. Every named contract that crosses a module boundary lives here. **Owner** = the module that implements/stabilizes it; **consumers** = modules that call it. Module docs carry serialization/transport detail; this doc owns names, semantic signatures, and guarantees. Contract status reflects implementation maturity — every owner doc is complete as of the v1 freeze.
-> **Rules:** signatures are transport-free (adapters map transports); every contract takes an `actor` context (user / agent / workflow) and is subject to Trust.
+> **Rules:** signatures are transport-free (adapters map transports); each Core contract takes an `actor` context (user / agent / workflow). Effect-bearing Core contracts are subject to Trust; the external agent's native operations are outside Core contracts (DEC-054).
 > **SDD:** this registry carries the L3 interface layer for behaviors in `ARCH/08-REQUIREMENTS.md`; REQ ↔ CTR links accrue in `ARCH/09-FEATURE-MATRIX.md`.
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
 
@@ -9,7 +9,7 @@
 
 - **IDs:** `CTR-###`, stable.
 - **Async by default**; every long-running call accepts a cancellation handle and declares a default timeout + retryability.
-- **Typed errors** only: `AuthorizationDenied · NotFound · Conflict · Unavailable · Timeout · InvalidState · GuidanceRequired · RequiresUserAction · Internal`. `guidance`/`requires_user_action` are **results**, not errors (a capability may answer “connect Google Drive first”).
+- **Typed errors** only: `AuthorizationDenied · NotFound · Conflict · Unavailable · Unsupported · Timeout · InvalidState · GuidanceRequired · RequiresUserAction · Internal`. `guidance`/`requires_user_action` are **results**, not errors (a capability may answer “connect Google Drive first”).
 - **Effects:** any contract that can cause an externally visible effect MUST require a `Ticket` (INV-03) and SHOULD return/append a `Receipt` ref (INV-07).
 - **No store exposure:** contracts return projections, handles and refs — never internal stores, vault values, or other modules' mutable state (INV-11).
 - **Versioning:** breaking signature changes require a `DEC`; additive changes are minor.
@@ -44,6 +44,11 @@
 | CTR-024 | `FileIdentity` + `WorkspaceWatcher` + `WriteLeases` | 25 | 16, 21, 26 | Provisional |
 | CTR-025 | `RepoIntelligence` (graph · map · lsp · git) | 26 | 16, 15 | Provisional |
 | CTR-026 | `Scheduler` (lanes · limits) | 11 | 15, 20, 32 | Provisional |
+| CTR-027 | `MissionService` (contract/plan/dispatch/reconcile) | 35 | 11, 15, 20, 32, UI | Proposed (DEC-054) |
+| CTR-028 | `OutcomeEvaluator` (requirement/mission evaluation) | 36 | 35, 29, UI | Proposed (DEC-054) |
+| CTR-029 | `MissionRecovery` (fingerprint/impact/reopen) | 36 | 35, 11, 19, 29 | Proposed (DEC-054) |
+| CTR-030 | `AgentBindingAdapter` (negotiate/launch/steer/status/receipt) | 15 | 35, 11, 32 | Proposed (DEC-054) |
+| CTR-031 | `ExternalWorkflowAdapter` (invoke/status/cancel/callback) | 20 | 35, 11, 37 | Proposed (DEC-054) |
 
 **Domain contracts.** Office (22), Browser (23), Computer Use (24) and Comms (28) deliberately own no named contract yet: their operations resolve through CTR-009 as capability descriptors, and a module pass registers a contract here only if a non-capability edge appears (see `ARCH/03-HLD.md` §3.1). Search (27) implements the one Core search service behind the **CTR-006 `context.search`** façade (owned by `16`) and resolves its other operations through CTR-009 — no separate Search contract is minted.
 
@@ -60,7 +65,7 @@ cancel(run) → void                  // terminate the work; children cascade
 spawnSubagent(options: SubagentOptions) → SubagentRef   // immediate spawn (DEC-036); full delegation contract: CTR-021
 dispose(session) → void
 ```
-**Guarantees:** input is admitted only at turn/step boundaries (inbox); `steer` never lands mid-tool; `interrupt` is cooperative and bounded; `cancel` is terminal for the work, cascades parent→child, and never rebuffers a completion (DEC-036); `dispose` releases environment resources; Every engine, first-party or not, is interchangeable behind this contract (DEC-010, DEC-052).
+**Guarantees:** input is admitted only at turn/step boundaries (inbox); `steer` never lands mid-tool; `interrupt` is cooperative and bounded; `cancel` is terminal for the Work, cascades through host-owned child Work, and never rebuffers a completion (DEC-036); `dispose` releases host-owned environment resources. DEC-054: adapter capabilities are negotiated per binding; unsupported `resumeSession`, `steer` or native `spawnSubagent` returns a typed `Unsupported` result, while cross-engine child creation uses CTR-021/Work. Core can replace a session by starting new Work with a reconstructed packet; interchangeability does not imply identical native APIs.
 
 ### CTR-002 `AgentSession` + `AgentHandle` + `Inbox` (15)
 - `AgentHandle` is a **capability** (`dispose()` only) returned to the owner; the registry keeps factories, not live internals.

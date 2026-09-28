@@ -1,5 +1,7 @@
 # 13 — Capability Plane
 
+> **DEC-054 amendment:** The shared catalog is additive to an external agent's native tools. Catalog visibility is not a grant or automatic MCP mount. Resolver preference may recommend structured API/MCP before browser/desktop by observed reliability, but it cannot force an external agent to abandon native tools. Actual path and provenance are recorded (`46`).
+
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P2).
 > **P7 pass (2026-09-26):** line-checked; requirements seeded (`REQ-CAP-*`, Requirements section).
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
@@ -46,7 +48,7 @@ CapabilityResult {
 ```
 
 - **`guidance` / `requires_user_action` are first-class** — a capability may answer *“you need to connect Google Drive first”* with a `next_action`, instead of failing the agent’s plan (`AGENTCOWORK-SPEC.md` §5; verified pattern).
-- `completed` always carries (or references) a receipt for externally visible effects (INV-07).
+- `completed` always carries (or references) a receipt for **Core-mediated** externally visible effects (INV-07, DEC-054).
 - `failed` carries a typed error (`10` §3) and `retryable`.
 
 ## 4. Handles (DM-012)

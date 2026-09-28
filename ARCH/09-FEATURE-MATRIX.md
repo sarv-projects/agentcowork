@@ -2,6 +2,7 @@
 
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P7). **This file owns links, never content:** requirements live in `ARCH/08-REQUIREMENTS.md`, designs in the module docs, tasks in `TODO.md`, evidence in `ARCH/42-EVIDENCE-MAP.md`.
 > **Purpose:** answer from one place — which requirements does a file implement · which requirements have no implementation · which acceptance tests are missing · which specs does a change affect.
+> **DEC-054 inventory (2026-09-28):** 315 unique requirement rows match the 315 active requirement headings in `08`; the 17 new rows remain unplanned with task/test pending. `TODO.md` is intentionally unchanged.
 
 ---
 
@@ -326,6 +327,28 @@ One row per `REQ-*`. Status only from evidence.
 | `REQ-UI-012` | `AGENTCOWORK-UI` | pending | `—` | — | pending | pending | unplanned |
 | `REQ-UI-013` | `AGENTCOWORK-UI` | pending | `—` | — | pending | pending | unplanned |
 | `REQ-UI-014` | `AGENTCOWORK-UI` | pending | `—` | — | pending | pending | unplanned |
+
+## 3.1 DEC-054 amendment rows (delivery task IDs pending; `TODO.md` intentionally unchanged)
+
+| REQ | Module (doc) | Code paths | Design (DEC/DM/CTR) | Flow/Edge | Task (`TODO.md`) | Test | Status |
+|---|---|---|---|---|---|---|---|
+| `REQ-MISSION-001` | `35-MISSION` | pending | `DEC-054`, `INV-25/26`, `DM-028`, `CTR-027` | pending | pending | pending | unplanned |
+| `REQ-MISSION-002` | `35-MISSION` | pending | `DEC-054`, `INV-27`, `DM-029/032` | pending | pending | pending | unplanned |
+| `REQ-MISSION-003` | `35-MISSION`, `11-WORK` | pending | `DEC-054`, `INV-26`, `DM-038` | pending | pending | pending | unplanned |
+| `REQ-MISSION-004` | `36-OUTCOME-AND-RECOVERY` | pending | `DEC-054`, `INV-28/30`, `CTR-028` | pending | pending | pending | unplanned |
+| `REQ-MISSION-005` | `36-OUTCOME-AND-RECOVERY` | pending | `DEC-054`, `INV-29`, `CTR-029` | pending | pending | pending | unplanned |
+| `REQ-MISSION-006` | `36-OUTCOME-AND-RECOVERY` | pending | `DEC-054`, `INV-31` | pending | pending | pending | unplanned |
+| `REQ-MISSION-007` | `35-MISSION`, `12-TRUST` | pending | `DEC-054`, `CTR-012/027` | pending | pending | pending | unplanned |
+| `REQ-ECO-001` | `46-ECOSYSTEM-ARCHITECTURE`, `32-CHANNELS` | pending | `DEC-054`, `INV-32`, `DM-014/039`, `CTR-030` | pending | pending | pending | unplanned |
+| `REQ-ECO-002` | `46-ECOSYSTEM-ARCHITECTURE`, `31-SKILLS-PLUGINS` | pending | `DEC-054`, `INV-32/33`, `DM-037` | pending | pending | pending | unplanned |
+| `REQ-ECO-003` | `32-CHANNELS`, `12-TRUST` | src-tauri/src/channel_b.rs (gap) | `DEC-054`, `INV-33` | pending | pending | pending | unplanned |
+| `REQ-ECO-004` | `12-TRUST`, `34-EFFECT-VERIFICATION` | pending | `DEC-049/054`, `INV-34` | pending | pending | pending | unplanned |
+| `REQ-ECO-005` | `15-AGENT-PLANE`, `35-MISSION` | pending | `DEC-054`, `CTR-021/027/030` | pending | pending | pending | unplanned |
+| `REQ-ECO-006` | `13-CAPABILITY`, `23-BROWSER`, `24-COMPUTER-USE` | pending | `DEC-054`, `INV-34` | pending | pending | pending | unplanned |
+| `REQ-LEARN-001` | `37-WORKFLOW-SKILL-LIFECYCLE` | pending | `DEC-054`, `INV-35` | pending | pending | pending | unplanned |
+| `REQ-LEARN-002` | `20-WORKFLOW`, `37-WORKFLOW-SKILL-LIFECYCLE` | pending | `DEC-054`, `CTR-031` | pending | pending | pending | unplanned |
+| `REQ-UXQ-001` | `38-EXPERIENCE-QUALITY` | pending | `DEC-054`, `CTR-027/028` | pending | pending | pending | unplanned |
+| `REQ-UXQ-002` | `38-EXPERIENCE-QUALITY` | pending | `DEC-054` | pending | pending | pending | unplanned |
 
 ## 4. Maintenance
 

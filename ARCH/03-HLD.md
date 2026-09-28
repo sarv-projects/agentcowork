@@ -8,6 +8,8 @@
 
 ## 1. Shape
 
+> **DEC-054 amendment (2026-09-28):** A durable Mission Plane sits between Experience and Work for substantial goals. It owns versioned intent, requirements, adaptive PlanNodes, evidence and stop/recovery decisions (`35`, `36`). It dispatches attempts to the existing Work scheduler; an agent still owns its internal turn plan and native tools. The diagram below is the original lower-plane view. Its `AGX → CAP → TRUST` path describes **shared Core capability calls only**; a self-contained agent's native tool path remains outside Core governance and must be represented separately (`46` §1). The unqualified “every effect” claim elsewhere in this HLD is superseded by DEC-054's mediated-effect boundary.
+
 ```mermaid
 flowchart TB
   subgraph XP["Experience Plane"]
@@ -102,6 +104,11 @@ flowchart TB
 | 31 | Skills & Plugins | Skill registry/loader/resolver; plugin surfaces (capabilities, providers, agents, models, channels, UI) | capability, work, trust |
 | 32 | Channels | Surfaces & protocols: desktop, CLI, ACP, A2A, API, mobile; agent gateway | everything above (thin) |
 | 34 | Effect Verification | Validate/render/verify/reconcile pipeline; receipt policy per risk | domains, artifacts, events |
+| 35 | Mission | Versioned goal/requirements, adaptive PlanNodes, semantic readiness, dispatch through Work | work, context, artifacts, events, outcome |
+| 36 | Outcome & Recovery | Requirement evidence evaluation, drift reconciliation, recovery ladder and stop | mission, work, artifacts, runtime, effect verification |
+| 37 | Workflow–Skill Lifecycle | Capture, proposal, evaluation and promotion; external workflow adapters | workflow, skills, trust, eval |
+| 38 | Experience Quality | Progressive Mission Control, transparency and quality measurement | channels, mission, evidence |
+| 46 | Ecosystem HLD | Native-vs-shared ownership, scoped extensions and heterogeneous teams | agent, capability, trust, channels |
 | 40–42 | Cross | Flows, edge cases, evidence map | all |
 | 43 | Glossary | Canonical terms — defined once, linked back (meta) | — |
 | 44 | Absorb Register | Competitor absorb matrix + licensing ledger | archive/REPO-COMPARE evidence |
@@ -236,7 +243,7 @@ Resources are installed/available at Global or Workspace and never duplicated pe
 
 ## 11. Failure, recovery, and degradation
 
-The architecture fails **closed** at trust boundaries and **honestly** everywhere else: no component fabricates state to hide a failure, and no failure path bypasses Guard (INV-01, INV-05).
+The architecture fails **closed** at Core trust boundaries and **honestly** everywhere else: no component fabricates state to hide a failure, and no Core-mediated failure path bypasses Guard (INV-01, INV-05, DEC-054). External-agent native effects are outside that guarantee.
 
 | Failure | Architectural behaviour | Owner |
 |---|---|---|
@@ -261,6 +268,6 @@ The architecture fails **closed** at trust boundaries and **honestly** everywher
 | Platform | Windows is the first release target; macOS/Linux are hosted targets; no design may assume a POSIX-only primitive (`ARCH/19-RUNTIME-ENVIRONMENTS.md`) |
 | Resource isolation | Kernel stays minimal (INV-14); domain runtimes and sandboxed execution carry their own bounds; a failing domain cannot take down the host |
 | Durability | Work, checkpoints, receipts and events survive restart; runs are pinned to versions (INV-16, INV-18) |
-| Security | One authorization decider, one egress path, vault custody (INV-02/04/05); every externally visible effect is auditable (INV-24) |
-| Observability | One event log; usage/cost telemetry derives from it; every effect has a receipt (INV-07, INV-23) |
+| Security | One Core authorization decider and egress path, vault custody (INV-02/04/05); every Core-mediated externally visible effect is auditable (INV-24); native-agent effects carry separate provenance (DEC-054) |
+| Observability | One Core event log; usage/cost telemetry derives from it; every Core-mediated effect has a receipt (INV-07/23); native effects are reported or observed only |
 | Verification | Depth scales with risk class (`ARCH/34-EFFECT-VERIFICATION.md`); "implemented" ≠ "verified" (SPEC §13) |

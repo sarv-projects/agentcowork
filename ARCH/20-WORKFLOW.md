@@ -153,6 +153,8 @@ Run receipts + per-node receipts + typed events; Runs UI surface (`32`); audit v
 
 ## 13. Not in v1
 
+> **DEC-054 scope amendment:** Items below document the 2026-09-26 frozen implementation baseline only. They are not exclusions from the target architecture. Capability, quality and dependency order in `39` determine delivery; external n8n/Activepieces integration and workflow-to-skill promotion are explicit target capabilities (`37`).
+
 Visual DAG editor (typed IR + JSON/YAML + agent authoring first; graph later) · cloud/distributed scheduling · quorum approvals · compensation transactions beyond declared policy · cron-specific version inheritance.
 
 ## 14. Open questions (`OQ-WF-*`)
@@ -169,6 +171,8 @@ Visual DAG editor (typed IR + JSON/YAML + agent authoring first; graph later) ·
 `ARCHIVE/v1-research/workflow-engine-verification.md` — §0 (design inputs), §1 (claims A–D verdicts + corrections), §2 (clone evidence: Grok `occurrence_journal.rs:1-12`/`types.rs:7-40`, OpenWork `types/src/automations.ts:346-371`, Open Cowork, NextCoWork, DeepSeek README:128 falsifier, Codex background), §3 (trigger taxonomy), §4 (durability design + resume matrix), §5 (versioning/approvals/retry defaults) · `agent-harness-verification.md` §E8 · DEC-008/021/033 · INV-16/23.
 
 ## 16. Requirements (`REQ-WF-*`)
+
+> **DEC-054 amendment:** Mission's adaptive PlanNode graph is distinct from this version-pinned executable IR. A Mission node may invoke a workflow; the workflow's internal nodes do not become Mission PlanNodes. n8n/Activepieces adapters (`CTR-031`) preserve those providers' internal execution and trigger ownership while one host Work tracks invocation, idempotency, status and receipts. Workflow capture and skill promotion are `37`.
 
 Testable behaviors owned by this module live in `ARCH/08-REQUIREMENTS.md`; the traceability chain is in `ARCH/09-FEATURE-MATRIX.md`. This table is a pointer, not a second copy.
 

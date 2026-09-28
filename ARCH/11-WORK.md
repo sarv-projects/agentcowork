@@ -116,6 +116,8 @@ Product-owner brief (universal Work; lanes; global limits; background work) · `
 
 ## 13. Requirements (`REQ-WORK-*`)
 
+> **DEC-054 amendment:** A Work item may carry `mission_id`, `plan_node_id` and `attempt_number` as nullable foreign references. These are correlation and budget references, not Work ownership of Mission semantics. A failed Work leaves the PlanNode intact. The existing scheduler remains the only execution admission/wake owner; Mission computes semantic readiness and submits Work through it. A checkpoint records context baseline and environment reference for Mission reconciliation (`35`, `36`).
+
 Testable behaviors owned by this module live in `ARCH/08-REQUIREMENTS.md`; the traceability chain is in `ARCH/09-FEATURE-MATRIX.md`. This table is a pointer, not a second copy.
 
 | REQ | Behavior (one line) |

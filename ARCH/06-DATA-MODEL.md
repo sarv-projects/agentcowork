@@ -48,11 +48,29 @@
 | DM-025 | `ModelDescriptor` | `18` | Model capabilities/pricing/limits registry entry | versioned by provider |
 | DM-026 | `WorldObject` (+`WorldEdge`) | `21` | Structural world state + relationships | ephemeral with freshness stamps |
 | DM-027 | `Skill` | `31` | Reusable know-how package (instructions + capability requirements) | versioned |
+| DM-028 | `Mission` | `35` | Durable user outcome above Work | draft → active/waiting/paused/verifying → terminal |
+| DM-029 | `GoalContractVersion` | `35` | Immutable user intent, criteria, constraints and budgets | immutable |
+| DM-030 | `MissionRequirement` | `35` | Individually addressable acceptance obligation | unplanned → verified/partial/blocked/superseded |
+| DM-031 | `Milestone` | `35` | Semantic grouping and gate | proposed → active → completed/invalidated |
+| DM-032 | `PlanVersion` | `35` | Immutable adaptive graph version | immutable |
+| DM-033 | `AssumptionRecord` | `35` | Provenance-bearing inferred premise | unverified → verified/invalidated |
+| DM-034 | `DecisionRecord` | `35` | Rationale and supersession of consequential choice | proposed → committed/superseded |
+| DM-035 | `EvidenceLink` | `36` | Requirement/node/claim to artifact/receipt/verification with validity | current → stale/invalid |
+| DM-036 | `OutcomeEvaluation` | `36` | Independent requirement and mission result | immutable versioned result |
+| DM-037 | `ExtensionGrant` | `46` | Explicit binding/workspace/Work activation of host MCP/skill/plugin component | active → revoked/expired |
+| DM-038 | `PlanNode` | `35` | Durable semantic unit whose Work attempts can be replaced | proposed → ready/running/verifying → completed/invalidated/superseded |
+| DM-039 | `AgentBinding` | `15` | One actual profile/launch/session capability negotiation with provenance | discovered → negotiated → attached → detached |
 
 ### 1.1 Core relationships (load-bearing references)
 
 ```mermaid
 erDiagram
+  MISSION ||--o{ MISSION_REQUIREMENT : "current contract obligations"
+  MISSION ||--o{ PLAN_VERSION : "versions adaptive graph"
+  PLAN_VERSION ||--o{ PLAN_NODE : "describes"
+  PLAN_NODE ||--o{ WORK : "attempts through"
+  MISSION_REQUIREMENT ||--o{ EVIDENCE_LINK : "verified by"
+  PLAN_NODE ||--o{ EVIDENCE_LINK : "produces"
   SESSION ||--o{ WORK : "hosts turns"
   SESSION ||--o{ SESSION_EVENT : "append-only log"
   WORK ||--o{ RUN : "executes as"
@@ -74,16 +92,17 @@ erDiagram
 
 > Detailed SQL/TS lives in owner docs; these are the load-bearing shared fields.
 
-**DM-001 `Work`** — `id` · `kind` (`session_turn` | `job` | `workflow_run` | `subagent_task` | `automation`) · `status` · `parent_work_id?` · `session_id?` · `agent_id?` · `workspace_id` · `objective` · `priority` · `completion_contract_ref?` · `budget {tokens, cost, time}` · `checkpoint_ref?` · `created/started/finished`.
+**DM-001 `Work`** — `id` · `kind` (`session_turn` | `job` | `workflow_run` | `subagent_task` | `automation`) · `status` · `parent_work_id?` · `mission_id?` · `plan_node_id?` · `attempt_number?` · `session_id?` · `agent_id?` · `workspace_id` · `objective` · `priority` · `completion_contract_ref?` · `budget {tokens, cost, time}` · `checkpoint_ref?` · `created/started/finished`.
 **DM-004 `Session`** — `id` · `workspace_id` · `agent_binding` (the bound engine, of any kind) · `status` · `title` · `log_range` (SessionEvent span) · `retention_class` · `last_active`.
 **DM-005 `Run`** — `id` · `session_id` · `work_id` · `agent_id` · `model` · `reasoning_level` · `status` · `usage {in,out,cost}` · `receipt_refs[]`.
 **DM-006 `Checkpoint`** — `id` · `scope` · `kind` (`work` | `context` | `workflow` | `session`) · `content_ref` · `reconstructable` (produced deterministically vs model-written) · `version`.
 **DM-009 `Ticket`** — `id` · `capability_id` · `provider_id` · `environment_id` · `provider_epoch` · `scope` (paths/targets/resource patterns) · `issued_at` · `expires_at` · `uses` · `approval_ref?`.
 **DM-011 `CapabilityDescriptor`** — `id` · `version` · `description` · `affordances[]` · `requirements[]` · `providers[]` · `loading_mode` (`eager|catalog|on-demand`) · `risk_class` (`safe|sensitive|dangerous`) · `auth_requirements?` · `verification`.
 **DM-012 `CapabilityHandle`** — `capability_id` · `provider_id` · `provider_epoch` · `environment_id` · `permission_snapshot` · `runtime_handle_ref` · `expires_at`.
-**DM-014 `AgentProfile`** — `id` · `name` · `runtime` (`native|acp|mcp-agent|remote`) · `version` · `status` (`installed` · `discovered` · `launchable` · `available` · `disabled`) · `supported_models[]` · `capabilities[]` · `protocol` · `supports_subagents/background/steering` · `composer` capabilities.
+**DM-014 `AgentProfile`** — `id` · `name` · `runtime` (`native|acp|cli|mcp-agent|remote`; `native` is a legacy descriptor, not a first-party reasoning engine) · `version` · `status` (`installed` · `discovered` · `launchable` · `available` · `disabled`) · `provenance` · `executable_or_endpoint_fingerprint` · `supported_models[]` · `declared_capabilities[]` · `protocol` · `supports_subagents/background/steering` · `composer` capabilities; native config locations are metadata only.
+**DM-039 `AgentBinding`** — `id` · `profile_id` · `launch_profile_ref` · `protocol_version` · `negotiated_capabilities[]` (declaration/probe/observation/timestamp) · `governance_class` · `session_ref?` · `attachment_state` · `extension_grant_refs[]` · `fingerprint`.
 **DM-015 `DelegationPolicyEntry`** — `worker_agent_id` · `role` · `model?` · `instructions_ref?` · `skills[]` · `mcp_scope[]` · `permissions` · `workspace_scope` (`shared|isolated-worktree|sandbox`) · `can_spawn_children` · `max_parallel` · `max_turns?` · `token_budget?` · `mode` (`automatic|preferred|manual|disabled`) · `routing_rules[]`.
-**DM-016 `WorkerReceipt`** — `agent_id` · `run_id` · `status` · `scope[]` · `summary` · `findings?[]` · `changed_files?[]` · `tests?[]` · `artifacts?[]` · `blockers?[]` · `confidence?` · `usage {in,out}` · `will_wake?` (advisory, from the `subagent.finished` event) · `partial?` (set when the child overran its step budget or was interrupted mid-task).
+**DM-016 `WorkerReceipt`** — `agent_id` · `run_id` · `plan_node_ref?` · `requirement_refs?[]` · `evidence_refs?[]` · `assumption_proposals?[]` · `decision_proposals?[]` · `status` · `scope[]` · `summary` · `findings?[]` · `changed_files?[]` · `tests?[]` · `artifacts?[]` · `blockers?[]` · `confidence?` · `usage {in,out}` · `will_wake?` (advisory, from the `subagent.finished` event) · `partial?` (set when the child overran its step budget or was interrupted mid-task).
 **DM-017 `ContextItem`** — see `16` §2 (id · source · type · content_ref · token_cost · priority · relevance · freshness · scope · pinned · compressible · reconstructable · sensitivity).
 **DM-018 `MemoryItem`** — see `17` §3 (full SQL): scope/kind/content/hash/dedup_key/sensitivity/trust_tier/source/confidence/pinned/used/superseded_by/expiry.
 **DM-019 `Artifact`** — `id` · `name` · `type` · `mime_type` · `source` · owner refs (`session_id/run_id/workflow_id/agent_id/workspace_id`) · `version` · `location` · `provenance` (chain) · `parent_artifact?` · `permissions`.
@@ -98,7 +117,7 @@ erDiagram
 
 ## 3. Cross-entity constraints
 
-1. Every `Receipt` references exactly one `Ticket` and one effect; every externally visible effect has a receipt (INV-07).
+1. Every **Core effect** `Receipt` references exactly one `Ticket` and one effect; every Core-mediated externally visible effect has a receipt (INV-07, DEC-054). Native-agent observations and reports are distinct evidence types.
 2. Every effect-bearing `Event` references its `work_id`; every `Work` outcome emits ≥1 event.
 3. `Artifact` versions are immutable; provenance chains are append-only; Library promotion is explicit (DEC-014).
 4. `CapabilityHandle` validity is `provider_epoch`-checked (DM-012, `13` §4); handles never survive a provider restart.
@@ -112,7 +131,7 @@ erDiagram
 
 ## 4. Open questions (`OQ-DM-*`)
 
-1. **Resolved (`11` §2, v1):** `Task` is a **projection** over `Work` + `Step` + assignment metadata, not a separate durable entity; the id is kept for traceability. Revisit only with evidence (e.g. cross-work task graphs).
+1. **Resolved (`11` §2, v1; DEC-054 amendment):** `Task` remains a projection over `Work` + `Step` + assignment metadata. Cross-work semantic planning uses the new `PlanNode` (DM-038), a distinct entity, not a redefinition of `Task`.
 2. `WorldObject.identity_key` per kind (file identity rules live in `25`).
 3. **Resolved (`16` §2, v1):** `ContextItem` is ephemeral and reference-first — never durable state.
 4. `SessionEvent` vs `Event` boundary: confirm which event classes are session-local vs published (`11`/`30`).

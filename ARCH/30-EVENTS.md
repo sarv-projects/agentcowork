@@ -1,5 +1,7 @@
 # 30 — Events
 
+> **DEC-054 amendment:** The one append-only store adds `mission.*`, `contract.versioned`, `requirement.*`, `plan.versioned`, `node.*`, `assumption.*`, `decision.*`, `evidence.*`, `outcome.*` and `extension.grant.*` events. Mission projections rebuild from this store; no second Mission event bus. Event payloads carry refs/redacted metadata, not secrets or entire native transcripts (`35`, `36`).
+
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P3).
 > **P7 pass (2026-09-26):** line-checked; requirements seeded (`REQ-EVENTS-*`, Requirements section).
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).

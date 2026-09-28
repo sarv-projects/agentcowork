@@ -1,5 +1,7 @@
 # 24 — Computer Use
 
+> **DEC-054 amendment:** Shared computer use is an optional scoped capability. Prefer structured API/site tool/DOM when it is suitable, then accessibility/visual desktop interaction; the external agent may choose a native tool and the UI reports that choice honestly. User takeover, application identity, action observation and revalidation after environment drift are part of the Mission contract (`46`, `36`).
+
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P3).
 > **P7 pass (2026-09-26):** line-checked; requirements seeded (`REQ-CUA-*`, Requirements section).
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).

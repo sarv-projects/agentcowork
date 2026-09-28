@@ -1,5 +1,7 @@
 # 16 — Context
 
+> **DEC-054 amendment:** Mission consumes Context infrastructure to create bounded per-node `ContextPacket`s: current goal/requirements, node contract, decisions/assumptions, dependency outputs, relevant files/memory, prior failed attempts, environment and grant refs. The external engine still controls its own turn context and compaction; Core never needs its native transcript to reconstruct Mission (`35`).
+
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P2).
 > **P7 pass (2026-09-26):** line-checked; requirements seeded (`REQ-CTX-*`, Requirements section).
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).

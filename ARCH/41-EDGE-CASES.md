@@ -229,6 +229,27 @@
 | EDGE-178 | Project re-key (move/clone/rename/worktree/path reuse) | Scope follows the stable project identity (`DM-024`), not the path: explicit re-key/mapping rules apply, worktrees share the parent identity, and no recall path returns an out-of-set identity (`17` §2.1, `25` §5, DEC-040). |
 | EDGE-179 | Source artifact deleted | Provenance renders “source unavailable”; injection never dereferences the ref; the item stays usable (`17` §3/§6, `29`, DEC-032). |
 
+## R. Mission and ecosystem amendment (`35`–`38`, `46`)
+
+| ID | Scenario | Required behavior |
+|---|---|---|
+| EDGE-180 | Agent session disappears while Mission active | Rebuild from Mission events/checkpoints; replace session without losing contract/node. |
+| EDGE-181 | Two planners patch same graph version | Compare-and-swap rejects stale patch; rebase or review. |
+| EDGE-182 | Work fails after external side effect may have happened | Reconcile observed state; no blind retry or false completion. |
+| EDGE-183 | User changes a requirement during parallel Work | Version contract; impact and steer only affected branches. |
+| EDGE-184 | Completed artifact's input changes | Mark dependent evidence/artifacts stale; selective revalidation. |
+| EDGE-185 | 90-day resume with changed repository/API/credentials | Fingerprint and reconcile before mutation; scoped blocker when unavailable. |
+| EDGE-186 | Agent repeats same failed strategy while heartbeat remains healthy | No-progress bound escalates; heartbeat does not count as progress. |
+| EDGE-187 | Discovered agent has native MCP/skills/plugins | Inventory read-only; preserve config; label native policy owner. |
+| EDGE-188 | Host MCP exists globally but Work has no grant | Not mounted/started for that Work; catalog metadata only. |
+| EDGE-189 | Two MCPs expose the same tool name | Namespace by owner/provider; no silent shadow. |
+| EDGE-190 | Channel-B tool call has placeholder/missing agent identity | Refuse until real binding/session/work/grant is supplied. |
+| EDGE-191 | Agent reports native operation as done | Show agent-reported/observed provenance; no Core ticket claim. |
+| EDGE-192 | Child agent lacks requested browser or isolation capability | Typed refusal; parent may choose another worker or replan. |
+| EDGE-193 | External workflow callback beats persisted wait state | Persist signal and reconcile after pause; no stranded waitpoint or duplicate continuation. |
+| EDGE-194 | Local machine shuts down during detached Mission | Durable pause; cloud continues only if explicitly configured and assigned. |
+| EDGE-195 | Captured workflow contains a secret or unstable UI step | Redact/reject unsafe candidate; require review and robust fallback. |
+
 ## Extension rule
 
 New edge cases are appended with the next free ID in their family, with: scenario · required behavior · owning doc. A case that changes an authority doc escalates to a `DEC`.

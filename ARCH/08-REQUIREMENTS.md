@@ -46,6 +46,10 @@ This registry answers one question per entry: **what behavior must this system e
 | `CHAN` | Desktop/CLI/ACP/A2A/API/mobile projections; agent gateway | `ARCH/32-CHANNELS.md` |
 | `VERIFY` | Validate · render · verify · reconcile; receipt policy | `ARCH/34-EFFECT-VERIFICATION.md` |
 | `UI` | Chat rendering, surface behavior, interaction model | `AGENTCOWORK-UI.md` |
+| `MISSION` | Durable goal, plan, evidence, resume and outcome | `ARCH/35-MISSION.md`, `ARCH/36-OUTCOME-AND-RECOVERY.md` |
+| `ECO` | External-agent coexistence and scoped shared ecosystem | `ARCH/46-ECOSYSTEM-ARCHITECTURE.md` |
+| `LEARN` | Workflow/skill capture and controlled promotion | `ARCH/37-WORKFLOW-SKILL-LIFECYCLE.md` |
+| `UXQ` | Progressive control and measured quality | `ARCH/38-EXPERIENCE-QUALITY.md` |
 
 **Entry format (machine-parseable — fixed heading + field lines):**
 
@@ -73,17 +77,17 @@ This registry answers one question per entry: **what behavior must this system e
 
 ### Product-wide (`PROD`)
 
-#### REQ-PROD-001 — One governed path for every externally visible effect
-- **Statement:** GIVEN any externally visible effect requested from any surface, domain, adapter or agent, WHEN the effect is proposed, THEN it executes only through the governed path (`Work → Capability → Provider → Handle → Guard → Ticket → Execute → Effect → Verify → Receipt → Event`) and its receipt references its ticket.
+#### REQ-PROD-001 — One governed path for each Core-mediated effect
+- **Statement:** GIVEN any **Core-mediated** externally visible effect requested from a surface, domain or adapter, WHEN the effect is proposed, THEN it executes only through the governed path (`Work → Capability → Provider → Handle → Guard → Ticket → Execute → Effect → Verify → Receipt → Event`) and its receipt references its ticket. A self-contained external agent's native effects are outside this guarantee (DEC-054).
 - **Priority:** must
 - **Source:** `AGENTCOWORK-SPEC.md` §4 · `ARCH/05-INVARIANTS.md` INV-01/INV-03 · `DEC-002`
-- **Acceptance:** an attempted effect without a ticket fails closed and is audited; every receipt cites a ticket; no bypass path exists for domains, adapters, UI or any engine.
-- **Failure cases:** bypass attempt via domain/adapter/UI/engine → denied; missing ticket → denied + audit entry; receipt without ticket → verification failure (no silent effects).
+- **Acceptance:** a Core-mediated attempted effect without a ticket fails closed and is audited; every Core receipt cites a ticket; native external activity never receives a Core-governed badge without proof of mediation.
+- **Failure cases:** bypass attempt via Core domain/adapter/UI → denied; missing ticket → denied + audit entry; Core receipt without ticket → verification failure; native effect labelled Core-mediated → provenance failure.
 - **Tests:** pending
 - **Status:** seeded
 
 #### REQ-PROD-002 — Credential custody
-- **Statement:** GIVEN a provider credential is stored, WHEN any prompt, context, event, log, receipt or code path is produced, THEN the credential value never appears; consumers receive vault-mediated use, never the secret.
+- **Statement:** GIVEN a Core-owned provider credential is stored, WHEN any Core prompt, context, event, log, receipt or code path is produced, THEN the credential value never appears; Core consumers receive vault-mediated use, never the secret. Discovered agents retain custody of their native credentials (DEC-054).
 - **Priority:** must
 - **Source:** `AGENTCOWORK-SPEC.md` §6 · `ARCH/05-INVARIANTS.md` INV-02
 - **Acceptance:** secret-corpus scans over prompts/logs/events/receipts find zero credential values; vault isolation test proves no non-vault consumer can read a secret.
@@ -92,7 +96,7 @@ This registry answers one question per entry: **what behavior must this system e
 - **Status:** seeded
 
 #### REQ-PROD-003 — One authorization decider
-- **Statement:** GIVEN any mutating action requires a decision, WHEN any component evaluates it, THEN exactly one Trust component decides ALLOW / ASK / DENY; no second permission system exists anywhere.
+- **Statement:** GIVEN a Core-mediated mutating action requires a decision, WHEN a Core component evaluates it, THEN exactly one Trust component decides ALLOW / ASK / DENY; no second Core permission system exists. An external agent retains its native permission system (DEC-054).
 - **Priority:** must
 - **Source:** `AGENTCOWORK-SPEC.md` §6 · `ARCH/05-INVARIANTS.md` INV-04 · `DEC-028`
 - **Acceptance:** static inspection finds policy evaluation only in Trust; every domain routes decisions to it; composed layers (confinement × approval policy × exec rules) produce one verdict.
@@ -101,11 +105,11 @@ This registry answers one question per entry: **what behavior must this system e
 - **Status:** seeded
 
 #### REQ-PROD-004 — Engine parity
-- **Statement:** GIVEN any agent engine performs an action, WHEN it mutates state or reaches outside its sandbox, THEN it traverses the same guard/ticket path as any other engine; no privileged shortcut exists for a first-party engine either, even temporarily (DEC-052).
+- **Statement:** GIVEN any agent engine invokes a shared Core effect capability, WHEN the call mutates state or crosses a boundary, THEN it traverses the same Guard/ticket path as any other binding; native agent tools remain under that agent's policy (DEC-054).
 - **Priority:** must
 - **Source:** `AGENTCOWORK-SPEC.md` §11 · `ARCH/05-INVARIANTS.md` INV-12 · `DEC-010`
-- **Acceptance:** an in-process engine runs through the same guard/ticket path as an external adapter in tests; no binding kind is exempt from the parity test.
-- **Failure cases:** native-only fast path → forbidden; parity exceptions → require a superseding `DEC`.
+- **Acceptance:** equivalent shared calls from different bindings receive equivalent Guard/ticket decisions; no binding kind is exempt from that parity test.
+- **Failure cases:** binding-specific bypass of a shared Core call → forbidden; native call shown as Core-governed → provenance failure.
 - **Tests:** pending
 - **Status:** seeded
 
@@ -269,7 +273,7 @@ This registry answers one question per entry: **what behavior must this system e
 ### Trust (`TRUST`)
 
 #### REQ-TRUST-001 — Egress fail-closed
-- **Statement:** GIVEN outbound network traffic, WHEN the guarded egress is unavailable or denies, THEN the connection does not leave by any side door — it fails closed.
+- **Statement:** GIVEN Core-mediated outbound network traffic, WHEN the guarded egress is unavailable or denies, THEN the connection does not leave by any Core side door — it fails closed (DEC-054).
 - **Priority:** must
 - **Source:** `AGENTCOWORK-SPEC.md` §6 · `ARCH/05-INVARIANTS.md` INV-05
 - **Acceptance:** egress tests show denied/unavailable egress → no connection; static check finds no direct network clients above the adapter layer.
@@ -287,16 +291,16 @@ This registry answers one question per entry: **what behavior must this system e
 - **Status:** seeded
 
 #### REQ-TRUST-003 — One authorization decider
-- **Statement:** GIVEN any mutating effect, WHEN it executes, THEN the decision is made by the single Trust decider (policy evaluation + ticket mint) — no module, prompt, or surface holds a second permission path.
+- **Statement:** GIVEN any Core-mediated mutating effect, WHEN it executes, THEN the decision is made by the single Trust decider (policy evaluation + ticket mint) — no Core module, prompt, or surface holds a second permission path (DEC-054).
 - **Priority:** must
 - **Source:** `ARCH/05-INVARIANTS.md` INV-04 · `ARCH/12-TRUST.md` §1/§3 · `ARCH/04-DECISIONS.md` DEC-028
-- **Acceptance:** static and runtime checks find exactly one decider entry point; every effect path resolves through it; a bypass attempt fails closed.
-- **Failure cases:** effect executed without a Trust decision → architecture violation; second decider introduced → review failure.
+- **Acceptance:** static and runtime checks find exactly one Core decider entry point; every Core-mediated effect path resolves through it; a bypass attempt fails closed.
+- **Failure cases:** Core-mediated effect executed without a Trust decision → architecture violation; second Core decider introduced → review failure.
 - **Tests:** pending
 - **Status:** seeded
 
 #### REQ-TRUST-004 — Vault custody, use-only
-- **Statement:** GIVEN any provider credential, WHEN it is used, THEN it lives only in the vault; callers receive scoped use, never the value; secrets never appear in prompts, context, events, logs, receipts or UI.
+- **Statement:** GIVEN a Core-owned provider credential, WHEN it is used by Core, THEN it lives only in the vault; Core callers receive scoped use, never the value; secrets never appear in Core prompts, context, events, logs, receipts or UI. Agent-native credentials remain agent-owned (DEC-054).
 - **Priority:** must
 - **Source:** `ARCH/05-INVARIANTS.md` INV-02 · `ARCH/12-TRUST.md` §6 · `ARCH/07-CONTRACTS.md` CTR-013
 - **Acceptance:** secret-corpus scans of prompts/logs/receipts/events are clean; no read-value API exists outside the vault; rotation audited.
@@ -2805,6 +2809,161 @@ This registry answers one question per entry: **what behavior must this system e
 - **Tests:** pending
 - **Status:** seeded
 
+### DEC-054 amendment — Mission, ecosystem, learning and experience
+
+#### REQ-MISSION-001 — Mission survives worker replacement
+- **Statement:** GIVEN a Mission with a failed or replaced agent session, WHEN Work restarts, THEN the current contract, plan, requirements and evidence remain reconstructable without the old transcript.
+- **Priority:** must
+- **Source:** DEC-054 · INV-25/26
+- **Acceptance:** restart from event/checkpoint state with a different adapter retains the same Mission and PlanNode identity.
+- **Failure cases:** missing native session → no Mission loss; failed Work → node remains retryable.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-MISSION-002 — Versioned intent and plan
+- **Statement:** GIVEN a contract or plan change, WHEN committed, THEN it creates an immutable version after impact, graph and stale-base validation.
+- **Priority:** must
+- **Source:** DEC-054 · INV-27
+- **Acceptance:** concurrent stale PlanPatch rejects; prior versions remain readable; affected nodes/evidence identified.
+- **Failure cases:** cycle, stale base, scope widening or budget violation → typed refusal.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-MISSION-003 — Semantic node and execution attempt separation
+- **Statement:** GIVEN a PlanNode fails an attempt, WHEN retried, THEN a new Work attempt is linked to the unchanged semantic node.
+- **Priority:** must
+- **Source:** DEC-054 · INV-26
+- **Acceptance:** history shows two attempts for one node and no duplicate requirement.
+- **Failure cases:** failed attempt marks Mission failed or overwrites prior evidence → reject.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-MISSION-004 — Evidence-backed completion
+- **Statement:** GIVEN Mission completion is proposed, WHEN evaluated, THEN each required current criterion has valid independent evidence or an explicit user-approved exception.
+- **Priority:** must
+- **Source:** DEC-054 · INV-28/30
+- **Acceptance:** missing required evidence yields partial/not_tested and blocks completed status.
+- **Failure cases:** worker self-report promoted to verified → reject; stale evidence → invalidate.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-MISSION-005 — Drift-aware resume
+- **Statement:** GIVEN a dormant Mission, WHEN resumed, THEN environment and referenced inputs are compared before further mutation and affected nodes/evidence are reconciled.
+- **Priority:** must
+- **Source:** DEC-054 · INV-29
+- **Acceptance:** changed file/dependency invalidates only its dependent closure and produces a reviewable report.
+- **Failure cases:** expired auth, missing profile or changed repo → pause affected branch rather than replay blindly.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-MISSION-006 — Bounded no-progress recovery
+- **Statement:** GIVEN repeated attempts with the same failure and no meaningful state delta, WHEN the bound is reached, THEN the controller changes strategy or stops that branch with a reason.
+- **Priority:** must
+- **Source:** DEC-054 · INV-31
+- **Acceptance:** repeat signature count, budget and escalation visible; no infinite retry.
+- **Failure cases:** alive heartbeat without progress → not treated as success.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-MISSION-007 — Branch-local human wait
+- **Statement:** GIVEN one node needs user input, WHEN independent nodes are ready, THEN those nodes continue within budget while the dependent branch waits durably.
+- **Priority:** must
+- **Source:** DEC-054
+- **Acceptance:** approval/question inbox shows blocker and unaffected work advances.
+- **Failure cases:** no interactive channel → durable wait, no assumed approval.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-ECO-001 — Non-invasive installed-agent discovery
+- **Statement:** GIVEN an existing local agent, WHEN discovered and attached, THEN native config/extensions are not modified and unsupported capabilities are shown as unknown/unavailable.
+- **Priority:** must
+- **Source:** DEC-054 · INV-32
+- **Acceptance:** config hashes unchanged after discovery/attach; probe timeouts do not block startup.
+- **Failure cases:** probe failure → unverified; unsupported overlay → explicit guidance.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-ECO-002 — Scoped MCP and extension grants
+- **Statement:** GIVEN a catalog MCP/skill/plugin, WHEN a Work starts, THEN only explicitly activated, policy-permitted components for its binding/workspace are exposed.
+- **Priority:** must
+- **Source:** DEC-054 · INV-32/33
+- **Acceptance:** global catalog entry grants zero access by itself; child grants are attenuated; revocation blocks next call.
+- **Failure cases:** name collision → namespaced choice; unauthorized server → never starts for that Work.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-ECO-003 — Actual identity on shared calls
+- **Statement:** GIVEN a shared tool call, WHEN admitted, THEN its policy decision and receipt use the real session, binding, Work, grant and trace identity.
+- **Priority:** must
+- **Source:** DEC-054 · INV-33
+- **Acceptance:** concurrent agent sessions receive distinct scopes and audit links.
+- **Failure cases:** placeholder identity or missing grant → reject typed.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-ECO-004 — Honest native/mediated provenance
+- **Statement:** GIVEN an external agent uses native or host tools, WHEN progress and evidence are shown, THEN governance class and proof level match the actual path.
+- **Priority:** must
+- **Source:** DEC-049/054 · INV-34
+- **Acceptance:** native reports never display a Core ticket/verified badge; mediated calls cite a ticket and receipt.
+- **Failure cases:** unknown path → unknown/unverified, not Core-governed.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-ECO-005 — Heterogeneous child delegation
+- **Statement:** GIVEN a lead requests a child with a compatible adapter, WHEN admitted, THEN child Work has its own context, scope, budget, lifecycle and typed receipt; integration is separately checked.
+- **Priority:** must
+- **Source:** DEC-054
+- **Acceptance:** two different agent implementations complete isolated nodes and parent receives evidence refs without child transcripts.
+- **Failure cases:** unsupported capability or isolation → typed refusal, no silent downgrade.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-ECO-006 — Shared browser/desktop/connector choice
+- **Statement:** GIVEN an agent has native and host options, WHEN a task needs an external resource, THEN host options are discoverable but the selected path and owner are visible and no native tool is silently suppressed.
+- **Priority:** must
+- **Source:** DEC-054
+- **Acceptance:** same scenario can select a suitable connector/browser/desktop path under grants; actual path is recorded.
+- **Failure cases:** connector unavailable → explicit fallback; login required → user handoff.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-LEARN-001 — Reviewable workflow-to-skill promotion
+- **Statement:** GIVEN a demonstration or successful workflow, WHEN proposed as a skill, THEN deterministic steps, adaptive guidance, permissions, inputs, provenance and version are reviewable before publication.
+- **Priority:** must
+- **Source:** DEC-054 · INV-35
+- **Acceptance:** replay/evaluation evidence and rollback target attached to published version.
+- **Failure cases:** secret capture or unscoped side effects → proposal rejected.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-LEARN-002 — External workflow adapter preserves ownership
+- **Statement:** GIVEN an n8n/Activepieces run invoked by AgentCowork, WHEN paused/resumed/completed, THEN one host Work tracks the provider run while trigger and internal node execution retain a single declared owner.
+- **Priority:** must
+- **Source:** DEC-054
+- **Acceptance:** callback replay and resume-before-pause settle once with evidence.
+- **Failure cases:** provider unavailable → waiting_dependency; duplicate trigger → deduplicated.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-UXQ-001 — Progressive Mission Control and truthful controls
+- **Statement:** GIVEN a simple request or a substantial Mission, WHEN displayed, THEN simple chat remains simple and Mission controls/evidence appear as complexity grows.
+- **Priority:** must
+- **Source:** DEC-054
+- **Acceptance:** user can inspect/steer/pause/replace/take over relevant Work and distinguish native versus mediated proof.
+- **Failure cases:** unavailable control → disabled with reason; notification never masquerades as receipt.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-UXQ-002 — Measured quality before superiority claims
+- **Statement:** GIVEN a release claims comparative task quality, WHEN published, THEN scenario outcomes, latency/cost, recovery, accessibility and competitor version/date are supported by reproducible evidence.
+- **Priority:** must
+- **Source:** DEC-054
+- **Acceptance:** benchmark record includes task inputs, hardware, product versions, human rubric and failures.
+- **Failure cases:** no comparable result → no superiority claim.
+- **Tests:** pending
+- **Status:** accepted
+
 ## 5. Seeding status
 
 | Domain | Seeds | Next pass |
@@ -2834,7 +2993,7 @@ This registry answers one question per entry: **what behavior must this system e
 | `CHAN` (13) | drafted above + expanded in pass `32` | verified during pass `32` ✅ (2026-09-26) |
 | `VERIFY` (13) | drafted above + expanded in pass `34` | verified during pass `34` ✅ (2026-09-26) |
 
-> **P9 verification (2026-09-26):** registry integrity verified — 307 entries ↔ 307 matrix rows, every entry carries all seven fields, IDs unique and never reused; `PROD` re-verified against `AGENTCOWORK-SPEC.md`; every other domain re-checked in the P9 verification wave.
+> **P9 verification (2026-09-26, historical):** registry integrity was recorded as 307 entries ↔ 307 matrix rows before later retirements. **DEC-054 amendment (2026-09-28):** current registry and matrix each contain 315 unique active `REQ-*` entries/rows (298 pre-amendment + 17 new), all new task/test links visibly pending because `TODO.md` is outside this pass. This count is an inventory, not verification of implementation.
 
 ## 6. Related
 

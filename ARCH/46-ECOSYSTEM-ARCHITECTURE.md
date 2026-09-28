@@ -1,0 +1,63 @@
+# 46 — Agent ecosystem architecture
+
+> Status: accepted target architecture, 2026-09-28; implementation pending. DEC-054 in `04-DECISIONS.md` governs conflicts with the frozen v1 text. This document is the target HLD for external-agent coexistence, teams and shared capabilities. `15`, `31`, `32`, `12` and `20` own their detailed implementations.
+
+## 1. Product contract and ownership
+
+AgentCowork is the durable work environment around interchangeable external agents. A bound agent owns its reasoning loop, planner, model/provider choice, native tools, native subagents, native MCPs/skills/plugins and native session state. Core owns **its** Work ledger, shared capability catalog, mediated effect path, vault, policies for mediated calls, workflow scheduling, artifact lineage, verification and UI projections. Horizon Code is a future external binding under the same adapter contract; there is no first-party reasoning engine in this repository (DEC-052).
+
+The previous absolute phrase “all agent effects go through Core” is false for a discovered self-contained agent. Core guarantees tickets, path/network checks, audit and verification for calls made through Core capabilities. For native calls it can record agent-reported progress/output and observed file changes, labelled `native_observed` or `agent_reported`, but must never claim a Core authorization, full trace or receipt it did not produce. An optional managed/mediated binding may enforce a stronger boundary through a separately verified adapter and environment; it may not silently replace a discovered agent's tools or configuration. All UI badges and evidence disclose which boundary was used.
+
+```mermaid
+flowchart LR
+  Human --> UX[Experience: chat, task, mission]
+  UX --> W[One Work ledger and scheduler]
+  W --> A[External agent adapters]
+  A --> N[Agent native tools, skills, MCPs]
+  A --> G[Scoped shared capability gateway]
+  G --> P[Core policy and credential broker]
+  P --> C[Connectors, files, browser, desktop, office, workflows]
+  W --> V[Verifier and artifact evidence]
+  C --> V
+  N -. observed or reported .-> V
+```
+
+The diagram distinguishes native and mediated paths. It does not promise an OS sandbox around arbitrary native agent actions.
+
+## 2. Agent discovery, binding and adapter negotiation
+
+`AgentProfile` (DM-014) describes install provenance (`discovered`, `host_installed`, `remote`), executable/endpoint fingerprint, protocol, availability, supported capabilities, native configuration locations (metadata only), health and capability evidence time. Discovery is read-only: PATH/known-location scan, bounded `--version` or equivalent probe, then a user-initiated test handshake. Cache results; re-probe on binary fingerprint/PATH changes; timeout or unknown means `unverified`, never “unsupported.” Do not copy credentials, inspect native private session files or rewrite native MCP/skill/plugin configuration. Installing a new engine may create a private AgentCowork-managed profile with explicit user review. A discovered agent keeps its profile; host additions use an ephemeral per-session overlay only where the protocol supports it. Unsupported injection is shown as unavailable, with a documented manual recipe; no silent global edit.
+
+`AgentBinding` (DM-039) resolves an agent profile plus launch profile and negotiated `Capabilities`: ACP/A2A/CLI transport; resume/steer/cancel semantics; tool injection; MCP server list support; context limits; background availability; file/browser/desktop/git/vision support; native subagents; usage reporting; output schema. Capabilities have `declared`, `probed`, `observed` and timestamp fields. No generic adapter can promise methods the engine lacks. CLI fallback is a bounded subprocess, with explicit limits on steering and resume. Native and managed agent identity remain distinct in the UI even if they share a model.
+
+`start`, `attach`, `send`, `steer`, `interrupt`, `cancel`, `status`, `checkpoint`, `result` and `capabilities` are adapter operations with typed `unsupported` responses. `spawnChild` is a **Work delegation operation**, not assumed to be a native subagent API. Native subagents can be observed when exposed, but cross-engine delegation is host Work. ACP is preferred where implemented; A2A/remote uses the same Work semantics without presuming ACP methods. Adapter version negotiation pins the protocol for each session.
+
+## 3. Ownership and scope of MCP, skills and plugins
+
+Four independent coordinates are recorded for each extension: **custodian** (agent-native / AgentCowork / third-party service), **installation location**, **visibility** (catalog scopes) and **activation grant** (specific Work/session/agent/action). A global catalog entry means discoverable metadata, never “started for every agent” or “authorized everywhere.” Default shared activation is one Work item and one agent binding, inherited by a child only through an explicit attenuated grant. Workspace/session/task-specific overlays can narrow but never widen a policy grant. Tool name collisions are namespaced by custodian/provider; the agent sees an explicit choice and no silent shadowing. Revocation invalidates active handles and next calls; in-flight semantics follow the existing ticket lease rules.
+
+For each MCP server, persist `origin`, `owner`, `definition`, `transport`, requested permissions, credential reference, allowed principals/workspaces, startup policy, runtime instances, health, and effective grants. Resolve at session attach against a permission snapshot reference; launch lazily on first accepted use or proactively only when explicitly selected for that session. One authenticated server instance is not shared across users or trust scopes unless its isolation is proven. Existing native MCPs are shown as a **read-only inventory** if detection is supported; their effective permissions are governed by the native agent, and Core does not claim to revoke them. Host-owned MCPs pass through `agentcowork-mcp` and Core Trust. The Channel-B tool call must carry the real `session_id`, `agent_binding_id`, `work_id`, grant and trace id; the current hard-coded `channel-b`/`external` values in `src-tauri/src/channel_b.rs` are an implementation gap.
+
+The effective host grant is the intersection of owner policy, user consent, workspace scope, Work scope, binding capability, extension manifest permission and any attenuated parent grant. A requested tool/action outside any one set is `DENY`; an absent grant is `DENY`, not a global fallback. Authentication scopes attach to the connector/action (for example Gmail read versus send), not merely to an entire Google account. Credential references are resolved by the Core broker only at a mediated call. Revocation bumps the grant epoch so cached tool handles fail on their next admission. Startup mode is `on_demand` by default; `prewarm` requires an explicitly selected scoped loadout. Health and restart budgets are per runtime instance, and a failed server degrades that capability without blocking unrelated agents. Native-agent servers are listed separately with `visibility=detected`, `grant=unknown/native`, never merged into host policy results.
+
+Skills are procedural content; they cannot grant tools or permissions. A host skill has provenance, version, declared capability requirements, scope, activation state and evaluation status. A discovered native skill remains in the native agent's namespace. A plugin is a package manifest of selected skills, tools/MCPs, agents, workflow templates and UI contributions, each separately permissioned. Plugin install/enable is never a blanket grant to all of its components. Avoid copying a user's native plugins into the host. Any import is explicit, versioned and reversible.
+
+## 4. Shared browser, desktop and SaaS plane
+
+The agent may choose its own native path. Core advertises optional shared operations through negotiated ACP MCP server entries, MCP tool facades or adapter-supported tool injection, plus short task-specific instructions. No unconditional prompt ranking that forces shared office/browser/computer-use over native tools. The host recommendation ladder is structured API connector → site/native MCP → DOM browser → accessibility/desktop computer use → visual fallback, chosen by reliability, permissions and user preference. An engine may decline a shared tool; UI must show the path actually used.
+
+For “find a YouTube video,” the task can use a suitable API/search connector, a user-owned browser session, or desktop Chrome with login handoff. Shared browser and desktop sessions need named ownership, profile isolation, user takeover, action preview for consequential submissions, observation receipts, and no password extraction. The capability is offered in a bounded loadout and discovered progressively rather than putting all tools in every prompt. Gmail/Drive/Sheets should use per-action OAuth scopes and a Core vault-backed connector where available; a separately installed CLI can be offered as an external adapter with its own credential custody disclosed.
+
+## 5. Heterogeneous teams
+
+The lead is an ordinary external agent selected by user or capability evidence. It proposes decomposition, worker selection and integration. Core validates task contracts, available agents, permissions, budgets and dependencies; creates child Work; schedules and records it. The lead retains intellectual coordination, while the Work scheduler supplies durable execution control. A Claude Code/Codex CLI lead can request an OpenCode, Cline, Gemini, Hermes, Horizon Code or local-model worker when an adapter exists and the negotiated capability set satisfies the child task. A worker can be chosen explicitly or by measured task profile; model name alone is not an eligibility test.
+
+Each child receives objective, input refs, context packet, allowed resources, output contract, acceptance checks, deadline and budget. Its native tool system remains intact within its own environment. Shared grants are attenuated. Parallel writers get separate Git worktrees or artifact versions; shared browsers get explicit session lease or separate profiles. An event mailbox carries progress, questions, receipts and wake signals. Results return as typed receipts with confidence and evidence refs, then an integration phase checks compatibility. The parent is never asked to read every child transcript. A verifier independent of the worker checks consequential outcomes; no automatic “best of N” without a comparison contract. A team is worthwhile only when expected parallel benefit exceeds spawn, context and integration cost.
+
+## 6. Reuse and restraint
+
+Keep the existing Rust Work/Guard/MCP/ACP/Blueprint/Artifact building blocks. Do not create a second agent loop, scheduler, memory store, credential store or generic workflow engine. n8n and Activepieces are optional external **workflow providers** through versioned invoke/status/cancel/webhook adapters; their executions are represented by one host Work item and evidence refs. Their connector ecosystems should be used through sanctioned APIs/MCP/CLI where practical, rather than reimplementing hundreds of services. A local deterministic workflow remains in `20-WORKFLOW` for user tasks requiring host governance and offline operation. A provider-specific feature absent from the adapter remains provider-owned, not silently emulated.
+
+## 7. Local and open-weight models
+
+A model endpoint is not an agent. A local model becomes a team worker only when an external agent harness with the required tool, session and receipt contract binds to it. Otherwise it serves narrower roles such as classification, extraction, embeddings, reranking or draft review through the existing Model Plane. [llama.cpp's server](https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md) and [vLLM's serving interface](https://github.com/vllm-project/vllm/blob/main/docs/serving/online_serving/README.md) expose compatible inference/tool interfaces, but actual tool-use reliability is model/template/hardware specific. The router therefore records measured capability for a **model + harness + hardware + tool loadout** tuple: structured-output validity, multi-step task completion, context fit, vision support, latency, memory use, cost and privacy locality. A cheap local worker can summarize sources or check a bounded artifact; a high-risk or complex task may require a stronger compatible worker. No provider swap silently changes the agent harness, permissions or evidence class.

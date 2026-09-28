@@ -1,5 +1,7 @@
 # 17 — Memory
 
+> **DEC-054 amendment:** Mission state is not memory. Goal contracts, PlanNodes, decisions, assumptions and evidence live in Mission/event stores; only durable reusable knowledge is eligible for Memory under existing provenance/consent rules. Agent-native memory stays native and is not harvested by discovery (`35`, `46`).
+
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P2).
 > **P7 pass (2026-09-26):** line-checked; requirements seeded (`REQ-MEM-*`, Requirements section).
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).

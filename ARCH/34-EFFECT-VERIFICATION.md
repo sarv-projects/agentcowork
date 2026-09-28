@@ -1,5 +1,7 @@
 # 34 — Effect Verification
 
+> **DEC-054 amendment:** This module verifies individual **Core-mediated** effects. Mission outcome evaluation in `36` separately tests the user's versioned goal against requirements and evidence. A self-contained agent's native tool action can be independently observed, but not assigned a Core effect receipt or authorization it did not use.
+
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P3).
 > **P7 pass (2026-09-26):** line-checked; requirements seeded (`REQ-VERIFY-*`, Requirements section).
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).

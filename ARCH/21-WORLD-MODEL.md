@@ -1,5 +1,7 @@
 # 21 — World Model
 
+> **DEC-054 amendment:** Mission resume queries freshness-stamped World objects and external resource versions to detect drift before mutation; it does not copy World state into Mission or grant the agent global observation. Stable file/repository identity and artifact dependency edges support selective invalidation (`35`, `36`).
+
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P2).
 > **P7 pass (2026-09-26):** line-checked; requirements seeded (`REQ-WORLD-*`, Requirements section).
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).

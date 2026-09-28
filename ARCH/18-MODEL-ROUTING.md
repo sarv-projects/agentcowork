@@ -1,5 +1,7 @@
 # 18 — Model Plane (registry · routing · adapters)
 
+> **DEC-054 amendment:** Model and agent harness are separate selections. A local inference endpoint is not itself an agent; it becomes a Mission worker only through an external `AgentBindingAdapter` with the needed tool/session/receipt capabilities. Route by measured `model + harness + hardware + loadout` performance, task contract, locality and budget (`46` §7); never infer agentic capability from an API-compatible endpoint alone.
+
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P2).
 > **P7 pass (2026-09-26):** line-checked; requirements seeded (`REQ-MODEL-*`, Requirements section).
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).

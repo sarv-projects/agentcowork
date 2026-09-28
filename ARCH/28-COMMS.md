@@ -1,5 +1,7 @@
 # 28 — Communication (Connectors)
 
+> **DEC-054 amendment:** Mail/Drive/Sheets and other SaaS capabilities resolve per action and OAuth scope; a globally connected account is not a grant to every Work or agent. Core-owned connector credentials remain in the vault and its calls pass Guard. An external CLI or agent may use its own credential store only under a visibly separate native/external custody and governance class (`46`, `45` cowork-os/Google Workspace CLI evidence).
+
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P3).
 > **P7 pass (2026-09-26):** line-checked; requirements seeded (`REQ-COMMS-*`, Requirements section).
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).

@@ -1,5 +1,7 @@
 # 23 — Browser Runtime
 
+> **DEC-054 amendment:** The shared browser is an optional scoped capability offered to external agents through negotiated adapters/MCP; it does not replace their native browser. A task records which path was used. Browser profile/session ownership, login handoff, user takeover and observed final-state evidence are required for long-horizon Work (`46`, `38`).
+
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P3).
 > **P7 pass (2026-09-26):** line-checked; requirements seeded (`REQ-BROWSER-*`, Requirements section).
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).

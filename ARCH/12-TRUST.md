@@ -1,5 +1,7 @@
 # 12 — Trust & Control
 
+> **DEC-054 amendment:** Guard/tickets/vault/audit govern Core-mediated calls. A `SelfContained` ACP agent's native shell/files/network/MCP calls are under that agent's own permissions and OS environment, not this Trust path. The UI and receipts must disclose the actual governance class. Discovered native configuration is read-only; shared grants are scoped by real binding/session/Work identity (`46`).
+
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P2).
 > **P7 pass (2026-09-26):** line-checked; requirements seeded (`REQ-TRUST-*`, Requirements section).
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
@@ -13,7 +15,7 @@
 **Never owns:** domain logic · collector implementations (`21` records consent; Trust evaluates it) · UI copy.
 
 1. **One decider** — exactly one component returns ALLOW / ASK / DENY (INV-04).
-2. **One egress path** — all outbound network passes Guard; no side doors (INV-05).
+2. **One Core egress path** — Core-mediated outbound network passes Guard; no Core side doors (INV-05, DEC-054).
 3. **Custody** — provider credentials exist only in the vault; contracts use `use`-style APIs, never reads (INV-02, CTR-013).
 4. **Enforcement lives here, never in prompts** — no agent instruction is a security boundary (P-13).
 5. **Every decision is audited** — including denials and forget/delete (INV-24).
@@ -67,7 +69,7 @@ Guard composes the three into a decision, then issues/validates tickets. Sandbox
 
 ## 7. Egress
 
-- All outbound network through the Guard egress (INV-05): allowlists by domain/method per policy; per-agent and per-session scopes; request metadata audited (never payloads by default).
+- All **Core-mediated** outbound network through the Guard egress (INV-05, DEC-054): allowlists by domain/method per policy; per-agent and per-session scopes; request metadata audited (never payloads by default). Native external-agent network remains outside this guarantee.
 - MCP/HTTP/CLI child processes inherit governed network through their environment (`19`).
 - Static checks + P6 sweep (re-verified in P9, 2026-09-26) verify no direct network clients exist above the adapter layer.
 
@@ -93,7 +95,7 @@ Never exposed: service topology, stores/schema, queues, scheduler internals, vau
 
 ## 9. Audit
 
-- Append-only, tamper-evident chain; every mutating operation logged (INV-24): actor · action · target · decision · ticket · result · timestamps.
+- Append-only, tamper-evident chain; every Core-mediated mutating operation logged (INV-24): actor · action · target · decision · ticket · result · timestamps. Native agent effects are outside this audit coverage.
 - Denials and forget/delete/wipe are first-class audit entries.
 - Memory mutations are audited under the local-mutation class (DEC-042); the record carries **no item body**, and suppression digests are keyed (DEC-039).
 - Audit reads are themselves access-controlled; exports carry the chain proof.
@@ -144,7 +146,7 @@ Testable behaviors owned by this module live in `ARCH/08-REQUIREMENTS.md`; the t
 |---|---|
 | `REQ-TRUST-001` | Egress fail-closed — one governed outbound path; allowlists; no direct clients above the adapter layer (INV-05). |
 | `REQ-TRUST-002` | One approval primitive — request(prompt, options, context, timeout); durable across waits; recorded once (DEC-021). |
-| `REQ-TRUST-003` | One authorization decider — every mutating effect is decided in Trust; no second permission path (INV-04). |
+| `REQ-TRUST-003` | One Core authorization decider — every Core-mediated mutating effect is decided in Trust; no second Core permission path (INV-04, DEC-054). |
 | `REQ-TRUST-004` | Vault custody, use-only — credentials never appear in prompts/context/events/logs/receipts; use-style API; scoped and rotated (INV-02). |
 | `REQ-TRUST-005` | Tickets bind and validate — effect tickets carry scope/uses/expiry/provider epoch and are validated at execution (INV-03, DM-009). |
 | `REQ-TRUST-006` | Three policy layers stay distinct — confinement, approval policy, and declarative exec rules never collapse (DEC-028). |

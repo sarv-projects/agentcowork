@@ -8,27 +8,27 @@
 ---
 
 ### INV-01 — Core disposes
-**Invariant:** Every **externally visible** mutating effect requires authorization minted in Core; agents, surfaces and adapters only propose. No surface, domain, adapter or agent may execute an externally visible effect on its own authority. Local persistent mutations that never leave the machine (e.g. in-store memory writes) are not ticket-bearing: they are policy-gated per scope and audited (DEC-042, INV-24).
+**Invariant:** Every **Core-mediated externally visible** mutating effect requires authorization minted in Core; surfaces, domains and adapters only propose to that path. A self-contained external agent may execute native effects under its own policy and environment; Core does not attest to those effects (DEC-049/054). Local persistent Core mutations that never leave the machine (e.g. in-store memory writes) are not ticket-bearing: they are policy-gated per scope and audited (DEC-042, INV-24).
 **Enforcement:** `12-TRUST` (Guard → Ticket) on the governed path; `13`, `14`; `17` (local-mutation class, DEC-042).
-**Verification:** no externally visible effect path exists without a ticket; every receipt references its ticket; the local-mutation audit census is complete (INV-24).
+**Verification:** no Core-mediated externally visible effect path exists without a ticket; every Core effect receipt references its ticket; the local-mutation audit census is complete (INV-24); native effects are labelled separately.
 
 ### INV-02 — Vault custody
-**Invariant:** Provider credentials exist only in the vault. They never appear in prompts, context, events, logs, receipts, or code.
+**Invariant:** Provider credentials in Core custody exist only in the vault. They never appear in Core prompts, context, events, logs, receipts, or code. Discovered external agents retain custody of their native credentials; Core neither imports nor claims to protect those stores (DEC-054).
 **Enforcement:** `12-TRUST` (vault), `18-MODEL-ROUTING` (use-without-exposure).
 **Verification:** secret-corpus scans; prompt/log audits; vault isolation tests.
 
 ### INV-03 — One governed path
-**Invariant:** Every externally visible effect follows DEC-002's single path. Domains, adapters, UI and the native agent are not exempt.
+**Invariant:** Every Core-mediated externally visible effect follows DEC-002's single path. Domains, adapters and UI are not exempt; an external agent's native path is outside this guarantee (DEC-054).
 **Enforcement:** `13-CAPABILITY`, `14-PROVIDERS`; review gate at every module doc.
 **Verification:** architecture sweep (P6; re-verified in the P9 pass, 2026-09-26); capability tests demonstrating no bypass.
 
 ### INV-04 — One authorization decider
-**Invariant:** Exactly one component decides ALLOW / ASK / DENY. No second permission system — including "small" ones inside domains, connectors, or agent adapters.
+**Invariant:** Exactly one Core component decides ALLOW / ASK / DENY for Core-mediated calls. No second Core permission system — including ones inside domains, connectors, or agent adapters. External agents retain their native permission systems (DEC-054).
 **Enforcement:** `12-TRUST`.
 **Verification:** grep-level check for policy evaluations outside Trust; interop review.
 
 ### INV-05 — One egress path
-**Invariant:** All outbound network traffic leaves through the guarded egress. Higher layers never open side-door connections.
+**Invariant:** All Core-mediated outbound network traffic leaves through the guarded egress. Higher Core layers never open side-door connections. A self-contained external agent's native network is outside this path (DEC-054).
 **Enforcement:** `12-TRUST` (egress), `14-PROVIDERS`, `19-RUNTIME-ENVIRONMENTS`.
 **Verification:** egress tests; static check for direct network clients above the adapter layer.
 
@@ -38,7 +38,7 @@
 **Verification:** interop matrix + ownership table in `ARCH/03-HLD.md §3`; P6 sweep (re-verified in P9, 2026-09-26).
 
 ### INV-07 — Receipts and events
-**Invariant:** Every externally visible effect produces a receipt and at least one event. No silent effects; no "completed" without evidence.
+**Invariant:** Every Core-mediated externally visible effect produces a receipt and at least one event. Native agent effects may be observed or reported, with explicit provenance; Mission completion still requires suitable evidence (DEC-054).
 **Enforcement:** `29-ARTIFACTS` (receipts), `30-EVENTS`, `34-EFFECT-VERIFICATION`.
 **Verification:** effect-path tests; receipt replay tests.
 
@@ -58,14 +58,14 @@
 **Verification:** write-assignment and ceiling-matrix tests; cross-project leakage = 0; external-agent view tests.
 
 ### INV-11 — Projections only
-**Invariant:** External agents receive projected views only (capability/context/workspace/artifacts/events). Internal topology, stores, policy engines and other agents' state are never exposed. Workspace boundaries are enforced by interception, not by discovery.
+**Invariant:** External agents receive only projected **Core** views (capability/context/workspace/artifacts/events). Internal topology, stores, policy engines and other agents' state are never exposed. Core-mediated workspace operations enforce boundaries by interception; a self-contained agent's native operations follow its own environment and are not falsely described as intercepted (DEC-054).
 **Enforcement:** `12-TRUST`, `16-CONTEXT`, `32-CHANNELS`.
 **Verification:** projection tests (7-item contract); deny-outside-path tests.
 
 ### INV-12 — Engine parity
-**Invariant:** every agent engine is governed identically, whichever codebase it comes from and however it is bound. No engine gets a privileged shortcut, even temporarily.
+**Invariant:** Every agent engine receives the same Core-mediated governance for the same shared capability and grant, whichever codebase it comes from. Native agent tools remain under native policy; no engine receives a privileged shortcut through Core (DEC-054).
 **Enforcement:** `15-AGENT-PLANE`, `32-CHANNELS`.
-**Verification:** an in-process engine runs through the same guard/ticket path in tests as an external adapter; no binding kind is exempt from the parity test.
+**Verification:** the same shared call through each binding runs through the same Guard/ticket path; binding type alone grants no exception.
 
 ### INV-13 — Token discipline
 **Invariant:** Deterministic operations (render, browse, list, open, preview, navigate, index search, deterministic user-triggered domain ops) never require an LLM call.
@@ -83,7 +83,7 @@
 **Verification:** capability tests run identically against different transports.
 
 ### INV-16 — Durable work
-**Invariant:** Work state is checkpointed; runs resume after crash/restart. In-flight workflow runs execute against their recorded version and never mutate underneath themselves.
+**Invariant:** Work state is checkpointed; after crash/restart it is reconciled and resumed or replaced according to the adapter's actual capabilities. Native agent sessions need not resume; Mission/Work truth persists independently (DEC-054). In-flight workflow runs execute against their recorded version and never mutate underneath themselves.
 **Enforcement:** `11-WORK`, `20-WORKFLOW`.
 **Verification:** kill/restart tests; long-wait resume tests.
 
@@ -123,6 +123,24 @@
 **Verification:** event coverage tests; no direct cross-module state writes without events.
 
 ### INV-24 — Audit completeness
-**Invariant:** Every mutating operation — including forget/delete/wipe — is audited; audit entries are append-only.
+**Invariant:** Every Core-mediated mutating operation — including forget/delete/wipe — is audited; audit entries are append-only. Agent-native effects outside Core do not receive a Core audit claim (DEC-054).
 **Enforcement:** `12-TRUST` (audit), all writers.
 **Verification:** mutation census vs audit entries (coverage = 100%).
+
+## DEC-054 boundary and Mission invariants (2026-09-28)
+
+INV-01 and INV-24 quantify over **Core-mediated operations**. DEC-049's external agent native effects are outside Core's ticket/audit path; those effects require honest `native_observed` or `agent_reported` provenance and no Core-governed badge. This is an explicit amendment, not a claim that Core can intercept a discovered agent's own tools. The vault rule remains absolute for credentials in Core custody.
+
+| ID | Invariant | Enforcer |
+|---|---|---|
+| INV-25 | Mission truth survives agent session/model/provider replacement; no transcript is required to reconstruct it. | `35-MISSION`, `30-EVENTS` |
+| INV-26 | A failed Work attempt does not itself fail its PlanNode or Mission. | `35-MISSION`, `11-WORK` |
+| INV-27 | GoalContract and PlanVersion commits are immutable; agents propose patches, Mission validates and commits against a base version. | `35-MISSION` |
+| INV-28 | Mission completion requires evidence against every required current criterion, or an explicit user-approved exception. | `36-OUTCOME-AND-RECOVERY` |
+| INV-29 | Requirement/input/environment changes trigger impact analysis; affected completed nodes/evidence may become invalid. Resume reconciles external state before mutation. | `35`, `36`, `29` |
+| INV-30 | Effect verification and mission outcome evaluation are separate; agent self-report is never upgraded to independent proof. | `34`, `36` |
+| INV-31 | Repeated no-progress attempts are bounded by budget and escalation policy. | `35`, `36`, `11` |
+| INV-32 | Discovered agent configuration and native extensions are read-only to discovery/attachment; host grants are explicit, scoped and reversible. | `46`, `31`, `32` |
+| INV-33 | Catalog visibility is not authorization; shared calls use the actual Work/session/agent/grant identity. | `46`, `12`, `13`, `32` |
+| INV-34 | Native agent effects and Core-mediated effects carry distinct provenance and assurance claims. | `12`, `34`, `36`, UI |
+| INV-35 | Learned skills/workflows/policies are versioned proposals and cannot silently change trusted active behavior. | `37`, `31`, `20` |

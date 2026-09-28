@@ -1,5 +1,7 @@
 # 19 — Runtime & Environments
 
+> **DEC-054 amendment:** Mission checkpoints reference both cognitive state and execution-environment fingerprint (`35`, `36`). Local shutdown durably pauses local Work. Cloud/remote continuation requires an explicitly configured executor with its own identity, scopes, credential broker and ownership/lease semantics; no UI may imply local Work continues while its only executor is offline. Agent-native process effects remain under that agent's environment policy.
+
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P2).
 > **P7 pass (2026-09-26):** line-checked; requirements seeded (`REQ-RTENV-*`, Requirements section).
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).

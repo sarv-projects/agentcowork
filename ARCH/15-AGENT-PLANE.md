@@ -15,7 +15,7 @@ An **agent engine** is a reasoning runtime that plans and acts. This document sp
 
 **Core owns, always:** capability implementation (`13`/`14`) · permissions and every authorization decision (`12`) · work scheduling, budgets and deadlines (`11`) · the durable memory store (`17`) · context data services (`16` infra) · deterministic multi-step processes (`20`) · the CLI/ACP surfaces it is reachable through · the UI.
 
-**The line:** an engine is a *peer*, not a privileged component. It proposes; Core disposes (INV-01). It receives projections, never another agent's state (INV-11). Whatever codebase it comes from and however it is bound, it takes the same guard/ticket path (DEC-010, INV-12).
+**The line (DEC-054):** an engine is a *peer*, not a privileged Core component. For shared Core capabilities it proposes and Core disposes (INV-01); native agent tools remain under the engine's own policy and environment. It receives Core projections, never another agent's state (INV-11). Every binding takes the same Guard/ticket path **when invoking a shared Core capability** (DEC-010, INV-12).
 
 **Bounded tools, never a flat dump (DEC-028, REQ-CAP-001):** an engine sees a bounded, Guard-mapped set of task-shaped tool façades — never a flattened dump of every MCP, plugin or native tool. Every effect-bearing call resolves through the capability/Guard/ticket path, read-only tools carry path scopes, and tool outputs are bounded (a preview plus a durable artifact ref; lossy success is forbidden — DEC-032). **How** an engine loads, searches and batches its tools is the engine's own design; the long tail is reachable, the wire is never flooded.
 
@@ -71,7 +71,9 @@ Per DEC-029 (evidence §A3 / §B3 / §E7):
 | Return value | **Worker receipt** (status · scope · summary · findings · changed files · tests · artifacts · blockers · confidence · usage · `will_wake` · `partial`) — never the transcript. |
 | Bounds | Platform enforces outer limits (max parallel · total · depth · tokens · spend); the running agent decides actual usage within them. |
 
-### 7.1 Capability-affinity steering (the published block)
+### 7.1 Capability-affinity steering (superseded by DEC-054)
+
+**Target contract:** A discovered external engine retains native tool choice. The four mandatory rankings below describe the currently shipped prompt block and its current assertion, **not** the target behavior. Replace it with a bounded, task-specific description of available shared capabilities and their actual grants. The engine may choose native tools. Show the selected path and its governance class. Do not claim `office.*`, `browser.*`, `computer_use.*` or `delegate.*` is always superior to an engine-native operation. The prompt-steering assertion must be revised with the implementation; until then this is a documented code/spec gap.
 
 A bound engine that can reach the shared cowork plane is told, in its own prompt, that the native capability façades outrank the generic shell. This is the published form of `COWORK_AFFINITY_STEERING` (`crates/agentcowork-acp/src/chief.rs`, asserted by `scripts/check-prompt-steering.mjs`), in the same order:
 

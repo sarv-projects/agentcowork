@@ -87,6 +87,8 @@ Each doc’s claims map to a verification class; tests are sized to the claim. (
 
 ## 5. Pass gates
 
+> **DEC-054 amendment:** New `REQ-MISSION-*`, `REQ-ECO-*`, `REQ-LEARN-*` and `REQ-UXQ-*` rows in `09` are unplanned implementation debt, not verified features. Acceptance evidence must demonstrate native config preservation, real Channel-B identity, heterogeneous child isolation, crash/session replacement, contract impact invalidation, independent outcome checks, workflow wait reconciliation and progressive control. `45` is source evidence for design, not product acceptance evidence. `TODO.md` remains untouched by owner instruction.
+
 - **v1 freeze conditions (P8):** every doc passes `00-INDEX` §5; the interop matrix is updated; the fix register is owned by the code phase; no `UNVERIFIED` claim remains silent.
 - **Post-freeze:** the code phase re-verifies FIX-01…18, then implements per `TODO.md` (W0–W4); the register's historical sequencing sketch is `MASTER-COMPARISON §5` (Wave 0 P0 → Wave 1 floors → Wave 2 context/token → Wave 3 engine hosting → Wave 4 work/scheduler → Wave 5 polish).
 

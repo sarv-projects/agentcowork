@@ -7,10 +7,16 @@
 | Term | Definition |
 |---|---|
 | **Core** | The runtime/kernel — supervisor of the work plane, capability plane, trust plane, domains and stores. Surfaces are projections of it. |
+| **Mission** | Durable user outcome with versioned intent, requirements, adaptive plan and evidence; survives Work/session/agent replacement (DM-028, `35`). |
+| **Goal Contract** | Versioned objective, constraints, acceptance criteria, required evidence, approvals and budget for a Mission (DM-029). |
+| **PlanNode** | Semantic unit of a Mission plan; one node may have several Work attempts (DM-038). Distinct from the `Task` projection over Work/Step. |
+| **Outcome Evaluation** | Requirement-by-requirement assessment of the user's goal against current evidence; separate from individual effect verification (DM-036, `36`). |
+| **Extension Grant** | Explicit, attenuable activation of a host-owned MCP/skill/plugin component for a binding, workspace and Work (DM-037, `46`). Catalog visibility alone is not a grant. |
 | **Agent** | A reasoning runtime that plans and acts. Any bound engine — external (ACP/A2A/CLI/remote) or in-process. |
-| **`AgentEngine`** | The peer contract every agent implements: create/resume sessions, run, steer, interrupt, spawn subagent, dispose (CTR-001). |
+| **`AgentEngine`** | The peer adapter contract for external engines; lifecycle features are negotiated and unsupported methods return a typed result. Cross-engine delegation is host Work (CTR-001/030, DEC-054). |
 | **Agent Gateway** | The brokered entry point external agents use; produces the 7-item projection (enforcement lives in Trust — `12` §8, `32` §3) (CTR-022, DEC-009). |
-| **Agent Profile** | An agent’s declarative configuration: runtime, version, supported models, capabilities, composer abilities (DM-014). |
+| **Agent Profile** | Discoverable agent metadata and install provenance: runtime, version/fingerprint, supported models, declared capabilities and composer abilities. Discovery does not modify native config (DM-014, DEC-054). |
+| **Agent Binding** | A profile attached through a particular launch/protocol with negotiated capability evidence, governance class and scoped host grants (DM-039). |
 | **Approval** | A recorded human decision (approve/reject/edit/provide-data) requested by an agent question or a workflow node (DM-010, DEC-021). |
 | **Artifact** | A versioned, provenance-carrying work product (document, spreadsheet, patch, dataset, capture…) (DM-019). |
 | **Artifact Gateway** | The ref-based exchange surface for artifacts with external agents (`artifact_id`, mime, uri) (`29` §5). |
@@ -20,7 +26,7 @@
 | **Capability Handle** | A resolved, epoch-checked binding to a provider for a capability (DM-012). |
 | **Capability Plane** | The registry/resolver/handles/affordances layer that turns capabilities into provider bindings (`13`). |
 | **Catalog** | The browseable list of installed/available capabilities, skills, agents, workflows — the UI/agent discovery surface (`13` §6). |
-| **Channel** | A user or protocol surface (desktop, CLI, ACP, A2A, API, mobile-later) (`32`). |
+| **Channel** | A user or protocol surface (desktop, CLI, ACP, A2A, API, mobile) (`32`); each advertises its actual availability and capabilities. |
 | **Checkpoint** | A durable state-reconstruction record (work · context · workflow · session) (DM-006, DEC-027). |
 | **Completion Contract** | The declared success conditions + verification for a piece of work; the loop may not stop before it is satisfied (`15` §4). |
 | **Connector** | A provider integration for external services (mail, calendar, messaging, SaaS) (`28`). |
@@ -53,15 +59,15 @@
 | **Requirement (`REQ-<DOMAIN>-<NNN>`)** | One testable behavior with acceptance and failure cases, owned by a module and derived from the SPEC/invariants/decisions (`08-REQUIREMENTS.md`); IDs are stable — never renumbered or reused. |
 | **Run** | One concrete execution of an agent or workflow node (DM-005). |
 | **Scheduler** | The Core component admitting work into lanes under outer limits (DEC-031, CTR-026). |
-| **Session** | A durable conversation/agent-context container; its log is append-only and everything else is a projection (DM-004, DM-007). |
+| **Session** | A conversation/agent-context container with durable host event references; the native model context may be disposable or unsupported on resume. Mission does not depend on its transcript (DM-004/007, DEC-054). |
 | **Sensitivity** | Data classification (`public`/`personal`/`confidential`) enforced at recall/projection/injection (INV-10). |
 | **Skill** | Reusable know-how (instructions + capability requirements) — teaches; doesn’t execute (DM-027, `31`). |
 | **Spec gate** | The pre-implementation check: read the applicable specs → extract the `REQ-*` to satisfy → inspect the implementation → plan → obtain a decision for any architecture change → smallest change → test every failure case → verify acceptance (`.agents/docs/spec-driven-development.md`). |
 | **Step** | A unit of progress inside a run; checkpoint boundary (DM-002). |
-| **Subagent** | A child session spawned by an agent for delegated work; returns a receipt, never a transcript (DEC-029). |
+| **Subagent** | A delegated child Work/session, possibly backed by a different external engine; returns a receipt, never a required transcript (DEC-029/054). |
 | **Task (`TASK-<DOMAIN>-<NNN>`)** | A plan unit in `TODO.md` that references the `REQ-*` it implements and its touched paths/tests; the matrix (`09`) carries the link. |
 | **Test (`TEST-<DOMAIN>-<NNN>`)** | The executable verification attached to a requirement; `verified` status requires an acceptance record (`42`) — for risky classes, never unit tests alone (`09`). |
-| **Ticket** | Scoped, time-boxed authorization for one effect — required before any execution (DM-009, INV-03). |
+| **Ticket** | Scoped, time-boxed Core authorization required before a Core-mediated effect. External-agent native effects do not carry Core tickets (DM-009, INV-03, DEC-054). |
 | **Tool vs Capability** | “Tool” is provider-side vocabulary; AgentCowork exposes capabilities. Protocols/tool names stay below the Capability Plane (INV-15). |
 | **Vault** | The credential store; `use`-style API only — values never leave it (INV-02). |
 | **Verification** | The read-only checks before a receipt; depth scales with risk class (`34`, INV-19). |

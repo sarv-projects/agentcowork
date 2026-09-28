@@ -100,6 +100,8 @@ Product-owner brief (skills model, relevance-only loading, agent-vs-skill distin
 
 ## 12. Requirements (`REQ-SKILL-*`)
 
+> **DEC-054 amendment:** Host-installed, discovered agent-native and third-party extensions have distinct custodians and namespaces. Installed/catalog-visible does not mean activated/authorized; activation is per binding and Work with child attenuation. Workflow-to-skill capture and versioned promotion are specified in `37-WORKFLOW-SKILL-LIFECYCLE.md`. Discovery never edits a native extension directory.
+
 Testable behaviors owned by this module live in `ARCH/08-REQUIREMENTS.md`; the traceability chain is in `ARCH/09-FEATURE-MATRIX.md`. This table is a pointer, not a second copy.
 
 | REQ | Behavior (one line) |
