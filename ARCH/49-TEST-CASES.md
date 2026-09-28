@@ -46,7 +46,7 @@ No observed-result field may be filled from a marketing claim or an agent's self
 | `TC-020` 3 | Edit code in a repository using external coding agent | Correct diff, relevant tests and runtime behavior, artifact/evidence; native effects labeled accurately | Worktree conflict, CLI restart, failed build |
 | `TC-021` 4 | Record a repeated browser workflow and reuse it | Candidate skill removes secrets, abstracts inputs/selectors, validates result on changed fixture | Unstable selector, credentials in trace, replay regression |
 | `TC-022` 4 | Convert stable workflow to skill and skill to workflow | Versioned package has scope, trigger, input/output, verifier and dependency; no unintended publication | Version mismatch, server unavailable, permission widening |
-| `TC-023` 4 | Schedule a report on a time trigger and inbox event | One run per logical event, duplicate suppression, visible history and blocked branch | Restart around trigger, late event, DST/time-zone change |
+| `TC-023` 4 | Schedule a report on a time trigger and inbox event | One logical run per deduped occurrence, correct report, visible history and blocked branch | Restart around trigger, late event, DST/time-zone change; external effects still checked separately |
 | `TC-024` 4 | Lead agent delegates independent research to another engine/local model | Child receives minimal contract/context, returns cited handoff; lead integrates once | Child timeout/crash, weak model, result format mismatch |
 | `TC-025` 4 | Two agents edit separate branches; integration required | Isolated writes, explicit merge/integration node, independent verification | Same-file conflict, incompatible designs, stale base |
 | `TC-026` 4 | Native subagent of a discovered agent runs during host task | UI does not invent host ownership; observed/reported child status separated from host-assigned Work | Agent hides child lifecycle, native tool outside Core |
@@ -62,6 +62,7 @@ No observed-result field may be filled from a marketing claim or an agent's self
 | `TC-036` 6 | Month-old Mission resurrection | Reconstruct goal/plan/evidence without transcript; reconcile all changed external state and only then resume | Lost process/VM, moved files, rotated auth |
 | `TC-037` 6 | Full business workflow: intake email → CRM → spreadsheet → deck → draft response | Source-correct joins, approved effects, verified artifacts and dependencies; no skipped/hallucinated step | Partial SaaS outage, duplicate input, human correction |
 | `TC-038` 6 | Accessibility journey through chat, agent picker, Workbench and approval | Screen reader and keyboard user completes task, understands status and evidence | 200% zoom, reduced motion, high contrast, focus restore |
+| `TC-039` 6 | Move a recurring schedule and webhook subscription from local service to cloud owner while the desktop closes | Exactly one fenced trigger owner materializes each logical occurrence; source cursor and definition version survive handoff; no duplicate external send or false offline-continuation badge | Kill old owner before ack, lose new-owner ack, replay webhook, expire Work lease after side effect; compare journal, provider state and UI location |
 
 ## 3. External benchmark mapping and gates
 

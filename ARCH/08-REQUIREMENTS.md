@@ -198,12 +198,12 @@ This registry answers one question per entry: **what behavior must this system e
 
 ### Work (`WORK`)
 
-#### REQ-WORK-001 — One lifecycle, one scheduler
-- **Statement:** GIVEN any runnable thing (chat turn, job, workflow run, subagent task, automation), WHEN it is created, THEN it is a `Work` item on the single lifecycle and admitted by the one scheduler — no second job system or side scheduler exists.
+#### REQ-WORK-001 — One host lifecycle and Work admission scheduler
+- **Statement:** GIVEN any Core-scheduled chat turn, job, workflow run, host-assigned subagent task or automation, WHEN it is created, THEN it is a `Work` item on the single host lifecycle and admitted by the one Work scheduler. Agent-native children and external workflow-provider internals are not fabricated as host Work (DEC-054/057).
 - **Priority:** must
 - **Source:** `ARCH/04-DECISIONS.md` DEC-003 · `ARCH/11-WORK.md` §1 · `ARCH/05-INVARIANTS.md` INV-06
-- **Acceptance:** every execution kind appears as Work with the same status machine; static check finds no parallel scheduler.
-- **Failure cases:** kind running outside Work → architecture violation; second queue → review failure.
+- **Acceptance:** every Core-scheduled execution kind appears as Work with the same status machine; static check finds no duplicate Core admission scheduler; native child telemetry is labeled by provenance.
+- **Failure cases:** Core-scheduled kind running outside Work, fabricated native child Work or duplicate Core queue → architecture violation.
 - **Tests:** pending
 - **Status:** seeded
 
@@ -217,10 +217,10 @@ This registry answers one question per entry: **what behavior must this system e
 - **Status:** seeded
 
 #### REQ-WORK-003 — Durable work and resume
-- **Statement:** GIVEN a crash or restart, WHEN work resumes, THEN `running` work resumes or requeues per step idempotency, `waiting`/`awaiting_approval` remain pending, `cancelled` stays cancelled, and cancellation is recorded — never implied.
+- **Statement:** GIVEN a crash or restart, WHEN Work is reconstructed, THEN `running` work first reconciles executor and effect state, then resumes only through a supported live adapter or is safely requeued as a new attempt; `waiting`/`awaiting_approval` remain pending, `cancelled` stays cancelled, and cancellation is recorded — never implied.
 - **Priority:** must
 - **Source:** `ARCH/05-INVARIANTS.md` INV-16 · `ARCH/11-WORK.md` §4
-- **Acceptance:** crash/restart test matrix per status; interrupted effects verified before retry (where no provider dedupe, the step is marked interrupted).
+- **Acceptance:** crash/restart test matrix per status and adapter resume capability; unsupported native session resume is never claimed; interrupted effects are verified before retry and unknown keyless effects enter `needs_attention`.
 - **Failure cases:** duplicate effect after resume → verification failure; silently dropped queue → defect.
 - **Tests:** pending
 - **Status:** seeded
@@ -1141,21 +1141,21 @@ This registry answers one question per entry: **what behavior must this system e
 - **Tests:** pending
 - **Status:** seeded
 
-#### REQ-WF-003 — Occurrences persist ahead and claim exactly once
-- **Statement:** GIVEN an enabled trigger, WHEN it becomes due, THEN its occurrence row (due time + unique idempotency key) exists before it is due, and a single-transaction claim admits each occurrence to exactly one run; duplicate materialization or claim attempts cannot double-execute.
+#### REQ-WF-003 — Occurrences persist ahead and admit one logical run
+- **Statement:** GIVEN an enabled trigger, WHEN it becomes due, THEN its occurrence row (due time + unique idempotency key) exists before it is due, and an atomic claim admits each occurrence identity to one logical run. This does not guarantee exactly-once external effects: a retried step uses provider idempotency or reconciliation before another action.
 - **Priority:** must
 - **Source:** `ARCH/20-WORKFLOW.md` §4 · `ARCH/04-DECISIONS.md` DEC-033
-- **Acceptance:** no execution without a persisted occurrence row; a duplicate-key insert/claim test yields exactly one run; a crash between materialize and claim leaves a reclaimable occurrence.
-- **Failure cases:** execution from an unpersisted occurrence → defect; double claim / double run → violation.
+- **Acceptance:** no execution without a persisted occurrence row; duplicate-key insertion/claim yields one logical run; a crash between materialize and claim leaves a reclaimable occurrence; a lost effect acknowledgement does not trigger a blind duplicate.
+- **Failure cases:** execution from an unpersisted occurrence, double logical run or unreconciled duplicate side effect → violation.
 - **Tests:** pending
 - **Status:** seeded
 
-#### REQ-WF-004 — One wake loop reconciles, claims and executes
-- **Statement:** GIVEN the workflow scheduler, WHEN it runs, THEN exactly one wake-loop actor reconciles expired leases (requeue + `lease_reaped` event), applies `cancel_requested` at the next step boundary, materializes due occurrences, claims them exactly-once, executes step-by-step in transactions, and sleeps until the nearest wake (occurrence due · wait `wake_at` · approval deadline · lease expiry) — no second scheduler or timer queue exists.
+#### REQ-WF-004 — One logical trigger owner reconciles, claims and dispatches
+- **Statement:** GIVEN the workflow trigger owner, WHEN it runs locally or after an accepted remote/cloud handoff, THEN one fenced logical owner reconciles expired leases (requeue + `lease_reaped` event), applies `cancel_requested` at the next step boundary, materializes time or authenticated connector/event occurrences with stable dedupe keys, atomically claims them, dispatches steps through Work and sleeps until the nearest wake (occurrence due · wait `wake_at` · approval deadline · lease expiry). A local service, cloud executor or external workflow provider may own a trigger, but never two at once for one definition.
 - **Priority:** must
-- **Source:** `ARCH/20-WORKFLOW.md` §4 · `ARCH/04-DECISIONS.md` DEC-033 · `ARCH/07-CONTRACTS.md` CTR-016 · `ARCH/05-INVARIANTS.md` INV-06
-- **Acceptance:** single-writer/single-scheduler inspection; lease-expiry requeue emits the event; cancellation lands only at step boundaries; nearest-wake computation test.
-- **Failure cases:** parallel scheduler → architecture violation; cancelled run executing another step → defect; expired lease blocking a claim → defect.
+- **Source:** `ARCH/20-WORKFLOW.md` §4 · `ARCH/04-DECISIONS.md` DEC-033/057 · `ARCH/07-CONTRACTS.md` CTR-016 · `ARCH/05-INVARIANTS.md` INV-06 · `ARCH/40-FLOWS.md` FLOW-47 · `ARCH/41-EDGE-CASES.md` EDGE-206…209
+- **Acceptance:** one fenced trigger owner per definition; duplicate SaaS/webhook event creates one logical occurrence; local-to-cloud owner transfer survives local shutdown; lease-expiry requeue emits the event; cancellation lands only at step boundaries; nearest-wake computation test.
+- **Failure cases:** simultaneous trigger owners, unverified webhook, cancelled run executing another step or expired lease blocking a claim → defect.
 - **Tests:** pending
 - **Status:** seeded
 

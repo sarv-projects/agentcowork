@@ -43,7 +43,7 @@ Each doc’s claims map to a verification class; tests are sized to the claim. (
 | `17` Memory | The §13 eval suite: write quality, update/conflict, recall golden set, budget honesty, isolation, lifecycle, ops. |
 | `18` Models | Router matrix tests; local discovery; reasoning mapping; usage accounting. |
 | `19` Runtime | Process/sandbox tests; helper consent; detached rehydration; **Windows sandbox acceptance record**. |
-| `20` Workflow | Durability suite: kill/restart, exactly-once occurrences, misfire policies, approval flows, version pinning. |
+| `20` Workflow | Durability suite: kill/restart, one logical run per deduped occurrence, fenced trigger-owner handoff, ambiguous effect reconciliation, misfire policies, approval flows and version pinning. |
 | `21` World | Collector tests + consent records; overflow/rescan; **Windows acceptance matrix** (real apps: Notepad/Explorer/Office/UWP/Electron). |
 | `22` Office | Round-trip/fidelity suite per format; resident crash tests; redact extraction check; op-registry docs-sync gate. |
 | `23` Browser | Task suite (snapshot/act/verify); ref invalidation; adapter fallback; no-evasion checks. |

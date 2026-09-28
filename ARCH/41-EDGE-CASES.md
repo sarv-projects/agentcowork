@@ -265,6 +265,15 @@
 | EDGE-204 | Native subagent is opaque or reports false completion | UI labels report provenance and missing controls; Mission requires independent acceptance evidence. |
 | EDGE-205 | A fast agent produces ten workers with shared resources | Bounds/isolation/integration cost prevent waste or conflict; no unbounded parallel admission. |
 
+## T. Trigger ownership and external-effect honesty (`19`–`20`, DEC-057)
+
+| ID | Scenario | Required behavior |
+|---|---|---|
+| EDGE-206 | Desktop closes before a remote trigger owner accepts | Future occurrences are paused/misfire-recorded unless a healthy local service still owns the trigger; a remote Work lease alone does not imply future scheduling. |
+| EDGE-207 | Old and new owners both believe handoff succeeded | Fencing epoch rejects the stale materializer; reconcile journal/source cursor before successor claims; never emit duplicate logical occurrences. |
+| EDGE-208 | Connector/webhook replays an event after network timeout | Authenticate origin, compare stable dedupe key and source cursor, and reuse the one occurrence identity. |
+| EDGE-209 | External action succeeded but its acknowledgement was lost | Do not infer exactly-once effect from occurrence claim; query observed state/use provider idempotency, otherwise settle `needs_attention` without blind retry. |
+
 ## Extension rule
 
 New edge cases are appended with the next free ID in their family, with: scenario · required behavior · owning doc. A case that changes an authority doc escalates to a `DEC`.

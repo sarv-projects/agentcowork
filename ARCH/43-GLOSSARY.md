@@ -41,15 +41,15 @@
 | **Guard** | The single policy decider (`ALLOW`/`ASK`/`DENY`) composed of three layers: platform confinement × approval policy × declarative exec rules (DEC-028). |
 | **Handles** | See Capability Handle. Handles are cached bindings; the hot path looks one up instead of re-negotiating. |
 | **Installed / Available / Activated / Executing** | The four-state scoping model for resources (MCP servers, skills, plugins, models) (DEC-024). |
-| **Lane** | Scheduler lanes: **foreground** (active turn) · **background** (non-blocking work) · **detached** (may outlive the app session) (DEC-031). |
-| **Library** | The global reusable inventory: agents, skills, workflows, connectors, plugins, templates, prompts, saved artifacts (DEC-014). |
+| **Lane** | Core Work lanes: **foreground** (active turn) · **background** (non-blocking work) · **detached** (durable record; execution after app close requires an accepted local service or remote owner) (DEC-031/057). |
+| **Library** | User-facing composite view of permitted generated/uploaded/imported/linked artifacts and explicitly saved reusable items; catalog visibility never grants access (DEC-014/055). |
 | **Library Item** | One promoted inventory entry (DM-023); promotion is explicit (“Save to Library”). |
 | **Memory** | Durable, scoped, provenance-carrying knowledge with write/read/forget lifecycle — distinct from context (DEC-019). |
 | **Memory Item** | One atomic memory record; ADD-only with a single `superseded_by` pointer; suppression-based forget (DM-018). |
 | **MCP** | Model Context Protocol — one provider transport; dual-era policy (modern 2026-07-28 + legacy fallback) (DEC-030). |
 | **Model Descriptor** | A model’s capabilities and limits: window, tools, reasoning modes, vision, costs, locality (DM-025). |
-| **Model Router** | The single component agents ask for a model; no module hard-codes a vendor (CTR-014, `18`). |
-| **Occurrence** | A materialized upcoming workflow trigger firing with an idempotency key — claimed exactly once (`20` §4). |
+| **Model Router** | Core-owned model consumers and compatible host-controlled bindings use CTR-014; discovered agents may retain their native model/provider configuration (`18`, DEC-054). |
+| **Occurrence** | A persisted trigger identity with a dedupe key; one logical run is admitted by atomic claim, while external effects still require idempotency or reconciliation (`20` §4, DEC-057). |
 | **Open question (`OQ-*`)** | An unresolved design point. Cross-cutting questions are `OQ-###` in `ARCH/00-INDEX.md` §9; module-scoped questions are `OQ-<MNEMONIC>-<n>` in the owning module doc's Open questions section (e.g. `OQ-CTX-01`). Ids are stable — never renumbered or reused. |
 | **Provider** | An implementation of capabilities (native runtime, MCP server, ACP agent, HTTP/CLI/plugin/remote) (DM-013). |
 | **Provider Epoch** | A counter bumped on provider restart; stale handles/tickets bound to old epochs are invalid (DM-012, `13` §4). |

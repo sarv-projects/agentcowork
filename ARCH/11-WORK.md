@@ -3,7 +3,7 @@
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P2).
 > **P7 pass (2026-09-26):** line-checked; requirements seeded (`REQ-WORK-*`, Requirements section).
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
-> **Role:** the **universal execution abstraction** (DEC-003). Everything that runs — a chat turn, a workflow run, a background job, a subagent task, an automation — is a `Work` item with one lifecycle, one scheduler, one Runs surface.
+> **Role:** the **universal host execution abstraction** (DEC-003). Every execution scheduled by Core — a chat turn, a workflow run, a background job, a host-assigned subagent task, an automation — is a `Work` item with one lifecycle, one scheduler and one Runs surface. Native agent-internal actions and subagents remain under that agent and are reported/observed only when exposed (DEC-054).
 > **Dependencies:** `10-KERNEL` · `12-TRUST` (tickets for effects) · `16-CONTEXT` (checkpoints) · `30-EVENTS` (stream). **Consumers:** `15-AGENT-PLANE` · `20-WORKFLOW` · `32-CHANNELS` · UI.
 > **Evidence:** product-owner brief (lanes, limits, background work, “Work is universal”) · `ARCHIVE/v1-research/agent-harness-verification.md` §A3 (background guidance), §D1/§E4 (durable log + projections, `next-turn`/`next-step`), §C2 (durable history) · `ARCH/06-DATA-MODEL.md` (DM-001…008) · DEC-003 / DEC-027 / INV-16 / INV-23.
 
@@ -13,20 +13,20 @@
 **Never owns:** reasoning (`15`) · execution (`13`/`14`) · workflow control-flow semantics (`20` — workflow runs *appear as* work, but the IR and node execution belong to 20) · UI rendering.
 
 Rules:
-1. **One lifecycle for everything** — no side schedulers, no second job system (DEC-003, INV-06).
+1. **One lifecycle for host work** — no side Core schedulers or second Core job system (DEC-003, INV-06). A native agent's own child processes are not fabricated as host Work.
 2. **The session log is append-only; every view is a projection** — UI history, prompt history, pending-work (inbox), runs list (DEC-027, INV-23).
-3. **Work is durable** — crash/restart resumes; cancellation is recorded, not implied (INV-16).
+3. **Work state is durable** — crash/restart first reconciles the executor and effects; it resumes a compatible live session or creates a bounded new attempt where safe. No unsupported external-agent resume is claimed. Cancellation is recorded, not implied (INV-16, DEC-054).
 4. **Budgets are maxima** — the scheduler enforces outer bounds; agents decide within them (DEC-029/031).
 
 ## 2. Entity model (detail for DM-001…008)
 
-**`Work` (DM-001)** — `kind`: `session_turn` · `job` · `workflow_run` · `subagent_task` · `automation`; `status`: `queued → running → waiting | paused | awaiting_approval → completed | failed | cancelled | expired`; plus `parent_work_id` (work trees), `session_id`, `agent_id`, `workspace_id`, `objective`, `priority`, `completion_contract_ref`, `budget {tokens, cost, time}`, `checkpoint_ref`, timestamps.
+**`Work` (DM-001)** — `kind`: `session_turn` · `job` · `workflow_run` · `subagent_task` · `automation`; `status`: `queued → running → waiting | paused | awaiting_approval → completed | failed | cancelled | expired`; plus `parent_work_id` (work trees), nullable `mission_id`/`plan_node_id`/`attempt_number` (semantic correlation), `session_id`, `agent_id`, `workspace_id`, `objective`, `priority`, `completion_contract_ref`, `budget {tokens, cost, time}`, `checkpoint_ref`, timestamps.
 
 **`Step` (DM-002)** — one unit of progress inside a run: `pending → active → done | failed | skipped`; inputs/output refs; tool-call refs; timestamps. Steps are checkpoint boundaries.
 
 **`Task` (DM-003)** — **decision recorded here (OQ-DM-01 resolved for v1):** `Task` is a **projection** over `Work` + `Step` + assignment metadata, not a separate durable entity. Rationale: avoids a second hierarchy beside work/step; delegation already models “task” as the unit passed to workers (`15` §7). Revisit only with evidence (e.g. cross-work task graphs).
 
-**`Session` (DM-004)** — durable container: `active → hibernated → archived`; `agent_binding`, `workspace_id`, `title`, `log_range` (SessionEvent span), `retention_class`, `last_active`.
+**`Session` (DM-004)** — durable container: `active → hibernated → archived`; `agent_binding`, `workspace_id`, `title`, `parent_session_id?`, `fork_origin_ref?`, `log_range` (SessionEvent span), `retention_class`, `last_active`.
 
 **`Run` (DM-005)** — one concrete execution of an agent (or workflow node): `session_id`, `work_id`, `agent_id`, `model`, `reasoning_level`, `usage`, `receipt_refs[]`.
 
@@ -42,7 +42,7 @@ Rules:
 |---|---|---|
 | Foreground | The active interactive turn | 1 per session (user-visible) |
 | Background | Jobs/workers admitted without blocking the UI | Global bound; per-tree bound |
-| Detached | Long work that may outlive the app session (workflow runs, scheduled automations) | Rehydrated on app start; still bounded |
+| Detached | Long work whose record outlives the app UI (workflow runs, scheduled automations) | A separate healthy local service or accepted remote executor is required to **continue executing** after app close; otherwise pause and rehydrate on restart (`19` §7) |
 
 **Admission:** work is created with `kind` + priority + budget + completion contract; the scheduler admits under the limits and records the decision (event).
 
@@ -55,7 +55,7 @@ Rules:
 ## 4. Durability & resume
 
 - **Checkpoint cadence:** every step boundary (cheap, incremental); before compaction (`16`); before waits/approvals; before handing off to a worker.
-- **Resume semantics on crash/restart:** `running` → resume or requeue depending on step idempotency; `waiting`/`awaiting_approval` remain; `cancelled` stays cancelled.
+- **Resume semantics on crash/restart:** `running` → reconcile executor/effect liveness, then resume only if the adapter supports it or requeue/new-attempt when safe; an unknown keyless effect enters `needs_attention`. `waiting`/`awaiting_approval` remain; `cancelled` stays cancelled.
 - **Resume target check:** resume re-resolves workspace identity before any write (`25` §5); an unresolvable root yields a typed `NotFound` + re-point guidance — queued work is never replayed against a guessed path (EDGE-009).
 - **Side-effect safety:** tickets + idempotency keys (`07` §5) make retries safe where providers support dedupe; where they do not, the step is marked *interrupted* and verification (`34`) runs before any retry — a keyless effect that cannot be verified lands in `needs_attention`, never a blind re-fire (EDGE-017).
 - **Log + projections:** no mutable session state is authoritative — every view folds the log (harness §D1/§E4 pattern).
@@ -109,7 +109,7 @@ Rules:
 2. Queue/state store: same SQLite instance as sessions or a dedicated store (with `19`/`30`).
 3. Hibernation triggers + TTLs per retention class.
 4. Fairness policy details under sustained background load.
-5. Task projection sufficiency — revisit if cross-work task graphs appear.
+5. **Resolved by DEC-054:** cross-work semantic graphs use `PlanNode` (DM-038); the Work/Step `Task` projection remains a view, not a second durable task table.
 
 ## 12. Evidence
 

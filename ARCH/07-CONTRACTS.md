@@ -1,6 +1,6 @@
 # 07 — Contracts (canonical cross-module interfaces)
 
-> **Status:** Frozen v1 (frozen 2026-09-26; drafted P1) — the interface registry. Every named contract that crosses a module boundary lives here. **Owner** = the module that implements/stabilizes it; **consumers** = modules that call it. Module docs carry serialization/transport detail; this doc owns names, semantic signatures, and guarantees. Contract status reflects implementation maturity — every owner doc is complete as of the v1 freeze.
+> **Status:** Frozen v1 baseline (2026-09-26), amended by DEC-054/055/056 (2026-09-28) — the interface registry. Every named contract that crosses a module boundary lives here. **Owner** = the module that implements/stabilizes it; **consumers** = modules that call it. Module docs carry serialization/transport detail; this doc owns names, semantic signatures, and guarantees. `Draft`/`Provisional`/`Proposed` describe design maturity, not shipped implementation; implementation evidence lives in `09`/`42`.
 > **Rules:** signatures are transport-free (adapters map transports); each Core contract takes an `actor` context (user / agent / workflow). Effect-bearing Core contracts are subject to Trust; the external agent's native operations are outside Core contracts (DEC-054).
 > **SDD:** this registry carries the L3 interface layer for behaviors in `ARCH/08-REQUIREMENTS.md`; REQ ↔ CTR links accrue in `ARCH/09-FEATURE-MATRIX.md`.
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
@@ -116,7 +116,7 @@ stream(request) → AsyncIterable<ModelChunk>
 capabilities(model) → ModelDescriptor
 mapReasoning(level) → provider-params
 ```
-**Guarantees:** credentials are used via `CTR-013` (never read); context windows/tokenization feed the Context budget (16); no module hard-codes a vendor.
+**Guarantees:** Core-owned model calls use credentials via `CTR-013` (never read); context windows/tokenization feed the Context budget (16); no Core model consumer hard-codes a vendor. An external agent may retain its native model/provider configuration; CTR-014 cannot silently override it (DEC-054).
 
 ### CTR-021 `DelegationService` (SubagentManager) (15)
 ```
@@ -139,6 +139,12 @@ policies() → DelegationPolicyEntry[]
 **CTR-023 `EffectVerifier`** — `verify(effect, risk_class) → VerificationRecord`; depth scales with risk (INV-19).
 
 **CTR-032 `PreferenceService`** — `registry()` returns stable key, owner, parser, scope, default and sensitivity; `effective(context)` returns source and revision; `update(key,value,expected_revision)` validates scope and compare-and-swap semantics; `profile_create/preview/apply/archive` operate on non-secret overrides only. Device-local cosmetic state may use the same schema in the UI, but Trust policy and extension grants resolve from Core authority, never from a renderer copy (DEC-056).
+
+### Trigger and remote execution ownership
+
+**CTR-016 `WorkflowEngine`** — `publish(definition)`, `register_trigger(definition_version, owner_ref)`, `materialize(source_event_or_due_time, dedupe_key)`, `claim(occurrence_id, owner_epoch)`, `status(run_id)`, `cancel(run_id)` and `handoff_trigger_owner(expected_epoch, target)` operate on the one persisted occurrence journal. Work's CTR-026 admits resulting execution. A claim is one logical run per occurrence identity, not an exactly-once claim for external effects; those still require idempotency or reconciliation (`20` §4, REQ-WF-003/004). A source event/webhook must be authenticated and deduped before materialization. A closed UI does not keep a trigger alive without a healthy local service or accepted remote owner (`19` §7).
+
+**CTR-027/028/029 Mission seams** — MissionService owns compare-and-swap contract/plan versions and semantic dispatch; OutcomeEvaluator consumes evidence with provenance and returns per-requirement verdicts; MissionRecovery reconciles environment/effect uncertainty before reopening nodes. These contracts do not own the Work queue or agent reasoning (`35`, `36`). **CTR-030/031 adapters** expose negotiated agent lifecycle and external workflow invoke/status/cancel/callback with typed `Unsupported`, stable external run identity, idempotency and authenticated callbacks; neither imports provider-internal state as Core truth (`15`, `20`, `37`).
 
 ## 5. Cross-contract rules
 

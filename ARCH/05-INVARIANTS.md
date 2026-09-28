@@ -33,9 +33,9 @@
 **Verification:** egress tests; static check for direct network clients above the adapter layer.
 
 ### INV-06 — One owner per state
-**Invariant:** Each durable store has exactly one writer (work store, event store, memory store, artifact store, world state). No second registry, scheduler, or queue exists anywhere.
-**Enforcement:** module boundaries (`10`–`34`).
-**Verification:** interop matrix + ownership table in `ARCH/03-HLD.md §3`; P6 sweep (re-verified in P9, 2026-09-26).
+**Invariant:** Each Core durable store has one writer (work store, event store, memory store, artifact store, world state). Core has one Work admission scheduler and one logical trigger owner per workflow definition; ownership may transfer only through a fenced handoff (DEC-057). Agent-native and external workflow-provider schedulers are separate domains, never shadow copies of Core state. No second Core registry, queue or policy decider duplicates an existing responsibility.
+**Enforcement:** module boundaries (`10`–`37`), Work admission (`11`), Workflow trigger ownership (`20`) and remote fencing (`19`).
+**Verification:** interop matrix and ownership table in `ARCH/03-HLD.md` §3; `TC-023/039` exercises duplicate events, crash and owner handoff. The P6/P9 checks covered only the 2026-09-26 baseline.
 
 ### INV-07 — Receipts and events
 **Invariant:** Every Core-mediated externally visible effect produces a receipt and at least one event. Native agent effects may be observed or reported, with explicit provenance; Mission completion still requires suitable evidence (DEC-054).

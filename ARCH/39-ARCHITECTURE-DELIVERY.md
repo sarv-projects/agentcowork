@@ -1,6 +1,6 @@
 # 39 — Architecture delivery sequence and acceptance
 
-> Status: accepted target architecture 2026-09-28 under DEC-054/055/056; implementation pending. This is an architecture dependency plan; `TODO.md` W6 is the delivery-status tracker. `48` owns final interaction design, `49` outcome scenarios, and `50` cross-plane maps.
+> Status: accepted target architecture 2026-09-28 under DEC-054/055/056/057; implementation pending. This is an architecture dependency plan; `TODO.md` W6 is the delivery-status tracker. `48` owns final interaction design, `49` outcome scenarios, and `50` cross-plane maps.
 
 ## Current-state delta (source observed, not completion claims)
 
@@ -49,7 +49,7 @@ The ownership design is viable where an interface and an honest fallback exist. 
 | `28`–`29` Comms/Artifacts | Scoped SaaS action and versioned artifact graph produce real deliverables | OAuth expiry/dedup, exact-version citations, stale propagation and duplicate-effect reconciliation (`TC-019/030/033/037`) |
 | `30`–`32` Events/Extensions/Channels | One event store and per-session extension grants avoid a second platform | Durable replay, native inventory/host activation distinction, collision/revoke and channel identity (`TC-007/008/026`) |
 | `34`–`38` Effect/Mission/Skill/Experience | Effect proof, goal proof and reviewed procedure learning are distinct | Independent verifier, no-progress stop, safe capture and nontechnical comprehension (`TC-021/027/029/032/038`) |
-| `46`/`48`/`50` Ecosystem/Workbench/blueprint | End-to-end route from user selection to worker/typed effect/artifact/evidence is explicit | The real UI and adapters must satisfy `TC-001…038`; no architecture diagram is a product benchmark |
+| `46`/`48`/`50` Ecosystem/Workbench/blueprint | End-to-end route from user selection to worker/typed effect/artifact/evidence is explicit | The real UI and adapters must satisfy `TC-001…039`; no architecture diagram is a product benchmark |
 
 `ARCH/09-FEATURE-MATRIX.md` owns exact implementation status, including `implemented` versus `verified`; this table records only the target seam and its proof obligation.
 
@@ -61,8 +61,8 @@ The ownership design is viable where an interface and an honest fallback exist. 
 4. Build Mission controller on the existing scheduler: ready-node dispatch, context packets, bounded budgets, versioned PlanPatch, branch-local waits, integration and cancellation propagation. Exit: heterogeneous agents can run independent nodes, report receipts, and a conflict cannot overwrite a newer plan.
 5. Add outcome evaluator, no-progress detector and resume reconciliation. Exit: crash/context reset/agent swap preserves goal and evidence; external drift invalidates only affected nodes; repeated identical failure stops; incomplete required evidence blocks completion.
 6. Connect shared browser/desktop/SaaS/office and optional external workflow providers. Exit: capability path is chosen by suitability, actual ownership is visible, OAuth actions use action scopes, and waitpoint callbacks reconcile idempotently.
-7. Add workflow capture → skill proposal → evaluation → versioned publication, plus mission-control UI and cross-device/cloud executor adapters. Exit: a recorded procedure is inspectable and rollbackable; local-offline work pauses honestly; cloud continuation requires a configured executor and shows where it runs.
-8. Deliver the DEC-055 Experience as a coherent journey: composer and renderer, first-run/agent setup, Workbench browser/file/Office tabs, Library retrieval, team view and searchable grouped Settings. Exit: each control is bound to a real capability/contract; `TC-001…038` oracles run on pinned builds, including nontechnical and accessibility cohorts. Unsupported format or adapter behavior has an honest fallback rather than a decorative promise.
+7. Add workflow capture → skill proposal → evaluation → versioned publication, plus mission-control UI and cross-device/cloud executor adapters. Exit: a recorded procedure is inspectable and rollbackable; local-offline work pauses honestly; cloud continuation requires a configured executor and shows where it runs; future schedule/event triggers move only after fenced owner/cursor/journal handoff (`TC-039`, DEC-057).
+8. Deliver the DEC-055 Experience as a coherent journey: composer and renderer, first-run/agent setup, Workbench browser/file/Office tabs, Library retrieval, team view and searchable grouped Settings. Exit: each control is bound to a real capability/contract; `TC-001…039` oracles run on pinned builds, including nontechnical and accessibility cohorts. Unsupported format or adapter behavior has an honest fallback rather than a decorative promise.
 
 Each stage can ship while later stages remain planned; capability and quality determine priority, not an arbitrary v1 label. Do not create additional network services for conceptual modules. Reuse existing crates and extract `agentcowork-mission` only when its own dependency boundary is established. Horizon Code is a future external binding, never a special path.
 

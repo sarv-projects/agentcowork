@@ -38,7 +38,7 @@ One row per `REQ-*`. Status only from evidence.
 | `REQ-KERNEL-005` | `10-KERNEL` | pending | — | — | `TASK-KERNEL-001` | pending | planned |
 | `REQ-KERNEL-006` | `10-KERNEL` | pending | `INV-06` | — | `TASK-KERNEL-001` | pending | planned |
 | `REQ-KERNEL-007` | `10-KERNEL` | pending | `CTR-003/004/026` | — | `TASK-KERNEL-002` | pending | planned |
-| `REQ-WORK-001` | `11-WORK` | pending | `DEC-003`, `INV-06`, `CTR-003/026` | — | `TASK-WORK-001`, `TASK-WORK-006`, `TASK-WORK-008` | pending | planned |
+| `REQ-WORK-001` | `11-WORK` | pending | `DEC-003`, `DEC-057`, `INV-06`, `CTR-003/026` | — | `TASK-WORK-001`, `TASK-WORK-006`, `TASK-WORK-008` | pending | planned |
 | `REQ-WORK-002` | `11-WORK` | pending | `DEC-027`, `INV-23`, `CTR-004`, `DM-007` | — | `TASK-UI-028`, `TASK-WORK-002` | pending | planned |
 | `REQ-WORK-003` | `11-WORK` | pending | `INV-16`, `DM-006` | — | `TASK-WORK-003` | pending | planned |
 | `REQ-WORK-004` | `11-WORK` | pending | `DEC-031`, `CTR-026` | — | `TASK-WORK-001`, `TASK-WORK-006` | pending | planned |
@@ -142,11 +142,11 @@ One row per `REQ-*`. Status only from evidence.
 | `REQ-RTENV-009` | `19-RUNTIME-ENVIRONMENTS` | pending | `INV-16` | — | `TASK-RTENV-001` | pending | planned |
 | `REQ-RTENV-010` | `19-RUNTIME-ENVIRONMENTS` | pending | `—` | — | `TASK-RTENV-001` | pending | planned |
 | `REQ-RTENV-011` | `19-RUNTIME-ENVIRONMENTS` | pending | `—` | — | `TASK-RTENV-001`, `TASK-RTENV-004` | pending | planned |
-| `REQ-RTENV-012` | `19-RUNTIME-ENVIRONMENTS` | pending | `DEC-054`, `DEC-055` | — | `TASK-RTENV-005` | pending | planned |
+| `REQ-RTENV-012` | `19-RUNTIME-ENVIRONMENTS` | pending | `DEC-054`, `DEC-055`, `DEC-057` | — | `TASK-RTENV-005` | pending | planned |
 | `REQ-WF-001` | `20-WORKFLOW` | pending | `INV-16`, `DEC-033` | — | `TASK-WF-001` | pending | planned |
 | `REQ-WF-002` | `20-WORKFLOW` | pending | `DM-021`, `DEC-008` | — | `TASK-WF-001` | pending | planned |
-| `REQ-WF-003` | `20-WORKFLOW` | pending | `DEC-033` | — | `TASK-WF-002` | pending | planned |
-| `REQ-WF-004` | `20-WORKFLOW` | pending | `CTR-016`, `INV-06` | — | `TASK-RTENV-005`, `TASK-WF-002` | pending | planned |
+| `REQ-WF-003` | `20-WORKFLOW` | pending | `DEC-033`, `DEC-057` | — | `TASK-WF-002` | pending | planned |
+| `REQ-WF-004` | `20-WORKFLOW` | pending | `CTR-016`, `DEC-057`, `INV-06` | `FLOW-47`, `EDGE-206…209` | `TASK-RTENV-005`, `TASK-WF-002` | pending | planned |
 | `REQ-WF-005` | `20-WORKFLOW` | pending | `DEC-033`, `DEC-022` | — | `TASK-WF-002` | pending | planned |
 | `REQ-WF-006` | `20-WORKFLOW` | pending | `DEC-033` | — | `TASK-WF-002` | pending | planned |
 | `REQ-WF-007` | `20-WORKFLOW` | pending | `DEC-033` | — | `TASK-WF-002` | pending | planned |
@@ -355,7 +355,7 @@ One row per `REQ-*`. Status only from evidence.
 | `REQ-LEARN-001` | `37-WORKFLOW-SKILL-LIFECYCLE` | pending | `DEC-054`, `INV-35` | `FLOW-39/40` | `TASK-LEARN-001` | pending | planned |
 | `REQ-LEARN-002` | `20-WORKFLOW`, `37-WORKFLOW-SKILL-LIFECYCLE` | pending | `DEC-054`, `CTR-031` | `FLOW-39` | `TASK-LEARN-001` | pending | planned |
 | `REQ-UXQ-001` | `38-EXPERIENCE-QUALITY` | pending | `DEC-054`, `CTR-027/028` | `FLOW-41/46` | `TASK-UI-019`, `TASK-UXQ-002` | pending | planned |
-| `REQ-UXQ-002` | `38-EXPERIENCE-QUALITY` | pending | `DEC-054` | `TC-001…038` | `TASK-UXQ-009` | pending | planned |
+| `REQ-UXQ-002` | `38-EXPERIENCE-QUALITY` | pending | `DEC-054`, `DEC-057` | `TC-001…039` | `TASK-UXQ-009` | pending | planned |
 | `REQ-UXQ-003` | `48-EXPERIENCE-SURFACES` | pending | `DEC-055` | `TC-005…008` | `TASK-UI-014`, `TASK-UI-015`, `TASK-UXQ-001` | pending | planned |
 | `REQ-UXQ-004` | `48-EXPERIENCE-SURFACES`, `46-ECOSYSTEM-ARCHITECTURE` | pending | `DEC-055` | `TC-007/009/038` | `TASK-UI-030`, `TASK-UXQ-002` | pending | planned |
 | `REQ-UXQ-005` | `48-EXPERIENCE-SURFACES`, `22-OFFICE`, `23-BROWSER`, `24-COMPUTER-USE` | pending | `DEC-055` | `TC-010…018` | `TASK-UI-011`, `TASK-UI-040`, `TASK-UXQ-003` | pending | planned |

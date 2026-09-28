@@ -1,6 +1,6 @@
 # 50 — System blueprint and ownership map
 
-> Status: DEC-055 target architecture map. Mermaid diagrams are navigation and review aids; canonical fields/contracts remain in `06`/`07`, requirements in `08`, module details in `10`–`38` and `46`/`48`. Every arrow below denotes a named boundary, not an extra service. The target is a modular monolith with external adapters, not a fleet of internal microservices. Diagram labels `Core-mediated` and `agent-native` must stay distinct.
+> Status: DEC-054/055/056/057 target architecture map. Mermaid diagrams are navigation and review aids; canonical fields/contracts remain in `06`/`07`, requirements in `08`, module details in `10`–`38` and `46`/`48`. Every arrow below denotes a named boundary, not an extra service. The target is a modular monolith with external adapters, not a fleet of internal microservices. Diagram labels `Core-mediated` and `agent-native` must stay distinct; occurrence ownership is fenced and does not imply exactly-once external effects.
 
 ## 1. High-level ownership
 
@@ -178,7 +178,7 @@ erDiagram
   MISSION ||--o{ PLAN_VERSION : versions
   PLAN_VERSION ||--o{ PLAN_NODE : contains
   PLAN_NODE ||--o{ WORK : attempts
-  WORK ||--o{ SESSION : binds
+  SESSION ||--o{ WORK : hosts
   WORK ||--o{ CHECKPOINT : checkpoints
   WORK ||--o{ WORKER_RECEIPT : reports
   MISSION ||--o{ EVIDENCE_LINK : assesses
@@ -209,6 +209,34 @@ flowchart LR
 
 Catalog, installation, availability and activation are separate states. The UI resolves one effective row per extension and explains a collision, missing bridge, expired credential or revocation before a user relies on it (`31`, `46`, `48`).
 
-### 7.3 Probes that remain
+### 7.3 Scheduled and event-triggered ownership
+
+```mermaid
+sequenceDiagram
+  participant Source as Clock or connector event
+  participant Owner as Fenced trigger owner
+  participant Journal as One occurrence journal
+  participant Work as Work scheduler
+  participant Executor as Local or remote executor
+  participant Effect as Capability or external provider
+  Source->>Owner: due time or authenticated event with source cursor
+  Owner->>Journal: materialize deduped occurrence under owner epoch
+  Journal-->>Owner: occurrence identity and pinned definition version
+  Owner->>Journal: atomically claim one logical run
+  Owner->>Work: request execution with occurrence id and budget
+  Work->>Executor: hand off only after authenticated acceptance and lease
+  Executor->>Effect: perform step with idempotency key where supported
+  Effect-->>Executor: result, timeout or unknown effect state
+  alt result known
+    Executor-->>Journal: settle step and receipt/evidence
+  else outcome uncertain
+    Executor->>Effect: reconcile observed state before retry
+    Executor-->>Journal: settle or needs_attention
+  end
+```
+
+The trigger owner transfers only with definition/version, occurrence journal, source cursor and a fencing epoch. An accepted remote Work lease alone does not transfer future schedules. The old owner stops materializing before the successor claims; after an uncertain handoff, both sides reconcile the journal before creating another occurrence (`19`, `20`, DEC-057).
+
+### 7.4 Probes that remain
 
 The blueprint is viable as ownership design, but the following cannot be asserted as shipped or universally available: external-agent session resume/steering/model picker, native child telemetry, injected shared MCP/skill support, Chrome user-profile attachment, lossless Office editing, every filetype preview, cloud continuation and strong local-model task performance. Each requires capability negotiation, adapter-specific probe, user-visible fallback and benchmark evidence. The right Workbench's managed Chromium surface may be implemented through a supported browser bridge rather than direct browser embedding; UI design must not assume one renderer API. Windows desktop control needs display/focus/permission probes and verified effect receipts for Core-mediated actions. Multi-agent quality requires integration and independent outcome checks, not mere process count. `39` owns implementation dependencies; `49` owns scenario oracles.

@@ -8,7 +8,7 @@
 
 ## 1. Shape
 
-> **DEC-054/055/056 amendment (2026-09-28):** Mission owns durable goals; Work owns execution attempts; the selected external agent owns its native reasoning loop, model, tools and private configuration. Core governs only shared Core capability calls. `48` owns the nontechnical-first surface, and `50` provides the detailed cross-plane maps.
+> **DEC-054/055/056/057 amendment (2026-09-28):** Mission owns durable goals; Work owns execution attempts; the selected external agent owns its native reasoning loop, model, tools and private configuration. Core governs only shared Core capability calls. Workflow trigger ownership is fenced across local/cloud handoff and does not promise exactly-once external effects. `48` owns the nontechnical-first surface, and `50` provides the detailed cross-plane maps.
 
 ```mermaid
 flowchart TB
@@ -125,12 +125,12 @@ Every cross-module edge is named in `ARCH/07-CONTRACTS.md`. A module with no own
 | Trust (12) | CTR-011 `Guard` · CTR-012 `ApprovalService` · CTR-013 `Vault` |
 | Capability (13) | CTR-009 `CapabilityBroker` |
 | Providers (14) | CTR-010 `ProviderAdapter` |
-| Agent plane (15) | CTR-001 `AgentEngine` · CTR-002 `AgentSession` · CTR-007 `ContextController` · CTR-021 `DelegationService` |
+| Agent plane (15) | CTR-001 `AgentEngine` · CTR-002 `AgentSession` · CTR-007 `ContextController` · CTR-021 `DelegationService` · CTR-030 `AgentBindingAdapter` |
 | Context (16) | CTR-005 `CheckpointService` · CTR-006 `ContextProvider` |
 | Memory (17) | CTR-008 `MemoryService` |
 | Models (18) | CTR-014 `ModelRouter` / `ModelAdapter` |
 | Runtime & Environments (19) | CTR-015 `EnvironmentService` |
-| Workflow (20) | CTR-016 `WorkflowEngine` |
+| Workflow (20) | CTR-016 `WorkflowEngine` · CTR-031 `ExternalWorkflowAdapter` |
 | World Model (21) | CTR-017 `WorldService` |
 | Office (22) · Browser (23) · Computer Use (24) | — (capability descriptors through CTR-009; a named contract is registered only for a non-capability edge) |
 | Files (25) | CTR-024 `FileIdentity` / `WorkspaceWatcher` / `WriteLeases` |
@@ -142,9 +142,9 @@ Every cross-module edge is named in `ARCH/07-CONTRACTS.md`. A module with no own
 | Skills & Plugins (31) | CTR-020 `SkillResolver` |
 | Channels (32) | CTR-022 `AgentGateway` |
 | Effect Verification (34) | CTR-023 `EffectVerifier` |
-| Mission (35) | CTR-027 `MissionService` · CTR-028 `PlanService` |
-| Outcome & Recovery (36) | CTR-029 `OutcomeEvaluator` · CTR-030 `RecoveryCoordinator` |
-| Workflow–Skill Lifecycle (37) | CTR-031 `ProcedureLifecycle` |
+| Mission (35) | CTR-027 `MissionService` (contract, plan, dispatch, reconcile) |
+| Outcome & Recovery (36) | CTR-028 `OutcomeEvaluator` · CTR-029 `MissionRecovery` |
+| Workflow–Skill Lifecycle (37) | — (lifecycle composes CTR-016/020/031; no second workflow adapter) |
 | Experience settings (48) | CTR-032 `PreferenceService` |
 | Cross (40–42) · Register (44) | — |
 

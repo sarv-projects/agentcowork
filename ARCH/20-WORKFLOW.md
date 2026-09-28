@@ -9,11 +9,11 @@
 
 ## 1. Purpose & rules
 
-**Owns:** the workflow IR + registry + version store · `WorkflowRun` state machine · the wake/scheduler loop · occurrence journaling · trigger resolution · approvals integration · run-level receipts.
+**Owns:** the workflow IR + registry + version store · `WorkflowRun` state machine · one logical trigger/wake owner per definition · occurrence journaling · trigger resolution · approvals integration · run-level receipts. Work (`11`) retains execution admission; the trigger owner may move to an accepted remote executor under a fenced lease (`19`), never by starting a second independent scheduler.
 **Never owns:** agent reasoning (`15`) · capability execution (`13`/`14`) · the Work lifecycle primitives (`11` — workflow runs *materialize as* Work) · UI rendering.
 
 1. **Deterministic ≠ adaptive** — workflows execute known processes; agents figure out unknown ones; both compose in both directions.
-2. **Durability is a state-machine problem, not a sleep problem** (verified): every wait/every occurrence exists as a persisted row *before* it is due.
+2. **Durability is a state-machine problem, not a sleep problem** (verified): timed waits/occurrences are persisted before due; connector and webhook events create a durable deduped occurrence before dispatch.
 3. **In-flight runs keep their pinned version**; new triggers resolve the then-current published version (INV-16).
 4. **Never fabricate completion** — unsettled keyless side effects go to `needs_attention` for a human decision (DEC-022 discipline, mechanized).
 
@@ -61,9 +61,9 @@ Run fields: pinned `workflow_version` + digest · occurrence/trigger ref · inpu
 ```
 1. reconcile(): expired leases → requeue step/run (lease_reaped event);
                 cancel_requested → cancel at next step boundary
-2. materialize(): enabled schedules with next_due_at ≤ now+window → insert occurrence rows
-                  (idempotency key = workflow+occurrence time; unique index ⇒ exactly once)
-3. claim(): due occurrence → run pinned to the version resolved at claim time, in one txn
+2. materialize(): schedules with next_due_at ≤ now+window, or authenticated connector/event input
+                  → insert occurrence rows with stable dedupe key (one logical occurrence)
+3. claim(): due occurrence → one logical run pinned to the version resolved at claim time, in one txn
 4. execute step-by-step: txn{step started + ticket req} → commit → capability via Guard →
                         txn{step settled + next step/wait rows + event}
 5. compute nearest wake (occurrence due · wait wake_at · approval deadline · lease expiry); sleep
@@ -82,11 +82,11 @@ Run fields: pinned `workflow_version` + digest · occurrence/trigger ref · inpu
 
 **Idempotency key shape:** `wf:<workflowId>:<versionDigest>:occ:<occurrenceId>:node:<nodeId>:a<attempt>`.
 
-**Misfire policy (desktop):** default **Skip + record** (visible missed row); optional *Run latest missed* (never the whole backlog); grace bounded (≤ 24 h desktop policy).
+**Misfire policy (timed local triggers):** default **Skip + record** (visible missed row); optional *Run latest missed* (never the whole backlog); grace bounded (≤ 24 h default). Event-triggered sources use their own cursor/retention window and dedupe policy, not a timer misfire rule.
 
-**Sleep & clocks:** persisted `wake_at` is “not before” (never wall-clock precision); every boot and wake re-checks persisted times; calendar schedules resolve in the stored IANA zone; an OS-level nudge for a *closed* app is a product decision (OQ-WF-04), not a v1 primitive.
+**Sleep & clocks:** persisted `wake_at` is “not before” (never wall-clock precision); every boot and wake re-checks persisted times; calendar schedules resolve in the stored IANA zone. A closed desktop requires an installed local service/helper or a fenced, accepted remote/cloud trigger owner; otherwise missed work is recorded according to policy (`19` §7).
 
-**Deliberately not built:** server timer queues · multi-worker distribution · unlimited retries · history compaction / continue-as-new (retention + terminal pruning suffice) · Temporal Nexus/cross-namespace and child-workflow `ABANDON` bookkeeping (the declared parent-close policy itself is kept, §2/§6).
+**Not duplicated in the embedded runner:** a separate server timer queue, generic distributed workflow engine, unlimited retries, Temporal-style cross-namespace machinery or an external provider's internal node scheduler. Remote Work execution and trigger-owner handoff use `19`; n8n/Activepieces retain their own workflow internals through CTR-031 (`37`).
 
 ## 5. Triggers (verified taxonomy — real vs product-invention)
 
@@ -96,10 +96,10 @@ Run fields: pinned `workflow_version` + digest · occurrence/trigger ref · inpu
 | **Schedule** (interval/calendar; full cron only Temporal/n8n) | REAL — we adopt cron-capable schedule + IANA timezone |
 | **Agent-call / workflow-as-tool** · **sub-workflow call/return** · **workflow-failure hook** | REAL — invocation surfaces |
 | Webhook | REAL as an *ingress pattern* (HTTP handler → signal); not a runtime primitive |
-| File · email · calendar · git | REAL only via connectors (n8n evidence); v1 = **event-store-fed** triggers |
+| File · email · calendar · git | Connector/world events become authenticated, deduped event-store occurrences; source cursor and retention are recorded. |
 | **Browser events** · **generic agent-event bus** · **completion-starts-another-workflow** | **NOT EVIDENCED** — if shipped, declared as our own design (World Model/CDP sourcing), never “ported” |
 
-**v1 defensible set:** manual · schedule · agent-call · sub-workflow call · workflow failure · Core/World-Model events.
+**Target set:** manual · one-shot/recurring schedule · agent-call · sub-workflow call · workflow failure · Core/World-Model events · authorized SaaS/file/git events and webhooks. Each definition has exactly one trigger owner, whether embedded or external; `37` owns the external-provider boundary.
 
 ## 6. Versioning
 
@@ -151,7 +151,7 @@ Run receipts + per-node receipts + typed events; Runs UI surface (`32`); audit v
 **Exposes to:** `15` (workflows-as-tools), `32`/UI (runs/approvals projections), `40` FLOW-04/05/18.
 **DAG check:** the engine claims occurrences and dispatches capabilities/agents; it never executes effects itself and never owns agent reasoning.
 
-## 13. Not in v1
+## 13. Historical baseline deferrals
 
 > **DEC-054 scope amendment:** Items below document the 2026-09-26 frozen implementation baseline only. They are not exclusions from the target architecture. Capability, quality and dependency order in `39` determine delivery; external n8n/Activepieces integration and workflow-to-skill promotion are explicit target capabilities (`37`).
 
@@ -162,9 +162,9 @@ Visual DAG editor (typed IR + JSON/YAML + agent authoring first; graph later) ·
 1. Misfire default per trigger class (proposal: skip+record).
 2. Single-approver vs quorum for v1 (proposal: single).
 3. Compensation/rollback scope (define explicit nodes vs defer entirely).
-4. OS-level nudge for closed-app schedules (product decision; Windows Task Scheduler-class).
-5. Visual editor timing (post-v1).
-6. Local webhook ingress surface + its security model (`12`).
+4. Closed-app local service/helper packaging and consent; remote/cloud owner handoff is required for cloud continuity (`19` §7).
+5. Visual editor interaction and schema round-trip acceptance (`48`), with the typed IR remaining authoritative.
+6. Webhook ingress authentication, replay window, source cursor and rate policy (`12`, `28`, `30`).
 
 ## 15. Evidence
 
@@ -180,8 +180,8 @@ Testable behaviors owned by this module live in `ARCH/08-REQUIREMENTS.md`; the t
 |---|---|
 | `REQ-WF-001` | In-flight runs execute their pinned version + digest; resume uses it; only an explicit audited upgrade changes it (INV-16) |
 | `REQ-WF-002` | Typed IR (DM-021) is the definition truth; only published, content-addressed versions trigger or execute |
-| `REQ-WF-003` | Occurrence rows persist before due with unique idempotency keys; claims admit exactly one run (DEC-033) |
-| `REQ-WF-004` | One wake loop: reconcile leases → materialize → claim → execute step-by-step → nearest wake; no second scheduler (CTR-016) |
+| `REQ-WF-003` | Occurrence rows persist before due with unique keys; claims admit one logical run, while effects still require idempotency/reconciliation (DEC-033) |
+| `REQ-WF-004` | One fenced trigger owner materializes schedule/event occurrences and dispatches through Work; local/cloud handoff never duplicates ownership (CTR-016) |
 | `REQ-WF-005` | Crash resume follows the persisted step matrix; keyless side effects go to `needs_attention`; completion is never fabricated |
 | `REQ-WF-006` | `wake_at` is "not before" and re-checked at boot/wake; calendar schedules resolve in stored IANA zones (DST-safe) |
 | `REQ-WF-007` | Missed occurrences: default Skip + record, optional "latest missed" only, grace ≤ 24 h |

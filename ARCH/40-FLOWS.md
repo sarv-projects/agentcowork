@@ -33,13 +33,13 @@
 
 ### FLOW-05 — Scheduled occurrence lifecycle
 **Actors:** scheduler loop (`20` §4) · journal · trigger row.
-**Steps:** `next_due_at` stored → wake loop materializes occurrence (idempotency key) → claim exactly-once → run pinned → execute → compute next wake.
+**Steps:** `next_due_at` stored → current fenced trigger owner materializes occurrence (idempotency key) → atomic claim admits one logical run → run pinned → Work dispatch and effect reconciliation → compute next wake.
 **Terminal:** run terminal state; trigger continues.
-**Failure branches:** app closed at due time → misfire policy (skip+record default; latest-missed optional); lease expiry → reaper requeues; occurrence journal reset → re-materialize from the persisted trigger rows (unique idempotency keys make the replay exactly-once) (`20` §4).
+**Failure branches:** app closed at due time without local service/accepted cloud owner → misfire policy (skip+record default; latest-missed optional); trigger-owner lease expiry → fence old owner and reconcile journal before successor; effect acknowledgement lost → verify/idempotency or `needs_attention`, never blind re-fire (`20` §4, DEC-057).
 
 ### FLOW-06 — Background/detached work across app lifecycle
 **Actors:** `11` lanes · `19` runtime · user.
-**Steps:** background work admitted without blocking UI → detached run registered → app closes (policy keep/suspend/stop recorded) → app starts → registry rehydrates → detached processes adopted/monitored → runs resume per idempotency rules.
+**Steps:** background work admitted without blocking UI → detached run registered → app close records whether a healthy local service or accepted remote executor owns it; otherwise pause → app starts → registry reconciles liveness/environment → eligible runs resume per idempotency rules.
 **Terminal:** per run; detached may outlive surfaces.
 **Failure branches:** orphan process found → reap or re-attach (audited); stale lease → requeue; keyless side effect interrupted → `needs_attention`.
 
@@ -220,3 +220,6 @@
 
 ### FLOW-46 — Team handoff and integration view
 **Actors:** Mission · Work · external agents · Experience. **Steps:** assign independent bounded nodes → show host children separately from native-reported children → collect structured handoffs → integrate and verify outcome → expose per-worker status/evidence in right pane. **Terminal:** verified Mission node or explicit conflict. **Failure:** unbounded swarm/opaque child cannot receive host controls (`15`, `35`, `48` §8).
+
+### FLOW-47 — Schedule/event trigger handoff to remote owner
+**Actors:** local trigger owner · remote executor · Workflow journal · Work · connector/webhook source. **Steps:** persist definition/version and source cursor → offer journal and fencing epoch → authenticated remote owner accepts → fence local materializer → new owner reconciles journal/cursor → materialize deduped occurrences → Work admits one logical run → effects use idempotency or observed-state reconciliation. **Terminal:** accepted remote owner or locally paused/misfire-recorded trigger. **Failure:** offer timeout keeps old ownership only while its service is live; lost acceptance acknowledgement enters uncertain handoff and no side may independently materialize; duplicate webhook reuses the occurrence; keyless unknown effect enters `needs_attention` (DEC-057, `19` §7, `20` §4).

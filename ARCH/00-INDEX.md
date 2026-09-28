@@ -7,7 +7,7 @@
 > **v0 archive:** `ARCHIVE/v0/` (local, git-ignored) — see `ARCHIVE/v0/MANIFEST.md`. Nothing in the archive is a contract.
 > **Exempt:** `TODO.md` stays the live delivery tracker and is not part of this rebuild.
 >
-> **Current target (2026-09-28):** the frozen 2026-09-26 baseline is amended by DEC-052/054/055/056. `ARCH/08-REQUIREMENTS.md` and `ARCH/09-FEATURE-MATRIX.md` each contain 330 active requirements/rows across 30 domains; `TODO.md` tracks W0–W6. Historical P7/P9 completion records below describe their dated baseline, not proof that the amended set has passed a new line-by-line semantic audit.
+> **Current target (2026-09-28):** the frozen 2026-09-26 baseline is amended by DEC-052/054/055/056/057. `ARCH/08-REQUIREMENTS.md` and `ARCH/09-FEATURE-MATRIX.md` each contain 330 active requirements/rows across 30 domains; `TODO.md` tracks W0–W6. Historical P7/P9 completion records below describe their dated baseline, not proof that the amended set has passed a new line-by-line semantic audit.
 >
 > **Re-frozen after verification (2026-09-26, owner-directed):** full architect-style pass across `AGENTCOWORK-SPEC.md` + `AGENTCOWORK-UI.md` + `ARCH/00–44` — read → understand → fix completed; schema/architecture/LLD clashes reconciled with back-propagation; missing pieces added; independent review applied; v1 re-frozen.
 >
@@ -36,7 +36,7 @@ v0 grew by accretion: 33 ARCH files, 55 research files, a 355 KB spec, a 606 KB 
 
 | Layer | Document | Authority over |
 |---|---|---|
-| Product | `AGENTCOWORK-SPEC.md` + accepted `DEC-054/055/056` amendments | **WHAT** the product must be: behavior, contracts, acceptance. Frozen baseline is superseded on named boundaries by the later decisions. |
+| Product | `AGENTCOWORK-SPEC.md` + accepted `DEC-054/055/056/057` amendments | **WHAT** the product must be: behavior, contracts, acceptance. Frozen baseline is superseded on named boundaries by the later decisions. |
 | Requirements | `ARCH/08-REQUIREMENTS.md` | **WHAT must be verified**: testable behaviors (`REQ-*`) derived from the SPEC, each with acceptance + failure cases. |
 | Traceability | `ARCH/09-FEATURE-MATRIX.md` | The `REQ → design → task → test` map. Owns links only, never content. |
 | Architecture | `ARCH/03-HLD.md` | **HOW** the system is structured. Module docs derive from it. |
@@ -53,9 +53,9 @@ v0 grew by accretion: 33 ARCH files, 55 research files, a 355 KB spec, a 606 KB 
 
 ## 3. Document map
 
-> **DEC-054/055/056 amendment (2026-09-28):** The 2026-09-26 frozen baseline is historical status, superseded on named boundaries by DEC-054/055/056. Target HLD is `03` + `35` + `46` + `50`; Mission LLD is `35`–`37`; Experience HLD/LLD is `48`; model-agnostic scenario oracles are `49`; research ledger is `45`, market comparison `47`; requirements/matrix are `08`/`09` and implementation work is `TODO.md` W0–W6. Historical count statements below refer to earlier freezes, not the amended registry.
+> **DEC-054/055/056/057 amendment (2026-09-28):** The 2026-09-26 frozen baseline is historical status, superseded on named boundaries by these decisions. Target HLD is `03` + `35` + `46` + `50`; Mission LLD is `35`–`37`; Experience HLD/LLD is `48`; model-agnostic scenario oracles are `49`; research ledger is `45`, market comparison `47`; requirements/matrix are `08`/`09` and implementation work is `TODO.md` W0–W6. Historical count statements below refer to earlier freezes, not the amended registry.
 
-> **DEC-056 reconciliation:** The older module headings “Not in v1” record a 2026-09-26 implementation sequence, not exclusions from the final product. For final capability conflicts, accepted DEC-054/055/056 and the amended requirements prevail. `TODO.md` W0–W6 is the current delivery tracker; its History section and the older UI baseline are provenance only. Remote/cloud continuation, cross-device projections, artifact knowledge retrieval, scoped extensions and advanced Workbench editing require explicit implementation and qualification even where an older module lists them as deferred. No checked P9 historical box certifies a fresh semantic audit of later amendments.
+> **Amendment reconciliation:** The older module headings “Not in v1” record a 2026-09-26 implementation sequence, not exclusions from the final product. For final capability conflicts, accepted DEC-054/055/056/057 and the amended requirements prevail. `TODO.md` W0–W6 is the current delivery tracker; its History section and the older UI baseline are provenance only. Remote/cloud continuation, cross-device projections, artifact knowledge retrieval, scoped extensions and advanced Workbench editing require explicit implementation and qualification even where an older module lists them as deferred. No checked P9 historical box certifies a fresh semantic audit of later amendments.
 
 | ID | File | Scope | Purpose | Status |
 |---|---|---|---|---|
