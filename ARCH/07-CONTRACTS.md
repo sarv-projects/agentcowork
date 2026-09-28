@@ -1,6 +1,6 @@
 # 07 — Contracts (canonical cross-module interfaces)
 
-> **Status:** Frozen v1 baseline (2026-09-26), amended by DEC-054/055/056/057/058 (2026-09-28) — the interface registry. Every named contract that crosses a module boundary lives here. **Owner** = the module that implements/stabilizes it; **consumers** = modules that call it. Module docs carry serialization/transport detail; this doc owns names, semantic signatures, and guarantees. `Draft`/`Provisional`/`Proposed` describe design maturity, not shipped implementation; implementation evidence lives in `09`/`42`.
+> **Status:** Frozen v1 baseline (2026-09-26), amended by DEC-054/055/056/057/058/059/060 (2026-09-28) — the interface registry. Every named contract that crosses a module boundary lives here. **Owner** = the module that implements/stabilizes it; **consumers** = modules that call it. Module docs carry serialization/transport detail; this doc owns names, semantic signatures, and guarantees. `Draft`/`Provisional`/`Proposed` describe design maturity, not shipped implementation; implementation evidence lives in `09`/`42`.
 > **Rules:** signatures are transport-free (adapters map transports); each Core contract takes an `actor` context (user / agent / workflow). Effect-bearing Core contracts are subject to Trust; the external agent's native operations are outside Core contracts (DEC-054).
 > **SDD:** this registry carries the L3 interface layer for behaviors in `ARCH/08-REQUIREMENTS.md`; REQ ↔ CTR links accrue in `ARCH/09-FEATURE-MATRIX.md`.
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
@@ -9,7 +9,7 @@
 
 - **IDs:** `CTR-###`, stable.
 - **Async by default**; every long-running call accepts a cancellation handle and declares a default timeout + retryability.
-- **Typed errors** only: `AuthorizationDenied · NotFound · Conflict · Unavailable · Unsupported · Timeout · InvalidState · GuidanceRequired · RequiresUserAction · Internal`. `guidance`/`requires_user_action` are **results**, not errors (a capability may answer “connect Google Drive first”).
+- **Typed errors** only: `AuthorizationDenied · NotFound · Conflict · Unavailable · Unsupported · Timeout · InvalidState · Internal`. `guidance`/`requires_user_action` are **results**, not errors (a capability may answer “connect Google Drive first”).
 - **Effects:** any Core contract that can cause an externally visible effect MUST require a `Ticket` (INV-03) and return/append a `Receipt` ref (INV-07). Native agent tools are outside this contract and produce separately labelled evidence.
 - **No store exposure:** contracts return projections, handles and refs — never internal stores, vault values, or other modules' mutable state (INV-11).
 - **Versioning:** breaking signature changes require a `DEC`; additive changes are minor.

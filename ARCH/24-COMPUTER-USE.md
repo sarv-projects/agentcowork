@@ -1,11 +1,11 @@
 # 24 — Computer Use
 
-> **DEC-054 amendment:** Shared computer use is an optional scoped capability. Prefer structured API/site tool/DOM when it is suitable, then accessibility/visual desktop interaction; the external agent may choose a native tool and the UI reports that choice honestly. User takeover, application identity, action observation and revalidation after environment drift are part of the Mission contract (`46`, `36`).
+> **DEC-054/060 amendment:** Shared computer use is an optional scoped capability. Select among eligible paths by authorization, target, effect coverage, observed reliability, freshness, latency and user preference: suitable typed API/connector/site-native tool first; browser DOM/accessibility for web targets or OS accessibility for native applications; vision when structured paths cannot meet the task or for verification; gated raw input last. This preference applies only to Core-shared calls and never overrides an external agent's native tool selection. The UI reports actual ownership and path honestly. User takeover, application identity, action observation and revalidation after environment drift are part of the Mission contract (`46`, `36`).
 
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P3).
 > **P7 pass (2026-09-26):** line-checked; requirements seeded (`REQ-CUA-*`, Requirements section).
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
-> **Role:** operate the desktop when no better rung exists. **The ladder:** native API → structured UI → browser DOM/AX → CLI/MCP → **vision fallback** → raw input.
+> **Role:** operate the desktop when a task needs interaction with a visible application. **Selection preference (DEC-060):** suitable authorized typed API/connector, site-native MCP or CLI → target-specific browser DOM/accessibility for a web target or native-app UIA/AX/AT-SPI for a desktop target → **vision when structured paths are insufficient or for verification** → gated raw input. These are eligibility-aware preferences, not mandatory fallbacks: the selected path must be authorized, capable of the required effect and sufficiently fresh/reliable. Browser DOM and OS accessibility are selected by target, not globally ranked against each other. External agents may choose their own native paths; Core records only the path it mediates or observes.
 > **Honest framing (recorded):** screenshot-first is the industry default (OpenAI computer tool · Anthropic computer-use · UI-TARS “solely perceives the screenshots”). **AgentCowork chooses structured-first** — verified hybrids (Agent-S a11y+OCR, open-codex AX-first, arXiv 2511.19477) outperform where semantics exist; vision remains a first-class rung, not the default.
 > **Dependencies:** `21-WORLD-MODEL` (observations, W3/W4) · `23-BROWSER` (browser rung) · `12-TRUST` (consent/approvals) · `18-MODEL-ROUTING` (vision models). **Consumers:** `15`, `22`–`28`, `34`.
 > **Evidence:** `ARCHIVE/v1-research/world-model-verification.md` §1–§2 (UIA caveats, ladder reality, vision costs) · local `crates/agentcowork-desktop` (`platform/win.rs:1-23,76-97`, `ladder.rs:16-24`, `ocr.rs:1-7`, `types.rs:235-247`) · DEC-011/016 · INV-20/21.
@@ -23,14 +23,12 @@
 
 ## 2. The ladder (verified reality)
 
-| Rung | Mechanism | Reality notes (evidence) |
+| Priority | Mechanism | Reality notes (evidence) |
 |---|---|---|
-| 0 | Native API | First-class APIs always win (calendar, git, office, …). |
-| 1 | Structured UI (UIA / AX / AT-SPI) | Real but conditional: `AutomationId` optional + **not build-stable**; elevated UI needs UIAccess; Chromium’s UIA provider is opt-in → use CDP instead. No surveyed agent relies on UIA alone. |
-| 2 | Browser DOM/AX | `23` — CDP snapshot pipeline. |
-| 3 | CLI / app API / MCP | Deterministic interfaces; exec-policy gated (`12`). |
-| 4 | Vision | Screenshot-first is the industry default; we use it for canvas/WebGL/poor semantics, verification, and structured misses. |
-| 5 | Raw input | Absolute fallback; gated by human authorization, visibly indicated. |
+| 1 | Suitable typed API / connector / site-native MCP / CLI | Preferred only when authorized, supported and able to meet the requested effect; provider choice is verified by the capability registry. |
+| 2 | Target-specific structured interaction | Browser DOM/AX for web pages (`23`); UIA / AX / AT-SPI for native desktop applications. UIA is conditional: `AutomationId` is optional and not build-stable; elevated UI needs UIAccess; Chromium's UIA provider is opt-in, so use CDP when supported. |
+| 3 | Vision | Use for canvas/WebGL/poor semantics, structured misses or verification; captures are capped before model send. |
+| 4 | Raw input | Absolute fallback; separately authorized, visibly indicated and rate-limited. |
 
 Local mapping: `platform/win.rs:76-97` is the only full 3-rung click ladder in the repo (accessibility → synthetic event → raw input, raw gated); `ocr.rs:1-7` + `types.rs:235-247` already model “empty tree → vision-fallback path”.
 
@@ -106,7 +104,7 @@ Testable behaviors owned by this module live in `ARCH/08-REQUIREMENTS.md`; the t
 
 | REQ | Behavior (one line) |
 |---|---|
-| `REQ-CUA-001` | Highest deterministic rung first (native API → structured UI → DOM/AX → CLI/MCP → vision → raw input); never screenshot what structure answers (DEC-011) |
+| `REQ-CUA-001` | Suitable authorized API/connector/MCP/CLI first; target-specific browser DOM/AX or native-app accessibility next; vision then gated raw input (DEC-060) |
 | `REQ-CUA-002` | Per-platform capability matrix declared, tested and honest; unavailable rungs yield guidance, never silent failure |
 | `REQ-CUA-003` | Observations epoch-scoped (one action), re-read per step, never identity; ambiguous matches rejected, not guessed (DM-026) |
 | `REQ-CUA-004` | Structured reads bounded (nodes/depth/text); per-call budget + worker isolation so a hung provider cannot stall the agent |

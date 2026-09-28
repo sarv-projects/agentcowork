@@ -87,7 +87,7 @@
 
 ### FLOW-14 — Computer-use fallback ladder
 **Actors:** agent · `24` · `21` observations · `18` vision models.
-**Steps:** native API? → structured UI (UIA/AX/AT-SPI, epoch-scoped handles) → DOM/AX (browser) → CLI/MCP → OCR (local, empty trees) → vision (capped capture → act → observe) → raw input (gated).
+**Steps:** For Core-shared paths, choose a suitable authorized API/connector/MCP/CLI first; for web targets use browser DOM/AX, and for native applications use the OS accessibility interface with epoch-scoped handles; use local OCR when the tree is empty and text suffices; otherwise use capped vision (capture → act → observe), then gated raw input. Record the selected path and provenance (DEC-060). External agents may use their own native tools without Core interception.
 **Terminal:** action completed + observed.
 **Failure branches:** provider hang → per-call budget + isolation; ambiguous element → reject/re-read; elevation blocked → mark unknown + guidance; vision misfire → verify + bounded retries.
 

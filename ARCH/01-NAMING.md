@@ -30,7 +30,7 @@
 | EveryOffice | Office Runtime |
 | EveryBrowser | Browser Runtime |
 | EveryRepo | RepoGraph / RepoMap |
-| `everyaios-*` (code) | unchanged until the code-phase rename |
+| `everyaios-*` (code) | `agentcowork-*` (renamed by DEC-053; old spellings survive in historical evidence) |
 | `every …` CLI | `agentcowork …` (placeholder) |
 
 ## 3. Rules
@@ -45,4 +45,4 @@
 
 - **OQ-001** — product shorthand for UI copy (“AC”, “Cowork”, or none). Decide before UI copy freeze (P5).
 - ~~**OQ-003** — timing + scope of the code identifier rename~~ → **closed by DEC-053** (2026-09-27).
-- **The agent engine is external.** No first-party engine ships in v1 (DEC-052). The first-party engine is developed outside this repository and is bound here afterwards as an ordinary binding — same `AgentEngine` contract, same Guard, no privileged path. It is not named in this table because it is not a component of this product; it is an engine binding like any other.
+- **The agent engine is external.** No first-party engine ships in v1 (DEC-052). Horizon Code is developed outside this repository and may later bind through the same `AgentEngine` contract. Its shared Core capability calls use the same Guard path as every binding; native effects remain under its own policy (DEC-054). It is not a Core component or privileged binding.

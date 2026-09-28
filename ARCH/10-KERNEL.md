@@ -29,13 +29,12 @@ Taxonomy (canonical for every boundary; extensions require a DEC):
 | `NotFound` | target does not exist or is filtered by policy | no |
 | `Conflict` | concurrent state change (lease, version, duplicate) | yes (bounded) |
 | `Unavailable` | provider/agent/environment down or degraded | yes (backoff) |
+| `Unsupported` | requested operation is not supported by this binding or environment | no (choose another binding or operation) |
 | `Timeout` | call exceeded deadline | eligible after reconciliation; never blindly repeat an uncertain effect |
 | `InvalidState` | operation not valid for current state (incl. stale epochs) | no |
-| `GuidanceRequired` | capability can proceed only with user setup | no (surface guidance) |
-| `RequiresUserAction` | explicitly needs a decision/input | no (approval path) |
 | `Internal` | bug | no (report + log) |
 
-Rules: typed and actionable; **no secrets or user content in messages**; stable codes for UI mapping; cause chains preserved for diagnostics; boundary errors never leak internals (INV-11). `Guidance`/`RequiresUserAction` are **results with next steps**, not failures (`13`).
+Rules: typed and actionable; **no secrets or user content in messages**; stable codes for UI mapping; cause chains preserved for diagnostics; boundary errors never leak internals (INV-11). `guidance`/`requires_user_action` are **results with next steps**, not failures (`13`).
 
 ## 4. Configuration
 

@@ -2,7 +2,7 @@
 
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P7). **This file owns links, never content:** requirements live in `ARCH/08-REQUIREMENTS.md`, designs in the module docs, tasks in `TODO.md`, evidence in `ARCH/42-EVIDENCE-MAP.md`.
 > **Purpose:** answer from one place — which requirements does a file implement · which requirements have no implementation · which acceptance tests are missing · which specs does a change affect.
-> **Current inventory (2026-09-28):** 343 unique requirement rows match the 343 active requirement headings in `08` (including remote/cloud ownership, cross-device access, DEC-056 UI reconciliation, DEC-058 machine observation/diagnostics and DEC-059 bounded candidate comparison). Active `TODO.md` W0–W6 task IDs are linked below where assigned; new implementation tests and evidence remain pending.
+> **Current inventory (2026-09-28):** 343 unique requirement rows match the 343 active requirement headings in `08` (including remote/cloud ownership, cross-device access, DEC-056 UI reconciliation, DEC-058 machine observation/diagnostics, DEC-059 bounded candidate comparison, DEC-060 eligibility-aware interaction-path selection, and DEC-061 Rust MCP SDK integration behind Guard). Active `TODO.md` W0–W6 task IDs are linked below where assigned; new implementation tests and evidence remain pending.
 
 ---
 
@@ -70,8 +70,8 @@ One row per `REQ-*`. Status only from evidence.
 | `REQ-PROV-001` | `14-PROVIDERS` | pending | `INV-15`, `DEC-004/054` | — | `TASK-PROV-004` | pending | planned |
 | `REQ-PROV-002` | `14-PROVIDERS` | crates/agentcowork-core/src/tools.rs, crates/agentcowork-guard/src/ticket.rs, crates/agentcowork-audit/src/receipt.rs | `CTR-010`, `INV-03` | — | `TASK-PROV-001`, `TASK-PROV-004` | pending | implemented |
 | `REQ-PROV-003` | `14-PROVIDERS` | pending | `DEC-025` | — | `TASK-PROV-004` | pending | planned |
-| `REQ-PROV-004` | `14-PROVIDERS` | crates/agentcowork-mcp/src/remote.rs, crates/agentcowork-mcp/src/store.rs, src-tauri/src/mcp_cmds.rs | `DEC-030` | — | `TASK-PROV-003`, `TASK-PROV-006`, `TASK-PROV-007`, `TASK-UI-042` | pending | implemented |
-| `REQ-PROV-005` | `14-PROVIDERS` | crates/agentcowork-mcp/src/server.rs, crates/agentcowork-mcp/src/remote.rs | `DEC-030` | — | `TASK-PROV-003`, `TASK-PROV-006`, `TASK-PROV-007`, `TASK-UI-042` | pending | implemented |
+| `REQ-PROV-004` | `14-PROVIDERS` | crates/agentcowork-mcp/src/remote.rs, crates/agentcowork-mcp/src/store.rs, src-tauri/src/mcp_cmds.rs | `DEC-030`, `DEC-048`, `DEC-061` | — | `TASK-PROV-003`, `TASK-PROV-006`, `TASK-PROV-007`, `TASK-UI-042` | `TEST-PROV-003`, `TC-053` (pending) | in-progress |
+| `REQ-PROV-005` | `14-PROVIDERS` | crates/agentcowork-mcp/src/server.rs, crates/agentcowork-mcp/src/remote.rs | `DEC-030`, `DEC-048`, `DEC-061` | — | `TASK-PROV-003`, `TASK-PROV-006`, `TASK-PROV-007`, `TASK-UI-042` | `TEST-PROV-003`, `TC-053` (pending) | in-progress |
 | `REQ-PROV-006` | `14-PROVIDERS` | pending | `DM-012`, `DM-013`, `13` §4 | — | `TASK-PROV-004` | pending | planned |
 | `REQ-PROV-007` | `14-PROVIDERS` | pending | `DM-013`, `CTR-013`, `DEC-047` | — | `TASK-PROV-004` | pending | planned |
 | `REQ-PROV-008` | `14-PROVIDERS` | crates/agentcowork-guard/src/netfloor.rs, crates/agentcowork-core/src/models/, crates/agentcowork-vault/src/oauth.rs | `INV-02/05`, `CTR-013` | — | `TASK-PROV-002`, `TASK-PROV-005` | pending | implemented |
@@ -188,7 +188,7 @@ One row per `REQ-*`. Status only from evidence.
 | `REQ-BROWSER-010` | `23-BROWSER` | pending | `INV-05`, `INV-20` | — | `TASK-BROWSER-001` | pending | planned |
 | `REQ-BROWSER-011` | `23-BROWSER` | pending | `CTR-018` | — | `TASK-BROWSER-002` | pending | planned |
 | `REQ-BROWSER-012` | `23-BROWSER` | pending | `DEC-016`, `INV-21` | — | `TASK-BROWSER-002` | pending | planned |
-| `REQ-CUA-001` | `24-COMPUTER-USE` | pending | `DEC-011` | — | `TASK-CUA-003` | pending | planned |
+| `REQ-CUA-001` | `24-COMPUTER-USE` | pending | `DEC-011`, `DEC-060` | FLOW-14 | `TASK-CUA-003` | pending | planned |
 | `REQ-CUA-002` | `24-COMPUTER-USE` | pending | `—` | — | `TASK-CUA-003` | pending | planned |
 | `REQ-CUA-003` | `24-COMPUTER-USE` | crates/agentcowork-desktop/src/uia.rs, crates/agentcowork-desktop/src/platform/win.rs | `DM-026` | — | `TASK-CUA-001`, `TASK-CUA-003` | pending | implemented |
 | `REQ-CUA-004` | `24-COMPUTER-USE` | crates/agentcowork-desktop/src/uia.rs | `—` | — | `TASK-CUA-003` | pending | implemented |

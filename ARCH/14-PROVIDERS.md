@@ -51,18 +51,18 @@ Lifecycle: register (discover) → connect → serve → shutdown. `execute` rec
 **Client (we consume MCP servers):**
 - Modern first: revision `2026-07-28` (stateless, context carried in `_meta`, mandatory `server/discover`); legacy fallback `2025-11-25` (`initialize`).
 - Detection per transport: **stdio** probes `server/discover` (10 s cap) and falls back to `initialize`; **HTTP** classifies the `400` body to distinguish era. Era is cached per process/origin; a per-server **force-legacy** escape hatch exists.
-- Implementation: the **in-crate hand-rolled client** (`crates/agentcowork-mcp/src/remote.rs`), whose dual-era logic is transport-agnostic behind a small HTTP seam and **patch-owned by us**; `rmcp` is **not** adopted (`DEC-048`; `OQ-PRV-1` closed). The sidecar's MCP dependency is the TS SDK **v1** line (`@modelcontextprotocol/sdk`, `packages/core-search`), which does not carry `2026-07-28`; the v2 line (`@modelcontextprotocol/client`/`server` 2.1.0) does — relevant if the sidecar façade moves to TS, and a reason not to leave two protocol cores to reconcile.
+- Implementation target (DEC-061): use the official Rust `rmcp` SDK for protocol state machines, with Core-owned per-server era policy and a custom Guard-2-backed HTTP transport. Pin the exact reviewed release (`rmcp-v3.4.0`) during the implementation spike; do not use its default `reqwest` transport for guarded external calls. The current sidecar MCP client dependency remains a separately tracked migration/removal task; no second live protocol core remains after the Rust ownership migration. Until parity and security qualification pass, existing implementation remains the shipping behavior.
 
 **Server façade (we expose ourselves over MCP):**
 - Stateless modern + `initialize` compatibility; MUST implement `server/discover`; MUST validate `Mcp-Method` / `Mcp-Name` headers.
 
 **Non-goals:** HTTP+SSE transport · protocol sessions/resumability · sampling · roots · logging.
 
-**Clarifications (`DEC-048`, closing `OQ-PRV-1`):** the per-server **force-legacy hatch is persisted on the stored server record** (`StoreEntry.force_legacy`), never passed as a call argument — it changes the wire contract that server is spoken in, so a runtime-only flag would be lost on restart; the **effective era plus its source** (`forced` · `cached` · `probed` · `default`) is surfaced as a **read-only projection**, and reading it never probes the network; **era caching is keyed per origin for HTTP and per command fingerprint for stdio** (an origin is meaningless for a child process), re-probed when the command line is edited; the **era probe carries a 10 s budget on both transports** (one definition, so the two cannot drift).
+**Protocol behavior retained (`DEC-030`, `DEC-048`, `DEC-061`):** the per-server **force-legacy hatch is persisted on the stored server record** (`StoreEntry.force_legacy`), never passed as a call argument; the **effective era plus its source** (`forced` · `cached` · `probed` · `default`) is a **read-only projection** and reading never probes the network; **era caching is keyed per origin for HTTP and per command fingerprint for stdio**, re-probed when the command line is edited; the **era probe has a 10 s budget on both transports**. The SDK owns protocol mechanics; these compatibility policies remain in Core.
 
 **Corrections on record:** HTTP+SSE has been deprecated since `2025-03-26` (~18 months; the removal clock is SEP-2596 — Final 2026-05-18 + 3 months ⇒ eligible ≈2026-08-18, not yet removed) — the earlier “≥12 months” framing was wrong. ~~Code-phase fixes identified: the existing remote client sends no `_meta`/modern headers; `server/discover` is absent from the current façade.~~ **Both resolved** (`DEC-048`): the remote client now sends the `_meta` envelope and the modern protocol-version/Mcp-Method/Mcp-Name headers, and `server/discover` is served on the modern lease (`acceptance_server_discover_is_served_on_the_modern_lease`).
 
-**Evidence:** `ARCHIVE/v1-research/mcp-provider-verification.md` — spec changelog/versioning/transports/deprecated pages · `clone2/grok-build/crates/codegen/xai-grok-mcp/src/servers.rs:3782-3910` · `clone2/codex/codex-rs/rmcp-client/src/protocol_mode.rs:9-51` · `rmcp@3.4.1` · SEP-2596.
+**Evidence:** `ARCHIVE/v1-research/mcp-provider-verification.md` — original spec/version review; current Rust SDK transport and version evidence is pinned in `ARCH/45-REFERENCE-RESEARCH.md` §MCP SDK (`rmcp-v3.4.0`) · `clone2/grok-build/crates/codegen/xai-grok-mcp/src/servers.rs:3782-3910` · `clone2/codex/codex-rs/rmcp-client/src/protocol_mode.rs:9-51` · SEP-2596.
 
 ## 5. Registry, epochs, resolution
 
@@ -111,7 +111,7 @@ MCP server marketplace/auto-install · remote provider federation · per-provide
 
 ## 10. Open questions (`OQ-PRV-*`)
 
-1. ~~Hand-rolled vs `rmcp` for the client core~~ → **closed as `DEC-048`**: the client core stays hand-rolled, dual-era and patch-owned; `rmcp` is not adopted, with the revisit trigger and its three written questions recorded there.
+1. ~~Hand-rolled vs `rmcp` for the client core~~ → ownership settled by **DEC-061**: adopt the official Rust SDK behind the custom Guard transport; `TASK-PROV-003` qualifies pinned SDK compatibility, Guard routing and façade parity before old protocol code is removed.
 2. Façade compatibility-window advertising (`supported` vs `preferred` revisions).
 3. CLI adapter schema format + its interaction with exec-policy rules (DEC-028).
 4. Provider isolation default: per-provider process vs shared runtime (`19` decides).

@@ -1,17 +1,17 @@
 # AgentCowork — Product Specification (SPEC)
 
-> **DEC-054/055 target amendment (2026-09-28):** The frozen v1 text below records its historical baseline. The final product contract now includes durable Missions, agent-native ownership, scoped ecosystem and the outcome-first Experience in `ARCH/35-MISSION.md`, `ARCH/46-ECOSYSTEM-ARCHITECTURE.md`, `ARCH/48-EXPERIENCE-SURFACES.md` and `ARCH/50-SYSTEM-BLUEPRINT.md`. Those accepted decisions supersede contrary baseline wording, including absolute governance of self-contained external-agent native effects, a first-party Native engine, and scope-based deferrals. The target is a local/cloud capable architecture; actual cloud execution and every adapter require implementation evidence. `ARCH/08-REQUIREMENTS.md` and `TODO.md` carry the amended work. No current superiority claim is made.
+> **DEC-054/055/060 target amendment (2026-09-28):** The frozen v1 text below records its historical baseline. The final product contract now includes durable Missions, agent-native ownership, scoped ecosystem, the outcome-first Experience, and one shared capability-selection preference in `ARCH/35-MISSION.md`, `ARCH/46-ECOSYSTEM-ARCHITECTURE.md`, `ARCH/48-EXPERIENCE-SURFACES.md` and `ARCH/50-SYSTEM-BLUEPRINT.md`. Those accepted decisions supersede contrary baseline wording, including absolute governance of self-contained external-agent native effects, a first-party Native engine, scope-based deferrals, and conflicting action-ladder ordering. The target is a local/cloud capable architecture; actual cloud execution and every adapter require implementation evidence. `ARCH/08-REQUIREMENTS.md` and `TODO.md` carry the amended work. No current superiority claim is made.
 
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P5). **Authority:** root for **WHAT** the product must be (`ARCH/00-INDEX.md` §2). HOW lives in `ARCH/03-HLD.md` and the module docs; schemas in `ARCH/06-DATA-MODEL.md`/`07-CONTRACTS.md`; flows in `ARCH/40-FLOWS.md`.
 > **P7 pass (2026-09-26):** line-checked; requirements registry (`ARCH/08-REQUIREMENTS.md`) cross-referenced.
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
 > **Names:** product **AgentCowork** (working), runtime **Core**; the agent engine is external in v1 (`ARCH/01-NAMING.md`).
-> **v1.0 scope:** Windows-first desktop, local-first, single-user. No scope cuts carried from here — deferrals are explicit (§15).
+> **Release baseline:** Windows-first desktop, local-first, single-user. This frozen release baseline is not the final capability ceiling: accepted DEC-054/055 architecture includes configured local and remote execution, heterogeneous teams, durable goals and broader Workbench capabilities; each remains unimplemented until its TODO task and acceptance evidence land. Deferrals below describe delivery sequencing, not product-value cuts.
 > **SDD:** testable behaviors derived from this SPEC are registered as `REQ-*` in `ARCH/08-REQUIREMENTS.md`; traceability accrues in `ARCH/09-FEATURE-MATRIX.md`; process: `.agents/docs/spec-driven-development.md`.
 
 ## 1. Definition
 
-**AgentCowork is a local-first AI work environment that composes interchangeable agents, models, capabilities and execution environments behind one governed execution model, on top of a continuously updated model of the user's digital world.**
+**AgentCowork is a local-first AI work environment that accepts durable goals and composes interchangeable external agents, models, capabilities, workflows and execution environments around one shared mission and outcome record. Core governs the effects that pass through its own capabilities; external agents retain their reasoning loop, native tools and effective policy, with distinct provenance for native activity.**
 
 Working positioning: *one workspace, every model, every tool.* It is an AI-native execution layer on the user's existing computer — **not** an OS/kernel replacement.
 
@@ -20,7 +20,7 @@ Working positioning: *one workspace, every model, every tool.* It is an AI-nativ
 | # | Principle |
 |---|---|
 | P-01 | Core owns durable Mission, Work and shared-plane truth; each external agent owns its reasoning loop; every UI surface is a projection. |
-| P-02 | Work is the universal execution abstraction. |
+| P-02 | Work is the universal execution abstraction for execution admitted by AgentCowork; an external agent's native subtasks remain agent-owned unless Core explicitly creates host Work for them. |
 | P-03 | Agent ≠ Model ≠ Provider. |
 | P-04 | Capability describes *what*; provider describes *who*. |
 | P-05 | Protocols (MCP/ACP/CLI/HTTP/plugins) are adapters, never the center. |
@@ -31,7 +31,7 @@ Working positioning: *one workspace, every model, every tool.* It is an AI-nativ
 | P-10 | Memory ≠ context. |
 | P-11 | Workflow is deterministic; agent is adaptive; both compose. |
 | P-12 | The computer explains itself; vision is the fallback rung. |
-| P-13 | Enforcement lives in Core; prompts never enforce. |
+| P-13 | Enforcement for Core-mediated capabilities lives in Core; prompts never enforce. Native external-agent policy remains owned by that agent. |
 | P-14 | Token discipline: deterministic operations never touch an LLM. |
 
 (Teaching narrative: `ARCH/02-THESIS.md`.)
@@ -42,7 +42,7 @@ Desktop app (primary), CLI (`agentcowork`, placeholder), IDE via ACP, Work API, 
 
 ## 4. Governed execution contract
 
-Every externally visible effect: `Work → Capability → Provider → Handle → Guard → Ticket → Execute → Effect → Verify → Receipt → Event`. Control path: p50 < 2 ms · p95 < 10 ms · p99 < 25 ms (bounded work only); effect path: asynchronous and observable. No bypasses — not for domains, adapters, UI, or any engine. Verification depth scales with risk class; receipts are mandatory for visible effects. → `ARCH/03-HLD.md` §5, `12`, `13`, `34`, `29`.
+Every **Core-mediated** externally visible effect follows `Work → Capability → Provider → Handle → Guard → Ticket → Execute → Effect → Verify → Receipt → Event`. Within that path there are no domain, adapter or UI bypasses. The pipeline does not claim to intercept a self-contained external agent's native tools or effects; those remain under that agent's policy and are labelled as reported or observed when the binding exposes evidence. Control path: p50 < 2 ms · p95 < 10 ms · p99 < 25 ms (bounded work only); effect path: asynchronous and observable. Verification depth scales with risk class; Core-mediated visible effects require receipts. → `ARCH/03-HLD.md` §5, `12`, `13`, `34`, `29`, `46`.
 
 ## 5. Capability contract
 
@@ -55,8 +55,8 @@ Every externally visible effect: `Work → Capability → Provider → Handle �
 
 - **One decider** (Guard): `ALLOW / ASK / DENY` composed of three layers — platform confinement × approval policy × declarative exec rules (`DEC-028`).
 - **Vault custody:** credentials exist only in the vault; `use`-style API; never in prompts/logs/events (`INV-02`).
-- **Egress:** one guarded path; fail closed (`INV-05`).
-- **Permission defaults:** everyday allow · dangerous ask · Full Access with an irreducible catastrophic gate (`12` §3).
+- **Egress:** one guarded path for Core-mediated outbound calls; fail closed (`INV-05`). External agents' native network calls remain within their own effective policy and are not represented as Core-guarded.
+- **Core-mediated permission defaults:** everyday allow · dangerous ask · Full Access with an irreducible catastrophic gate (`12` §3). These defaults do not describe a discovered external agent's native permission policy.
 - **Projections only** for external agents; workspace boundaries enforced by interception, not un-discovery (`12` §8).
 - Approvals are one primitive for agents and workflows (`DEC-021`).
 
@@ -83,27 +83,27 @@ Every externally visible effect: `Work → Capability → Provider → Handle �
 
 ## 9. Experience contract
 
-- Composer controls are **capability-negotiated** per selected agent (no fake controls): agent · model · reasoning dial · context indicator; `@` opens a structured reference picker; `/eaios:*` is the reserved host namespace and the selected agent keeps its native commands untouched; `+` attaches/creates; `Run ▾` offers now/background/workflow/schedule.
+- Composer controls are **capability-negotiated** per selected agent (no fake controls): agent · model · reasoning dial · context indicator; `@` opens a structured reference picker; `/cowork:*` is the reserved host namespace and the selected agent keeps its native commands untouched; `+` attaches/creates; `Run ▾` offers now/background/workflow/schedule.
 - Chat rendering: markdown pipeline; mermaid auto-conversion (policy-gated, isolated); tool calls with state model; plan bar; reasoning dial — **never raw chain-of-thought**.
 - Universal DocumentSurface: files open as tabs regardless of type; Office/Browser are runtimes under it.
-- Token discipline: opening/rendering/navigating/previewing never call a model (`AGENTCOWORK-UI.md` owns detail; `DEC-015`).
+- Token discipline: opening/rendering/navigating/previewing never call a model (`ARCH/48-EXPERIENCE-SURFACES.md` owns final interaction detail; `AGENTCOWORK-UI.md` is retained as baseline/source-path evidence; `DEC-015`).
 
 ## 10. Workflow & automation contract
 
 - Typed IR; published vs draft; runs pinned; approvals first-class; workflows-as-tools; agent-authored workflows with validation.
-- Durability: append-only journal; occurrences; leases; exactly-once claims; resume matrix; `needs_attention` for keyless side effects; misfire policy.
+- Durability: append-only journal; persisted trigger occurrences with unique logical-run claims; leases; resume matrix; at-least-once step attempts with provider idempotency or observed-state reconciliation; `needs_attention` for uncertain keyless side effects; misfire policy. No exactly-once claim is made for external effects (`DEC-057`).
 - v1 trigger set: manual · schedule · agent-call · sub-workflow · workflow failure · Core/World events. Browser-event and completion-chained triggers are declared product inventions if ever shipped. → `20`.
 
 ## 11. Multi-agent contract
 
-- Every agent engine is a peer: same `AgentEngine`, same Guard, no privileged path — including a first-party engine bound later (`DEC-010`, `DEC-052`).
-- **No first-party engine ships in v1.** The reasoning engine is developed outside this repository and is bound here afterwards as an ordinary engine binding: same contract, same Guard, same projections, no privileged path (`DEC-052`).
-- Delegation: child session per subagent; full escaped project rules; per-spawn worktree option; **receipts, not transcripts**; outer bounds enforced by Core (`DEC-029`, `DEC-031`).
+- Every agent binding uses the negotiated `AgentEngine` contract. Core-mediated capability calls follow the same Guard path for every binding; no binding gets a Core bypass. A self-contained external agent's native loop and effects remain under its own policy and carry separate provenance (`DEC-010`, `DEC-052`, `DEC-054`).
+- **No first-party reasoning engine ships in v1.** Horizon Code is a future external binding developed outside this repository and attached as an ordinary agent; it does not replace or own AgentCowork's Mission, Work, Trust or evidence records (`DEC-052`, `DEC-054`).
+- Host delegation creates a bounded child session/Work with escaped project rules, optional per-spawn worktree isolation and **receipts, not transcripts**; Core enforces outer bounds on that host-created work (`DEC-029`, `DEC-031`, `DEC-054`). Native subagents remain owned by their agent and are reported only when the binding exposes them.
 - Scheduler lanes: foreground · background · detached, with interactive priority.
 
 ## 12. Extension contract
 
-Skills teach (activation-scoped, relevance-loaded); plugins extend at declared surfaces only, through a review gate, sandboxed, no Core patching; licensing rules from `44` apply to any reuse. → `31`.
+Skills teach (activation-scoped, relevance-loaded); plugins extend at declared surfaces only, through a review gate, with no Core patching. Code-bearing host plugins run only under a qualified confinement backend; they are unavailable where required confinement is absent. Content-only skills/templates follow untrusted-content rules and do not gain execution rights. Licensing rules from `44` apply to any reuse. → `31`.
 
 ## 13. Evidence & acceptance
 

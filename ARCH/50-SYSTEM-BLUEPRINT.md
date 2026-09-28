@@ -1,6 +1,6 @@
 # 50 — System blueprint and ownership map
 
-> Status: DEC-054/055/056/057/058/059 target architecture map. Mermaid diagrams are navigation and review aids; canonical fields/contracts remain in `06`/`07`, requirements in `08`, module details in `10`–`38` and `46`/`48`/`51`. Every arrow below denotes a named boundary, not an extra service. The target is a modular monolith with external adapters and one independently buildable local Observer, not a fleet of internal network microservices. Diagram labels `Core-mediated` and `agent-native` must stay distinct; occurrence ownership is fenced and does not imply exactly-once external effects.
+> Status: DEC-054/055/056/057/058/059/060 target architecture map. Mermaid diagrams are navigation and review aids; canonical fields/contracts remain in `06`/`07`, requirements in `08`, module details in `10`–`38` and `46`/`48`/`51`. Every arrow below denotes a named boundary, not an extra service. The target is a modular monolith with external adapters and one independently buildable local Observer, not a fleet of internal network microservices. Diagram labels `Core-mediated` and `agent-native` must stay distinct; occurrence ownership is fenced and does not imply exactly-once external effects.
 
 ## 1. High-level ownership
 
@@ -116,7 +116,7 @@ flowchart LR
   R --> M
 ```
 
-The hierarchy API/native connector → MCP → structured browser → visual browser → desktop is a **selection preference when all are available and authorized**, not a mandate to intercept a discovered agent's private tools. A shared MCP catalog item is not globally mounted. Scope is resolved for each agent/session/workspace/Mission, and unsupported overlays fail closed with an honest status. Native effects cannot inherit a Core receipt or verification badge.
+The shared-capability preference is a suitable authorized API/connector/site-native MCP/CLI first; then target-specific browser DOM/AX for web work or OS accessibility for native desktop work; then visual interaction; raw input is last and separately gated (DEC-060). This is a **selection preference among eligible shared paths**, not a mandate to intercept a discovered agent's private tools. Selection accounts for observed reliability, effect coverage, permissions, latency and user preference. A shared MCP catalog item is not globally mounted. Scope is resolved for each agent/session/workspace/Mission, and unsupported overlays fail closed with an honest status. Native effects cannot inherit a Core receipt or verification badge.
 
 ## 4.1 Local machine observation and optional elevation
 

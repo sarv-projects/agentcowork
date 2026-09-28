@@ -45,7 +45,7 @@ other workflow publishes (`P70.A1`, asserted by `scripts/check-release-matrix.mj
 | Platform | v1 artifact | Cockpit | Desktop control | Terminal | Status |
 |---|---|---|---|---|---|
 | **Windows** (x64, arm64 — the two msvc targets the release matrix builds) | `.msi` (WiX) + `.exe` (NSIS) — target, not yet qualified | v1 target | UIA + Graphics Capture path (target) | ConPTY path (target) | **v1 target** — acceptance in progress (`P70.D6`, `P70.E8`); no acceptance record exists yet, and none can be produced from a Linux host |
-| **WSL2** | none — supported **host for agents** | n/a (the cockpit is the Windows app) | n/a | the Windows terminal plane | **supported**: Linux-native agents and their ACP entrypoints run inside the distro; a discovered Linux path is launched through `wsl.exe -d <distro> -- <path>` and never enters a native Windows spawn |
+| **WSL2** | none — intended **host for agents** | n/a (the cockpit is the Windows app) | n/a | the Windows terminal plane | **not separately release-qualified**: Linux-native agent/ACP launch is an implemented target path through `wsl.exe -d <distro> -- <path>`; Windows-host acceptance remains outstanding with `P70.E8` |
 | macOS (Apple silicon / Intel) | **none** | — | not claimed | — | **out of v1 scope** |
 | Native Linux desktop (any distro) | **none** | — | verified on the development host only | — | **out of v1 scope** — the verification host, not a shipped platform |
 

@@ -45,12 +45,11 @@ This registry answers one question per entry: **what behavior must this system e
 | `SKILL` | Skill registry/loader/resolver; plugin surfaces | `ARCH/31-SKILLS-PLUGINS.md` |
 | `CHAN` | Desktop/CLI/ACP/A2A/API/mobile projections; agent gateway | `ARCH/32-CHANNELS.md` |
 | `VERIFY` | Validate · render · verify · reconcile; receipt policy | `ARCH/34-EFFECT-VERIFICATION.md` |
-| `UI` | Chat rendering, surface behavior, interaction model | `AGENTCOWORK-UI.md` |
+| `UI` | Chat rendering, surface behavior, interaction model | `ARCH/48-EXPERIENCE-SURFACES.md` (final; `AGENTCOWORK-UI.md` is baseline/source-path evidence) |
 | `MISSION` | Durable goal, plan, evidence, resume and outcome | `ARCH/35-MISSION.md`, `ARCH/36-OUTCOME-AND-RECOVERY.md` |
 | `ECO` | External-agent coexistence and scoped shared ecosystem | `ARCH/46-ECOSYSTEM-ARCHITECTURE.md` |
 | `LEARN` | Workflow/skill capture and controlled promotion | `ARCH/37-WORKFLOW-SKILL-LIFECYCLE.md` |
 | `UXQ` | Progressive control and measured quality | `ARCH/38-EXPERIENCE-QUALITY.md` |
-
 | `OBS` | Machine Observer service · sensors · system telemetry · safe OS queries · bounded history | `ARCH/51-MACHINE-OBSERVABILITY.md` |
 
 **Entry format (machine-parseable — fixed heading + field lines):**
@@ -157,7 +156,7 @@ This registry answers one question per entry: **what behavior must this system e
 - **Statement:** GIVEN any boundary error, WHEN it surfaces, THEN it uses the canonical taxonomy codes with correct retryability, carries no secrets or user content, preserves cause chains for diagnostics, and never leaks internals across boundaries.
 - **Priority:** must
 - **Source:** `ARCH/10-KERNEL.md` §3 · `ARCH/05-INVARIANTS.md` INV-11
-- **Acceptance:** every boundary error maps to a taxonomy code; secret-corpus scan of error surfaces is clean; `GuidanceRequired`/`RequiresUserAction` arrive as results with next steps, not failures.
+- **Acceptance:** every boundary error maps to a taxonomy code; secret-corpus scan of error surfaces is clean; `guidance`/`requires_user_action` arrive as result statuses with next steps, not failures.
 - **Failure cases:** untyped error crossing a boundary → review failure; retryability misclassified → defect; internals leaked → verification failure.
 - **Tests:** pending
 - **Status:** seeded
@@ -497,8 +496,8 @@ This registry answers one question per entry: **what behavior must this system e
 #### REQ-PROV-004 — MCP client dual-era policy
 - **Statement:** GIVEN an MCP server connection, WHEN the era is negotiated, THEN the client tries the modern revision `2026-07-28` (stateless, context in `_meta`, `server/discover`) first and falls back to legacy `2025-11-25` (`initialize`), with per-transport detection (stdio probe with 10 s cap; HTTP 400-body classification), era caching per process/origin, and a per-server force-legacy escape hatch.
 - **Priority:** must
-- **Source:** `ARCH/14-PROVIDERS.md` §4 · `ARCH/04-DECISIONS.md` DEC-030, DEC-048 · `ARCHIVE/v1-research/mcp-provider-verification.md`
-- **Acceptance:** dual-era tests against both revisions; detection and cache tests; force-legacy honored; the client core is the hand-rolled, patch-owned in-crate implementation carrying both revisions (DEC-048 — no SDK core), with the era verdict cached per origin (HTTP) and per command fingerprint (stdio) and the era probe bounded at 10 s on both transports.
+- **Source:** `ARCH/14-PROVIDERS.md` §4 · `ARCH/04-DECISIONS.md` DEC-030, DEC-048, DEC-061 · `ARCHIVE/v1-research/mcp-provider-verification.md`
+- **Acceptance:** dual-era tests against both revisions; detection and cache tests; force-legacy honored; `rmcp` protocol semantics run behind Core-owned origin/command-fingerprint cache, force-legacy policy, credentials and lifecycle; Streamable HTTP goes through the custom Guard-backed transport (never default `reqwest`); stdio probe is bounded at 10 s and times out as typed attach failure; current protocol code is removed only after behavioral/security parity. Exact SDK release pin is a dependency decision recorded by the implementation and evidence set, not inferred from an unpinned range.
 - **Failure cases:** permanent mismatch → provider marked incompatible with reason; detection that loses capabilities → defect.
 - **Tests:** pending
 - **Status:** seeded
@@ -506,8 +505,8 @@ This registry answers one question per entry: **what behavior must this system e
 #### REQ-PROV-005 — MCP server façade compliance
 - **Statement:** GIVEN our MCP façade, WHEN an external client connects, THEN it serves stateless modern behavior with `initialize` compatibility, MUST implement `server/discover`, and MUST validate `Mcp-Method` and `Mcp-Name` headers.
 - **Priority:** must
-- **Source:** `ARCH/14-PROVIDERS.md` §4 · `ARCH/04-DECISIONS.md` DEC-030, DEC-048
-- **Acceptance:** façade tests cover modern and legacy clients; `server/discover` present; header validation rejects mismatches; and `initialize` compatibility is reachable **on the strict lease**, method-restricted (only `initialize` is exempt from the revision pin) and session-less (no lease, no session, no capability handle) — `crates/agentcowork-mcp/tests/acceptance_mcp_dual_era.rs::acceptance_a_legacy_initialize_completes_on_the_strict_lease`.
+- **Source:** `ARCH/14-PROVIDERS.md` §4 · `ARCH/04-DECISIONS.md` DEC-030, DEC-048, DEC-061
+- **Acceptance:** façade tests cover modern and legacy clients; `server/discover` present; header validation rejects mismatches; and `initialize` compatibility is method-restricted and session-less (no lease, no session, no capability handle), while every other modern call is pinned/authorized. SDK adoption must preserve this boundary; the existing acceptance name is historical and should be renamed when the fixture is migrated.
 - **Failure cases:** missing `server/discover` → client cannot negotiate; unvalidated headers → request rejected.
 - **Tests:** pending
 - **Status:** seeded
@@ -1538,12 +1537,12 @@ This registry answers one question per entry: **what behavior must this system e
 
 ### Computer use (`CUA`)
 
-#### REQ-CUA-001 — Highest deterministic rung first
-- **Statement:** GIVEN a desktop interaction need, WHEN a rung is chosen, THEN the highest deterministic rung runs first — native API → structured UI (UIA/AX/AT-SPI) → browser DOM/AX → CLI/app API/MCP → vision → raw input — and a screenshot is never taken for something an API or a tree can answer.
+#### REQ-CUA-001 — Select the best eligible interaction path without overriding agent-native tools
+- **Statement:** GIVEN a task that can use a Core-shared capability, WHEN its path is selected, THEN a suitable authorized typed API/connector, site-native MCP or CLI is preferred; browser DOM/AX is used for structured web interaction and OS accessibility for native desktop interaction; visual interaction is used only when structured paths cannot meet the task or for verification; raw input is last and separately gated. Eligibility, observed reliability, effect coverage and user preference inform selection (DEC-060). An external agent's private native tools remain agent-owned (DEC-054).
 - **Priority:** must
-- **Source:** `ARCH/24-COMPUTER-USE.md` §1/§2 · `ARCH/04-DECISIONS.md` DEC-011
-- **Acceptance:** rung-selection tests per scenario; vision/raw paths are reached only after higher rungs fail or are unavailable.
-- **Failure cases:** screenshot used where structure answers → design violation; raw input chosen first → violation.
+- **Source:** `ARCH/24-COMPUTER-USE.md` §1/§2 · `ARCH/04-DECISIONS.md` DEC-011/060 · `ARCH/46-ECOSYSTEM-ARCHITECTURE.md` §4
+- **Acceptance:** selection tests cover a suitable authorized API, site-native MCP, browser DOM/AX, native-app accessibility, vision-only surfaces, and gated raw input; unsuitable/unavailable methods are skipped with a recorded reason; actual path and provenance are displayed.
+- **Failure cases:** vision used when a suitable structured path answers → design defect; raw input selected before structured/visual paths → policy violation; Core claims control over a native agent's private tool path → provenance violation.
 - **Tests:** pending
 - **Status:** seeded
 
@@ -1662,6 +1661,8 @@ This registry answers one question per entry: **what behavior must this system e
 - **Source:** `ARCH/15-AGENT-PLANE.md` §7 · `ARCH/11-WORK.md` · `ARCH/04-DECISIONS.md` DEC-029, DEC-031, DEC-036
 - **Acceptance:** a delegated item is queryable as `Work` while running and after completion; a cancelled parent leaves the child's terminal state honest.
 - **Failure cases:** a delegation that cannot be represented as `Work` → refused; a child outliving its deadline → reported as expired, never as completed.
+- **Tests:** pending
+- **Status:** seeded
 
 #### REQ-AGENT-002 — Subagent spawn and completion
 - **Statement:** GIVEN a **host-created** child Work request, WHEN it is admitted, THEN its host lifecycle is observable, its terminal result is a receipt or labelled worker report with evidence refs, and the async child is tracked by Work rather than an in-memory promise. An engine-native child remains outside the host lifecycle (DEC-054).
@@ -1669,6 +1670,8 @@ This registry answers one question per entry: **what behavior must this system e
 - **Source:** `ARCH/15-AGENT-PLANE.md` §7 · `ARCH/20-WORKFLOW.md` · `ARCH/04-DECISIONS.md` DEC-029, DEC-036 · `ARCH/30-EVENTS.md`
 - **Acceptance:** spawn → completion is reconstructable from the journal alone after a restart; a child that dies without a terminal record settles as uncertain, never as completed.
 - **Failure cases:** a lost child record → `uncertain`; a completion claimed without evidence → rejected.
+- **Tests:** pending
+- **Status:** seeded
 
 #### REQ-AGENT-003 — Subagent isolation modes
 - **Statement:** GIVEN a host delegation request, WHEN isolation is chosen, THEN the requested and enforced modes are explicit and recorded per Work. Shared read, worktree or adapter-specific sandbox are available only where proven; a bound external engine is never described as in-process or stronger-isolated without evidence (DEC-054).
@@ -1676,6 +1679,8 @@ This registry answers one question per entry: **what behavior must this system e
 - **Source:** `ARCH/15-AGENT-PLANE.md` §7 · `ARCH/04-DECISIONS.md` DEC-025, DEC-029 · `ARCH/19-RUNTIME-ENVIRONMENTS.md`
 - **Acceptance:** the recorded mode is the mode actually enforced; a request for a mode the runtime cannot provide is refused rather than downgraded.
 - **Failure cases:** silent downgrade to a weaker isolation mode → violation; unavailable worktree/ACP mode → refused with the reason.
+- **Tests:** pending
+- **Status:** seeded
 
 #### REQ-AGENT-004 — Receipts, not transcripts
 - **Statement:** GIVEN a completed delegated item, WHEN its result is projected to the user or a parent engine, THEN it is a receipt (what was intended, what changed, what it cost, what remains uncertain) and never a raw transcript presented as a result.
@@ -1683,13 +1688,15 @@ This registry answers one question per entry: **what behavior must this system e
 - **Source:** `ARCH/15-AGENT-PLANE.md` §7 · `ARCH/29-ARTIFACTS.md` · `ARCH/34-EFFECT-VERIFICATION.md` · `ARCH/04-DECISIONS.md` DEC-022
 - **Acceptance:** a delegated result is renderable as a receipt with no transcript access; an engine's self-report of success is labelled as a report until verified.
 - **Failure cases:** an unverified report rendered as fact → violation; a transcript surfaced as a user-facing result → violation.
+- **Tests:** pending
+- **Status:** seeded
 
 ### UI (`UI`)
 
 #### REQ-UI-001 — Reasoning is summarized, never raw chain-of-thought
 - **Statement:** GIVEN a model produces reasoning, WHEN it is rendered in chat, THEN the user sees a summarized, structured progress view — never raw chain-of-thought.
 - **Priority:** must
-- **Source:** `AGENTCOWORK-SPEC.md` §9 · `AGENTCOWORK-UI.md` §4.4
+- **Source:** `ARCH/48-EXPERIENCE-SURFACES.md` §4.2 · `ARCH/30-EVENTS.md` §3
 - **Acceptance:** no raw CoT in stored or displayed transcripts; reasoning renders only through the `reasoning` projection.
 - **Failure cases:** raw CoT rendered → defect.
 - **Tests:** pending
@@ -1698,7 +1705,7 @@ This registry answers one question per entry: **what behavior must this system e
 #### REQ-UI-002 — Deterministic-first UI operations
 - **Statement:** GIVEN a UI surface renders, navigates, converts a diagram or discovers references, WHEN the operation runs, THEN it is a pure function of already-fetched state and consumes zero model tokens; only explicit opt-in actions (title generation, summarisation, "what next") may call a model, with visible cost.
 - **Priority:** must
-- **Source:** `AGENTCOWORK-SPEC.md` §9 · `DEC-015` · `INV-13` · `AGENTCOWORK-UI.md` §8 (UI-02)
+- **Source:** `AGENTCOWORK-SPEC.md` §9 · `DEC-015` · `INV-13` · `ARCH/48-EXPERIENCE-SURFACES.md` §4.1
 - **Acceptance:** a trace of rendering/navigation/diagram/reference paths shows zero provider calls; opt-in actions show a cost affordance.
 - **Failure cases:** a render/navigation path calling a model → defect; a preview silently spending budget → defect.
 - **Tests:** pending
@@ -1707,7 +1714,7 @@ This registry answers one question per entry: **what behavior must this system e
 #### REQ-UI-003 — Truthful state, never inferred as measured
 - **Statement:** GIVEN a value, state or progress affordance, WHEN the value is not measured, THEN the UI renders `—` or nothing and never a plausible guess, fabricated percentage, fake spinner or progress bar standing in for an unknown.
 - **Priority:** must
-- **Source:** `AGENTCOWORK-UI.md` §1.2 (UI-03, UI-18), §11; `ev: ui/src/components/views/run-projection.tsx:33-56`; `ev: ui/src/lib/store.ts:191-194`
+- **Source:** `ARCH/48-EXPERIENCE-SURFACES.md` §§1, 4.2, 9; `ev: ui/src/components/views/run-projection.tsx:33-56`; `ev: ui/src/lib/store.ts:191-194`
 - **Acceptance:** unknown figures render `—`/absent; no determinate progress without a measured value; no fake spinner on a Core-unavailable banner.
 - **Failure cases:** inferred value shown as measured → defect; fabricated progress → defect; spinner with no work in flight → defect.
 - **Tests:** pending
@@ -1716,7 +1723,7 @@ This registry answers one question per entry: **what behavior must this system e
 #### REQ-UI-004 — Streaming-safe markdown completeness
 - **Statement:** GIVEN an assistant answer containing headings, tables, blockquotes, `hr`, ordered lists or images, WHEN it renders (streaming or committed), THEN every element renders from the token palette, a GFM table scrolls inside a keyboard-focusable `role="region"`, raw HTML is gated off, math is constrained, in-flight code fences are not re-highlighted, and stream writes coalesce to at most one per animation frame.
 - **Priority:** must
-- **Source:** `AGENTCOWORK-UI.md` §4.1 (R1–R8); evidence §4.1
+- **Source:** `ARCH/48-EXPERIENCE-SURFACES.md` §4.1; `ui/package.json`; renderer implementation evidence remains in the root UI baseline
 - **Acceptance:** a heading + table + 400-line fence renders correctly; a render trace shows no per-delta re-parse; the table is focusable without breaking the bubble.
 - **Failure cases:** borderless/unconstrained table → defect; re-highlight of an open fence → defect; raw HTML rendered → defect.
 - **Tests:** pending
@@ -1725,7 +1732,7 @@ This registry answers one question per entry: **what behavior must this system e
 #### REQ-UI-005 — Mermaid policy-gated isolated auto-conversion
 - **Statement:** GIVEN a fenced `mermaid` block in the transcript, WHEN the fence closes, THEN it auto-converts with no user action through the policy gate and a `securityLevel: 'strict'` config locked by a `secure:` array, the theme is read from live tokens, output is a blob-`<img>` (never inline SVG/HTML), size is reserved (CLS 0), renders are serialized and bounded, and a rejection/failure leaves copyable source with a status line.
 - **Priority:** must
-- **Source:** `AGENTCOWORK-SPEC.md` §9 · `AGENTCOWORK-UI.md` §4.2 (R10–R18)
+- **Source:** `AGENTCOWORK-SPEC.md` §9 · `ARCH/48-EXPERIENCE-SURFACES.md` §4.1
 - **Acceptance:** a `mermaid` fence converts automatically; `img:`/`%%{init}%%` source renders as copyable source with a status line; a theme/accent flip re-renders; a failed render leaves the previous image visible (CLS 0).
 - **Failure cases:** render while the fence is open → defect; source bypassing the gate → blocked; inline SVG/HTML injection → forbidden.
 - **Tests:** pending
@@ -1734,7 +1741,7 @@ This registry answers one question per entry: **what behavior must this system e
 #### REQ-UI-006 — Tool-call states and grouping
 - **Statement:** GIVEN tool calls in a turn, WHEN they stream, run, succeed, fail or are cancelled, THEN the UI renders exactly five states (`proposed · running · succeeded · failed · cancelled`) with streaming mapped to `running` + `tool.progress`, a group containing an error never auto-collapses, a settled turn collapses to one rail line, group identity is the first item's identity, and a Guard-denied call is neutral-with-lock (not red).
 - **Priority:** must
-- **Source:** `ARCH/30-EVENTS.md` §3 · `AGENTCOWORK-UI.md` §4.3 (R21–R27; UI-04, UI-06)
+- **Source:** `ARCH/30-EVENTS.md` §3 · `ARCH/48-EXPERIENCE-SURFACES.md` §4.2
 - **Acceptance:** a failed call never auto-collapses; a settled turn collapses to one line; a resumed session replays the same grouping; denied ≠ failed styling.
 - **Failure cases:** failure auto-collapsed → defect; a sixth `streaming` state → defect; blocked rendered as error → defect.
 - **Tests:** pending
@@ -1743,7 +1750,7 @@ This registry answers one question per entry: **what behavior must this system e
 #### REQ-UI-007 — Plan bar bound to the running turn
 - **Statement:** GIVEN a plan for the active turn, WHEN the turn runs, THEN a plan bar sits above the composer bound to `turn_id === activeTurnId`, is keyboard-operable (`role="button"`, `aria-expanded`), caps open height at `min(22vh, 180px)`, shows `completed/total`, reports a version delta on a new plan version (never "no change" from an unknown previous list), and renders/reserves nothing when no plan belongs to the turn.
 - **Priority:** must
-- **Source:** `AGENTCOWORK-UI.md` §4.4 (R31); `ev: ui/src/lib/store.ts:197-205,211`
+- **Source:** `ARCH/48-EXPERIENCE-SURFACES.md` §4.2; `ev: ui/src/lib/store.ts:197-205,211`
 - **Acceptance:** the bar appears only while its turn runs and disappears with it; a second version reports a delta; the step vocabulary is the existing `ProgressStep` union.
 - **Failure cases:** plan hanging over the next turn → defect; false "no change" → defect; a new status vocabulary → defect.
 - **Tests:** pending
@@ -1752,7 +1759,7 @@ This registry answers one question per entry: **what behavior must this system e
 #### REQ-UI-008 — Reasoning dial capability-negotiated
 - **Statement:** GIVEN the bound agent's model descriptor, WHEN the reasoning dial is shown, THEN it offers only the levels the model supports (`auto · minimal · low · medium · high · extra_high`), clamps the value on model switch, keeps `auto` off the track on its own row, keeps the pill visible at `auto`, tracks the label live while dragging, states what the current level means, and says the model has no reasoning surface rather than showing a dead control.
 - **Priority:** must
-- **Source:** `ARCH/18-MODEL-ROUTING.md` §5 · `AGENTCOWORK-UI.md` §5.4 (R51); `ev: ui/src/lib/acp.ts:93-101`
+- **Source:** `ARCH/18-MODEL-ROUTING.md` §5 · `ARCH/48-EXPERIENCE-SURFACES.md` §3; `ev: ui/src/lib/acp.ts:93-101`
 - **Acceptance:** a reasoning-less model shows an honest statement, not a dead slider; an unsupported level is never offered; the value clamps on switch.
 - **Failure cases:** dial offers a level the model rejects → defect; `auto` on the track → defect; silent stale value after model switch → defect.
 - **Tests:** pending
@@ -1761,7 +1768,7 @@ This registry answers one question per entry: **what behavior must this system e
 #### REQ-UI-009 — Universal DocumentSurface
 - **Statement:** GIVEN a reference, artifact, run, URL or session, WHEN it is opened, THEN one DocumentSurface opens exactly one tab per document identity (a second open focuses the existing tab) with N documents per kind, re-derives content from a persisted light ref, pre-checks existence in the host (a missing file renders an inert *not found* row with a re-link), and opens/renders with zero model tokens.
 - **Priority:** must
-- **Source:** `ARCH/29-ARTIFACTS.md` §7 · `AGENTCOWORK-UI.md` §3 (R45), §2.3
+- **Source:** `ARCH/29-ARTIFACTS.md` §7 · `ARCH/48-EXPERIENCE-SURFACES.md` §5
 - **Acceptance:** two spreadsheets and a PDF open together; a per-session reload restores the tab set; a missing file renders inert with a reason; two opens of one identity share one tab.
 - **Failure cases:** a second document of a kind replacing the first → defect; a tab opening onto "file not found" → defect; tab content persisted instead of a light ref → defect.
 - **Tests:** pending
@@ -1770,7 +1777,7 @@ This registry answers one question per entry: **what behavior must this system e
 #### REQ-UI-010 — Agent picker / agent-owner model / two-pane runtime surface
 - **Statement:** GIVEN an agent binding, WHEN the composer agent control is used or agent configuration is opened, THEN the compact control paints the agent-owned model or an explicit em dash, selection is installed-only (catalog-only rows render a not-installed state with an install affordance), and configuration expands to a two-pane surface (runtimes left; the selected runtime's own model/auth/native capabilities + shared grants right) where a Native model is never offered for an external runtime and an agent with no model surface says "managed by \<agent\>".
 - **Priority:** must
-- **Source:** `AGENTCOWORK-UI.md` §5.3, §5.13; `ev: ui/DESIGN-SYSTEM.md:11,58`; `ev: ui/src/components/chat/agent-model-picker.tsx:474-489,526-549`
+- **Source:** `ARCH/48-EXPERIENCE-SURFACES.md` §§3, 7; `ev: ui/DESIGN-SYSTEM.md:11,58`; `ev: ui/src/components/chat/agent-model-picker.tsx:474-489,526-549`
 - **Acceptance:** a governance badge and honest hover note per agent; installed-only selectable; catalog-only not selectable; no Native model offered for an external runtime; a switch during a live stream applies to the next turn and says so.
 - **Failure cases:** a catalog row becoming selectable → defect; a Native model offered for an external runtime → defect; the platform inventing a model list → defect.
 - **Tests:** pending
@@ -1779,7 +1786,7 @@ This registry answers one question per entry: **what behavior must this system e
 #### REQ-UI-011 — Windows-first provenance and truthful readiness
 - **Statement:** GIVEN an agent/runtime row, WHEN it renders, THEN it shows a discriminated location (`managed · windows_path · app_paths · user_path · package_manager · wsl · unavailable`), keeps `installed`/`discovered`/`launchable` distinct (a WSL row is discovered-not-launchable until its spawn adapter exists and is non-selectable with a reason), never treats a catalog/registry row as occupancy, and shows readiness as evidence-gated (`unverified`/`available` until a real Windows acceptance record) rather than fabricated from a mock, preview, catalog entry or unit-only result.
 - **Priority:** must
-- **Source:** `AGENTCOWORK-UI.md` §5.13 (UI-17); workspace UI/UX skill section 8; `ARCH/06-DATA-MODEL.md` DM-014; `ARCH/13-CAPABILITY.md` §6
+- **Source:** `ARCH/48-EXPERIENCE-SURFACES.md` §7; `ARCH/06-DATA-MODEL.md` DM-014; `ARCH/13-CAPABILITY.md` §6
 - **Acceptance:** a WSL-only row is non-selectable with an honest reason; a catalog row is not occupancy; no verified readiness without a Windows acceptance record; a Linux path is never handed to `CreateProcess`.
 - **Failure cases:** path string instead of a discriminated location → defect; `discovered` treated as `launchable` → defect; fabricated readiness → defect.
 - **Tests:** pending
@@ -1788,7 +1795,7 @@ This registry answers one question per entry: **what behavior must this system e
 #### REQ-UI-012 — Keyboard-complete accessibility
 - **Statement:** GIVEN any interactive surface, WHEN the user navigates by keyboard, THEN every action (workbench slot, tab, disclosure, approval choice, composer control) is reachable with a visible `focus-visible` ring, the Workbench is a real `role="tab"`/`tabpanel` tablist, composer `@`/`/` use combobox semantics with IME-safe Enter, streaming text is not announced token-by-token while status/approval changes are announced appropriately, and an automated accessibility gate passes.
 - **Priority:** must
-- **Source:** `AGENTCOWORK-UI.md` §9.1 (UI-12); `ev: ui/src/globals.css:791-795`
+- **Source:** `ARCH/48-EXPERIENCE-SURFACES.md` §9; `ev: ui/src/globals.css:791-795`
 - **Acceptance:** keyboard-only traversal of every workflow, tab, disclosure, approval choice and composer control with a visible ring; the a11y gate passes; live-region announcements follow the discipline.
 - **Failure cases:** an interactive with no focus ring → defect; token-by-token live announcement → defect; a11y gate absent → defect.
 - **Tests:** pending
@@ -1797,7 +1804,7 @@ This registry answers one question per entry: **what behavior must this system e
 #### REQ-UI-013 — Progressive disclosure and non-intrusive product invariants
 - **Statement:** GIVEN advanced detail, a policy-blocked control, or a finishing tool, WHEN the surface renders, THEN advanced detail sits behind a labelled collapsed row (open-by-default only when the content is the answer), a blocked control stays visible marked blocked with its reason and who can change it, and nothing auto-navigates — a tool finishing never steals focus, opens a pane or moves the page.
 - **Priority:** must
-- **Source:** `AGENTCOWORK-UI.md` §1.2 (UI-04, UI-05, UI-07); evidence §3.8 (openwork P3/P4, T1, S5)
+- **Source:** `ARCH/48-EXPERIENCE-SURFACES.md` §§1, 3, 5, 9; OpenWork evidence is historical baseline research in `ARCH/45`
 - **Acceptance:** a blocked action is visible with a reason; a completed tool does not move focus or open a pane; advanced detail is behind a labelled disclosure.
 - **Failure cases:** blocked control hidden → defect; auto-navigation on completion → defect; blocked rendered red as a failure → defect.
 - **Tests:** pending
@@ -1806,7 +1813,7 @@ This registry answers one question per entry: **what behavior must this system e
 #### REQ-UI-014 — Zero layout shift on live regions
 - **Statement:** GIVEN a live region whose content ticks or changes (reasoning timer, tool rail, telemetry readout, streaming diagram, transcript), WHEN its state changes, THEN its space is reserved (`min-h`, fixed readout slots, intrinsic-size hints, viewBox-sized diagram) so CLS is zero and no control moves when a neighbouring state changes.
 - **Priority:** must
-- **Source:** `AGENTCOWORK-UI.md` §1.2 (UI-08), §4.2 (R16); `ev: ui/src/components/chat/message-bubble.tsx:197`; `ev: ui/src/components/chat/tool-chip.tsx:533,541`; `ev: ui/src/components/chat/chat-composer.tsx:929-965`
+- **Source:** `ARCH/48-EXPERIENCE-SURFACES.md` §§4.1–4.2; `ev: ui/src/components/chat/message-bubble.tsx:197`; `ev: ui/src/components/chat/tool-chip.tsx:533,541`; `ev: ui/src/components/chat/chat-composer.tsx:929-965`
 - **Acceptance:** CLS measured 0 while a turn streams and a diagram re-renders; telemetry readouts do not move when web-search toggles; the reasoning trigger reserves its height.
 - **Failure cases:** content jumping as a timer ticks → defect; a readout slot resizing on state change → defect; a diagram collapsing to a placeholder on re-render → defect.
 - **Tests:** pending
@@ -2572,12 +2579,12 @@ This registry answers one question per entry: **what behavior must this system e
 - **Tests:** pending
 - **Status:** seeded
 
-#### REQ-SKILL-007 — Plugin code executes sandboxed without ambient authority
-- **Statement:** GIVEN enabled plugin code, WHEN it runs, THEN it executes sandboxed (`19`) under the exec policy (`12`) with explicit, recorded grants and no ambient authority.
+#### REQ-SKILL-007 — Code-bearing host plugins fail closed without confinement
+- **Statement:** GIVEN code-bearing host plugin content, WHEN Core launches it, THEN execution requires a qualified confined Runtime profile (`19`) under the exec policy (`12`) and explicit recorded grants; if required confinement is unavailable, Core refuses launch with a typed reason. Content-only skills/templates do not receive execution authority.
 - **Priority:** must
 - **Source:** `ARCH/31-SKILLS-PLUGINS.md` §5 · `ARCH/19-RUNTIME-ENVIRONMENTS.md` §4 · `ARCH/04-DECISIONS.md` DEC-028
-- **Acceptance:** sandbox-confinement test; an undeclared privileged action is denied + audited; grants are recorded per plugin.
-- **Failure cases:** ambient authority → security failure; sandbox escape → catastrophic-class violation.
+- **Acceptance:** confined-profile execution is verified; an undeclared privileged action is denied and audited; unsupported/unconfined executors refuse code-bearing plugin launch; grants are recorded per plugin scope.
+- **Failure cases:** unconfined code launch → security failure; sandbox escape → catastrophic-class violation; refusal hidden as a crash → defect.
 - **Tests:** pending
 - **Status:** seeded
 

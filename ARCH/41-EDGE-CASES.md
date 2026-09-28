@@ -168,7 +168,7 @@
 | EDGE-122 | Loop makes no progress across N steps | Stuck detector fires → escalation through the approval/question primitive; bounded retries — never an unbounded spin (`15` §8, `11` §9). |
 | EDGE-123 | Failover crosses providers with in-flight provider-bound state | The fallback chain is declared at selection; signed reasoning blocks, cache breakpoints and in-flight tool-call ids are never replayed onto another provider; the step restarts cleanly or escalates — invalidation rules remain explicit open work (`18` §3, §4; `OQ-MODEL-01`). |
 | EDGE-124 | Provider stream emits unknown or malformed events | The adapter maps into the typed union; unknown events are dropped with a diagnostic and malformed known events fail typed — consumers never crash and never branch on provider id (`18` §4, DEC-034). |
-| EDGE-125 | No model satisfies a required capability (vision/tools/window) | `GuidanceRequired` / `RequiresUserAction` naming the missing requirement — never a silent capability downgrade (`18` §3, §8). |
+| EDGE-125 | No model satisfies a required capability (vision/tools/window) | `guidance` / `requires_user_action` result naming the missing requirement — never a silent capability downgrade (`18` §3, §8). |
 
 ## M. Runtime & environments (`19`)
 

@@ -57,7 +57,7 @@ Manifest fields: id · version · surfaces[] · permissions requested · hooks �
 ## 5. Lifecycle & trust
 
 - **Install:** from local file/folder (v1, local-first) → **review gate** (declared surfaces, requested permissions, provenance) → explicit enable per scope.
-- **Run:** plugin code executes in a sandboxed environment (`19`) under exec policy (`12`); no ambient authority; grants are explicit and recorded.
+- **Run:** code-bearing host plugins execute only in a qualified confined Runtime profile (`19`) under exec policy (`12`); if the selected executor cannot provide the required confinement, Core refuses code execution with a typed reason. Static skill/template content may still load under untrusted-content handling but gains no execution authority. Grants are explicit, scope-bound and recorded.
 - **Update:** versioned; compatibility checked against contract versions (`07` §0); breaking mismatches are rejected with a typed error.
 - **Disable/failure:** repeated crashes auto-disable + audit; failure isolation (a bad plugin never breaks Core).
 - **Uninstall:** removes code + owned data; Library entries and receipts referencing it are preserved.

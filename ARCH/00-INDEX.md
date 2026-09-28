@@ -7,7 +7,7 @@
 > **v0 archive:** `ARCHIVE/v0/` (local, git-ignored) — see `ARCHIVE/v0/MANIFEST.md`. Nothing in the archive is a contract.
 > **Delivery tracker:** `TODO.md` is not an architecture authority, but this amendment includes it in the traceability pass: active `TASK-*` rows point to their exact requirement, owner section, current/new code path, reviewed source file where applicable, and pending test slot.
 >
-> **Current target (2026-09-28):** the frozen 2026-09-26 baseline is amended by DEC-052/054/055/056/057/058/059. `ARCH/08-REQUIREMENTS.md` and `ARCH/09-FEATURE-MATRIX.md` each contain 343 active requirements/rows across 31 domains; `TODO.md` tracks W0–W6. Historical P7/P9 completion records below describe their dated baseline, not proof that the amended set has passed a new line-by-line semantic audit.
+> **Current target (2026-09-28):** the frozen 2026-09-26 baseline is amended by DEC-052/054/055/056/057/058/059/060. `ARCH/08-REQUIREMENTS.md` and `ARCH/09-FEATURE-MATRIX.md` each contain 343 active requirements/rows across 31 domains; `TODO.md` tracks W0–W6. Historical P7/P9 completion records below describe their dated baseline, not proof that the amended set has passed a new line-by-line semantic audit.
 >
 > **Re-frozen after verification (2026-09-26, owner-directed):** full architect-style pass across `AGENTCOWORK-SPEC.md` + `AGENTCOWORK-UI.md` + `ARCH/00–44` — read → understand → fix completed; schema/architecture/LLD clashes reconciled with back-propagation; missing pieces added; independent review applied; v1 re-frozen.
 >
@@ -36,7 +36,7 @@ v0 grew by accretion: 33 ARCH files, 55 research files, a 355 KB spec, a 606 KB 
 
 | Layer | Document | Authority over |
 |---|---|---|
-| Product | `AGENTCOWORK-SPEC.md` + accepted `DEC-054/055/056/057/058` amendments | **WHAT** the product must be: behavior, contracts, acceptance. Frozen baseline is superseded on named boundaries by the later decisions. |
+| Product | `AGENTCOWORK-SPEC.md` + accepted `DEC-054/055/056/057/058/059/060` amendments | **WHAT** the product must be: behavior, contracts, acceptance. Frozen baseline is superseded on named boundaries by the later decisions. |
 | Requirements | `ARCH/08-REQUIREMENTS.md` | **WHAT must be verified**: testable behaviors (`REQ-*`) derived from the SPEC, each with acceptance + failure cases. |
 | Traceability | `ARCH/09-FEATURE-MATRIX.md` | The `REQ → design → task → test` map. Owns links only, never content. |
 | Architecture | `ARCH/03-HLD.md` | **HOW** the system is structured. Module docs derive from it. |
@@ -53,7 +53,7 @@ v0 grew by accretion: 33 ARCH files, 55 research files, a 355 KB spec, a 606 KB 
 
 ## 3. Document map
 
-> **DEC-054/055/056/057/058 amendment (2026-09-28):** The 2026-09-26 frozen baseline is historical status, superseded on named boundaries by these decisions. Target HLD is `03` + `35` + `46` + `50`; Mission LLD is `35`–`37`; Experience HLD/LLD is `48`; Machine Observer LLD is `51`; model-agnostic scenario oracles are `49`; research ledger is `45`, market comparison `47`; requirements/matrix are `08`/`09` and implementation work is `TODO.md` W0–W6. Historical count statements below refer to earlier freezes, not the amended registry.
+> **DEC-054/055/056/057/058/059/060/061 amendment (2026-09-28):** The 2026-09-26 frozen baseline is historical status, superseded on named boundaries by these decisions. Target HLD is `03` + `35` + `46` + `50`; Mission LLD is `35`–`37`; Experience HLD/LLD is `48`; Machine Observer LLD is `51`; model-agnostic scenario oracles are `49`; research ledger is `45`, market comparison `47`; requirements/matrix are `08`/`09` and implementation work is `TODO.md` W0–W6. DEC-060 reconciles the capability-selection and computer-use ladders; DEC-061 uses the official Rust MCP SDK behind the Guard transport while retaining Core-owned policy. Historical count statements below refer to earlier freezes, not the amended registry.
 
 > **Amendment reconciliation:** The older module headings “Not in v1” record a 2026-09-26 implementation sequence, not exclusions from the final product. For final capability conflicts, accepted DEC-054/055/056/057 and the amended requirements prevail. `TODO.md` W0–W6 is the current delivery tracker; its History section and the older UI baseline are provenance only. Remote/cloud continuation, cross-device projections, artifact knowledge retrieval, scoped extensions and advanced Workbench editing require explicit implementation and qualification even where an older module lists them as deferred. No checked P9 historical box certifies a fresh semantic audit of later amendments.
 
@@ -185,9 +185,9 @@ Working product name: **AgentCowork** · Runtime: **Core** · Agent engine: exte
 | ID | Question | Resolve by |
 |---|---|---|
 | OQ-001 | Product shorthand for UI copy (“AC”? “Cowork”? none) | Before UI copy freeze (P5) |
-| OQ-002 | Platform scope for World Model collectors (Windows-first vs cross-platform parity) | Module pass 21 |
-| OQ-003 | Timing + scope of code identifier rename (`agentcowork-*` crates/packages, `AgentCowork` strings) | Post-freeze code phase |
-| OQ-004 | `docs/` folder v1 review; README/AGENTS sync ✅ done (2026-09-26) | Post-freeze |
+| OQ-002 | Windows-first World Model collectors; cross-platform parity is separately qualified per environment | DEC-058/059 and `21`/`51` define the current target; platform acceptance remains pending |
+| OQ-003 | Code identifier rename | Resolved by DEC-053 (2026-09-27); legacy spellings remain only in history/evidence |
+| OQ-004 | `docs/` folder v1 review; README/AGENTS sync ✅ done (2026-09-26) | Review remaining `docs/` content against the amended target before release |
 | OQ-005 | CLI final binary name + command surface (`32-CHANNELS.md` §3) | Product owner (branding, `DEC-020`) |
 | OQ-006 | Whether v0 doc removals are committed now or when v1 freezes | ✅ resolved — committed `573fff0` (2026-09-26) |
 

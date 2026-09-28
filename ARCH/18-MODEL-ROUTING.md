@@ -42,7 +42,7 @@
 resolve(preferences, constraints) → ModelSelection
 ```
 
-Inputs: agent-profile default · session override · task requirements (vision? tools? reasoning? context size?) · policy (models/providers allowed per scope, `12`) · availability/health · preference weights (cost · latency · locality). Ranking is deterministic and audited; a fallback chain is declared per selection. Degrade rules are explicit: if a requirement cannot be met (e.g. vision needed, none available), the result is `GuidanceRequired`/`RequiresUserAction` — never a silent capability downgrade.
+Inputs: agent-profile default · session override · task requirements (vision? tools? reasoning? context size?) · policy (models/providers allowed per scope, `12`) · availability/health · preference weights (cost · latency · locality). Ranking is deterministic and audited; a fallback chain is declared per selection. Degrade rules are explicit: if a requirement cannot be met (e.g. vision needed, none available), the result status is `guidance`/`requires_user_action` — never a silent capability downgrade.
 
 The router serves Core-owned utility inference and external **harness selection** only when the binding delegates model choice through a proven adapter. It does not replace an opaque engine's model mid-turn; its native model list, sign-in and provider controls are queried from that engine where supported (`46` §2, `48` §3).
 

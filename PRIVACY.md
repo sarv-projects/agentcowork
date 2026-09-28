@@ -12,6 +12,7 @@
 | Update checks | the channel + target + current version, to the release endpoint | at boot and every 4h | yes — the check is a plain manifest GET; set the channel and read `docs/updating.md` §3 for the kill-switch |
 | Agent-native tools and extensions | Data they access under that agent's policy; some agents may contact their own services | Only while that external agent runs | Disable or change the agent; Core cannot attest to all native effects |
 | Future configured cloud/remote executor | Only the Mission inputs/environment grants explicitly assigned to it | When the user configures and selects that executor | Yes — keep execution local |
+| Future Machine Observer | Selected local machine readings on this device; sharing with a specific agent requires a separate Work grant | Only after an in-app category choice and while its selected scope is active | Yes — decline or revoke local collection; leave agent sharing off |
 
 ## What never leaves the machine
 
@@ -33,6 +34,7 @@
 - **No ambient capture by Core.** Screen recording / always-on OCR is an explicit
   privacy non-goal (`ARCH/21-WORLD-MODEL.md` and `ARCH/24-COMPUTER-USE.md`): the app observes what you drop,
   open or ask it to read — governed, visible, per-window computer use only.
+- **Machine observation is not vendor telemetry.** The planned local Observer is not implemented in the current build. When shipped, it will ask before its first sample; local collection, background history and sharing results with a Work are separate choices. Declining leaves normal chat and other app work available (`ARCH/51-MACHINE-OBSERVABILITY.md`).
 - **The app is fully functional with no network.** Nothing degrades into a
   nagging telemetry prompt; local models, local agents and the whole cockpit work
   offline.

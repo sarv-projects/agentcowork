@@ -30,7 +30,11 @@ node scripts/ipc-parity.mjs                  # UI ↔ Tauri command parity
 node scripts/release-qualify.mjs             # the release gate (plan mode)
 ```
 
-Every gate named above runs in CI; a PR that turns one red is not mergeable.
+These are the project gates. `check-doc-sync.mjs` checks the live requirements,
+feature matrix, active TODO task references and authority links; archived v0
+documents are intentionally excluded. `TASK-PROD-005` records the checker
+re-home and its current passing evidence in `ARCH/42-EVIDENCE-MAP.md` §7.
+Other CI gates must not be made newly red by a change.
 
 ## Changes that touch the release surface
 
