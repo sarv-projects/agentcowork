@@ -1637,11 +1637,11 @@ This registry answers one question per entry: **what behavior must this system e
 - **Status:** seeded
 
 #### REQ-CUA-012 — Post-action verification with bounded recovery
-- **Statement:** GIVEN an action whose outcome is uncertain (vision-based location, a pattern call that may not have applied), WHEN it completes, THEN the outcome is verified (structured re-read or a second observation), retries are bounded, and repeated failure lands in `needs_attention` — never an unbounded retry loop.
+- **Statement:** GIVEN an action whose outcome is uncertain (vision-based location, a pattern call that may not have applied, or a user/agent control handoff), WHEN it completes or control returns, THEN the outcome is verified (structured re-read or a second observation), the active input owner and fencing epoch are current, stale queued actions are rejected, retries are bounded, and repeated failure lands in `needs_attention` — never an unbounded retry loop or concurrent human/agent input.
 - **Priority:** must
 - **Source:** `ARCH/24-COMPUTER-USE.md` §4/§8 · `ARCH/04-DECISIONS.md` DEC-022
-- **Acceptance:** post-action verification tests; bounded-retry test; repeated failure yields `needs_attention`.
-- **Failure cases:** unbounded retry loop → defect; unverified success claimed → violation.
+- **Acceptance:** post-action verification tests; bounded-retry test; takeover fences queued old-epoch actions; only one human/agent input owner acts on a surface at a time; return-to-agent forces a fresh observation; repeated failure yields `needs_attention`.
+- **Failure cases:** unbounded retry loop → defect; unverified success claimed → violation; a delayed action from a prior control epoch executes after takeover → policy/safety violation; stale screen/focus target is replayed → defect.
 - **Tests:** pending
 - **Status:** seeded
 
@@ -3018,11 +3018,11 @@ This registry answers one question per entry: **what behavior must this system e
 - **Status:** accepted
 
 #### REQ-LEARN-001 — Reviewable workflow-to-skill promotion
-- **Statement:** GIVEN a demonstration or successful workflow, WHEN proposed as a skill, THEN deterministic steps, adaptive guidance, permissions, inputs, provenance and version are reviewable before publication.
+- **Statement:** GIVEN a demonstration or successful workflow, WHEN proposed as a skill, THEN deterministic steps, adaptive guidance, permissions, inputs, provenance and version are reviewable before publication; browser/desktop replay uses re-resolved semantic anchors and explicit pre/postconditions when available, stops on window/page/focus drift, and never treats stale coordinates or a successful click as proof of the desired outcome.
 - **Priority:** must
 - **Source:** DEC-054 · INV-35
-- **Acceptance:** replay/evaluation evidence and rollback target attached to published version.
-- **Failure cases:** secret capture or unscoped side effects → proposal rejected.
+- **Acceptance:** replay/evaluation evidence and rollback target attached to published version; user can inspect demonstrated application/origin scope; each replayed UI step verifies target/focus and expected outcome; drift/no-progress stops dependent steps and leaves a typed last-verified result.
+- **Failure cases:** secret capture or unscoped side effects → proposal rejected; raw click replay survives changed target/page/focus → defect; task reported complete from action dispatch without postcondition evidence → violation.
 - **Tests:** pending
 - **Status:** accepted
 
@@ -3054,11 +3054,11 @@ This registry answers one question per entry: **what behavior must this system e
 - **Status:** accepted
 
 #### REQ-UXQ-003 — Composer controls and durable draft
-- **Statement:** GIVEN a conversation, WHEN the user composes or work is active, THEN `+`, `@`, `/`, agent, conditional model, access, voice where available, Send/Stop, Queue/Steer, attachments and draft persistence follow `48` §3.
+- **Statement:** GIVEN a conversation, WHEN the user composes or work is active, THEN `+`, `@`, `/`, agent, conditional model, access, voice where available, Send/Stop, Queue/Steer, attachments and draft persistence follow `48` §3; file intake is qualified by selected worker capability and explicitly distinguishes message-scoped attachment from persistent Library/workspace ingestion.
 - **Priority:** must
 - **Source:** DEC-055; `48` §3
-- **Acceptance:** `TC-005…008` pass with keyboard and crash/navigation restore; unsupported model/access controls explain why.
-- **Failure cases:** native command collision, lost draft, invented model choice, silent worker switch.
+- **Acceptance:** `TC-005…008` pass with keyboard and crash/navigation restore; unsupported model/access controls explain why; multi-file upload/extraction reports per-item state without losing the draft; message-only attachment does not silently persist/index; Library ingestion is explicit and versioned.
+- **Failure cases:** native command collision, lost draft, invented model choice, silent worker switch, unsupported file implied to be understood by the selected worker, partial upload silently dropped, or chat attachment silently promoted to persistent indexed content.
 - **Tests:** pending
 - **Status:** accepted
 

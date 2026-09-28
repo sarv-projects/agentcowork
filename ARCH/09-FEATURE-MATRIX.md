@@ -199,7 +199,7 @@ One row per `REQ-*`. Status only from evidence.
 | `REQ-CUA-009` | `24-COMPUTER-USE` | pending | `DEC-021` | — | `TASK-CUA-001`, `TASK-CUA-004` | pending | planned |
 | `REQ-CUA-010` | `24-COMPUTER-USE` | pending | `DEC-016`, `INV-21` | — | `TASK-CUA-001`, `TASK-CUA-004` | pending | planned |
 | `REQ-CUA-011` | `24-COMPUTER-USE` | pending | `DEC-021`, `INV-04` | — | `TASK-CUA-004` | pending | planned |
-| `REQ-CUA-012` | `24-COMPUTER-USE` | pending | `DEC-022` | — | `TASK-CUA-004` | pending | planned |
+| `REQ-CUA-012` | `24-COMPUTER-USE` | pending | `DEC-022` | — | `TASK-CUA-004`, `TASK-LEARN-002` | pending | planned |
 | `REQ-FILES-001` | `25-FILES` | crates/agentcowork-storage/src/identity.rs, crates/agentcowork-storage/src/walk.rs | `DM-026`, `CTR-024`, `INV-20` | — | `TASK-FILES-002`, `TASK-FILES-003` | pending | implemented |
 | `REQ-FILES-002` | `25-FILES` | crates/agentcowork-storage/src/identity.rs, crates/agentcowork-storage/src/dedup.rs, crates/agentcowork-storage/src/cleanup.rs | `DM-026` | — | `TASK-FILES-002`, `TASK-FILES-003` | pending | implemented |
 | `REQ-FILES-003` | `25-FILES` | pending | `CTR-024`, `INV-20` | — | `TASK-FILES-003` | pending | planned |
@@ -354,7 +354,7 @@ One row per `REQ-*`. Status only from evidence.
 | `REQ-ECO-005` | `15-AGENT-PLANE`, `35-MISSION` | pending | `DEC-054`, `CTR-021/027/030` | `FLOW-36/46` | `TASK-ECO-002` | pending | planned |
 | `REQ-ECO-006` | `13-CAPABILITY`, `23-BROWSER`, `24-COMPUTER-USE` | pending | `DEC-054`, `INV-34` | `FLOW-43` | `TASK-ECO-002` | pending | planned |
 | `REQ-ECO-007` | `35-MISSION`, `46-ECOSYSTEM-ARCHITECTURE`, `48-EXPERIENCE-SURFACES` | pending | `DEC-059`, `INV-39`, `DM-038` | `FLOW-050`, `TC-052` | `TASK-ECO-003` | `TEST-ECO-003` (pending) | planned |
-| `REQ-LEARN-001` | `37-WORKFLOW-SKILL-LIFECYCLE` | pending | `DEC-054`, `INV-35` | `FLOW-39/40` | `TASK-LEARN-001` | pending | planned |
+| `REQ-LEARN-001` | `37-WORKFLOW-SKILL-LIFECYCLE` | pending | `DEC-054`, `INV-35` | `FLOW-39/40` | `TASK-LEARN-001`, `TASK-LEARN-002` | pending | planned |
 | `REQ-LEARN-002` | `20-WORKFLOW`, `37-WORKFLOW-SKILL-LIFECYCLE` | pending | `DEC-054`, `CTR-031` | `FLOW-39` | `TASK-LEARN-001` | pending | planned |
 | `REQ-UXQ-001` | `38-EXPERIENCE-QUALITY` | pending | `DEC-054`, `CTR-027/028` | `FLOW-41/46` | `TASK-UI-019`, `TASK-UXQ-002` | pending | planned |
 | `REQ-UXQ-002` | `38-EXPERIENCE-QUALITY` | pending | `DEC-054`, `DEC-057/058/059` | `TC-001…052` | `TASK-UXQ-009` | pending | planned |

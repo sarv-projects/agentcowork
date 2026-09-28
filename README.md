@@ -1,37 +1,68 @@
 # AgentCowork
 
-> In development. The target architecture below is accepted design, not a list of shipped or qualified capabilities. [Support matrix](SUPPORT-MATRIX.md) describes the currently intended release artifacts and qualification status; [feature matrix](ARCH/09-FEATURE-MATRIX.md) records implementation evidence.
+> **One workspace for the AI agents and tools you already use.**
+>
+> AgentCowork is in development. This README describes the accepted product design; it does not claim that every capability is implemented, released, or qualified.
 
-AgentCowork is a work environment around interchangeable external AI agents. A person asks a question or states an outcome. AgentCowork keeps substantial goals as durable Missions, dispatches bounded work to agents and workflows, offers shared capabilities for files, browser, desktop, Office and connected services, and checks the result against the requested outcome. The agent keeps its own reasoning loop, model, tools, native extensions and private configuration. Horizon Code is a future external binding.
+AgentCowork is designed to make a user's chosen agent useful across a durable workspace. The agent keeps its own reasoning loop, model choice, tools, extensions, and private configuration. AgentCowork adds the surrounding workbench: shared capabilities, scoped approvals, persistent goals, collaboration, recovery, files, and evidence.
 
-## What the finished experience is designed to do
+**The agent can change. The work and the user's intent stay.**
 
-- **Start simply.** Chat is the default. The composer has an agent picker, a model picker only when the agent supports it, an access control, `+` attachments, structured `@` references and namespaced `/cowork:*` commands. Running work can be steered or queued.
-- **Keep work durable.** A Mission stores the goal, requirements, plan versions, attempts, artifacts and evidence outside any agent session. A failed agent or lost context does not erase the goal. Resume checks changed files, accounts and other external state before acting.
-- **Use the right surface.** The right Workbench opens a managed browser, workspace tree/worktree, code, PDF, Word, spreadsheets, slides, media, artifacts and agent/task detail beside chat. It exposes editing only when the selected provider can preserve the file faithfully; otherwise it offers a reader or native-app fallback.
-- **Produce real artifacts.** Outputs have versions, provenance, validation status and input dependencies. The Library distinguishes generated, uploaded, imported and linked material. Retrieval cites exact permitted versions and locations.
-- **Coordinate workers.** A lead can delegate independent work to different external agents, integrate their outputs and verify the combined result. Agent-native subagents stay owned by their agent; the host only claims control of child Work it created.
-- **Automate repeated work.** A reviewed recording can become a scoped skill or a versioned workflow. Existing workflow systems can be called as external providers while retaining their own execution and credentials.
-- **Show what happened.** Core-mediated effects use its policy, ticket, verification and receipt path. A self-contained agent's native effects remain under that agent's policy and are labelled as reported or observed. Mission completion needs evidence against the user's requirements, not an agent's assertion alone.
+[Architecture](ARCH/00-INDEX.md) · [Product specification](AGENTCOWORK-SPEC.md) · [Experience design](ARCH/48-EXPERIENCE-SURFACES.md) · [Implementation plan](TODO.md) · [Support and qualification](SUPPORT-MATRIX.md)
 
-The experience is designed for nontechnical and technical people: ordinary answers stay uncluttered, while Tasks, the Workbench, agents, permissions, timeline, cost, evidence and diagnostics become available when needed. Local and cloud are execution locations in the target architecture. Work on a laptop pauses when that is its only executor and it goes offline; continued execution requires a configured remote/cloud executor. No claim of superiority over other products is made until comparable tasks are measured.
+## Designed experience
 
-## Current state and limits
-
-The repository contains working code and an accepted architecture, but the final Mission plane and Experience described above are implementation work. The Windows artifact is not yet qualified on a real Windows acceptance run. Support for a particular external agent, model picker, shared-tool overlay, browser attachment, Office feature, local model or remote executor must be probed and verified; the UI must show an unavailable state or fallback when it is absent. “Any file” means one entry point with truthful format support, not lossless editing of every MIME type.
-
-## Architecture and delivery
-
-| Need | Source |
+| Start with a simple chat | Grow into a complete workbench |
 |---|---|
-| Product contract and requirements | [Specification](AGENTCOWORK-SPEC.md), [requirements](ARCH/08-REQUIREMENTS.md) |
-| Architecture map and ownership | [Index](ARCH/00-INDEX.md), [HLD](ARCH/03-HLD.md), [system blueprint](ARCH/50-SYSTEM-BLUEPRINT.md) |
-| Mission and recovery | [Mission](ARCH/35-MISSION.md), [outcome and recovery](ARCH/36-OUTCOME-AND-RECOVERY.md) |
-| External agents and extensions | [Ecosystem architecture](ARCH/46-ECOSYSTEM-ARCHITECTURE.md) |
-| Final UI and Workbench | [Experience surfaces](ARCH/48-EXPERIENCE-SURFACES.md) |
-| Research and comparison | [Source ledger](ARCH/45-REFERENCE-RESEARCH.md), [market protocol](ARCH/47-MARKET-AND-BENCHMARKS.md) |
-| Product scenarios and pass oracles | [Test cases](ARCH/49-TEST-CASES.md) |
-| Implementation status | [Feature matrix](ARCH/09-FEATURE-MATRIX.md), [TODO](TODO.md), [evidence map](ARCH/42-EVIDENCE-MAP.md) |
-| Contributor process | [AGENTS.md](AGENTS.md), [CONTRIBUTING.md](CONTRIBUTING.md) |
+| Choose an agent, its supported model, and an access level in the composer. Add files, reference Library items, or invoke discoverable actions without leaving the conversation. | Keep chat beside a browser, workspace tree, editor, document/spreadsheet/slide preview, generated artifact, or running-agent view. Switch between work surfaces without losing the conversation. |
+| Ask a question, attach several files, or describe an outcome in everyday language. Ordinary answers remain uncluttered. | Turn larger requests into durable Missions with milestones, independent work, approvals, recoverable attempts, and outcome checks. |
 
-The desktop uses a React/Tauri UI, Rust Core crates and a compiled Bun sidecar for shared services. External agents attach through supported adapters; MCP is a tool/resource protocol, not the Mission runtime. Build, test and release instructions are in [AGENTS.md](AGENTS.md) and the [packaging contract](PACKAGING.md). Code changes follow the repository's spec-driven process. Architecture acceptance does not imply a passing product benchmark.
+### Work that survives a session
+
+- **Durable goals:** Mission state, requirements, plan versions, decisions, artifacts, and evidence live outside an agent's transcript. Resume reconciles changed files and other relevant state before continuing.
+- **Agents that keep their own harness:** use supported external agents as peers. AgentCowork does not rewrite a discovered agent's native setup. Optional delegation creates separately scoped Work with clear ownership and provenance.
+- **Shared capabilities:** attach browser, desktop, files, Office, connected apps, MCP servers, skills, and workflows at explicit scopes. A catalog entry is not an active grant.
+- **Useful results:** create artifacts beside the conversation, review versions and sources, and save reusable outputs to a searchable Library. File support and edit fidelity are shown per format and provider.
+- **Control you can understand:** see what is running, what it can access, what needs approval, what changed, and what evidence supports completion. Pause, steer, take over, or cancel.
+- **Automation with history:** schedule and reuse reviewed workflows. Execution depends on an available local or configured remote executor; a laptop-only job pauses when that laptop is offline.
+
+## Capability design and delivery status
+
+The product design covers chat and attachments, model/agent selection, long-running Missions, parallel work, browser and computer use, office files, generated artifacts, connected apps, MCP, skills/plugins, workflows and schedules, local machine observation, and searchable project knowledge.
+
+**These are design targets, not a shipping checklist.** The implementation plan and evidence map identify unfinished work; the support matrix records what can currently be built or qualified. The Windows artifact has not yet passed a real Windows acceptance run. Agent/model support, integrations, formats, editability, and remote execution must be detected and qualified; unsupported combinations need a clear fallback. “Any file” means a format-aware entry point, not a promise of lossless editing for every format.
+
+## How it fits together
+
+```text
+Human goal
+    ↓
+Mission — requirements, milestones, durable plan and outcome evidence
+    ↓
+Work — bounded attempts owned by an external agent or a workflow
+    ↓
+Shared capabilities — files · browser · desktop · Office · apps · MCP
+    ↓
+Local or configured remote runtime
+    ↓
+Observed effects · artifacts · verification · recoverable progress
+```
+
+The desktop is a React/Tauri application with a Rust Core and a compiled Bun sidecar. The Core owns policy and authorization for Core-mediated actions. External agents retain their native credentials and actions; the UI labels those boundaries instead of implying the Core governed them. MCP is an integration protocol, not the Mission or Work scheduler.
+
+## Architecture and project status
+
+| Topic | Canonical document |
+|---|---|
+| Product requirements and decisions | [Specification](AGENTCOWORK-SPEC.md) · [requirements](ARCH/08-REQUIREMENTS.md) · [decisions](ARCH/04-DECISIONS.md) |
+| System structure and module ownership | [Architecture index](ARCH/00-INDEX.md) · [HLD](ARCH/03-HLD.md) · [system blueprint](ARCH/50-SYSTEM-BLUEPRINT.md) |
+| Agents, integrations and trust | [Agent plane](ARCH/15-AGENT-PLANE.md) · [ecosystem](ARCH/46-ECOSYSTEM-ARCHITECTURE.md) · [trust](ARCH/12-TRUST.md) |
+| Missions, artifacts and interaction design | [Mission](ARCH/35-MISSION.md) · [artifacts](ARCH/29-ARTIFACTS.md) · [experience surfaces](ARCH/48-EXPERIENCE-SURFACES.md) |
+| Research and benchmark scenarios | [Reference research](ARCH/45-REFERENCE-RESEARCH.md) · [market and benchmarks](ARCH/47-MARKET-AND-BENCHMARKS.md) · [test cases](ARCH/49-TEST-CASES.md) |
+| Implementation and proof | [TODO](TODO.md) · [feature matrix](ARCH/09-FEATURE-MATRIX.md) · [evidence map](ARCH/42-EVIDENCE-MAP.md) · [support matrix](SUPPORT-MATRIX.md) |
+
+## Build and contribute
+
+Follow [AGENTS.md](AGENTS.md) for prerequisites, workspace commands, testing, and the spec-driven contribution process. Start with [CONTRIBUTING.md](CONTRIBUTING.md) for project conventions.
+
+Architecture acceptance is not implementation completion. Product comparisons and claims of superiority require equivalent, reproducible tasks and measured results; no such result is claimed here.

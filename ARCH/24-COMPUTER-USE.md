@@ -58,6 +58,14 @@ Synthetic input with a `HumanAuthorization`-class gate; visible indicator; rate-
 - Destructive/persistent patterns are denied by policy defaults (`12` §3); the ladder never overrides policy.
 - No bulk-input storms: bounded action rate per target.
 
+### 6.1 Single-owner input control and takeover
+
+An attached browser/desktop surface has one input owner at a time: `agent`, `human`, or `none`. This control lease serializes input; it is **not** an authorization grant and never replaces Trust tickets. A lease is scoped to the exact Work and surface instance, carries a monotonically increasing fencing epoch, and expires or is revoked on disconnect, surface replacement, Work cancellation, or takeover. A user takeover first fences the agent's epoch, stops queued-but-not-started actions, then grants the human input ownership. The agent may continue read-only observation only when that capability is separately allowed. No action prepared under an older epoch may execute after takeover.
+
+Returning control is explicit. Core takes a fresh structured snapshot, compares the surface identity and expected state with the last agent checkpoint, and reconciles any changed state before granting a new agent epoch. It never replays a buffered action from before the handoff. Unknown drift pauses the affected action and asks for guidance; independent Mission work may continue. Leases do not claim to control an external agent's private native desktop path; those effects retain native-policy provenance (`15`, `46`).
+
+This is adapted from Libre WebUI's task/session-bound Work Computer control lease and visible view/takeover flow at pin `1eef74012d958e51ec7afb26685eaf12cd228f28`; its teach feature also validates focus/expected outcomes and stops a batch when the observed screen changes (§8, §11). AgentCowork keeps the existing Core Trust and ticket path as the authority.
+
 ## 7. Observation model & context discipline
 
 - The World Model (`21`) holds structure; agents **query** it instead of re-screenshotting (token discipline, DEC-015).
@@ -75,6 +83,8 @@ Synthetic input with a `HumanAuthorization`-class gate; visible indicator; rate-
 | Vision model unavailable when scheduled | Degrade with a recorded gap; dangerous classes require human confirmation instead (EDGE-055). |
 | Vision mislocates | Verify after action (structured re-read or second observation); bounded retries; `needs_attention` on repeat failure. |
 | Input rejected by policy | Typed `AuthorizationDenied`; surfaced; no fallback bypass. |
+| Takeover races an in-flight/queued action | Fence the old input epoch, reject stale actions, grant one owner, and take a fresh observation before agent control resumes. |
+| Screen, window, or focus drifts during a demonstrated action sequence | Stop the remaining batch; do not retarget by coordinates or replay stale actions; report the last verified outcome. |
 
 ## 9. Interop
 
@@ -96,7 +106,7 @@ Cross-platform AT-SPI/AX parity beyond the declared matrix · continuous UIA eve
 
 ## 12. Evidence
 
-`ARCHIVE/v1-research/world-model-verification.md` §1–§2 — UIA docs + caveats; Agent-S `GroundingAgent.py:164-188,264-305` (a11y + OCR patch); open-codex `AccessibilitySnapshot.swift:48-62,92-97` + `ToolDefinitions.swift:34-56` (bounded AX, click methods); open-computer-use (vision-only outlier); Anthropic computer-use doc (2576 px/4784 tokens; zoom; injection guidance); arXiv 2511.19477 (hybrid ≈85%) · local `platform/win.rs:76-97`, `ladder.rs:16-24`, `ocr.rs:1-7` · DEC-011/016 · INV-20/21.
+`ARCHIVE/v1-research/world-model-verification.md` §1–§2 — UIA docs + caveats; Agent-S `GroundingAgent.py:164-188,264-305` (a11y + OCR patch); open-codex `AccessibilitySnapshot.swift:48-62,92-97` + `ToolDefinitions.swift:34-56` (bounded AX, click methods); open-computer-use (vision-only outlier); Anthropic computer-use doc (2576 px/4784 tokens; zoom; injection guidance); arXiv 2511.19477 (hybrid ≈85%); Libre WebUI `1eef74012d958e51ec7afb26685eaf12cd228f28` [`workScreenControlService.ts`](https://github.com/libre-webui/libre-webui/blob/1eef74012d958e51ec7afb26685eaf12cd228f28/backend/src/services/workScreenControlService.ts), [`WorkspaceScreen.tsx`](https://github.com/libre-webui/libre-webui/blob/1eef74012d958e51ec7afb26685eaf12cd228f28/frontend/src/components/work/WorkspaceScreen.tsx), [`workComputerTeachService.ts`](https://github.com/libre-webui/libre-webui/blob/1eef74012d958e51ec7afb26685eaf12cd228f28/backend/src/services/workComputerTeachService.ts), and [`docs/33-WORKSPACES.md`](https://github.com/libre-webui/libre-webui/blob/1eef74012d958e51ec7afb26685eaf12cd228f28/docs/33-WORKSPACES.md#L680-L823) §680–823; local `platform/win.rs:76-97`, `ladder.rs:16-24`, `ocr.rs:1-7` · DEC-011/016/060 · INV-20/21.
 
 ## 13. Requirements (`REQ-CUA-*`)
 
