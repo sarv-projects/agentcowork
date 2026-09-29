@@ -552,18 +552,28 @@ pub trait HttpTransport: Send {
     }
 }
 
-/// Default transport using `ureq` (same client as the vault).
+/// Default transport using the shared Guard-pinned bounded HTTP client.
+///
+/// The historical type name is retained for API compatibility; this transport
+/// no longer uses `ureq` directly.
 #[derive(Debug, Clone, Default)]
 pub struct UreqTransport;
 
+const DEFAULT_HTTP_BUDGET: Duration = Duration::from_secs(30);
+const MAX_HTTP_REQUEST_BYTES: usize = 16 * 1024 * 1024;
+const MAX_HTTP_RESPONSE_BYTES: usize = 16 * 1024 * 1024;
+
 impl HttpTransport for UreqTransport {
     fn get_json(&self, url: &str) -> Result<serde_json::Value, RemoteError> {
-        ureq::get(url)
-            .set("Accept", "application/json")
-            .call()
-            .map_err(|e| RemoteError::Transport(e.to_string()))?
-            .into_json()
-            .map_err(|e| RemoteError::Transport(e.to_string()))
+        let response = guarded_http_request(
+            "GET",
+            url,
+            &[("Accept", "application/json")],
+            None,
+            DEFAULT_HTTP_BUDGET,
+        )?;
+        require_success(response.status)?;
+        parse_json_body(&response.body)
     }
 
     fn post_form(
@@ -571,12 +581,23 @@ impl HttpTransport for UreqTransport {
         url: &str,
         form: &[(&str, &str)],
     ) -> Result<serde_json::Value, RemoteError> {
-        ureq::post(url)
-            .set("Accept", "application/json")
-            .send_form(form)
-            .map_err(|e| RemoteError::Transport(e.to_string()))?
-            .into_json()
-            .map_err(|e| RemoteError::Transport(e.to_string()))
+        let mut serializer = url::form_urlencoded::Serializer::new(String::new());
+        for (name, value) in form {
+            serializer.append_pair(name, value);
+        }
+        let body = serializer.finish().into_bytes();
+        let response = guarded_http_request(
+            "POST",
+            url,
+            &[
+                ("Accept", "application/json"),
+                ("Content-Type", "application/x-www-form-urlencoded"),
+            ],
+            Some(&body),
+            DEFAULT_HTTP_BUDGET,
+        )?;
+        require_success(response.status)?;
+        parse_json_body(&response.body)
     }
 
     fn post_json(
@@ -585,16 +606,20 @@ impl HttpTransport for UreqTransport {
         bearer: Option<&str>,
         body: &serde_json::Value,
     ) -> Result<serde_json::Value, RemoteError> {
-        let mut req = ureq::post(url)
-            .set("Accept", "application/json, text/event-stream")
-            .set("Content-Type", "application/json");
-        if let Some(b) = bearer {
-            req = req.set("Authorization", &format!("Bearer {b}"));
+        let payload = serde_json::to_vec(body)
+            .map_err(|_| RemoteError::Transport("could not encode MCP request".into()))?;
+        let mut headers = vec![
+            ("Accept", "application/json, text/event-stream"),
+            ("Content-Type", "application/json"),
+        ];
+        let authorization = bearer.map(|token| format!("Bearer {token}"));
+        if let Some(value) = authorization.as_deref() {
+            headers.push(("Authorization", value));
         }
-        req.send_json(body)
-            .map_err(|e| RemoteError::Transport(e.to_string()))?
-            .into_json()
-            .map_err(|e| RemoteError::Transport(e.to_string()))
+        let response =
+            guarded_http_request("POST", url, &headers, Some(&payload), DEFAULT_HTTP_BUDGET)?;
+        require_success(response.status)?;
+        parse_json_body(&response.body)
     }
 
     fn post_json_rpc(
@@ -634,37 +659,70 @@ impl UreqTransport {
         body: &serde_json::Value,
         budget: Option<Duration>,
     ) -> Result<McpResponse, RemoteError> {
-        let mut req = ureq::post(url)
-            .set("Accept", "application/json, text/event-stream")
-            .set("Content-Type", "application/json");
-        if let Some(budget) = budget {
-            req = req.timeout(budget);
+        let payload = serde_json::to_vec(body)
+            .map_err(|_| RemoteError::Transport("could not encode MCP request".into()))?;
+        let authorization = bearer.map(|token| format!("Bearer {token}"));
+        let mut request_headers = vec![
+            ("Accept", "application/json, text/event-stream"),
+            ("Content-Type", "application/json"),
+        ];
+        request_headers.extend_from_slice(headers);
+        if let Some(value) = authorization.as_deref() {
+            request_headers.push(("Authorization", value));
         }
-        for (name, value) in headers {
-            req = req.set(name, value);
-        }
-        if let Some(b) = bearer {
-            req = req.set("Authorization", &format!("Bearer {b}"));
-        }
-        match req.send_json(body) {
-            Ok(response) => Ok(McpResponse {
-                status: response.status(),
-                // A streamable-HTTP reply may legitimately be an SSE frame or
-                // an empty body; the caller classifies what arrived.
-                body: response.into_json().unwrap_or(serde_json::Value::Null),
-            }),
-            // A JSON-RPC error arrives as a 4xx *with* a body. Report the
-            // refusal instead of collapsing it into a transport failure, or
-            // era classification can never see it.
-            Err(ureq::Error::Status(status, response)) => Ok(McpResponse {
-                status,
-                body: response.into_json().unwrap_or(serde_json::Value::Null),
-            }),
-            // A budget overrun is a transport failure: no reply, no verdict, so
-            // the probe stays inconclusive and nothing is cached.
-            Err(error) => Err(RemoteError::Transport(error.to_string())),
-        }
+        let response = guarded_http_request(
+            "POST",
+            url,
+            &request_headers,
+            Some(&payload),
+            budget.unwrap_or(DEFAULT_HTTP_BUDGET),
+        )?;
+        // A JSON-RPC error arrives as a 4xx with a body. Keep the status and
+        // body visible to protocol-era classification; never retry the call.
+        Ok(McpResponse {
+            status: response.status,
+            // A Streamable HTTP reply may be SSE or empty; the protocol layer
+            // classifies it, while malformed/non-JSON bytes become `null`.
+            body: serde_json::from_slice(&response.body).unwrap_or(serde_json::Value::Null),
+        })
     }
+}
+
+fn guarded_http_request(
+    method: &str,
+    url: &str,
+    headers: &[(&str, &str)],
+    body: Option<&[u8]>,
+    budget: Duration,
+) -> Result<agentcowork_guard::egress_http::GuardedHttpResponse, RemoteError> {
+    if body.is_some_and(|bytes| bytes.len() > MAX_HTTP_REQUEST_BYTES) {
+        return Err(RemoteError::Transport(
+            "MCP HTTP request exceeded the configured byte limit".into(),
+        ));
+    }
+    let client = agentcowork_guard::egress_http::GuardedHttpClient::new(
+        url,
+        agentcowork_guard::NetPolicy::default(),
+        budget,
+    )
+    .map_err(|_| RemoteError::Transport("Guard refused the MCP HTTP destination".into()))?;
+    client
+        .request(method, url, headers, body, MAX_HTTP_RESPONSE_BYTES)
+        .map_err(|_| RemoteError::Transport("Guarded MCP HTTP request failed".into()))
+}
+
+fn require_success(status: u16) -> Result<(), RemoteError> {
+    if (200..300).contains(&status) {
+        Ok(())
+    } else {
+        Err(RemoteError::Transport(format!(
+            "MCP HTTP returned {status}"
+        )))
+    }
+}
+
+fn parse_json_body(body: &[u8]) -> Result<serde_json::Value, RemoteError> {
+    serde_json::from_slice(body).map_err(RemoteError::Json)
 }
 
 /// Fetch `.well-known/oauth-protected-resource` from a server URL.

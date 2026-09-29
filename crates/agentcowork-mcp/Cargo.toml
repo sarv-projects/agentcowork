@@ -13,7 +13,7 @@ sha2 = { workspace = true }
 thiserror = { workspace = true }
 base64 = { workspace = true }
 rand = { workspace = true }
-ureq = { workspace = true }
 agentcowork-guard = { path = "../agentcowork-guard" }
+url = { workspace = true }
 # DEC-053 — the one `AGENTCOWORK_*`/legacy-`EVERYAIOS_*` env + data-home rule.
 agentcowork-types = { path = "../agentcowork-types" }
