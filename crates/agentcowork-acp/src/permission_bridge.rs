@@ -9,11 +9,11 @@
 //!
 //! Three rules make the mapping safe (`ARCH/42-EVIDENCE-MAP.md` §4 FIX-03):
 //!
-//! 1. **once / always / reject — never a client-side default.** `once` is a
-//!    single-use ticket bound to this request; `always` *additionally* requires
-//!    a durable declarative rule the user made explicitly, and is otherwise
-//!    narrowed back to `once` (never granted as a client-side default); `reject`
-//!    is a first-class answer (`ARCH/12-TRUST.md` §5 vocabulary mapping).
+//! 1. **ACP answers are one-shot.** An offered `allow_always` or
+//!    `reject_always` is never selected by Core; a persistent rule belongs in
+//!    the external agent's own settings. Core maps an “always” request to an
+//!    offered single-use allow and a persistent deny to an offered one-shot
+//!    reject, or fails closed when no one-shot option exists.
 //! 2. **Never synthesize an option id.** An id the agent never offered is a
 //!    typed error, not an invented string.
 //! 3. **Show what is being approved.** [`PermissionPreview`] builds a bounded,
@@ -51,18 +51,10 @@ impl AcpApprovalChoice {
     /// The ACP option kinds that can realize this choice, most specific first.
     fn accepted_kinds(self) -> &'static [PermissionOptionKind] {
         match self {
-            // `always` is never reachable by accident: the bridge narrows it to
-            // `Once` unless Trust recorded a policy change (see
-            // `PermissionBridge::answer`).
-            AcpApprovalChoice::Once => &[PermissionOptionKind::AllowOnce],
-            AcpApprovalChoice::Always => &[
-                PermissionOptionKind::AllowAlways,
-                PermissionOptionKind::AllowOnce,
-            ],
-            AcpApprovalChoice::Reject => &[
-                PermissionOptionKind::RejectOnce,
-                PermissionOptionKind::RejectAlways,
-            ],
+            AcpApprovalChoice::Once | AcpApprovalChoice::Always => {
+                &[PermissionOptionKind::AllowOnce]
+            }
+            AcpApprovalChoice::Reject => &[PermissionOptionKind::RejectOnce],
         }
     }
 
@@ -135,10 +127,6 @@ pub struct TrustOutcome {
     pub choice: AcpApprovalChoice,
     /// The ticket Guard minted for this request, if one exists.
     pub ticket: Option<TicketFacts>,
-    /// Trust wrote a durable declarative rule for this operation — the `always`
-    /// half of the approval primitive. False for a one-off approval, and false
-    /// whenever the user did not ask for persistence.
-    pub policy_recorded: bool,
     /// Audit note (the decision, not a secret).
     pub reason: String,
 }
@@ -149,18 +137,15 @@ impl TrustOutcome {
         Self {
             choice: AcpApprovalChoice::Once,
             ticket: Some(ticket),
-            policy_recorded: false,
             reason: reason.into(),
         }
     }
 
-    /// An `always` answer. `policy_recorded` is the host's assertion that the
-    /// user's policy change was actually persisted by Trust.
-    pub fn always(ticket: TicketFacts, policy_recorded: bool, reason: impl Into<String>) -> Self {
+    /// An external agent offered a persistent option; Core will answer once.
+    pub fn always(ticket: TicketFacts, reason: impl Into<String>) -> Self {
         Self {
             choice: AcpApprovalChoice::Always,
             ticket: Some(ticket),
-            policy_recorded,
             reason: reason.into(),
         }
     }
@@ -171,7 +156,6 @@ impl TrustOutcome {
         Self {
             choice: AcpApprovalChoice::Reject,
             ticket: None,
-            policy_recorded: false,
             reason: reason.into(),
         }
     }
@@ -199,6 +183,11 @@ pub enum BridgeError {
     /// An explicit option id was not among the offered options.
     #[error("offered option id {0} is not in the permission request")]
     UnknownOptionId(String),
+    /// Core never persists an external agent's native permission rule.
+    #[error(
+        "persistent ACP permission options are refused; configure persistence in the agent's own settings"
+    )]
+    PersistentOptionRefused,
 }
 
 /// The wire answer plus the evidence for the audit trail.
@@ -212,9 +201,7 @@ pub struct BridgeAnswer {
     pub option_id: String,
     /// The ticket backing the allow (`None` for a rejection).
     pub ticket_id: Option<String>,
-    /// `true` when an `always` request was answered as `once` because no durable
-    /// policy change was recorded — the effect is allowed, the persistent grant
-    /// is not.
+    /// `true` when a persistent option was narrowed to a one-shot decision.
     pub narrowed: bool,
     /// Audit note.
     pub reason: String,
@@ -242,13 +229,11 @@ impl PermissionBridge {
         binding: &TicketBinding,
         outcome: &TrustOutcome,
     ) -> Result<BridgeAnswer, BridgeError> {
-        // `always` is an explicit user policy change, never a client default.
-        // Without one, the effect may still run — but only once, and the
-        // narrowing is reported so the host can surface it.
+        // The external agent owns persistent native permission settings. Core
+        // never grants them from this bridge; an offered persistent choice is
+        // narrowed to one call and reported to the host.
         let (choice, narrowed) = match outcome.choice {
-            AcpApprovalChoice::Always if !outcome.policy_recorded => {
-                (AcpApprovalChoice::Once, true)
-            }
+            AcpApprovalChoice::Always => (AcpApprovalChoice::Once, true),
             other => (other, false),
         };
 
@@ -309,10 +294,10 @@ impl PermissionBridge {
         match decision {
             PermissionDecision::Allow {
                 option_id: Some(id),
-            } => offered_id(request, id),
+            } => offered_one_shot_id(request, id, PermissionOptionKind::AllowOnce),
             PermissionDecision::Deny {
                 option_id: Some(id),
-            } => offered_id(request, id),
+            } => offered_one_shot_id(request, id, PermissionOptionKind::RejectOnce),
             PermissionDecision::Allow { option_id: None } => {
                 select_option(request, AcpApprovalChoice::Once)?
                     .ok_or(BridgeError::NoOfferedOption("allow_once"))
@@ -326,13 +311,20 @@ impl PermissionBridge {
 }
 
 /// The offered option with this id, or a typed refusal.
-fn offered_id(request: &PermissionRequestParams, id: &str) -> Result<String, BridgeError> {
-    request
+fn offered_one_shot_id(
+    request: &PermissionRequestParams,
+    id: &str,
+    required: PermissionOptionKind,
+) -> Result<String, BridgeError> {
+    let option = request
         .options
         .iter()
         .find(|option| option.option_id == id)
-        .map(|option| option.option_id.clone())
-        .ok_or_else(|| BridgeError::UnknownOptionId(id.to_string()))
+        .ok_or_else(|| BridgeError::UnknownOptionId(id.to_string()))?;
+    if option.kind != required {
+        return Err(BridgeError::PersistentOptionRefused);
+    }
+    Ok(option.option_id.clone())
 }
 
 /// The offered option that realizes `choice`, if the agent offered one.
@@ -343,9 +335,8 @@ fn select_option(
     request: &PermissionRequestParams,
     choice: AcpApprovalChoice,
 ) -> Result<Option<String>, BridgeError> {
-    // Priority is by *kind*, not by the order the agent listed them in: an
-    // `always` answer prefers `allow_always` over `allow_once` and vice versa,
-    // so list order can never change what the wire expresses.
+    // Match only one-shot option kinds. Persistent native-agent policy belongs
+    // in the agent's own settings and must not be changed through this bridge.
     for kind in choice.accepted_kinds() {
         if let Some(option) = request.options.iter().find(|o| o.kind == *kind) {
             return Ok(Some(option.option_id.clone()));
@@ -1087,7 +1078,7 @@ mod tests {
     }
 
     #[test]
-    fn always_is_refused_without_a_recorded_policy_change_and_narrows_to_once() {
+    fn always_option_is_narrowed_to_once_unconditionally() {
         let bridge = PermissionBridge::new();
         let req = request(
             vec![
@@ -1100,7 +1091,7 @@ mod tests {
             .answer(
                 &req,
                 &binding(),
-                &TrustOutcome::always(facts(), false, "user pressed always"),
+                &TrustOutcome::always(facts(), "user pressed always"),
             )
             .expect("answered");
         // The persistent grant is never granted client-side; the effect still
@@ -1114,25 +1105,20 @@ mod tests {
     }
 
     #[test]
-    fn always_is_granted_only_when_trust_recorded_the_policy_change() {
+    fn always_only_offer_fails_closed_when_no_one_shot_allow_exists() {
         let bridge = PermissionBridge::new();
         let req = request(
-            vec![
-                option("allow-once", PermissionOptionKind::AllowOnce),
-                option("allow-always", PermissionOptionKind::AllowAlways),
-            ],
+            vec![option("allow-always", PermissionOptionKind::AllowAlways)],
             None,
         );
-        let answer = bridge
+        let error = bridge
             .answer(
                 &req,
                 &binding(),
-                &TrustOutcome::always(facts(), true, "rule persisted"),
+                &TrustOutcome::always(facts(), "user pressed always"),
             )
-            .expect("answered");
-        assert_eq!(answer.option_id, "allow-always");
-        assert_eq!(answer.choice, AcpApprovalChoice::Always);
-        assert!(!answer.narrowed);
+            .expect_err("Core must not use the persistent option");
+        assert_eq!(error, BridgeError::NoOfferedOption("once"));
     }
 
     #[test]
@@ -1476,7 +1462,7 @@ mod tests {
         let req = request(
             vec![
                 option("allow-once", PermissionOptionKind::AllowOnce),
-                option("reject-always", PermissionOptionKind::RejectAlways),
+                option("reject-once", PermissionOptionKind::RejectOnce),
             ],
             None,
         );
@@ -1485,11 +1471,11 @@ mod tests {
                 .resolve(
                     &req,
                     &PermissionDecision::Deny {
-                        option_id: Some("reject-always".into())
+                        option_id: Some("reject-once".into())
                     }
                 )
                 .expect("resolved"),
-            "reject-always"
+            "reject-once"
         );
         let error = bridge
             .resolve(
@@ -1503,6 +1489,33 @@ mod tests {
             error,
             BridgeError::UnknownOptionId("approve-everything".into())
         );
+    }
+
+    #[test]
+    fn resolve_refuses_explicit_persistent_allow_and_deny_options() {
+        let bridge = PermissionBridge::new();
+        let req = request(
+            vec![
+                option("allow-once", PermissionOptionKind::AllowOnce),
+                option("allow-always", PermissionOptionKind::AllowAlways),
+                option("reject-once", PermissionOptionKind::RejectOnce),
+                option("reject-always", PermissionOptionKind::RejectAlways),
+            ],
+            None,
+        );
+        for decision in [
+            PermissionDecision::Allow {
+                option_id: Some("allow-always".into()),
+            },
+            PermissionDecision::Deny {
+                option_id: Some("reject-always".into()),
+            },
+        ] {
+            assert_eq!(
+                bridge.resolve(&req, &decision),
+                Err(BridgeError::PersistentOptionRefused)
+            );
+        }
     }
 
     #[test]

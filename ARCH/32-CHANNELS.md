@@ -70,6 +70,8 @@ Approvals (`DEC-021`) route to the channel bound to the session/work: desktop pr
 
 DEC-056: a Core-mediated approval always enters the one Trust decision record. A request or answer arriving through CLI, web/mobile, ACP or API carries the authenticated channel identity and is reconciled idempotently; the resulting decision and receipt reference are visible in the local approval history. A native agent's private approval may be displayed as an observed/reported native event but cannot be represented as a Core decision. Disconnection leaves the Core request pending, with expiry and next eligible channel visible.
 
+**ACP persistence boundary:** AgentCowork's ACP permission bridge answers only one-shot choices. If an external agent offers `allow_always` or `reject_always`, Core selects the corresponding `*_once` option; if the one-shot option is absent, the request fails closed. Core does not persist native-agent permission rules. A user who wants a persistent native rule changes it in that agent's own settings, where the native agent owns and enforces it. This keeps Core from implying governance over future native actions it cannot mediate (DEC-054/063).
+
 ## 8. Failure modes
 
 | Failure | Behavior |

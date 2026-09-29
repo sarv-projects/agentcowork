@@ -168,7 +168,7 @@ fn reject_reaches_the_agent_as_the_offered_reject_option() {
 }
 
 #[test]
-fn always_without_a_recorded_policy_change_reaches_the_agent_as_once() {
+fn persistent_permission_offer_reaches_the_agent_as_once() {
     let bin = fixture_bin("mock-agent-permission");
     let mut session = AcpSession::new(ProcessTransport::spawn(&bin, &[], &[]).expect("spawn"));
     session.initialize(client_info()).expect("initialize");
@@ -188,9 +188,6 @@ fn always_without_a_recorded_policy_change_reaches_the_agent_as_once() {
                     &binding,
                     &TrustOutcome::always(
                         minted_ticket("mock-agent", &session_id, "args-1"),
-                        // The user pressed "always" but the policy write did not
-                        // land: the persistent grant must not be created here.
-                        false,
                         "user pressed always",
                     ),
                 )
