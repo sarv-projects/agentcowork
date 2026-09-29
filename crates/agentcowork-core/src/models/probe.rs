@@ -124,24 +124,23 @@ pub fn find_runtime_processes() -> Vec<DiscoveredRuntime> {
 
 /// OpenAI-compatible endpoint probe: `GET {base}/v1/models` must 200.
 ///
-/// FIX-09: the destination floor is enforced before the socket. `base` reaches
-/// this function from the renderer's runtime-discovery form, so it is
-/// caller-supplied: the desktop default policy still refuses the LAN and the
-/// always-refused ranges (a `http://169.254.169.254/` "local runtime" is the
-/// SSRF this closes), while a loopback runtime keeps working. A denial is
-/// simply "not reachable" — the probe never falls back to a direct client.
+/// FIX-09: `base` reaches this function from the renderer's runtime-discovery
+/// form, so it is caller-supplied. Guard pins the checked address set into the
+/// request, refuses redirects and caps the response; the desktop default still
+/// refuses LAN and always-blocked ranges while loopback runtimes remain usable.
+/// A denial is simply "not reachable" — the probe has no direct-client fallback.
 pub fn probe_openai_endpoint(base: &str) -> bool {
     let url = format!("{base}/v1/models");
-    if agentcowork_guard::netfloor::preflight_url(&url, agentcowork_guard::NetPolicy::default())
-        .is_err()
-    {
+    let Ok(client) = agentcowork_guard::egress_http::GuardedHttpClient::new(
+        &url,
+        agentcowork_guard::NetPolicy::default(),
+        Duration::from_secs(2),
+    ) else {
         return false;
-    }
-    ureq::get(&url)
-        .timeout(Duration::from_secs(2))
-        .call()
-        .map(|r| r.status() == 200)
-        .unwrap_or(false)
+    };
+    client
+        .request("GET", &url, &[], None, 1024 * 1024)
+        .is_ok_and(|response| response.status == 200)
 }
 
 /// TTL-cached probe of candidate localhost endpoints (default 10s).

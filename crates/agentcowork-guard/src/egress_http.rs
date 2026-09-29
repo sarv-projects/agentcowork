@@ -139,6 +139,13 @@ fn parse_url(url: &str) -> Result<url::Url, GuardedHttpError> {
         || !parsed.username().is_empty()
         || parsed.password().is_some()
         || parsed.fragment().is_some()
+        || (parsed.scheme() == "http"
+            && !matches!(
+                parsed
+                    .host()
+                    .map(|host| crate::netfloor::classify_url_host(&host)),
+                Some(crate::NetClass::Loopback)
+            ))
     {
         return Err(GuardedHttpError::InvalidEndpoint);
     }
