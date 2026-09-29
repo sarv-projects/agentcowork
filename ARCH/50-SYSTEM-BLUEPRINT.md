@@ -1,6 +1,6 @@
 # 50 — System blueprint and ownership map
 
-> Status: DEC-054/055/056/057/058/059/060/061/062/063 target architecture map. Mermaid diagrams are navigation and review aids; canonical fields/contracts remain in `06`/`07`, requirements in `08`, module details in `10`–`38` and `46`/`48`/`51`. Every arrow below denotes a named boundary, not an extra service. The target is a modular monolith with external adapters and one independently buildable local Observer, not a fleet of internal network microservices. Diagram labels `Core-mediated` and `agent-native` must stay distinct; Core tickets/receipts cover only the mediated path, while native effects use reported/observed provenance (DEC-063). Occurrence ownership is fenced and does not imply exactly-once external effects. Queued chat work resolves the latest valid conversation selection at dequeue and records the actual binding used.
+> Status: DEC-054/055/056/057/058/059/060/061/062/063/064/065 target architecture map. Mermaid diagrams are navigation and review aids; canonical fields/contracts remain in `06`/`07`, requirements in `08`, module details in `10`–`38` and `46`/`48`/`51`. Every arrow below denotes a named boundary, not an extra service. The target is a modular monolith with external adapters and one independently buildable local Observer, not a fleet of internal network microservices. Diagram labels `Core-mediated` and `agent-native` must stay distinct; Core tickets/receipts cover only the mediated path, while native effects use reported/observed provenance (DEC-063). Occurrence ownership is fenced and does not imply exactly-once external effects. Queued chat work resolves the latest valid conversation selection at dequeue and records the actual binding used. DEC-064 adds lazy host skills and exact-version artifact refs; DEC-065 adds only a read-only active-work projection; continuous surface streams remain deferred.
 
 ## 1. High-level ownership
 
@@ -24,6 +24,14 @@ flowchart TB
   M --> R[Mission outcome evaluator]
   V --> R
   R --> X
+  M --> AP[Read-only activity projection]
+  W --> AP
+  E --> AP
+  V --> AP
+  AP --> X
+  P -. future exact-target observation provider .-> PX[Ephemeral preview frames]
+  T -. explicit observation grant .-> PX
+  PX -. ephemeral media only .-> X
   O[World model, context, memory, artifact graph] --> M
   O --> W
   O --> X
@@ -39,6 +47,7 @@ flowchart TB
 | Surface or user intent | Primary owner | Dependencies and output |
 |---|---|---|
 | Ordinary chat / renderer | Experience `48`, channels `32` | Agent binding `15`, context `16`, artifact cards `29`; no Mission required for bounded answer |
+| Active Work / Live Desk | Experience `48` | Read-only projection over Mission/Work, Events, Artifacts and verifier evidence; video/surface streams are not part of v1 contract |
 | Agent/model/access composer | Experience `48` | Agent discovery `46`, model capability `18`, effective policy `12`; unsupported choice disabled |
 | Same-conversation agent handoff | Experience `48`, Work/session `11`, agent binding `15` | One logical host Session can attach multiple external bindings; bounded visible-history handoff; private native sessions stay separate; active Work ownership does not switch |
 | Subagent roster/settings | Experience `48`, delegation `15`, ecosystem `46` | User-enabled binding + provider-qualified model pin + attenuated extension ceiling; lead may select itself as a fresh child or another enabled binding |

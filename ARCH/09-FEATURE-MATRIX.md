@@ -2,7 +2,7 @@
 
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P7). **This file owns links, never content:** requirements live in `ARCH/08-REQUIREMENTS.md`, designs in the module docs, tasks in `TODO.md`, evidence in `ARCH/42-EVIDENCE-MAP.md`.
 > **Purpose:** answer from one place — which requirements does a file implement · which requirements have no implementation · which acceptance tests are missing · which specs does a change affect.
-> **Current inventory (2026-09-29):** 343 unique requirement rows match the 343 active requirement headings in `08` (including remote/cloud ownership, cross-device access, DEC-056 UI reconciliation, DEC-058 machine observation/diagnostics, DEC-059 bounded candidate comparison, DEC-060 eligibility-aware interaction-path selection, DEC-061 Rust MCP SDK integration behind Guard, and DEC-062 latest-selection dequeue resolution). Active `TODO.md` W0–W6 task IDs are linked below where assigned; new implementation tests and evidence remain pending.
+> **Current inventory (2026-09-29):** 345 unique requirement rows match the 345 active requirement headings in `08` (including remote/cloud ownership, cross-device access, DEC-056 UI reconciliation, DEC-058 machine observation/diagnostics, DEC-059 bounded candidate comparison, DEC-060 eligibility-aware interaction-path selection, DEC-061 Rust MCP SDK integration behind Guard, DEC-062 latest-selection dequeue resolution, DEC-064 built-in host skills/artifact links, and DEC-065 truthful active-work visualization). Active `TODO.md` W0–W6 task IDs are linked below where assigned; new implementation tests and evidence remain pending.
 
 ---
 
@@ -287,6 +287,7 @@ One row per `REQ-*`. Status only from evidence.
 | `REQ-SKILL-011` | `31-SKILLS-PLUGINS` | pending | `—` | `EDGE-094` | `TASK-SKILL-003` | pending | planned |
 | `REQ-SKILL-012` | `31-SKILLS-PLUGINS` | pending | `—` | `EDGE-093` | `TASK-SKILL-002` | pending | planned |
 | `REQ-SKILL-013` | `31-SKILLS-PLUGINS` | pending | `—` | `EDGE-096` | `TASK-SKILL-003` | pending | planned |
+| `REQ-SKILL-014` | `31-SKILLS-PLUGINS`, `46-ECOSYSTEM-ARCHITECTURE` | pending | `DEC-064`, `DM-027`, `INV-41` | `TC-067` | `TASK-SKILL-002`, `TASK-ECO-002` | pending | planned |
 | `REQ-CHAN-001` | `32-CHANNELS` | pending | `—` | — | `TASK-CHAN-003` | pending | planned |
 | `REQ-CHAN-002` | `32-CHANNELS` | pending | `INV-15` | — | `TASK-CHAN-003` | pending | planned |
 | `REQ-CHAN-003` | `32-CHANNELS` | pending | `DEC-009`, `CTR-022` | — | `TASK-CHAN-002`, `TASK-CHAN-003` | pending | planned |
@@ -362,11 +363,12 @@ One row per `REQ-*`. Status only from evidence.
 | `REQ-UXQ-004` | `48-EXPERIENCE-SURFACES`, `46-ECOSYSTEM-ARCHITECTURE` | pending | `DEC-055` | `TC-007/009/038` | `TASK-UI-030`, `TASK-UXQ-002` | pending | planned |
 | `REQ-UXQ-005` | `48-EXPERIENCE-SURFACES`, `22-OFFICE`, `23-BROWSER`, `24-COMPUTER-USE` | pending | `DEC-055` | `TC-010…018/051` | `TASK-UI-011`, `TASK-UI-040`, `TASK-UXQ-003` | pending | planned |
 | `REQ-UXQ-006` | `48-EXPERIENCE-SURFACES` | pending | `DEC-055` | `TC-003/004/014/038` | `TASK-UXQ-004` | pending | planned |
-| `REQ-UXQ-007` | `29-ARTIFACTS`, `48-EXPERIENCE-SURFACES` | pending | `DEC-055` | `TC-015/033` | `TASK-UI-041`, `TASK-UXQ-005` | pending | planned |
+| `REQ-UXQ-007` | `29-ARTIFACTS`, `48-EXPERIENCE-SURFACES` | pending | `DEC-055/064`, `DM-019` | `TC-015/033/068` | `TASK-UI-041`, `TASK-UXQ-005` | pending | planned |
 | `REQ-UXQ-008` | `46-ECOSYSTEM-ARCHITECTURE`, `48-EXPERIENCE-SURFACES` | pending | `DEC-054/055`, `INV-41` | `TC-007/008/026` | `TASK-UXQ-006` | pending | planned |
 | `REQ-UXQ-009` | `15-AGENT-PLANE`, `35-MISSION`, `48-EXPERIENCE-SURFACES` | pending | `DEC-054/055`, `INV-40/42`, `DM-015/039` | `TC-024…026/034/035/065` | `TASK-UXQ-007` | pending | planned |
 | `REQ-UXQ-010` | `20-WORKFLOW`, `37-WORKFLOW-SKILL-LIFECYCLE`, `48-EXPERIENCE-SURFACES` | pending | `DEC-054/055` | `TC-021…023` | `TASK-UXQ-008` | pending | planned |
 | `REQ-UXQ-011` | `48-EXPERIENCE-SURFACES`, `51-MACHINE-OBSERVABILITY` | pending | `DEC-058/059`, `INV-36/37` | `TC-041/049` | `TASK-UXQ-010` | `TEST-UXQ-010` (pending) | planned |
+| `REQ-UXQ-012` | `38-EXPERIENCE-QUALITY`, `48-EXPERIENCE-SURFACES` | pending | `DEC-065`, `INV-23/34` | `TC-069` | `TASK-UXQ-011` | `TEST-UXQ-011` (pending) | planned |
 | `REQ-OBS-001` | `51-MACHINE-OBSERVABILITY` | pending | `DEC-058`, `INV-36`, `DM-041`, `CTR-033` | `FLOW-048`, `TC-040` | `TASK-OBS-001` | `TEST-OBS-001` (pending) | planned |
 | `REQ-OBS-002` | `51-MACHINE-OBSERVABILITY` | pending | `DEC-058`, `INV-36`, `DM-041` | `TC-040/048` | `TASK-OBS-002` | `TEST-OBS-002` (pending) | planned |
 | `REQ-OBS-003` | `12-TRUST`, `19-RUNTIME-ENVIRONMENTS`, `48-EXPERIENCE-SURFACES`, `51-MACHINE-OBSERVABILITY` | pending | `DEC-058/059`, `INV-37`, `CTR-033` | `FLOW-048`, `TC-041/049` | `TASK-OBS-003` | `TEST-OBS-003` (pending) | planned |

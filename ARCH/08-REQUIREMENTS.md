@@ -2642,6 +2642,15 @@ This registry answers one question per entry: **what behavior must this system e
 - **Tests:** pending
 - **Status:** seeded
 
+#### REQ-SKILL-014 — Bundled host skills are cross-binding, scoped and lazy-loaded
+- **Statement:** GIVEN a bundled AgentCowork host skill and a selected compatible agent binding, WHEN a Work is composed or dispatched, THEN the catalog entry is discoverable across projects while only selected/relevant, version-pinned instructions are delivered through a supported overlay; native skill stores remain unchanged.
+- **Priority:** must
+- **Source:** DEC-064; `ARCH/31-SKILLS-PLUGINS.md` §2.1/§3; `ARCH/46-ECOSYSTEM-ARCHITECTURE.md` §3.1
+- **Acceptance:** `TC-067` passes for compatible, unsupported, project-pinned, disabled and agent-switch cases; missing capability requirements produce guidance; activation creates no permission grant.
+- **Failure cases:** every skill body inserted into every prompt; selected agent silently claims unsupported host skill; native config modified; skill activation widens capability or Trust scope.
+- **Tests:** pending
+- **Status:** accepted
+
 ### Channels (`CHAN`)
 
 #### REQ-CHAN-001 — Surfaces are projections; Core is the only brain
@@ -3090,11 +3099,11 @@ This registry answers one question per entry: **what behavior must this system e
 - **Status:** accepted
 
 #### REQ-UXQ-007 — Library metadata and exact-version retrieval
-- **Statement:** GIVEN generated, uploaded, imported or linked material, WHEN filtered or retrieved, THEN origin, version, permissions, index status and provenance remain distinct; citations identify exact source location.
+- **Statement:** GIVEN generated, uploaded, imported or linked material, WHEN filtered, retrieved or referenced by a conversation result, THEN origin, version, permissions, index status and provenance remain distinct; citations identify exact source location and a result link opens only the exact authorized version.
 - **Priority:** must
 - **Source:** DEC-055; `29` §4; `48` §6
-- **Acceptance:** `TC-015`, `TC-033` pass under version change, parser failure and revocation.
-- **Failure cases:** stale retrieval presented current, unindexed content invented, revoked item exposed.
+- **Acceptance:** `TC-015`, `TC-033` and `TC-068` pass under version change, parser failure, revocation, stale/ambiguous filename and unsupported output provenance.
+- **Failure cases:** stale retrieval presented current, unindexed content invented, revoked item exposed, path text interpreted as permission or executable content.
 - **Tests:** pending
 - **Status:** accepted
 
@@ -3131,6 +3140,15 @@ This registry answers one question per entry: **what behavior must this system e
 - **Source:** DEC-058/059; ARCH/48-EXPERIENCE-SURFACES.md §5/§7; ARCH/51-MACHINE-OBSERVABILITY.md §6/§8
 - **Acceptance:** new-user tasks identify what is collected, why, retention and agent visibility; advanced query/process controls are discoverable but hidden behind progressive detail; screen-reader and keyboard journeys pass.
 - **Failure cases:** technical jargon required for Overview; hidden data collection; dashboard opening silently injects telemetry; consent implied by OS permission; no reason shown for unsupported/denied readings.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-UXQ-012 — Active-work visualization stays evidence-backed
+- **Statement:** GIVEN an active or completed Work/Mission, WHEN its activity is rendered or replayed, THEN the view is a read-only projection of existing Mission/Work/events/artifacts/observations, user-facing labels are approachable, and every displayed action/count/target/provenance/verification resolves to evidence; unobserved activity stays generic or explicitly reported.
+- **Priority:** must
+- **Source:** DEC-064/065; `ARCH/38-EXPERIENCE-QUALITY.md`; `ARCH/48-EXPERIENCE-SURFACES.md` §§4.2–4.3
+- **Acceptance:** `TC-069` passes for Core-mediated, Core-observed, native-reported and opaque work; replay executes nothing; no inferred count, physical pointer motion or verification appears.
+- **Failure cases:** tool-name regex invents domain; native agent internals are presented as observed; API call rendered as fake UI; stale visual anchor remains; raw TUI obscures normal chat; a reported success receives verified styling.
 - **Tests:** pending
 - **Status:** accepted
 

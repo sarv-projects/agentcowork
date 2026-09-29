@@ -1,6 +1,6 @@
 # 29 — Artifacts & Receipts
 
-> **DEC-054 amendment:** Artifact versions gain explicit `mission_id`, `plan_node_id`, input artifact/resource versions and downstream dependency edges; a changed input marks dependent outputs stale pending review (`36`). Core effect receipts and agent-reported/native-observed evidence remain different evidence classes. No inferred native effect receives a Core ticket or verification badge.
+> **DEC-054/064/065 amendment:** Artifact versions gain explicit `mission_id`, `plan_node_id`, input artifact/resource versions and downstream dependency edges; a changed input marks dependent outputs stale pending review (`36`). Core effect receipts and agent-reported/native-observed evidence remain different evidence classes. No inferred native effect receives a Core ticket or verification badge. Conversation links resolve exact authorized artifact/file versions; activity projection reuses these refs.
 
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P2).
 > **P7 pass (2026-09-26):** line-checked; requirements seeded (`REQ-ART-*`, Requirements section).
@@ -76,6 +76,8 @@ Exchange via refs only: `artifact_id` · `mime_type` · `uri`. Supported verbs (
 ## 7. Previews & rendering handoff
 
 **Workbench contract (DEC-055):** `48` owns tab identity, layout, selection and user interaction. This module returns immutable version refs and preview/provider capability metadata. A selected range is `(artifact identity, version, typed location)` rather than a pasted caption. Office/PDF/image preview support is independent of edit/round-trip support; an unsupported editor offers read-only preview or native-app fallback with an explicit warning. Edit/save creates a new version only after the domain provider validates its result; no UI control may imply lossless editing of an unprobed format. Managed artifact previews use isolated renderers and cannot inherit app or vault privileges.
+
+**Conversation result link path (DEC-064):** Prefer structured artifact/result events referencing an immutable artifact id+version. Where an external agent only writes a file, `25`/Work observation must correlate that exact file identity/version to the active Work and authorized workspace before Experience creates an artifact card. A filename/path in prose is only a display hint; it becomes a clickable ref only if it uniquely resolves to that already-authorized Work result. Ambiguous, stale, outside-scope or unregistered text remains inert or opens an explicit chooser. Clicking opens/focuses the exact-version Workbench tab; it never reads arbitrary paths or executes content. Preserve the output's actual provenance (`core_created`, `agent_reported`, `native_observed`, `user_added`) and do not synthesize a Core receipt for native work.
 
 Previews are **projections** (thumbnail/render refs) produced by domains (`22`–`24`) — artifacts store refs, not pixels. The UI opens them through the universal document surface (`AGENTCOWORK-UI.md`); opening/rendering consumes zero model tokens (DEC-015).
 

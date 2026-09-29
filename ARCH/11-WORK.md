@@ -14,7 +14,7 @@
 
 Rules:
 1. **One lifecycle for host work** — no side Core schedulers or second Core job system (DEC-003, INV-06). A native agent's own child processes are not fabricated as host Work.
-2. **The session log is append-only; every view is a projection** — UI history, prompt history, pending-work (inbox), runs list (DEC-027, INV-23).
+2. **The session log is append-only; every view is a projection** — UI history, prompt history, pending-work (inbox), runs list and active-work/Live Desk views (DEC-027, DEC-065, INV-23). Existing Work events may carry optional bounded `ActivityDescriptor` metadata (`06`, `30`) when the execution owner can support a truthful semantic summary; missing metadata stays unknown/generic.
 3. **Work state is durable** — crash/restart first reconciles the executor and effects; it resumes a compatible live session or creates a bounded new attempt where safe. No unsupported external-agent resume is claimed. Cancellation is recorded, not implied (INV-16, DEC-054).
 4. **Budgets are maxima** — the scheduler enforces outer bounds; agents decide within them (DEC-029/031).
 

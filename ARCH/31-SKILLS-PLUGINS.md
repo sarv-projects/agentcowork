@@ -1,6 +1,6 @@
 # 31 — Skills & Plugins
 
-> **DEC-054/055 target amendment:** The host registry owns only host extensions. A discovered agent's native MCPs, skills and plugins remain in its namespace and are at most inventoried read-only. Catalogued, installed, activated and executing are distinct states; effective grant is resolved for each agent binding/session/workspace/Mission and cannot exceed Trust policy. A plugin's bundled components require separate grants. Workflow-to-skill conversion and publication live in `37`, with user controls in `48`; no global auto-mount or silent native-config rewrite is allowed.
+> **DEC-054/055/064 target amendment:** The host registry owns only host extensions. A discovered agent's native MCPs, skills and plugins remain in its namespace and are at most inventoried read-only. Catalogued, installed, activated and executing are distinct states; effective grant is resolved for each agent binding/session/workspace/Mission and cannot exceed Trust policy. A plugin's bundled components require separate grants. Bundled host skills are available across compatible bindings but are loaded only when relevant/selected; project pins and per-Work activation remain explicit. Workflow-to-skill conversion and publication live in `37`, with user controls in `48`; no global auto-mount or silent native-config rewrite is allowed.
 
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P3).
 > **P7 pass (2026-09-26):** line-checked; requirements seeded (`REQ-SKILL-*`, Requirements section).
@@ -32,10 +32,32 @@
 
 **Package format:** a directory with a manifest + instructions + optional scripts/resources (mirrors the repo’s `SKILL.md` convention). Loading order: scan catalog → match relevance → activate → inject bounded instructions; heavy resources load on demand.
 
+### 2.1 Bundled host skill catalog
+
+The app ships versioned, read-only catalog entries under the `cowork/` namespace. They are available in every project and compatible agent picker, but their full instructions are **not** inserted into every session. Relevance resolution may suggest activation; the user can invoke a skill explicitly from `/` or a contextual skill chip, pin it for a project, disable a project default, or select it for the current Work. Activation is recorded with its exact skill digest on that Work.
+
+Initial catalog families:
+
+| Skill ID | Teaches the agent to | Capability requirements (resolved separately) |
+|---|---|---|
+| `cowork/research` | Plan source-backed research, compare claims, preserve citations and disclose gaps | Web search/fetch or browser |
+| `cowork/rich-artifact` | Turn explanations/data into diagrams, charts, visual explainers and interactive previews; link the deliverable in the response | Artifact create/version/open + an available safe renderer; image generation is optional |
+| `cowork/document-authoring` | Produce and revise polished reports and documents; verify structure and rendered output | File/artifact write + compatible Office/PDF provider |
+| `cowork/spreadsheet-analysis` | Inspect data, clean/date-analyze, write formulas/charts and verify recalculation | Scoped file read/write + spreadsheet provider/runtime |
+| `cowork/presentation-authoring` | Build a coherent slide story, apply a template and inspect rendered slides | Presentation provider/runtime + artifact output |
+| `cowork/image-creation` | Create/edit visual assets, report provenance and return the saved asset as an artifact | Connected image-generation/edit provider; otherwise offer a truthful fallback |
+| `cowork/browser-workflow` | Use a shared browser for navigation, extraction and verified multi-step web tasks | Compatible host browser capability |
+| `cowork/computer-workflow` | Plan, perform and verify visible desktop interactions with takeover boundaries | Compatible OS accessibility/computer-use capability and effective permission |
+| `cowork/workflow-capture` | Convert a successful repeatable procedure into a reviewed, versioned workflow or skill with secrets removed | Work/event history or explicit user demonstration; skill/workflow lifecycle |
+
+This is an initial built-in catalog, not a claim that every operation works without a provider. A skill never supplies the tool, authentication, permission or renderer it names. If a selected binding accepts bounded context overlays, the adapter supplies the activated host skill by digest; if it does not, show `not available to this agent` and offer direct host execution where supported or manual guidance. Do not install or synchronize these entries into native agent directories. Keep this inventory small and composable; domain capability itself belongs in the owner module, not duplicated in prompts.
+
 ## 3. Resolution & activation
 
 - **Resolver inputs:** task/intent, agent profile, workspace, available capabilities.
 - **Activation sets** are per session/run; users can invoke a skill explicitly; agents may request activation.
+- **Scopes:** built-ins are app-catalogued; user skills may be personal; project skills/pins are workspace-bound; a turn's activation is session/Work-bound; native skills remain agent-owned. Resolution uses namespaced refs and an explicit compatibility result. The effective set is attenuated by project, binding and Work policy; no scope widens Trust grants. Project defaults and a user's disable choice are persisted separately from per-Work activation.
+- **Cross-binding delivery:** a logical conversation may switch agents, but the host skill is re-resolved for the binding used by each new Work. Only selected, compatible instructions are handed off; record `delivered`, `unsupported`, `disabled` or `missing-requirement` rather than assuming injection. Switching agents never copies native skills or changes native config.
 - **Context discipline:** only activated skill instructions enter context, bounded by `16`; skill bodies never live in the stable prefix unless pinned.
 - **Requirements check:** a skill whose capabilities are unavailable activates in `guidance` mode (“needs X”) rather than failing silently — and activation never grants permissions; policy still decides (`12`).
 
@@ -136,3 +158,4 @@ Testable behaviors owned by this module live in `ARCH/08-REQUIREMENTS.md`; the t
 | `REQ-SKILL-011` | Package extraction is bounded and confined (pathfloor); hostile packages are rejected typed (EDGE-094) |
 | `REQ-SKILL-012` | Skill/plugin instructions are untrusted content — provenance + injection hygiene (EDGE-093) |
 | `REQ-SKILL-013` | Updates never hot-swap mid-call; new versions apply at next activation (EDGE-096) |
+| `REQ-SKILL-014` | Bundled host skills are cross-binding and lazy-loaded by digest only through supported overlays; native stores and Trust grants are unaffected |

@@ -6,6 +6,12 @@
 
 The review enumerated repository structure, then traced launch, agent registration, MCP/skill registration, scheduling, workflow execution, credential use and user-facing control through source. `ARCH/44-ABSORB-REGISTER.md` retains earlier research; this file records new source-grounded findings. Source references are immutable commit links where a pinned checkout was available. An absent source is recorded as a limit, not filled by inference. UI and market claims from vendor documentation are directional; no comparative usability study or benchmark has been run yet.
 
+## Google Antigravity artifact UX (official documentation; interaction reference only)
+
+| Official source | What it documents | AgentCowork adaptation and limit |
+|---|---|---|
+| [Artifacts](https://antigravity.google/docs/artifacts?authuser=002), [Artifact Review](https://antigravity.google/docs/artifact-review/), [Generative UI](https://antigravity.google/blog/visualizing-with-the-help-of-antigravity), [CLI artifacts](https://www.antigravity.google/docs/cli/artifacts/) | Structured deliverables can be reviewed beside the conversation, previewed as rich/interactive content, opened for detail, and exported; review-before-apply is a useful control pattern. | Adapt artifact-first result cards, side-by-side review, isolated previews and export into `ARCH/29`/`48`. Resolve only typed, authorized, exact-version Artifact/File refs; never turn an arbitrary path in model text into an active link. This public documentation does not expose the private agent runtime, built-in skill contents, markup syntax or security implementation; do not copy undocumented `agent-embed`, `write_to_file`, CDN or CSP conventions. No upstream code was copied. |
+
 ## Latest upstream selection inventory (2026-09-29)
 
 These are read-only remote `HEAD` selections collected before implementation. A selection is not a source audit: rows without a current-head section below retain their prior focused or historical evidence and must be re-traced at the listed commit before code is adapted. This prevents a historical source path from being treated as current behavior.
