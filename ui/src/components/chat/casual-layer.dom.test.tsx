@@ -254,6 +254,25 @@ describe('assistant Markdown rendering', () => {
     expect(useAppStore.getState().activeView).toBe('browse')
   })
 
+  test('does not execute raw HTML or load an unsafe Markdown image URL', async () => {
+    mounted = await mount(
+      <MessageBubble
+        message={{
+          id: 'message-untrusted-markdown',
+          role: 'assistant',
+          content: '<img src="https://evil.example/track" onerror="alert(1)">\n\n![unsafe](javascript:alert(1))',
+          timestamp: new Date().toISOString(),
+        }}
+      />,
+    )
+    await tick()
+
+    expect(mounted.container.querySelector('img')).toBeNull()
+    expect(mounted.container.querySelector('[onerror]')).toBeNull()
+    expect(mounted.container.textContent).toContain('This image reference can’t be opened safely')
+    expect(mounted.container.querySelector('button')?.textContent).not.toContain('Open image in Browse')
+  })
+
   test('artifact cards do not invent preview contents for files without a real thumbnail', async () => {
     mounted = await mount(
       <MessageBubble
