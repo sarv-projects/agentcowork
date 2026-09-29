@@ -591,11 +591,13 @@ impl ReadScopes {
         Ok(())
     }
 
-    /// **Re-check at the point of use.** A path resolved a moment ago is not the
-    /// path a syscall is about to touch: an intermediate directory can be
-    /// replaced by a link, and a leaf can be swapped for one. This runs the
-    /// same decision again and additionally refuses a canonical form that
-    /// drifted since resolution.
+    /// **Re-check immediately before use.** A path resolved a moment ago is not
+    /// necessarily the path a syscall will touch: an intermediate directory
+    /// can be replaced by a link, and a leaf can be swapped for one. This runs
+    /// the same decision again and refuses a canonical form that drifted since
+    /// resolution. It only narrows the race; callers must bind the eventual
+    /// operation to a handle or equivalent identity to close the gap to the
+    /// syscall.
     ///
     /// Deliberately *not* checked: whether the bytes at an in-scope path
     /// changed. A file being edited between resolution and read is normal, and

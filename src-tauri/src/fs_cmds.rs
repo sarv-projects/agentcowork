@@ -78,9 +78,9 @@ fn read_scopes() -> agentcowork_guard::pathfloor::ReadScopes {
 /// consulted and nothing is written: an in-scope read is not a decision anybody
 /// has to make again (`ARCH/12-TRUST.md` §8 — interception at the scope
 /// boundary, never per-read approval; the same ruling as
-/// `ARCH/25-FILES.md` §7.1). The re-check is what closes the window between
-/// resolution and the `std::fs` call: a path swapped in that window is refused
-/// rather than read (`REQ-FILES-009`).
+/// `ARCH/25-FILES.md` §7.1). The re-check narrows path drift but does not close
+/// the race to the following pathname-based `std::fs` call. A handle-bound
+/// read is still required for race-free use (`REQ-FILES-009`).
 fn resolve_read(
     path: &str,
     op: agentcowork_guard::pathfloor::FsOp,
