@@ -317,6 +317,7 @@ describe('assistant Markdown rendering', () => {
     )
     await tick()
 
+    expect(mounted.container.textContent).toContain('File reference or viewer is not available yet')
     const open = Array.from(mounted.container.querySelectorAll<HTMLButtonElement>('button')).find((button) =>
       button.textContent?.trim() === 'Open',
     )

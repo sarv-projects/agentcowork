@@ -90,6 +90,11 @@ function ArtifactTile({ artifact }: { artifact: Artifact }) {
     markdown: 'Markdown file',
     image: 'Image file',
   }
+  const officeType = ['xlsx', 'docx', 'pptx', 'pdf'].includes(artifact.type)
+  const hasSupportedOfficePath = Boolean(
+    officeType && artifact.path && /\.(xlsx|xlsm|docx|pptx|pdf)$/i.test(artifact.path),
+  )
+  const canOpen = Boolean(artifact.view || hasSupportedOfficePath)
 
   return (
     <div className="flex aspect-video w-full items-center justify-center gap-3 rounded-xl border border-border bg-gradient-to-br from-card via-muted/40 to-brand/5 px-4">
@@ -98,7 +103,9 @@ function ArtifactTile({ artifact }: { artifact: Artifact }) {
       </span>
       <div className="min-w-0">
         <div className="truncate text-sm font-medium text-foreground">{label[artifact.type]}</div>
-        <div className="mt-1 text-[10px] text-muted-foreground">Open to view the actual file</div>
+        <div className="mt-1 text-[10px] text-muted-foreground">
+          {canOpen ? 'Open to view the actual file' : 'File reference or viewer is not available yet'}
+        </div>
       </div>
     </div>
   )
