@@ -114,36 +114,38 @@ interface Props {
   artifact: Artifact
 }
 
+export function openArtifactInWorkspace(artifact: Artifact): void {
+  const state = useAppStore.getState()
+  const officeType = ['xlsx', 'docx', 'pptx', 'pdf'].includes(artifact.type)
+  const officePath = artifact.path && /\.(xlsx|xlsm|docx|pptx|pdf)$/i.test(artifact.path)
+    ? artifact.path
+    : undefined
+
+  if (officeType || officePath) {
+    if (officePath) {
+      state.openOfficeDoc(officePath)
+    } else if (artifact.view) {
+      state.setActiveView(artifact.view)
+    } else {
+      state.notify(`“${artifact.name}” has no available file location or viewer yet`, 'error')
+    }
+    return
+  }
+  if (artifact.view) {
+    state.setActiveView(artifact.view)
+    return
+  }
+  state.notify(`No viewer for “${artifact.name}” yet — use Save preview to export its text summary`, 'error')
+}
+
 export default function ArtifactCard({ artifact }: Props) {
   const activeView = useAppStore((s) => s.activeView)
-  const setActiveView = useAppStore((s) => s.setActiveView)
   const notify = useAppStore((s) => s.notify)
   const isLive = artifact.view && artifact.view === activeView
   // P32.3 (corrected) — figures the run actually reported. Empty ⇒ no badge.
   const figures = preciseFigures(artifact)
 
-  const openArtifact = () => {
-    const officeType = ['xlsx', 'docx', 'pptx', 'pdf'].includes(artifact.type)
-    const officePath = artifact.path && /\.(xlsx|xlsm|docx|pptx|pdf)$/i.test(artifact.path)
-      ? artifact.path
-      : undefined
-
-    if (officeType || officePath) {
-      if (officePath) {
-        useAppStore.getState().openOfficeDoc(officePath)
-      } else if (artifact.view) {
-        setActiveView(artifact.view)
-      } else {
-        notify(`“${artifact.name}” has no available file location or viewer yet`, 'error')
-      }
-      return
-    }
-    if (artifact.view) {
-      setActiveView(artifact.view)
-      return
-    }
-    notify(`No viewer for “${artifact.name}” yet — use Save to download it`, 'error')
-  }
+  const openArtifact = () => openArtifactInWorkspace(artifact)
 
   return (
     <Card

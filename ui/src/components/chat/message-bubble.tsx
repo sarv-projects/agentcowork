@@ -35,13 +35,13 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
-import type { ChatError, ChatMessage } from '@/lib/store'
+import type { Artifact, ChatError, ChatMessage } from '@/lib/store'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/lib/store'
 import { explainError } from '@/lib/errors'
 import { saferMode, saferPrompt, differentlyPrompt, hasUndoableWork } from '@/lib/recovery'
 import { checkpointSummary, isMutatingMessage } from '@/lib/checkpoints'
-import ArtifactCard from './artifact-card'
+import ArtifactCard, { openArtifactInWorkspace } from './artifact-card'
 import { staggerStyle } from '@/lib/stagger'
 import McqInterruptCard from './mcq-interrupt-card'
 import ProgressSteps from './progress-steps'
@@ -222,6 +222,72 @@ function remarkCitationReferences(options: { messageId: string; indexes: number[
   }
 }
 
+function uniqueArtifactsByName(artifacts: Artifact[]): Map<string, Artifact> {
+  const grouped = new Map<string, Map<string, Artifact>>()
+  for (const artifact of artifacts) {
+    const name = artifact.name.trim()
+    if (!name) continue
+    const matches = grouped.get(name) ?? new Map<string, Artifact>()
+    matches.set(artifact.id, artifact)
+    grouped.set(name, matches)
+  }
+  return new Map([...grouped.entries()].flatMap(([name, matches]) =>
+    matches.size === 1 ? [[name, [...matches.values()][0]] as const] : [],
+  ))
+}
+
+function remarkArtifactReferences(options: { artifacts: Artifact[] }) {
+  const byName = uniqueArtifactsByName(options.artifacts)
+  return (tree: CitationNode) => {
+    const visit = (node: CitationNode, insideLink = false) => {
+      if (!node.children) return
+      const next: CitationNode[] = []
+      for (const child of node.children) {
+        if (child.type !== 'text' || !child.value || insideLink) {
+          visit(child, insideLink || child.type === 'link')
+          next.push(child)
+          continue
+        }
+
+        let offset = 0
+        const matches: { start: number; end: number; artifact: Artifact }[] = []
+        for (const [name, artifact] of byName) {
+          let cursor = 0
+          while (cursor < child.value.length) {
+            const start = child.value.indexOf(name, cursor)
+            if (start < 0) break
+            const end = start + name.length
+            const before = start > 0 ? child.value[start - 1] : ''
+            const after = end < child.value.length ? child.value[end] : ''
+            const boundaryBefore = !before || !/[\w.]/u.test(before)
+            const boundaryAfter = !after || !/[\w.]/u.test(after)
+            if (boundaryBefore && boundaryAfter) matches.push({ start, end, artifact })
+            cursor = Math.max(end, start + 1)
+          }
+        }
+        matches.sort((a, b) => a.start - b.start || b.end - a.end)
+        for (const match of matches) {
+          if (match.start < offset) continue
+          if (match.start > offset) next.push({ type: 'text', value: child.value.slice(offset, match.start) })
+          next.push({
+            type: 'link',
+            url: `#artifact/${encodeURIComponent(match.artifact.id)}`,
+            children: [{ type: 'text', value: child.value.slice(match.start, match.end) }],
+          })
+          offset = match.end
+        }
+        if (offset > 0) {
+          if (offset < child.value.length) next.push({ type: 'text', value: child.value.slice(offset) })
+        } else {
+          next.push(child)
+        }
+      }
+      node.children = next
+    }
+    visit(tree)
+  }
+}
+
 const mdComponents = {
   code: CodeBlock,
   pre: ({ children }: React.ComponentProps<'pre'>) => <>{children}</>,
@@ -291,10 +357,29 @@ const mdComponents = {
   img: MarkdownImage,
 }
 
-function markdownComponentsFor(citationIds: ReadonlySet<string>) {
+function markdownComponentsFor(citationIds: ReadonlySet<string>, artifactsById: ReadonlyMap<string, Artifact>) {
   return {
     ...mdComponents,
     a: ({ children, href, ...props }: React.ComponentProps<'a'>) => {
+      if (href?.startsWith('#artifact/')) {
+        try {
+          const artifact = artifactsById.get(decodeURIComponent(href.slice('#artifact/'.length)))
+          if (artifact) {
+            return (
+              <button
+                type="button"
+                onClick={() => openArtifactInWorkspace(artifact)}
+                aria-label={`Open ${artifact.name}`}
+                className="text-brand underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60"
+              >
+                {children}
+              </button>
+            )
+          }
+        } catch {
+          // Malformed or unknown internal refs fall through to the inert link path.
+        }
+      }
       const citationId = href?.startsWith('#') ? href.slice(1) : undefined
       if (citationId && citationIds.has(citationId)) {
         return (
@@ -1096,6 +1181,7 @@ const MessageBubble = memo(function MessageBubble({ message, streaming }: Props)
             <ReactMarkdown
               remarkPlugins={[
                 remarkGfm,
+                [remarkArtifactReferences, { artifacts: message.artifacts ?? [] }],
                 [remarkCitationReferences, {
                   messageId: message.id,
                   indexes: (message.citations ?? []).map((citation) => citation.index),
@@ -1103,9 +1189,10 @@ const MessageBubble = memo(function MessageBubble({ message, streaming }: Props)
                 remarkMath,
               ]}
               rehypePlugins={[[rehypeKatex, katexOptions], rehypeHighlight]}
-              components={markdownComponentsFor(new Set(
-                (message.citations ?? []).map((citation) => citationAnchorId(citation.index, message.id)),
-              ))}
+              components={markdownComponentsFor(
+                new Set((message.citations ?? []).map((citation) => citationAnchorId(citation.index, message.id))),
+                new Map((message.artifacts ?? []).map((artifact) => [artifact.id, artifact])),
+              )}
             >
               {applyCitationMarks(message.content, message.citations ?? [])}
             </ReactMarkdown>

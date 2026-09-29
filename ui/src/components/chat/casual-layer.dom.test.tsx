@@ -225,6 +225,53 @@ describe('assistant Markdown rendering', () => {
     expect(useAppStore.getState().browserUrl).not.toBe('https://example.com/report')
   })
 
+  test('opens a uniquely referenced artifact directly from its message text', async () => {
+    mounted = await mount(
+      <MessageBubble
+        message={{
+          id: 'message-artifact-ref',
+          role: 'assistant',
+          content: 'Open Monthly plan.xlsx when you are ready.',
+          timestamp: new Date().toISOString(),
+          artifacts: [{
+            id: 'artifact-monthly-plan',
+            name: 'Monthly plan.xlsx',
+            type: 'xlsx',
+            preview: 'Summary sheet updated',
+            view: 'office-xlsx',
+          }],
+        }}
+      />,
+    )
+    await tick()
+
+    const ref = mounted.container.querySelector<HTMLButtonElement>('.prose button[aria-label="Open Monthly plan.xlsx"]')
+    expect(ref?.textContent).toBe('Monthly plan.xlsx')
+    await click(ref!)
+    expect(useAppStore.getState().activeView).toBe('office-xlsx')
+  })
+
+  test('leaves filename references inert when multiple artifacts share that name', async () => {
+    mounted = await mount(
+      <MessageBubble
+        message={{
+          id: 'message-ambiguous-artifact-ref',
+          role: 'assistant',
+          content: 'Open notes.md when you are ready.',
+          timestamp: new Date().toISOString(),
+          artifacts: [
+            { id: 'notes-workspace-a', name: 'notes.md', type: 'markdown', preview: 'A' },
+            { id: 'notes-workspace-b', name: 'notes.md', type: 'markdown', preview: 'B' },
+          ],
+        }}
+      />,
+    )
+    await tick()
+
+    expect(mounted.container.querySelector('.prose button')).toBeNull()
+    expect(mounted.container.querySelector('.prose')?.textContent).toContain('notes.md')
+  })
+
   test('shows remote images in an accessible placeholder and does not fetch until the user opens Browse', async () => {
     mounted = await mount(
       <MessageBubble
