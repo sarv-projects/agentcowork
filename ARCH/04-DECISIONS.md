@@ -70,6 +70,7 @@
 | DEC-059 | Explicit in-app System consent dialog; no install-time monitoring elevation; add bounded same-task candidate comparison as a strategy over Mission/Work with isolated writes, shared criteria, budget and human/evidence-based selection | Accepted target, implementation pending | 00, 04–09, 12, 19, 35–36, 40–42, 45–51, AGENTS, TODO |
 | DEC-060 | One capability-selection preference: suitable authorized API/connector/MCP/CLI first, target-specific browser or OS accessibility next, vision after structured paths, raw input last; native agent tools remain agent-owned | Accepted target, implementation pending | 03, 08–09, 13–15, 23–24, 40, 46, 50 |
 | DEC-061 | Use the official Rust MCP SDK for protocol semantics behind Core-owned provider, policy, credential and Guard boundaries; inject a Guard-backed HTTP transport; qualify pinned SDK behavior before removing compatibility code | Accepted target, implementation pending | 04, 08–09, 14, 32, 44–45, TODO |
+| DEC-062 | Queued chat items resolve the latest conversation binding at dequeue time (agent, advertised model or agent-managed state, mode and access); queue content/references remain durable, but a stale binding snapshot is never silently reused; unavailable or unsupported latest selection pauses with an explicit resolution state | Locked | 08, 11, 15, 18, 30, 48–50, TODO |
 
 ## 2. Details
 
@@ -469,6 +470,16 @@ Use the SDK for the server façade only where its API can preserve DEC-048 clari
 **Status note:** Accepted architecture target; implementation, dependency/security review and conformance qualification remain pending. This decision supersedes **only DEC-048 decision 1** (hand-rolled client core / SDK rejection). DEC-048 clarifications A–C remain Locked. The closed `OQ-PRV-1` is replaced by implementation task `TASK-PROV-003` and acceptance test `TEST-PROV-003`.
 
 **Affects:** `14-PROVIDERS`, `32-CHANNELS`, `08-REQUIREMENTS`, `09-FEATURE-MATRIX`, `44-ABSORB-REGISTER`, `45-REFERENCE-RESEARCH`.
+
+### DEC-062 — Queued chat uses the latest selection at dequeue
+
+**Decision:** A queued chat item stores its prompt, structured references, attachments, draft revision and conversation identity, but does not freeze the agent/model/access selection. When the item becomes eligible to start, Core resolves the latest valid selection on that logical conversation and records the actual `AgentBinding`, provider-qualified model (or `agent-managed`), mode and effective grants on the resulting Work. A user changing the picker while an item is queued therefore changes what the queued item will use.
+
+The latest selection is revalidated at dequeue. If the selected agent is offline, unauthenticated, revoked, does not support a requested model or cannot accept an attachment/reference, the item remains queued with a typed `needs_resolution` state and an actionable explanation. It must not silently fall back to `Auto`, another model, another agent or a broader grant. The active Work that caused the queue remains owned by its original binding; this rule applies only when the later queued item is admitted.
+
+**Reason:** The user expects a picker change to govern the next turn. Freezing a binding at queue time makes the visible picker misleading and can run a later action under stale permissions or stale availability. Content and references remain durable independently of the binding so a failed revalidation does not lose user work.
+
+**Status:** Locked. **Affects:** `08`, `09`, `11`, `15`, `18`, `30`, `48`, `49`, `50`, `TODO`.
 
 ## 3. Pending decisions
 
