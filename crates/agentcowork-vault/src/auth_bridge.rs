@@ -15,7 +15,6 @@
 use base64::Engine as _;
 use rand::RngCore;
 use sha2::{Digest, Sha256};
-use std::io::Read;
 
 use crate::Vault;
 use crate::keyring::{KeyRing, KeySpec, KeyStatus};
@@ -274,14 +273,8 @@ fn code_challenge(verifier: &str) -> String {
 
 /// POST an application/x-www-form-urlencoded body and parse the JSON reply.
 fn post_form(url: &str, form: &[(&str, &str)]) -> Result<serde_json::Value, String> {
-    agentcowork_guard::netfloor::preflight_url(url, agentcowork_guard::NetPolicy::default())
+    let agent = crate::guarded_http::agent_for(url)
         .map_err(|denied| format!("token endpoint refused: {}", denied.reason))?;
-    let agent = ureq::AgentBuilder::new()
-        // OAuth responses must not silently move a code or token-bearing
-        // request to another origin. A redirect is returned to the caller.
-        .redirects(0)
-        .timeout(std::time::Duration::from_secs(15))
-        .build();
     let response = match agent.post(url).send_form(form) {
         Ok(response) => response,
         Err(ureq::Error::Status(status, response)) => {
@@ -297,18 +290,9 @@ fn post_form(url: &str, form: &[(&str, &str)]) -> Result<serde_json::Value, Stri
         .map_err(|_| "token response was invalid or exceeded its size limit".into())
 }
 
-const MAX_TOKEN_RESPONSE_BYTES: u64 = 1024 * 1024;
-
 fn read_json_bounded(response: ureq::Response) -> Result<serde_json::Value, String> {
-    let mut bytes = Vec::new();
-    response
-        .into_reader()
-        .take(MAX_TOKEN_RESPONSE_BYTES + 1)
-        .read_to_end(&mut bytes)
-        .map_err(|_| "token response read failed".to_string())?;
-    if bytes.len() as u64 > MAX_TOKEN_RESPONSE_BYTES {
-        return Err("token response exceeded its size limit".into());
-    }
+    let bytes = crate::guarded_http::read_bounded(response)
+        .map_err(|_| "token response was invalid or exceeded its size limit".to_string())?;
     serde_json::from_slice(&bytes).map_err(|_| "token response was not valid JSON".into())
 }
 

@@ -14,6 +14,7 @@ pub mod auth_bridge;
 pub mod broker;
 pub mod credential_broker;
 pub mod egress;
+mod guarded_http;
 pub mod keyring;
 pub mod ledger;
 pub mod oauth;

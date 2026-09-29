@@ -414,6 +414,35 @@ impl<'a> OAuthManager<'a> {
         let challenge = code_challenge(&verifier);
         let state = random_hex(16);
 
+        let mut authorize = url::Url::parse(&p.authorize_url)
+            .map_err(|_| OAuthError::Transport("invalid OAuth authorization endpoint".into()))?;
+        if authorize.scheme() != "https"
+            || authorize.host_str().is_none()
+            || !authorize.username().is_empty()
+            || authorize.password().is_some()
+            || authorize.fragment().is_some()
+            || authorize.query().is_some()
+        {
+            return Err(OAuthError::Transport(
+                "invalid OAuth authorization endpoint".into(),
+            ));
+        }
+        // BrowserOS mirrors the official clients' extra params (doc 33 §7.4).
+        authorize.query_pairs_mut().extend_pairs([
+            ("client_id", p.client_id.as_str()),
+            ("response_type", "code"),
+            ("scope", p.scopes.as_str()),
+            ("redirect_uri", self.redirect_uri.as_str()),
+            ("code_challenge", challenge.as_str()),
+            ("code_challenge_method", "S256"),
+            ("state", state.as_str()),
+            (
+                "extraAuthParams",
+                "id_token_add_organizations,codex_cli_simplified_flow",
+            ),
+        ]);
+        let auth_url = authorize.into();
+
         self.store_pending(
             provider,
             Pending {
@@ -425,22 +454,6 @@ impl<'a> OAuthManager<'a> {
                 interval_secs: 0,
             },
         )?;
-
-        let mut query = String::new();
-        push_q(&mut query, "client_id", &p.client_id);
-        push_q(&mut query, "response_type", "code");
-        push_q(&mut query, "scope", &p.scopes);
-        push_q(&mut query, "redirect_uri", &self.redirect_uri);
-        push_q(&mut query, "code_challenge", &challenge);
-        push_q(&mut query, "code_challenge_method", "S256");
-        push_q(&mut query, "state", &state);
-        // BrowserOS mirrors the official clients' extra params (doc 33 §7.4).
-        push_q(
-            &mut query,
-            "extraAuthParams",
-            "id_token_add_organizations,codex_cli_simplified_flow",
-        );
-        let auth_url = format!("{}?{}", p.authorize_url, query);
 
         Ok(PkceStart {
             provider: provider.to_string(),
@@ -1046,27 +1059,31 @@ impl<'a> OAuthManager<'a> {
 /// LAN, or a non-`http(s)` scheme. A denial is typed and the request is not
 /// made; there is no direct-client fallback.
 fn post_form(url: &str, form: &[(&str, &str)]) -> Result<serde_json::Value, OAuthError> {
-    egress_preflight(url)?;
-    match ureq::post(url)
+    let agent = crate::guarded_http::agent_for(url).map_err(|error| OAuthError::EgressDenied {
+        reason: error.reason,
+        url: error.url,
+    })?;
+    match agent
+        .post(url)
         .set("Accept", "application/json")
         .send_form(form)
     {
-        Ok(resp) => resp
-            .into_json::<serde_json::Value>()
-            .map_err(|e| OAuthError::Transport(e.to_string())),
+        Ok(resp) => parse_oauth_response(resp),
         Err(ureq::Error::Status(code, resp)) => {
-            let body = resp
-                .into_string()
-                .unwrap_or_default()
-                .chars()
-                .take(300)
-                .collect::<String>();
-            match serde_json::from_str::<serde_json::Value>(&body) {
+            let body = crate::guarded_http::read_bounded(resp).map_err(|_| {
+                OAuthError::Transport("OAuth error response was unavailable or too large".into())
+            })?;
+            match serde_json::from_slice::<serde_json::Value>(&body) {
                 Ok(json) if json.get("error").is_some() => Ok(json),
-                _ => Err(OAuthError::Http(code, body)),
+                _ => Err(OAuthError::Http(
+                    code,
+                    "provider returned an error response".into(),
+                )),
             }
         }
-        Err(ureq::Error::Transport(t)) => Err(OAuthError::Transport(t.to_string())),
+        Err(ureq::Error::Transport(_)) => Err(OAuthError::Transport(
+            "OAuth endpoint request failed".into(),
+        )),
     }
 }
 
@@ -1076,9 +1093,13 @@ fn post_form(url: &str, form: &[(&str, &str)]) -> Result<serde_json::Value, OAut
 /// credential, so it is the one place where an unchecked destination would be
 /// a credential leak rather than a policy miss.
 fn get_json_with_auth(url: &str, token: &str) -> Result<serde_json::Value, OAuthError> {
-    egress_preflight(url)?;
+    let agent = crate::guarded_http::agent_for(url).map_err(|error| OAuthError::EgressDenied {
+        reason: error.reason,
+        url: error.url,
+    })?;
     // The internal endpoint checks editor headers; mirror copilot clients.
-    match ureq::get(url)
+    match agent
+        .get(url)
         .set("Authorization", &format!("token {token}"))
         .set("Editor-Version", "vscode/1.85.0")
         .set("Editor-Plugin-Version", "copilot-chat/0.14.1")
@@ -1086,36 +1107,25 @@ fn get_json_with_auth(url: &str, token: &str) -> Result<serde_json::Value, OAuth
         .set("Accept", "application/json")
         .call()
     {
-        Ok(resp) => resp
-            .into_json::<serde_json::Value>()
-            .map_err(|e| OAuthError::Transport(e.to_string())),
-        Err(ureq::Error::Status(code, resp)) => Err(OAuthError::Http(
-            code,
-            resp.into_string()
-                .unwrap_or_default()
-                .chars()
-                .take(300)
-                .collect(),
+        Ok(resp) => parse_oauth_response(resp),
+        Err(ureq::Error::Status(code, resp)) => {
+            let _ = crate::guarded_http::read_bounded(resp);
+            Err(OAuthError::Http(
+                code,
+                "provider returned an error response".into(),
+            ))
+        }
+        Err(ureq::Error::Transport(_)) => Err(OAuthError::Transport(
+            "OAuth endpoint request failed".into(),
         )),
-        Err(ureq::Error::Transport(t)) => Err(OAuthError::Transport(t.to_string())),
     }
 }
 
-/// The destination pre-flight for every outbound call in this module.
-///
-/// The policy is [`agentcowork_guard::NetPolicy::default`]: loopback stays
-/// reachable (the tests point the endpoints at a loopback mock, and a
-/// loopback OAuth endpoint is a legitimate desktop setup) while the LAN, the
-/// always-refused ranges and non-`http(s)` schemes are denied. The stricter
-/// [`agentcowork_guard::NetPolicy::strict`] is deliberately *not* used here: it
-/// would refuse loopback, and a custody path must not be weakened or widened by
-/// a fix to an unrelated surface — the hard floor is what protects it here.
-fn egress_preflight(url: &str) -> Result<(), OAuthError> {
-    agentcowork_guard::netfloor::preflight_url(url, agentcowork_guard::NetPolicy::default())
-        .map_err(|denied| OAuthError::EgressDenied {
-            reason: denied.reason,
-            url: denied.url,
-        })
+fn parse_oauth_response(response: ureq::Response) -> Result<serde_json::Value, OAuthError> {
+    let bytes = crate::guarded_http::read_bounded(response)
+        .map_err(|_| OAuthError::Transport("OAuth response was unavailable or too large".into()))?;
+    serde_json::from_slice(&bytes)
+        .map_err(|_| OAuthError::Transport("OAuth response was not valid JSON".into()))
 }
 
 #[derive(Debug, Clone)]
@@ -1188,28 +1198,6 @@ fn access_id(access: &str) -> String {
 }
 
 /// RFC 3986 unreserved-safe percent-encoder (query values).
-fn pct_encode(s: &str) -> String {
-    const UNRESERVED: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
-    let mut out = String::with_capacity(s.len() * 3);
-    for &b in s.as_bytes() {
-        if UNRESERVED.contains(&b) {
-            out.push(b as char);
-        } else {
-            out.push_str(&format!("%{b:02X}"));
-        }
-    }
-    out
-}
-
-fn push_q(query: &mut String, key: &str, value: &str) {
-    if !query.is_empty() {
-        query.push('&');
-    }
-    query.push_str(key);
-    query.push('=');
-    query.push_str(&pct_encode(value));
-}
-
 /// PKCE S256 code challenge from a verifier.
 fn code_challenge(verifier: &str) -> String {
     let digest = Sha256::digest(verifier.as_bytes());
