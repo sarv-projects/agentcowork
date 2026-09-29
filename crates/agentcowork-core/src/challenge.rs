@@ -169,25 +169,42 @@ pub trait SolverHttp {
     fn post_json(&self, url: &str, body: &serde_json::Value) -> Result<serde_json::Value, String>;
 }
 
-/// The real transport (ureq, same stack as the vault broker/oauth).
-///
-/// FIX-09: the solver destination is pre-flighted through
-/// [`agentcowork_guard::netfloor::preflight_url`] before the socket. The base URL
-/// comes from the [`ByoProvider`] enum, but the seam is a trait a caller can
-/// implement and re-point, so the floor is enforced at the client — a BYO
-/// solver can never be steered at cloud metadata or the LAN.
+/// The real transport uses Guard-pinned egress. The provider URLs are selected
+/// from [`ByoProvider`], and the trait seam remains available for test doubles.
 pub struct UreqHttp;
 
 impl SolverHttp for UreqHttp {
     fn post_json(&self, url: &str, body: &serde_json::Value) -> Result<serde_json::Value, String> {
-        agentcowork_guard::netfloor::preflight_url(url, agentcowork_guard::NetPolicy::default())
-            .map_err(|e| e.to_string())?;
-        let resp = ureq::post(url)
-            .set("Content-Type", "application/json")
-            .send_json(body.clone())
-            .map_err(|e| e.to_string())?;
-        resp.into_json::<serde_json::Value>()
-            .map_err(|e| e.to_string())
+        let client = agentcowork_guard::egress_http::GuardedHttpClient::new(
+            url,
+            agentcowork_guard::NetPolicy::default(),
+            std::time::Duration::from_secs(20),
+        )
+        .map_err(|_| "Guard refused the challenge-solver destination".to_string())?;
+        let payload = serde_json::to_vec(body).map_err(|_| "invalid solver request".to_string())?;
+        if payload.len() > 1024 * 1024 {
+            return Err("challenge-solver request exceeds the configured limit".to_string());
+        }
+        let response = client
+            .request(
+                "POST",
+                url,
+                &[
+                    ("Content-Type", "application/json"),
+                    ("Accept", "application/json"),
+                ],
+                Some(&payload),
+                1024 * 1024,
+            )
+            .map_err(|_| "Guarded challenge-solver request failed".to_string())?;
+        if !(200..300).contains(&response.status) {
+            return Err(format!(
+                "challenge solver returned HTTP {}",
+                response.status
+            ));
+        }
+        serde_json::from_slice(&response.body)
+            .map_err(|_| "invalid solver response JSON".to_string())
     }
 }
 
