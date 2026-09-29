@@ -311,7 +311,6 @@ fn finish_spawn(
     output: agentcowork_core::terminal::PtyOutput,
     prov: SpawnProvenance<'_>,
 ) -> Result<String, String> {
-    stream_frames(app.clone(), pty_id.clone(), output)?;
     // v3.59 governance decision — the audit kind tracks who acted: a user
     // gesture for a human tab, an agent authorization for `script.run`.
     let (kind, subject) = match prov.origin {
@@ -331,6 +330,14 @@ fn finish_spawn(
         payload["ticketId"] = serde_json::json!(tid);
     }
     crate::control::record_mutation(state, kind, subject, payload);
+    if let Err(error) = stream_frames(app.clone(), pty_id.clone(), output) {
+        // The PTY exists and has been audited, but without a reader the user
+        // cannot inspect it. Stop the process before surfacing the failure.
+        let _ = state.terminal.kill(&pty_id);
+        return Err(format!(
+            "terminal stream setup failed; session stopped: {error}"
+        ));
+    }
     Ok(pty_id)
 }
 
@@ -458,24 +465,19 @@ fn spawn_agent_command(
     // Grab the tracker before writing: the reader thread can start producing
     // records the instant the first line lands, and a tracker taken afterwards
     // could miss the earliest ones.
-    let tracker = state
-        .terminal
-        .tracker(&pty_id)
-        .ok_or_else(|| "terminal: session vanished immediately after spawn".to_string())?;
-
-    // Send the command(s). The shell echoes them and its integration script
-    // reports `E` (line) + `D` (exit) back to us.
-    for line in command.lines() {
-        let line = line.trim();
-        if line.is_empty() {
-            continue;
+    let tracker = match state.terminal.tracker(&pty_id) {
+        Some(tracker) => tracker,
+        None => {
+            let _ = state.terminal.kill(&pty_id);
+            return Err(
+                "terminal: session vanished immediately after spawn; session stopped".into(),
+            );
         }
-        state
-            .terminal
-            .write(&pty_id, format!("{line}\r").as_bytes())
-            .map_err(|e| format!("terminal: write failed: {e}"))?;
-    }
+    };
 
+    // Record the spawn and start observation before sending any command. The
+    // audit stores bounded metadata and the spent ticket reference, never the
+    // command text (which may itself contain credentials or private data).
     finish_spawn(
         app,
         state,
@@ -484,13 +486,34 @@ fn spawn_agent_command(
         SpawnProvenance {
             subject: serde_json::json!({
                 "profileId": resolved.profile_name,
-                "command": command.trim(),
+                "commandLines": command_line_count(command),
+                "commandBytes": command.len(),
                 "rows": rows,
                 "cols": cols,
             }),
             ..prov
         },
     )?;
+
+    // Send the command(s). The shell echoes them and its integration script
+    // reports `E` (line) + `D` (exit) back to us.
+    for line in command.lines() {
+        let line = line.trim();
+        if line.is_empty() {
+            continue;
+        }
+        if let Err(error) = state
+            .terminal
+            .write(&pty_id, format!("{line}\r").as_bytes())
+        {
+            // Earlier lines of a multi-line submission may already have run;
+            // terminate the remainder and make the ambiguity explicit.
+            let _ = state.terminal.kill(&pty_id);
+            return Err(format!(
+                "terminal command submission failed; an earlier command prefix may have run, and the session was stopped: {error}"
+            ));
+        }
+    }
     Ok((pty_id, tracker))
 }
 
@@ -521,9 +544,7 @@ fn ticket_for_agent_command(
     command: &str,
     origin: TerminalOrigin,
 ) -> Result<String, String> {
-    use agentcowork_guard::{DecisionPackage, Operation as GuardOp, RiskLevel, prescan};
-    use std::hash::{Hash, Hasher};
-
+    use agentcowork_guard::{prescan, DecisionPackage, Operation as GuardOp, RiskLevel};
     // 1) Guard-1: the deterministic blocklist, on the exact command line.
     //    `scan_shell` returns the blocklist indices that matched; non-empty
     //    means a known-destructive pattern, which is refused outright (the
@@ -539,11 +560,11 @@ fn ticket_for_agent_command(
     decision.risk = RiskLevel::High;
     decision.script_lines = vec![command.to_string()];
 
-    let mut h = std::collections::hash_map::DefaultHasher::new();
-    "terminal.command".hash(&mut h);
-    command.hash(&mut h);
-    origin_label(origin).hash(&mut h);
-    let args_hash = format!("{:016x}", h.finish());
+    let args_hash = agentcowork_guard::ticket::hash_args(&[
+        "terminal.command.v1",
+        command,
+        origin_label(origin),
+    ]);
 
     let mut guard = state.guard_service.lock().map_err(|e| e.to_string())?;
     let verdict = guard.evaluate(
