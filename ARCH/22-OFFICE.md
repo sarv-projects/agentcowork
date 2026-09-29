@@ -100,18 +100,20 @@ Registry mechanics: each op = `{id · input/output schema · risk · executor ·
 
 Pivot authoring · reflow · SmartArt/OLE editing · multi-writer merge · real-time co-editing · embedded rendering engine (we shell out) — each with product-demand/fidelity-proof triggers.
 
-## 10. Code-phase fixes identified (frozen code)
+## 10. Code-phase implementation status
 
-1. **Resident/lease missing** in the current crate (has commit/snapshot primitives) — the main gap for DEC-013.
-2. **PDF “redact” currently annotates** — must remove content (v0 P0 carried forward).
-3. **fsync before atomic swap** — partial: the DOCX/PDF command paths use `agentcowork_office::write_atomic` (temp → `sync_all` → rename, plus a best-effort directory fsync on POSIX), but the XLSX command path has its own `atomic_write` (`src-tauri/src/xlsx_cmds.rs:301-312`) = write + rename with **no fsync**; route it — and every new commit path — through the fsynced primitive.
-4. Declare per-engine fidelity limits in the registry (lossy ops surface as `guidance`).
+The former frozen-code findings below have been rechecked against the live tree. Implementation status and outstanding acceptance evidence are tracked by `TODO.md` W0 (`TASK-OFFICE-001`–`003`) and the `FIX-14`–`FIX-16` rows in `ARCH/42-EVIDENCE-MAP.md`; this section records the current design boundary, not a second task ledger.
+
+1. **Resident/lease:** `agentcowork-office::resident` now owns per-format tables and work-bound writer leases. The current Tauri commit adapters acquire a context for a commit and close it after flush; a persistent Workbench editing session and op-log/restart/batch-recovery acceptance are not established.
+2. **PDF redact:** the runtime now removes content from page content streams and has a checked path that refuses unremovable intersections or requested residual strings. Format coverage and all required failure cases still need acceptance evidence; a visual overlay is never called a redaction.
+3. **Durable commit:** DOCX/PDF and XLSX mutation paths use the shared staging → fsync → atomic-swap commit API. Platform-specific directory durability and crash-injection acceptance remain required.
+4. **Fidelity limits:** per-engine limits must be declared in the registry; lossy or unsupported operations return typed `guidance` rather than silently claiming fidelity (`TASK-OFFICE-005`).
 
 ## 11. Open questions (`OQ-OFFICE-*`)
 
 1. Native renderer vs browser shell-out per format (packaging/licensing trade).
 2. IronCalc coverage vs LibreOffice fallback thresholds.
-3. PDF redact implementation path (object-level removal engine).
+3. PDF content types and unsupported object classes that must make redaction refuse rather than claim removal.
 4. Template subset definition per format.
 5. Merge deferral trigger (when multi-writer demand justifies design).
 
