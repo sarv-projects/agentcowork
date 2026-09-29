@@ -6149,7 +6149,12 @@ mod tests {
         assert!(second.get_work("w-journal").is_some());
         assert_eq!(second.replay_from("w-journal", 0).len(), 2);
         let mut third = second;
-        let same = third.create_work("w-journal", None, None, "must not replace");
+        let same = third.create_work(
+            "w-journal",
+            Some("p".into()),
+            Some("s".into()),
+            "must not replace",
+        );
         assert_eq!(same.project_id.as_deref(), Some("p"));
         let _ = std::fs::remove_file(path);
     }
@@ -6362,6 +6367,8 @@ mod tests {
             .unwrap();
         g.record_execution_transition("w1", "ex:1", WorkState::WaitingApproval)
             .unwrap();
+        g.record_execution_transition("w1", "ex:1", WorkState::Running)
+            .unwrap();
         g.record_execution_transition("w1", "ex:1", WorkState::Completed)
             .unwrap();
         assert_eq!(
@@ -6400,6 +6407,8 @@ mod tests {
         use agentcowork_types::{WaitCondition, WaitReason};
         let mut g = gateway();
         g.bind_execution("w1", "ex:1").unwrap();
+        g.record_execution_transition("w1", "ex:1", WorkState::Running)
+            .unwrap();
         let wait = WaitCondition::new(WaitReason::Timer)
             .with_detail("retry backoff")
             .with_deadline_ms(1_700_000_000_000)
@@ -6412,6 +6421,8 @@ mod tests {
         assert_eq!(presence.wait, Some(wait));
 
         // Approval has a named state and its own presence projection.
+        g.record_execution_transition("w1", "ex:1", WorkState::Running)
+            .unwrap();
         let approval = WaitCondition::new(WaitReason::Approval).with_resume_on("tkt:42");
         g.record_wait("w1", "ex:1", &approval).unwrap();
         let presence = g.presence("w1").unwrap();
@@ -6458,7 +6469,15 @@ mod tests {
         assert_eq!(address.session_kind, SessionKind::Automation);
         assert_eq!(address.session_id.as_deref(), Some("auto-s-1"));
         // Idempotent re-create keeps the kind.
-        let again = g.create_work("w-auto", None, Some("auto-s-1".into()), "again");
+        let again = g
+            .create_work_in_session(
+                "w-auto",
+                None,
+                Some("auto-s-1".into()),
+                SessionKind::Automation,
+                "again",
+            )
+            .unwrap();
         assert_eq!(again.session_kind, SessionKind::Automation);
 
         // Interactive roots are unchanged.

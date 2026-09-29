@@ -121,93 +121,103 @@ pub fn capture(hwnd: HWND) -> Result<(Vec<u8>, u32, u32), String> {
 }
 
 unsafe fn capture_inner(hwnd: HWND) -> Result<(Vec<u8>, u32, u32), String> {
-    let (device, context, rt_device) = create_device().map_err(|e| format!("D3D11 device: {e}"))?;
-    let item = GraphicsCaptureItem::TryCreateFromWindowId(WindowId {
-        Value: hwnd.0 as u64,
-    })
-    .map_err(|e| format!("GraphicsCaptureItem: {e}"))?;
-    let size = item.Size().map_err(|e| format!("capture item size: {e}"))?;
-    if size.Width <= 0 || size.Height <= 0 {
-        return Err(format!(
-            "the capture item reports no extent ({}x{})",
-            size.Width, size.Height
-        ));
-    }
-    let width = size.Width as u32;
-    let height = size.Height as u32;
-
-    let pool = Direct3D11CaptureFramePool::CreateFreeThreaded(
-        &rt_device,
-        DirectXPixelFormat::B8G8R8A8UIntNormalized,
-        2,
-        SizeInt32 {
-            Width: size.Width,
-            Height: size.Height,
-        },
-    )
-    .map_err(|e| format!("Direct3D11CaptureFramePool: {e}"))?;
-    let session: GraphicsCaptureSession = pool
-        .CreateCaptureSession(&item)
-        .map_err(|e| format!("CreateCaptureSession: {e}"))?;
-    // A capture is for content, not for the user's cursor.
-    let _ = session.SetIsCursorCaptureEnabled(false);
-    session
-        .StartCapture()
-        .map_err(|e| format!("StartCapture: {e}"))?;
-
-    let mut frame = None;
-    for _ in 0..FRAME_ATTEMPTS {
-        if let Ok(f) = pool.TryGetNextFrame() {
-            frame = Some(f);
-            break;
+    // SAFETY: The caller has validated the HWND; WinRT/D3D objects are owned
+    // for this call and all mapped texture memory is unmapped before return.
+    unsafe {
+        let (device, context, rt_device) =
+            create_device().map_err(|e| format!("D3D11 device: {e}"))?;
+        let item = GraphicsCaptureItem::TryCreateFromWindowId(WindowId {
+            Value: hwnd.0 as u64,
+        })
+        .map_err(|e| format!("GraphicsCaptureItem: {e}"))?;
+        let size = item.Size().map_err(|e| format!("capture item size: {e}"))?;
+        if size.Width <= 0 || size.Height <= 0 {
+            return Err(format!(
+                "the capture item reports no extent ({}x{})",
+                size.Width, size.Height
+            ));
         }
-        std::thread::sleep(std::time::Duration::from_millis(FRAME_POLL_MS));
-    }
-    let Some(frame) = frame else {
-        return Err(format!(
-            "no frame arrived within {} attempts \u{d7} {}ms",
-            FRAME_ATTEMPTS, FRAME_POLL_MS
-        ));
-    };
-    let surface: IDirect3DSurface = frame.Surface().map_err(|e| format!("frame surface: {e}"))?;
-    let _ = frame.Close();
-    let _ = session.Close();
-    let _ = pool.Close();
+        let width = size.Width as u32;
+        let height = size.Height as u32;
 
-    let access: IDirect3DDxgiInterfaceAccess = surface
-        .cast()
-        .map_err(|e| format!("surface \u{2192} DXGI access: {e}"))?;
-    let texture: ID3D11Texture2D = access
-        .GetInterface()
-        .map_err(|e| format!("DXGI access \u{2192} ID3D11Texture2D: {e}"))?;
-    let png = copy_and_encode(&device, &context, &texture, width, height)
-        .ok_or_else(|| "the captured surface could not be read back or encoded".to_string())?;
-    Ok((png, width, height))
+        let pool = Direct3D11CaptureFramePool::CreateFreeThreaded(
+            &rt_device,
+            DirectXPixelFormat::B8G8R8A8UIntNormalized,
+            2,
+            SizeInt32 {
+                Width: size.Width,
+                Height: size.Height,
+            },
+        )
+        .map_err(|e| format!("Direct3D11CaptureFramePool: {e}"))?;
+        let session: GraphicsCaptureSession = pool
+            .CreateCaptureSession(&item)
+            .map_err(|e| format!("CreateCaptureSession: {e}"))?;
+        // A capture is for content, not for the user's cursor.
+        let _ = session.SetIsCursorCaptureEnabled(false);
+        session
+            .StartCapture()
+            .map_err(|e| format!("StartCapture: {e}"))?;
+
+        let mut frame = None;
+        for _ in 0..FRAME_ATTEMPTS {
+            if let Ok(f) = pool.TryGetNextFrame() {
+                frame = Some(f);
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(FRAME_POLL_MS));
+        }
+        let Some(frame) = frame else {
+            return Err(format!(
+                "no frame arrived within {} attempts \u{d7} {}ms",
+                FRAME_ATTEMPTS, FRAME_POLL_MS
+            ));
+        };
+        let surface: IDirect3DSurface =
+            frame.Surface().map_err(|e| format!("frame surface: {e}"))?;
+        let _ = frame.Close();
+        let _ = session.Close();
+        let _ = pool.Close();
+
+        let access: IDirect3DDxgiInterfaceAccess = surface
+            .cast()
+            .map_err(|e| format!("surface \u{2192} DXGI access: {e}"))?;
+        let texture: ID3D11Texture2D = access
+            .GetInterface()
+            .map_err(|e| format!("DXGI access \u{2192} ID3D11Texture2D: {e}"))?;
+        let png = copy_and_encode(&device, &context, &texture, width, height)
+            .ok_or_else(|| "the captured surface could not be read back or encoded".to_string())?;
+        Ok((png, width, height))
+    }
 }
 
 /// A BGRA-capable D3D11 device + immediate context, wrapped as the WinRT
 /// `IDirect3DDevice` the frame pool needs.
 unsafe fn create_device()
 -> windows::core::Result<(ID3D11Device, ID3D11DeviceContext, IDirect3DDevice)> {
-    let mut device: Option<ID3D11Device> = None;
-    let mut context: Option<ID3D11DeviceContext> = None;
-    D3D11CreateDevice(
-        None,
-        D3D_DRIVER_TYPE_HARDWARE,
-        None,
-        D3D11_CREATE_DEVICE_BGRA_SUPPORT,
-        None,
-        D3D11_SDK_VERSION,
-        Some(&mut device),
-        Some(&mut D3D_FEATURE_LEVEL::default()),
-        Some(&mut context),
-    )?;
-    let device = device.ok_or_else(windows::core::Error::from_win32)?;
-    let context = context.ok_or_else(windows::core::Error::from_win32)?;
-    let dxgi: windows::Win32::Graphics::Dxgi::IDXGIDevice = device.cast()?;
-    let inspectable = CreateDirect3D11DeviceFromDXGIDevice(&dxgi)?;
-    let rt_device: IDirect3DDevice = inspectable.cast()?;
-    Ok((device, context, rt_device))
+    // SAFETY: D3D11CreateDevice initializes the optional COM interfaces below;
+    // each returned interface is checked before it is used.
+    unsafe {
+        let mut device: Option<ID3D11Device> = None;
+        let mut context: Option<ID3D11DeviceContext> = None;
+        D3D11CreateDevice(
+            None,
+            D3D_DRIVER_TYPE_HARDWARE,
+            None,
+            D3D11_CREATE_DEVICE_BGRA_SUPPORT,
+            None,
+            D3D11_SDK_VERSION,
+            Some(&mut device),
+            Some(&mut D3D_FEATURE_LEVEL::default()),
+            Some(&mut context),
+        )?;
+        let device = device.ok_or_else(windows::core::Error::from_win32)?;
+        let context = context.ok_or_else(windows::core::Error::from_win32)?;
+        let dxgi: windows::Win32::Graphics::Dxgi::IDXGIDevice = device.cast()?;
+        let inspectable = CreateDirect3D11DeviceFromDXGIDevice(&dxgi)?;
+        let rt_device: IDirect3DDevice = inspectable.cast()?;
+        Ok((device, context, rt_device))
+    }
 }
 
 /// Copy the GPU texture into a CPU-readable staging texture, map it, and encode
@@ -219,61 +229,66 @@ unsafe fn copy_and_encode(
     width: u32,
     height: u32,
 ) -> Option<Vec<u8>> {
-    let mut src_desc = D3D11_TEXTURE2D_DESC::default();
-    src.GetDesc(&mut src_desc);
+    // SAFETY: `src` is a live texture from the captured frame; `mapped` is
+    // checked for a non-null pointer and adequate row pitch before reading.
+    // Each row/pixel offset is bounded by the validated dimensions and pitch.
+    unsafe {
+        let mut src_desc = D3D11_TEXTURE2D_DESC::default();
+        src.GetDesc(&mut src_desc);
 
-    let mut staging_desc = src_desc;
-    staging_desc.Usage = D3D11_USAGE_STAGING;
-    staging_desc.BindFlags = 0;
-    staging_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ.0 as u32;
-    staging_desc.MiscFlags = 0;
-    staging_desc.MipLevels = 1;
-    staging_desc.ArraySize = 1;
-    staging_desc.SampleDesc.Count = 1;
-    staging_desc.SampleDesc.Quality = 0;
+        let mut staging_desc = src_desc;
+        staging_desc.Usage = D3D11_USAGE_STAGING;
+        staging_desc.BindFlags = 0;
+        staging_desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ.0 as u32;
+        staging_desc.MiscFlags = 0;
+        staging_desc.MipLevels = 1;
+        staging_desc.ArraySize = 1;
+        staging_desc.SampleDesc.Count = 1;
+        staging_desc.SampleDesc.Quality = 0;
 
-    let mut staging: Option<ID3D11Texture2D> = None;
-    device
-        .CreateTexture2D(&staging_desc, None, Some(&mut staging))
-        .ok()?;
-    let staging = staging?;
-    let dst_res: ID3D11Resource = staging.cast().ok()?;
-    let src_res: ID3D11Resource = src.cast().ok()?;
-    context.CopyResource(&dst_res, &src_res);
+        let mut staging: Option<ID3D11Texture2D> = None;
+        device
+            .CreateTexture2D(&staging_desc, None, Some(&mut staging))
+            .ok()?;
+        let staging = staging?;
+        let dst_res: ID3D11Resource = staging.cast().ok()?;
+        let src_res: ID3D11Resource = src.cast().ok()?;
+        context.CopyResource(&dst_res, &src_res);
 
-    let mut mapped = D3D11_MAPPED_SUBRESOURCE::default();
-    context
-        .Map(&dst_res, 0, D3D11_MAP_READ, 0, Some(&mut mapped))
-        .ok()?;
+        let mut mapped = D3D11_MAPPED_SUBRESOURCE::default();
+        context
+            .Map(&dst_res, 0, D3D11_MAP_READ, 0, Some(&mut mapped))
+            .ok()?;
 
-    let row_pitch = mapped.RowPitch as usize;
-    let mut rgba = vec![0u8; (width as usize) * (height as usize) * 4];
-    if mapped.pData.is_null() || row_pitch < (width as usize) * 4 {
-        context.Unmap(&dst_res, 0);
-        return None;
-    }
-    for y in 0..height as usize {
-        let src_row = (mapped.pData as *const u8).add(y * row_pitch);
-        for x in 0..width as usize {
-            let p = src_row.add(x * 4);
-            // BGRA (little-endian) → RGBA
-            let b = *p;
-            let g = *p.add(1);
-            let r = *p.add(2);
-            let a = *p.add(3);
-            let o = (y * (width as usize) + x) * 4;
-            rgba[o] = r;
-            rgba[o + 1] = g;
-            rgba[o + 2] = b;
-            rgba[o + 3] = a;
+        let row_pitch = mapped.RowPitch as usize;
+        let mut rgba = vec![0u8; (width as usize) * (height as usize) * 4];
+        if mapped.pData.is_null() || row_pitch < (width as usize) * 4 {
+            context.Unmap(&dst_res, 0);
+            return None;
         }
-    }
-    context.Unmap(&dst_res, 0);
+        for y in 0..height as usize {
+            let src_row = (mapped.pData as *const u8).add(y * row_pitch);
+            for x in 0..width as usize {
+                let p = src_row.add(x * 4);
+                // BGRA (little-endian) → RGBA
+                let b = *p;
+                let g = *p.add(1);
+                let r = *p.add(2);
+                let a = *p.add(3);
+                let o = (y * (width as usize) + x) * 4;
+                rgba[o] = r;
+                rgba[o + 1] = g;
+                rgba[o + 2] = b;
+                rgba[o + 3] = a;
+            }
+        }
+        context.Unmap(&dst_res, 0);
 
-    let img = image::RgbaImage::from_raw(width, height, rgba)?;
-    let mut out = std::io::Cursor::new(Vec::new());
-    image::DynamicImage::ImageRgba8(img)
-        .write_to(&mut out, image::ImageFormat::Png)
-        .ok()?;
-    Some(out.into_inner())
+        let img = image::RgbaImage::from_raw(width, height, rgba)?;
+        let mut out = std::io::Cursor::new(Vec::new());
+        image::DynamicImage::ImageRgba8(img)
+            .write_to(&mut out, image::ImageFormat::Png)
+            .ok()?;
+        Some(out.into_inner())
+    }
 }

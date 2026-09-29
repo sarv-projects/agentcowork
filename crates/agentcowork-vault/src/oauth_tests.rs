@@ -796,7 +796,8 @@ fn custody_egress_refuses_the_always_blocked_ranges() {
         let err = post_form(url, &[("grant_type", "authorization_code")]).unwrap_err();
         match err {
             OAuthError::EgressDenied { reason, url: u } => {
-                assert_eq!(u, url);
+                let expected_origin = url::Url::parse(url).unwrap().origin().ascii_serialization();
+                assert_eq!(u, expected_origin, "refusal must not echo URL paths");
                 assert!(!reason.is_empty());
             }
             other => panic!("expected an egress denial for {url}, got {other:?}"),
@@ -851,6 +852,8 @@ fn a_repointed_token_url_cannot_escape_the_floor() {
 /// into uselessness by the fix.
 #[test]
 fn loopback_endpoints_still_pass_the_floor() {
-    assert!(egress_preflight("http://127.0.0.1:8080/oauth/token").is_ok());
-    assert!(egress_preflight("https://auth0.openai.com/oauth/token").is_ok());
+    assert!(
+        crate::guarded_http::agent_for("http://127.0.0.1:8080/oauth/token").is_ok(),
+        "a loopback desktop callback/test endpoint remains reachable"
+    );
 }

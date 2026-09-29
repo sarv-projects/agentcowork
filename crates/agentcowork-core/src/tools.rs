@@ -356,6 +356,13 @@ impl ToolRegistry {
         for r in FACADE_ROUTES {
             aliases.insert(r.facade.into(), r.facade.into());
         }
+        // Keep the pre-dotted spool lookup id as an input-only compatibility
+        // alias; capability discovery and newly issued calls use the canonical
+        // dotted façade id.
+        aliases.insert(
+            "retrieve_original".into(),
+            "artifact.retrieve_original".into(),
+        );
 
         Self { tools, aliases }
     }
@@ -1655,7 +1662,7 @@ impl ToolService {
         // like any other read. A hash that does not resolve contributes no
         // path — and the dispatch refuses it — so an unresolvable address can
         // never be authorized into reading something.
-        if spec.id == "retrieve_original" {
+        if spec.id == "artifact.retrieve_original" {
             let hash_arg = args.get("hash").and_then(Value::as_str).unwrap_or("");
             if let Some(spool) = self.spool.as_ref()
                 && let Ok(path) = spool.resolve(hash_arg)
@@ -2267,7 +2274,7 @@ impl ToolService {
             // TOCTOU re-verification included). Here the address is re-resolved
             // through the same guarded `Spool::retrieve`; a hash that stopped
             // resolving refuses rather than falling back to anything.
-            "retrieve_original" => {
+            "artifact.retrieve_original" => {
                 let Some(spool) = self.spool.clone() else {
                     return json!({
                         "ok": false,
@@ -4336,7 +4343,7 @@ pub const FACADE_ROUTES: &[FacadeRoute] = &[
     // rides the same native-read auto-allow that `file_ops.read` gets — the
     // floor, the ticket, and the audit row are the executor's, unchanged.
     FacadeRoute {
-        facade: "retrieve_original",
+        facade: "artifact.retrieve_original",
         description: "Read a line range of a spooled tool output by its content address (hash)",
         read_only: true,
         destructive: false,
@@ -4546,7 +4553,9 @@ mod tests {
             assert_eq!(out["ok"], false, "{url} must be refused: {out}");
             let err = out["error"].as_str().unwrap_or_default();
             assert!(
-                err.contains("egress denied") || err.contains("path floor"),
+                err.contains("egress denied")
+                    || err.contains("invalid or cross-origin HTTP endpoint")
+                    || err.contains("path floor"),
                 "{url} → {err}"
             );
         }
@@ -5530,9 +5539,11 @@ mod tests {
     fn p69_g2_deflection_is_not_downgradable_by_a_ticket_or_args_hash() {
         let dir = tempfile();
         let mut s = svc(&dir);
-        // A caller-supplied `argsHash` (the coordinator's pre-flight claim) and
-        // a pre-existing `ticketId` must not buy authorization for a refused
-        // command: the deflection returns before the ticket is consulted.
+        // Even a correctly bound args hash (the coordinator's pre-flight
+        // claim) and a pre-existing `ticketId` must not buy authorization for
+        // a refused command: deflection returns before the ticket is consulted.
+        let args = json!({"code": "python -c 'import xlsxwriter'"});
+        let args_hash = canonical_args_hash(&args);
         let out = s
             .handle(
                 "tool/exec",
@@ -5540,9 +5551,9 @@ mod tests {
                     "toolId": "script.run",
                     "sessionId": "s",
                     "agentId": "external",
-                    "argsHash": "deadbeef",
+                    "argsHash": args_hash,
                     "ticketId": "tkt:forged",
-                    "args": {"code": "python -c 'import xlsxwriter'"}
+                    "args": args
                 }),
             )
             .unwrap();
@@ -6552,6 +6563,7 @@ mod tests {
         let mut seen = HashSet::new();
         for r in FACADE_ROUTES {
             // Flat unique names with dot hierarchy.
+            assert!(!r.facade.is_empty(), "façade id must not be empty");
             assert!(r.facade.contains('.'), "{} needs dot hierarchy", r.facade);
             assert!(seen.insert(r.facade), "duplicate façade {}", r.facade);
             // destructive ⇒ mutating (never a readOnly destructive).
@@ -6575,6 +6587,11 @@ mod tests {
             assert_eq!(t.read_only, r.read_only, "{}", r.facade);
             assert_eq!(t.family, ToolFamily::Facade, "{}", r.facade);
         }
+        assert_eq!(
+            reg.get("retrieve_original").map(|tool| tool.id.as_str()),
+            Some("artifact.retrieve_original"),
+            "legacy spool lookup name must resolve only to the canonical façade"
+        );
         // Every façade target resolves to a real native tool (no dangling fan-out).
         for r in FACADE_ROUTES {
             for t in r.targets {

@@ -819,7 +819,7 @@ fn acceptance_commit_path_is_fsynced_before_the_swap() {
     assert!(trace.is_ordered());
     assert!(trace.is_durable());
     assert_eq!(std::fs::read(&doc).unwrap(), b"v2-committed");
-    verify_readback(&doc, b"v2-committed".len()).expect("the read-back matches");
+    verify_readback(&doc, b"v2-committed").expect("the read-back matches");
 
     // A commit that cannot swap leaves the original bytes and no orphan.
     let blocked = dir.join("blocked.xlsx");

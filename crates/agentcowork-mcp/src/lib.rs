@@ -875,6 +875,15 @@ pub const SHARED_FACADES: &[FacadeDef] = &[
         kernel_route: false,
     },
     FacadeDef {
+        name: "artifact.retrieve_original",
+        description: "Read a line range of a spooled tool output by its content address (hash)",
+        read_only: true,
+        destructive: false,
+        risk: "low",
+        fans_out_to: &[],
+        kernel_route: true,
+    },
+    FacadeDef {
         name: "work.create",
         description: "Create durable work (memory store + plan surface)",
         read_only: false,

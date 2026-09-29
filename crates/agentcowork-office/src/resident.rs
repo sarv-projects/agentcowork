@@ -889,7 +889,7 @@ impl ResidentTable {
             }
         };
         if self.policy.verify_readback {
-            verify_readback(&target, bytes.len()).map_err(ResidentError::Commit)?;
+            verify_readback(&target, &bytes).map_err(ResidentError::Commit)?;
         }
 
         let committed = bytes.len();

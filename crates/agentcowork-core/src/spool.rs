@@ -736,8 +736,10 @@ impl Spool {
     /// spool directory that does not exist yet.
     pub fn prune_at_boot(&self, now_ms: u64) -> SpoolStats {
         self.maybe_prune(now_ms);
-        let mut last = self.last_prune_ms.lock().unwrap_or_else(|e| e.into_inner());
-        *last = now_ms;
+        {
+            let mut last = self.last_prune_ms.lock().unwrap_or_else(|e| e.into_inner());
+            *last = now_ms;
+        }
         self.prune(now_ms)
     }
 }

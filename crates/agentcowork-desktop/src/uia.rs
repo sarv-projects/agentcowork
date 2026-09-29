@@ -823,7 +823,7 @@ pub enum UiaAnswer {
 /// The real implementation lives in [`crate::platform::win`] (Windows-only, COM);
 /// everything here is exercised on every host with fakes, which is what makes the
 /// identity, ambiguity, readiness and timeout rules testable off Windows.
-pub trait UiaProvider: Send {
+pub trait UiaProvider {
     /// The source's current snapshot generation. Zero means "the source does not
     /// report one", in which case the collector stamps its own per-scope
     /// generation.
@@ -1322,6 +1322,18 @@ impl ReadSession {
 /// worker isolation prevent a hung provider from stalling the agent").
 pub fn start_read<P>(provider: P, window: WindowInfo, cfg: CollectConfig) -> ReadSession
 where
+    P: UiaProvider + Send + 'static,
+{
+    start_read_with(move || Ok(provider), window, cfg)
+}
+
+/// Start a bounded read whose platform provider is constructed on the isolated
+/// worker. This is required by apartment-bound APIs such as Windows UIA: native
+/// handles must be created in the thread/apartment that uses them, not moved
+/// across the UI thread boundary.
+pub fn start_read_with<F, P>(factory: F, window: WindowInfo, cfg: CollectConfig) -> ReadSession
+where
+    F: FnOnce() -> Result<P, UiaFault> + Send + 'static,
     P: UiaProvider + 'static,
 {
     let sink = Arc::new(SharedSink::new());
@@ -1335,7 +1347,15 @@ where
     let _ = std::thread::Builder::new()
         .name("uia-read".into())
         .spawn(move || {
-            let mut provider = provider;
+            let mut provider = match factory() {
+                Ok(provider) => provider,
+                Err(fault) => {
+                    let _ = tx.send(WorkerMsg::Done(Box::new(CollectionOutcome::Failed {
+                        fault,
+                    })));
+                    return;
+                }
+            };
             // The coverage verdict first, so a caller polling the session learns
             // about an elevation block without waiting for the whole walk.
             let _ = tx.send(WorkerMsg::Coverage(provider.coverage(&coverage_window)));
@@ -2239,7 +2259,7 @@ impl UiaRead {
 /// the smallest known scope instead of a silent gap (`REQ-WORLD-005`).
 pub fn read_window<P>(provider: P, window: &WindowInfo) -> UiaRead
 where
-    P: UiaProvider + 'static,
+    P: UiaProvider + Send + 'static,
 {
     read_window_with(
         provider,
@@ -2258,11 +2278,40 @@ pub fn read_window_with<P>(
     tracker: &UiaEpochTracker,
 ) -> UiaRead
 where
-    P: UiaProvider + 'static,
+    P: UiaProvider + Send + 'static,
 {
     let source_epoch = provider.epoch();
     let started = Instant::now();
-    let mut session = start_read(provider, window.clone(), *cfg);
+    let session = start_read(provider, window.clone(), *cfg);
+    finish_read_session(session, window, cfg, tracker, source_epoch, started)
+}
+
+/// [`read_window_with`] variant that constructs the provider on the isolated
+/// worker and receives its source epoch separately.
+pub fn read_window_with_factory<F, P>(
+    factory: F,
+    window: &WindowInfo,
+    cfg: &CollectConfig,
+    tracker: &UiaEpochTracker,
+    source_epoch: SnapshotEpoch,
+) -> UiaRead
+where
+    F: FnOnce() -> Result<P, UiaFault> + Send + 'static,
+    P: UiaProvider + 'static,
+{
+    let started = Instant::now();
+    let session = start_read_with(factory, window.clone(), *cfg);
+    finish_read_session(session, window, cfg, tracker, source_epoch, started)
+}
+
+fn finish_read_session(
+    mut session: ReadSession,
+    window: &WindowInfo,
+    cfg: &CollectConfig,
+    tracker: &UiaEpochTracker,
+    source_epoch: SnapshotEpoch,
+    started: Instant,
+) -> UiaRead {
     let mut outcome: Option<CollectionOutcome> = None;
     while Instant::now() < cfg.deadline {
         let remaining = cfg.deadline.saturating_duration_since(Instant::now());

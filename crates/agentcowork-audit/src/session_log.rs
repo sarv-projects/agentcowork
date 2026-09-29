@@ -174,15 +174,15 @@ pub fn list_session_ids(base_dir: &Path) -> Result<Vec<String>, SessionLogError>
     for entry in fs::read_dir(&dir)? {
         let entry = entry?;
         let path = entry.path();
-        if path.extension().map(|e| e == "ndjson").unwrap_or(false) {
-            if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
-                let created = entry
-                    .metadata()
-                    .map(|m| m.created().ok().or(m.modified().ok()))
-                    .ok()
-                    .flatten();
-                entries.push((stem.to_string(), created));
-            }
+        if path.extension().map(|e| e == "ndjson").unwrap_or(false)
+            && let Some(stem) = path.file_stem().and_then(|s| s.to_str())
+        {
+            let created = entry
+                .metadata()
+                .map(|m| m.created().ok().or(m.modified().ok()))
+                .ok()
+                .flatten();
+            entries.push((stem.to_string(), created));
         }
     }
     entries.sort_by_key(|(_, created)| std::cmp::Reverse(*created));

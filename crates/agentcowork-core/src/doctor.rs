@@ -704,7 +704,8 @@ mod tests {
         assert_eq!(r.exit_code(), 0);
         // Core + Vault + Database + Disk + Chrome + Local + Credentials + MCP
         // + Sidecar + Platform + Windows shells + Git Bash history + Browser
-        assert_eq!(r.checks.len(), 13);
+        // + machine observer readiness
+        assert_eq!(r.checks.len(), 14);
         let shells = r
             .checks
             .iter()

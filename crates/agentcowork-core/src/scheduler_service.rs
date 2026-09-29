@@ -2892,7 +2892,9 @@ fn occurrence_trigger_matches_revision(
         (OccurrenceTrigger::Schedule { .. }, TriggerSpec::Cron { .. })
         | (OccurrenceTrigger::Schedule { .. }, TriggerSpec::Interval { .. })
         | (OccurrenceTrigger::Schedule { .. }, TriggerSpec::Window { .. }) => true,
-        (OccurrenceTrigger::Manual, TriggerSpec::Manual) => true,
+        // A user may run any enabled automation immediately. The occurrence
+        // records its manual origin while retaining the immutable definition.
+        (OccurrenceTrigger::Manual, _) => true,
         (OccurrenceTrigger::Event { kind }, TriggerSpec::Event { kind: expected, .. }) => {
             serde_json::to_value(expected)
                 .ok()
@@ -3530,10 +3532,12 @@ mod tests {
                 filter: "".into(),
             },
             vec![],
-            None,
+            Some(SchedulePolicy {
+                scope: Some("src/".into()),
+                ..SchedulePolicy::default()
+            }),
             now(),
         );
-        svc.jobs.get_mut("j3").unwrap().policy.scope = Some("src/".into());
         let fired3 = svc
             .fire_event(
                 EventKind::RepoChange,
@@ -3618,10 +3622,12 @@ mod tests {
                 filter: "".into(),
             },
             vec![],
-            None,
+            Some(SchedulePolicy {
+                max_runs_per_hour: Some(2),
+                ..SchedulePolicy::default()
+            }),
             now(),
         );
-        svc.jobs.get_mut("j1").unwrap().policy.max_runs_per_hour = Some(2);
         let first = svc
             .admit_event_with_key(
                 EventKind::TelemetryThreshold,

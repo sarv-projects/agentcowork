@@ -27,7 +27,7 @@ use agentcowork_blueprint::subagent::{
     DelegationPolicy, SubAgentError, SubAgentLimits, SubAgentResult, SubAgentSpec, parent_view,
 };
 use agentcowork_blueprint::{ScriptLanguage, TaskStatus};
-use agentcowork_core::work_gateway::WorkGateway;
+use agentcowork_core::work_gateway::{DomainEvent, WorkEvent, WorkGateway};
 // P71.3f — the delegation gate judges the canonical readiness state.
 use agentcowork_core::chat::{ChatRelay, ChatWireEvent};
 use agentcowork_core::connector_hub::{ConnectorHub, Engine};
@@ -605,25 +605,75 @@ fn scheduled_task_fires_headless() {
         1_700_000_000,
     );
 
-    // Headless daemon tick: jobs due at `now` are returned; the host records
-    // each firing (`mark_fired` — the trigger-plane dedupe), which advances
-    // the schedule. Execution itself is the Work kernel's business.
-    let due = sched.due(1_700_000_060);
-    assert!(
-        due.contains(&"job-cron".to_string()),
-        "cron due at minute boundary: {due:?}"
-    );
-    assert!(due.contains(&"job-int".to_string()));
+    // A headless tick admits durable occurrences. The host then persists the
+    // matching Work/Run pair before returning a receipt that advances each
+    // trigger; a trigger-only mark_fired call is deliberately forbidden.
+    let due = sched.admit_due(1_700_000_060).unwrap();
+    assert_eq!(due.len(), 2);
+    let admitted_ids = due
+        .iter()
+        .map(|occurrence| {
+            sched
+                .job_id_for_automation(&occurrence.automation_id)
+                .unwrap()
+        })
+        .collect::<std::collections::HashSet<_>>();
+    assert!(admitted_ids.contains("job-cron"));
+    assert!(admitted_ids.contains("job-int"));
 
-    sched.mark_fired("job-cron", 1_700_000_060).unwrap();
-    sched.mark_fired("job-int", 1_700_000_060).unwrap();
-    let job = sched.get("job-cron").unwrap();
-    assert_eq!(job.last_fired_at, Some(1_700_000_060));
-    assert_eq!(job.recent_fires, vec![1_700_000_060]);
-    // The firing dedupes: no longer due at the same instant…
+    let journal_dir = temp_dir("headless-scheduled-work");
+    let mut gateway = WorkGateway::open(journal_dir.join("work.jsonl")).unwrap();
+    for occurrence in &due {
+        let work_id = sched.expected_work_id(occurrence);
+        let run_id = sched.expected_run_id(occurrence);
+        let session_id = format!("automation-session:{}", occurrence.trigger_occurrence_id);
+        gateway
+            .create_work_in_session(
+                work_id.clone(),
+                None,
+                Some(session_id),
+                agentcowork_types::SessionKind::Automation,
+                occurrence.revision.automation().name,
+            )
+            .unwrap();
+        gateway
+            .append(
+                &work_id,
+                WorkEvent::Domain(DomainEvent::WorkUpdated {
+                    patch: serde_json::json!({
+                        "automationId": occurrence.automation_id,
+                        "revisionId": occurrence.revision_id,
+                        "automationGeneration": occurrence.revision.generation(),
+                        "triggerOccurrenceId": occurrence.trigger_occurrence_id,
+                        "payloadDigest": occurrence.payload_digest,
+                        "dedupDigest": occurrence.dedup_digest,
+                    }),
+                }),
+                None,
+            )
+            .unwrap();
+        gateway.bind_execution(&work_id, &run_id).unwrap();
+        gateway
+            .record_execution_transition(&work_id, &run_id, agentcowork_types::WorkState::Ready)
+            .unwrap();
+        let receipt = sched
+            .receipt_for_occurrence(&occurrence.trigger_occurrence_id)
+            .unwrap();
+        sched
+            .mark_occurrence_fired_with_receipt(
+                &occurrence.trigger_occurrence_id,
+                1_700_000_060,
+                &receipt,
+            )
+            .unwrap();
+    }
+
+    let cron = sched.get("job-cron").unwrap();
+    assert_eq!(cron.last_fired_at, Some(1_700_000_060));
+    assert_eq!(cron.recent_fires, vec![1_700_000_060]);
     assert!(!sched.due(1_700_000_060).contains(&"job-cron".to_string()));
-    // …but due again at the next occurrence.
     assert!(sched.due(1_700_000_120).contains(&"job-cron".to_string()));
+    let _ = std::fs::remove_dir_all(journal_dir);
 }
 
 // ---------------------------------------------------------------------------

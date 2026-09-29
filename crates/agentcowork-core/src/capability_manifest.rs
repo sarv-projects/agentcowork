@@ -809,6 +809,10 @@ mod tests {
             capability_id_for("retrieve_original", ToolFamily::Facade),
             "artifact.retrieve_original"
         );
+        assert_eq!(
+            capability_id_for("artifact.retrieve_original", ToolFamily::Facade),
+            "artifact.retrieve_original"
+        );
         // Derivation is pure: the same input always yields the same id.
         for tool in ToolRegistry::new().list() {
             assert_eq!(

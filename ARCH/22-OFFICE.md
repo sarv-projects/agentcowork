@@ -106,7 +106,7 @@ The former frozen-code findings below have been rechecked against the live tree.
 
 1. **Resident/lease:** `agentcowork-office::resident` now owns per-format tables and work-bound writer leases. The current Tauri commit adapters acquire a context for a commit and close it after flush; a persistent Workbench editing session and op-log/restart/batch-recovery acceptance are not established.
 2. **PDF redact:** the runtime now removes content from page content streams and has a checked path that refuses unremovable intersections or requested residual strings. Format coverage and all required failure cases still need acceptance evidence; a visual overlay is never called a redaction.
-3. **Durable commit:** DOCX/PDF and XLSX mutation paths use the shared staging → fsync → atomic-swap commit API. Platform-specific directory durability and crash-injection acceptance remain required.
+3. **Durable commit:** DOCX/PDF and XLSX mutation paths use the shared staging → fsync → atomic-swap commit API. Readback compares the exact committed bytes using a bounded buffer (not merely file length). Platform-specific directory durability, operation-log replay, and crash-injection acceptance remain required; see `TASK-OFFICE-003`.
 4. **Fidelity limits:** per-engine limits must be declared in the registry; lossy or unsupported operations return typed `guidance` rather than silently claiming fidelity (`TASK-OFFICE-005`).
 
 ## 11. Open questions (`OQ-OFFICE-*`)

@@ -254,7 +254,7 @@ impl PlatformBackend {
             #[cfg(target_os = "linux")]
             PlatformBackend::X11(b) => b.dpi_scale(),
             #[cfg(windows)]
-            PlatformBackend::Win => crate::platform::win::WinBackend::dpi_scale(window),
+            PlatformBackend::Win => crate::platform::win::WinBackend::dpi_scale(_window),
             #[cfg(target_os = "macos")]
             PlatformBackend::Mac => crate::platform::macos::MacBackend::dpi_scale(),
             PlatformBackend::Unsupported => DpiScale::unknown(),
@@ -286,7 +286,7 @@ impl PlatformBackend {
         #[cfg(windows)]
         {
             Box::new(crate::platform::win::WinCaptureProbe::new(
-                crate::platform::win::hwnd_of(window),
+                crate::platform::win::hwnd_of(_window),
             ))
         }
         #[cfg(all(target_os = "macos", not(windows)))]

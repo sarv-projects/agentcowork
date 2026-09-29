@@ -231,7 +231,7 @@ function shortToolKind(toolId: string): string {
 }
 
 /** P64.11 — spooled big-payload card. Results over ~2,000 tokens are treated
- * as spooled to content-addressed disk storage (`retrieve_original(hash)` on
+ * as spooled to content-addressed disk storage (`artifact.retrieve_original(hash)` on
  * the host): the drawer shows stats plus a short preview, and `Inspect in
  * Right Rail ↗` opens the full cleaned output in the dedicated `tool-output`
  * right-rail view without bloating the thread. The inline expand remains as

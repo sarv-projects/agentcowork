@@ -439,10 +439,13 @@ mod tests {
             "boot report must name the data dir"
         );
         assert!(out.contains("vault="), "boot report must name the vault");
-        // Heavy subsystems must NOT be constructed or named at boot.
+        // The ready line may list durable stores such as `cua_graph`; that is
+        // not construction of the optional graph service. Check only the
+        // boot-surface fields before the store inventory.
+        let boot_surface = out.split(", ").take(3).collect::<Vec<_>>().join(", ");
         for heavy in ["office", "ironcalc", "lsp", "codeintel", "graph", "monaco"] {
             assert!(
-                !out.to_ascii_lowercase().contains(heavy),
+                !boot_surface.to_ascii_lowercase().contains(heavy),
                 "boot report must not mention {heavy}: {out}"
             );
         }

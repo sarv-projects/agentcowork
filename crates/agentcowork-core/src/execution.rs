@@ -3542,18 +3542,23 @@ mod tests {
     fn p64_auto_checkpoint_persists_and_fence_holds() {
         let dir = std::env::temp_dir().join(format!("exec-p64-ckpt-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
-        let mut k = ExecutionKernel::new();
-        let ex = k.begin(
-            ExecutionTrigger::Chat,
-            "s",
-            "mutate",
-            None,
-            String::new(),
-            String::new(),
-            Vec::new(),
-        );
+        let mut gateway = crate::work_gateway::WorkGateway::new();
+        gateway.create_work("w-checkpoint", None, Some("s".into()), "mutate");
+        gateway.bind_execution("w-checkpoint", "ex:1").unwrap();
+        gateway
+            .record_execution_transition(
+                "w-checkpoint",
+                "ex:1",
+                agentcowork_types::WorkState::Running,
+            )
+            .unwrap();
+        // Production checkpoints require a Run reconstructed from the durable
+        // Work journal. A bare in-memory `begin` has no authoritative event
+        // projection and must not be persisted as if it were durable Work.
+        let k = ExecutionKernel::recover_from_work_gateway(&gateway).unwrap();
+        let run_id = "ex:1";
         let (path, meta) =
-            auto_checkpoint_kernel(&k, &dir, &ex.id, 1, Some("abc123".into()), 9).unwrap();
+            auto_checkpoint_kernel(&k, &dir, run_id, 1, Some("abc123".into()), 9).unwrap();
         assert!(path.exists());
         assert_eq!(meta.step, 1);
         assert_eq!(meta.fencing_token, 9);

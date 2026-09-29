@@ -29,7 +29,7 @@
 //! best-effort re-apply.
 
 use std::fs::File;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
@@ -119,6 +119,8 @@ pub enum CommitError {
     ReadBack { source: std::io::Error },
     #[error("post-commit read-back mismatch: wrote {written} bytes, read {read} bytes back")]
     ReadBackMismatch { written: usize, read: usize },
+    #[error("post-commit read-back content differs from the committed bytes")]
+    ReadBackContentMismatch,
 }
 
 impl CommitError {
@@ -287,15 +289,32 @@ pub fn commit_bytes(target: &Path, bytes: &[u8]) -> Result<CommitTrace, CommitEr
     Ok(out)
 }
 
-/// Post-commit structural check: re-read the target and confirm it holds
-/// exactly what was committed (ARCH/22 §5 — validate before a receipt).
-pub fn verify_readback(target: &Path, expected_len: usize) -> Result<(), CommitError> {
-    let meta = std::fs::metadata(target).map_err(|source| CommitError::ReadBack { source })?;
-    if meta.len() as usize != expected_len {
+/// Post-commit check: re-read the target and compare every byte with the
+/// committed payload (ARCH/22 §5 — validate before a receipt). Streaming the
+/// file avoids allocating a second copy of a potentially large document.
+pub fn verify_readback(target: &Path, expected: &[u8]) -> Result<(), CommitError> {
+    let mut file = File::open(target).map_err(|source| CommitError::ReadBack { source })?;
+    let actual_len = file
+        .metadata()
+        .map_err(|source| CommitError::ReadBack { source })?
+        .len();
+    if actual_len != expected.len() as u64 {
         return Err(CommitError::ReadBackMismatch {
-            written: expected_len,
-            read: meta.len() as usize,
+            written: expected.len(),
+            read: usize::try_from(actual_len).unwrap_or(usize::MAX),
         });
+    }
+
+    let mut offset = 0;
+    let mut buffer = [0_u8; 8192];
+    while offset < expected.len() {
+        let count = (expected.len() - offset).min(buffer.len());
+        file.read_exact(&mut buffer[..count])
+            .map_err(|source| CommitError::ReadBack { source })?;
+        if buffer[..count] != expected[offset..offset + count] {
+            return Err(CommitError::ReadBackContentMismatch);
+        }
+        offset += count;
     }
     Ok(())
 }
@@ -502,14 +521,19 @@ mod tests {
     fn readback_check_detects_a_mismatch() {
         let path = tmp_file("readback");
         commit_bytes(&path, b"12345").unwrap();
-        verify_readback(&path, 5).unwrap();
-        let err = verify_readback(&path, 9).unwrap_err();
+        verify_readback(&path, b"12345").unwrap();
+        let err = verify_readback(&path, b"123456789").unwrap_err();
         assert!(matches!(
             err,
             CommitError::ReadBackMismatch {
                 written: 9,
                 read: 5
             }
+        ));
+        std::fs::write(&path, b"abcde").unwrap();
+        assert!(matches!(
+            verify_readback(&path, b"12345"),
+            Err(CommitError::ReadBackContentMismatch)
         ));
         let _ = std::fs::remove_file(&path);
     }
