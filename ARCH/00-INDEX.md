@@ -36,7 +36,7 @@ v0 grew by accretion: 33 ARCH files, 55 research files, a 355 KB spec, a 606 KB 
 
 | Layer | Document | Authority over |
 |---|---|---|
-| Product | `AGENTCOWORK-SPEC.md` + accepted `DEC-054/055/056/057/058/059/060/061/062` amendments | **WHAT** the product must be: behavior, contracts, acceptance. Frozen baseline is superseded on named boundaries by the later decisions. |
+| Product | `AGENTCOWORK-SPEC.md` + accepted `DEC-054/055/056/057/058/059/060/061/062/063` amendments | **WHAT** the product must be: behavior, contracts, acceptance. Frozen baseline is superseded on named boundaries by the later decisions. |
 | Requirements | `ARCH/08-REQUIREMENTS.md` | **WHAT must be verified**: testable behaviors (`REQ-*`) derived from the SPEC, each with acceptance + failure cases. |
 | Traceability | `ARCH/09-FEATURE-MATRIX.md` | The `REQ → design → task → test` map. Owns links only, never content. |
 | Architecture | `ARCH/03-HLD.md` | **HOW** the system is structured. Module docs derive from it. |

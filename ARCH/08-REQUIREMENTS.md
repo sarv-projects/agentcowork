@@ -81,7 +81,7 @@ This registry answers one question per entry: **what behavior must this system e
 #### REQ-PROD-001 — One governed path for each Core-mediated effect
 - **Statement:** GIVEN any **Core-mediated** externally visible effect requested from a surface, domain or adapter, WHEN the effect is proposed, THEN it executes only through the governed path (`Work → Capability → Provider → Handle → Guard → Ticket → Execute → Effect → Verify → Receipt → Event`) and its receipt references its ticket. A self-contained external agent's native effects are outside this guarantee (DEC-054).
 - **Priority:** must
-- **Source:** `AGENTCOWORK-SPEC.md` §4 · `ARCH/05-INVARIANTS.md` INV-01/INV-03 · `DEC-002`
+- **Source:** `AGENTCOWORK-SPEC.md` §4 · `ARCH/05-INVARIANTS.md` INV-01/INV-03 · `DEC-002` as scoped by `DEC-063`
 - **Acceptance:** a Core-mediated attempted effect without a ticket fails closed and is audited; every Core receipt cites a ticket; native external activity never receives a Core-governed badge without proof of mediation.
 - **Failure cases:** bypass attempt via Core domain/adapter/UI → denied; missing ticket → denied + audit entry; Core receipt without ticket → verification failure; native effect labelled Core-mediated → provenance failure.
 - **Tests:** pending
@@ -108,7 +108,7 @@ This registry answers one question per entry: **what behavior must this system e
 #### REQ-PROD-004 — Engine parity
 - **Statement:** GIVEN any agent engine invokes a shared Core effect capability, WHEN the call mutates state or crosses a boundary, THEN it traverses the same Guard/ticket path as any other binding; native agent tools remain under that agent's policy (DEC-054).
 - **Priority:** must
-- **Source:** `AGENTCOWORK-SPEC.md` §11 · `ARCH/05-INVARIANTS.md` INV-12 · `DEC-010`
+- **Source:** `AGENTCOWORK-SPEC.md` §11 · `ARCH/05-INVARIANTS.md` INV-12 · `DEC-010` as scoped by `DEC-063`
 - **Acceptance:** equivalent shared calls from different bindings receive equivalent Guard/ticket decisions; no binding kind is exempt from that parity test.
 - **Failure cases:** binding-specific bypass of a shared Core call → forbidden; native call shown as Core-governed → provenance failure.
 - **Tests:** pending
@@ -2323,12 +2323,12 @@ This registry answers one question per entry: **what behavior must this system e
 - **Tests:** pending
 - **Status:** seeded
 
-#### REQ-ART-003 — Receipts are mandatory for externally visible effects
-- **Statement:** GIVEN an externally visible effect, WHEN it completes, THEN a receipt is emitted inside the governed path (`12` → `13` → `34` → receipt), and the effect path cannot commit without it.
+#### REQ-ART-003 — Receipts are mandatory for Core-mediated externally visible effects
+- **Statement:** GIVEN a Core-mediated externally visible effect, WHEN it completes, THEN a Core receipt is emitted inside the governed path (`12` → `13` → `34` → receipt), and that Core effect path cannot commit without it. Native external-agent effects remain under the agent's policy and use separately labelled reported/observed evidence, not Core receipts (DEC-054/063).
 - **Priority:** must
-- **Source:** `ARCH/29-ARTIFACTS.md` §3/§8 · `ARCH/05-INVARIANTS.md` INV-07 · `ARCH/04-DECISIONS.md` DEC-022 · `AGENTCOWORK-SPEC.md` §4
-- **Acceptance:** an effect-without-receipt attempt is blocked before commit; every committed effect has a receipt citing effect/ticket/verification.
-- **Failure cases:** visible effect without receipt → violation; receipt written outside the governed path → violation.
+- **Source:** `ARCH/29-ARTIFACTS.md` §3/§8 · `ARCH/05-INVARIANTS.md` INV-07 · `ARCH/04-DECISIONS.md` DEC-022 as scoped by DEC-063 · `AGENTCOWORK-SPEC.md` §4
+- **Acceptance:** a Core-mediated effect-without-receipt attempt is blocked before commit; every committed Core-mediated effect has a receipt citing effect/ticket/verification.
+- **Failure cases:** Core-mediated visible effect without receipt → violation; Core receipt written outside the governed path → violation; native effect falsely represented as Core-receipted → provenance violation.
 - **Tests:** pending
 - **Status:** seeded
 

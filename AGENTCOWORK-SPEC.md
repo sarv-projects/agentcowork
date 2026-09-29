@@ -96,7 +96,7 @@ Every **Core-mediated** externally visible effect follows `Work → Capability �
 
 ## 11. Multi-agent contract
 
-- Every agent binding uses the negotiated `AgentEngine` contract. Core-mediated capability calls follow the same Guard path for every binding; no binding gets a Core bypass. A self-contained external agent's native loop and effects remain under its own policy and carry separate provenance (`DEC-010`, `DEC-052`, `DEC-054`).
+- Every agent binding uses the negotiated `AgentEngine` contract. Core-mediated capability calls follow the same Guard path for every binding; no binding gets a Core bypass. A self-contained external agent's native loop and effects remain under its own policy and carry separate provenance (`DEC-010`, `DEC-052`, `DEC-054`, clarified by `DEC-063`).
 - **No first-party reasoning engine ships in v1.** Horizon Code is a future external binding developed outside this repository and attached as an ordinary agent; it does not replace or own AgentCowork's Mission, Work, Trust or evidence records (`DEC-052`, `DEC-054`).
 - Host delegation creates a bounded child session/Work with escaped project rules, optional per-spawn worktree isolation and **receipts, not transcripts**; Core enforces outer bounds on that host-created work (`DEC-029`, `DEC-031`, `DEC-054`). Native subagents remain owned by their agent and are reported only when the binding exposes them.
 - Scheduler lanes: foreground · background · detached, with interactive priority.

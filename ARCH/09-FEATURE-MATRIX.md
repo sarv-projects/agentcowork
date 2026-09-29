@@ -252,7 +252,7 @@ One row per `REQ-*`. Status only from evidence.
 | `REQ-COMMS-013` | `28-COMMS` | crates/agentcowork-core/src/tools.rs, crates/agentcowork-guard/src/netfloor.rs | `INV-02/05`, `DEC-016/037` | — | `TASK-COMMS-003`, `TASK-PROV-002` | pending | implemented |
 | `REQ-ART-001` | `29-ARTIFACTS` | pending | `DM-019`, `INV-18` | — | `TASK-ART-001` | pending | planned |
 | `REQ-ART-002` | `29-ARTIFACTS` | pending | `DM-019`, `INV-18` | — | `TASK-ART-001` | pending | planned |
-| `REQ-ART-003` | `29-ARTIFACTS` | crates/agentcowork-core/src/tools.rs, crates/agentcowork-audit/src/receipt.rs | `DEC-022`, `INV-07`, `CTR-018` | — | `TASK-ART-001`, `TASK-PROV-001` | pending | implemented |
+| `REQ-ART-003` | `29-ARTIFACTS` | crates/agentcowork-core/src/tools.rs, crates/agentcowork-audit/src/receipt.rs | `DEC-022/063`, `INV-07`, `CTR-018` | — | `TASK-ART-001`, `TASK-PROV-001` | pending | implemented |
 | `REQ-ART-004` | `29-ARTIFACTS` | pending | `CTR-018`, `INV-07` | — | `TASK-ART-001` | pending | planned |
 | `REQ-ART-005` | `29-ARTIFACTS` | pending | `INV-23/24` | — | `TASK-ART-001` | pending | planned |
 | `REQ-ART-006` | `29-ARTIFACTS` | pending | `DEC-014`, `DM-023` | — | `TASK-ART-001` | pending | planned |
