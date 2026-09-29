@@ -2964,11 +2964,11 @@ This registry answers one question per entry: **what behavior must this system e
 - **Status:** accepted
 
 #### REQ-ECO-002 — Scoped MCP and extension grants
-- **Statement:** GIVEN a catalog MCP/skill/plugin, WHEN a Work starts, THEN only explicitly activated, policy-permitted components for its binding/workspace are exposed.
+- **Statement:** GIVEN a host-catalogued or agent-native MCP/skill/plugin, WHEN a Work starts, THEN only explicitly activated, policy-permitted and binding-compatible host components are exposed to that binding; native components remain within their agent-owned namespace and policy.
 - **Priority:** must
-- **Source:** DEC-054 · INV-32/33
-- **Acceptance:** global catalog entry grants zero access by itself; child grants are attenuated; revocation blocks next call.
-- **Failure cases:** name collision → namespaced choice; unauthorized server → never starts for that Work.
+- **Source:** DEC-054 · INV-32/33/41
+- **Acceptance:** `TC-064` passes; global catalog entry grants zero access by itself; compatible agents receive only the Work-scoped filtered façade; unsupported injection is visible and gives no access; connector credentials remain in Core; child grants are attenuated; revocation blocks the next Core-mediated call; install/connect/enable/activate remain distinct.
+- **Failure cases:** name collision → namespaced choice; unauthorized server → never starts for that Work; secret copied into agent context; native config silently changed; unsupported binding represented as connected/usable.
 - **Tests:** pending
 - **Status:** accepted
 
@@ -2991,11 +2991,11 @@ This registry answers one question per entry: **what behavior must this system e
 - **Status:** accepted
 
 #### REQ-ECO-005 — Heterogeneous child delegation
-- **Statement:** GIVEN a lead requests a child with a compatible adapter, WHEN admitted, THEN child Work has its own context, scope, budget, lifecycle and typed receipt; integration is separately checked.
+- **Statement:** GIVEN a lead requests a child, WHEN admitted, THEN only a user-enabled host subagent binding can run as child Work (including the same agent profile in a fresh session); the child receives its own context, pinned/explicitly agent-managed model, scope, budget, lifecycle and typed receipt; integration is separately checked.
 - **Priority:** must
-- **Source:** DEC-054
-- **Acceptance:** two different agent implementations complete isolated nodes and parent receives evidence refs without child transcripts.
-- **Failure cases:** unsupported capability or isolation → typed refusal, no silent downgrade.
+- **Source:** DEC-054 · INV-42
+- **Acceptance:** `TC-065` passes; two different agent implementations complete isolated nodes and parent receives evidence refs without child transcripts; Settings can enable/disable a binding as a child and pin a model from that binding's verified choices; a same-profile child uses a fresh session; spawn cannot widen the saved child policy or change its pinned model.
+- **Failure cases:** disabled/discovered-only binding invoked as child; model pin silently ignored or falls back; child reuses parent's native transcript; unsupported capability or isolation → typed refusal, no silent downgrade.
 - **Tests:** pending
 - **Status:** accepted
 
@@ -3057,8 +3057,8 @@ This registry answers one question per entry: **what behavior must this system e
 - **Statement:** GIVEN a conversation, WHEN the user composes or work is active, THEN `+`, `@`, `/`, agent, conditional model, access, voice where available, Send/Stop, Queue/Steer, attachments and draft persistence follow `48` §3; file intake is qualified by selected worker capability and explicitly distinguishes message-scoped attachment from persistent Library/workspace ingestion.
 - **Priority:** must
 - **Source:** DEC-055; `48` §3
-- **Acceptance:** `TC-005…008` pass with keyboard and crash/navigation restore; unsupported model/access controls explain why; multi-file upload/extraction reports per-item state without losing the draft; message-only attachment does not silently persist/index; Library ingestion is explicit and versioned.
-- **Failure cases:** native command collision, lost draft, invented model choice, silent worker switch, unsupported file implied to be understood by the selected worker, partial upload silently dropped, or chat attachment silently promoted to persistent indexed content.
+- **Acceptance:** `TC-005…008`, `TC-063` pass with keyboard and crash/navigation restore; unsupported model/access controls explain why; switching bindings preserves the visible conversation, records per-turn attribution and performs a bounded handoff without transferring private agent state; multi-file upload/extraction reports per-item state without losing the draft; message-only attachment does not silently persist/index; Library ingestion is explicit and versioned.
+- **Failure cases:** native command collision, lost draft, invented model choice, switching agent silently creates another conversation or transfers private state, active Work silently changes owner, unsupported file implied to be understood by the selected worker, partial upload silently dropped, or chat attachment silently promoted to persistent indexed content.
 - **Tests:** pending
 - **Status:** accepted
 
@@ -3101,7 +3101,7 @@ This registry answers one question per entry: **what behavior must this system e
 #### REQ-UXQ-008 — Scoped extensions and truthful native inventory
 - **Statement:** GIVEN a discovered or installed agent and host MCP/skill/plugin, WHEN configured, THEN catalog/install/active states and effective agent/session/workspace/Mission scope are visible; native config remains owned by its agent.
 - **Priority:** must
-- **Source:** DEC-054/055; `46`; `48` §7
+- **Source:** DEC-054/055 · INV-40/41; `46`; `48` §7
 - **Acceptance:** extension collision, revoke and unsupported overlay cases pass `TC-007`, `TC-008`, `TC-026`.
 - **Failure cases:** global auto-mount, native config mutation, Core receipt claimed for native effect.
 - **Tests:** pending
@@ -3110,9 +3110,9 @@ This registry answers one question per entry: **what behavior must this system e
 #### REQ-UXQ-009 — Team visibility and bounded collaboration
 - **Statement:** GIVEN host-delegated or native child agents, WHEN work runs, THEN the UI distinguishes their provenance and supports bounded host delegation, independent integration and branch-local blocking.
 - **Priority:** must
-- **Source:** DEC-054/055; `15`; `35`; `48` §8
-- **Acceptance:** `TC-024…026`, `TC-034`, `TC-035` pass.
-- **Failure cases:** native child shown as controlled Work, unbounded swarm, completion without integration.
+- **Source:** DEC-054/055 · INV-40/42; `15`; `35`; `48` §8
+- **Acceptance:** `TC-024…026`, `TC-034`, `TC-035`, `TC-065` pass; user can enable a binding for host subagent use, pin one verified supported child model, and select same-profile fresh-session or another enabled binding.
+- **Failure cases:** native child shown as controlled Work, unbounded swarm, completion without integration, disabled worker admitted, model pin silently ignored, or host settings mutate native subagent configuration.
 - **Tests:** pending
 - **Status:** accepted
 

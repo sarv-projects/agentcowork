@@ -64,7 +64,22 @@ Manifest fields: id · version · surfaces[] · permissions requested · hooks �
 
 ## 6. Distribution (v1)
 
-Local-first: file/folder install, bundle import/export, Library integration (kinds `skill` · `plugin`). No marketplace, no auto-update, no remote registry in v1 (triggers: real user demand + signing infrastructure).
+### 6.1 Catalogs, installation and marketplaces
+
+The v1 host has a local catalog with built-in entries plus explicit local folder/file and bundle import/export. It may display links to the native agent's own catalog/marketplace, but that store remains owned by that agent and is never installed or activated by Core behind the user's back. A Core marketplace is a **catalog source**, not an execution scope: listing/browsing has no install, authentication or runtime side effect.
+
+Remote community marketplace feeds and automatic updates are deferred until package signing, publisher identity, immutable version/digest pinning, revocation, dependency review, malware/content scanning, rollback and a maintained catalog service are designed and qualified. Until then, do not present a remote package URL as verified marketplace content. A downloaded package enters a review queue, is stored locally by immutable digest, and requires explicit install followed by separate activation. Updating creates a new version; running Works stay pinned to the old version until their next activation. Rollback is explicit and does not restore revoked credentials or grants.
+
+Recommended lifecycle and vocabulary:
+
+```text
+catalogued → inspected → installed locally → enabled in a profile
+           → activated for this binding/Work → executing → revoked/removed
+```
+
+The UI shows these independently. **Install** stores package content; **Connect** authorizes an external account; **Enable for this agent** chooses compatibility/default availability; **Use in this Work** creates the scoped grant. None implies the next. Third-party connector catalogs such as Composio or an MCP directory can supply discoverability and protocol packages, but connector credentials still belong to the connector owner/Core vault and require separate per-action authorization.
+
+**Marketplace evidence and limits:** OpenHands Agent Canvas at the pin recorded in `45` has a catalog/custom MCP install path with connection testing, OAuth, tool listing, health and profile references. OpenWork's inspected source merges project/global/runtime MCP sources and resolves skills from multiple locations; that is a managed-engine configuration pattern, not authority to rewrite discovered agents. Libre WebUI's inspected catalog is an admin/user/grant-scoped first-party tool server directory with per-user credentials and turn-level narrowing; it does not prove safe injection into arbitrary ACP agents. OpenCowork's enabled MCP manager and skill-location precedence are host-local patterns, but its global tool set and child inheritance are too broad for this contract. Treat these as lifecycle/UI references, not as a reason to globally activate packages. Exact pins and files: `ARCH/45-REFERENCE-RESEARCH.md` §“Extension ownership and connected-app setup”; `TODO.md` implementation-source table rows for `TASK-UXQ-006`/`TASK-UXQ-007`.
 
 ## 7. Failure modes
 

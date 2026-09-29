@@ -40,6 +40,8 @@ flowchart TB
 |---|---|---|
 | Ordinary chat / renderer | Experience `48`, channels `32` | Agent binding `15`, context `16`, artifact cards `29`; no Mission required for bounded answer |
 | Agent/model/access composer | Experience `48` | Agent discovery `46`, model capability `18`, effective policy `12`; unsupported choice disabled |
+| Same-conversation agent handoff | Experience `48`, Work/session `11`, agent binding `15` | One logical host Session can attach multiple external bindings; bounded visible-history handoff; private native sessions stay separate; active Work ownership does not switch |
+| Subagent roster/settings | Experience `48`, delegation `15`, ecosystem `46` | User-enabled binding + provider-qualified model pin + attenuated extension ceiling; lead may select itself as a fresh child or another enabled binding |
 | Mission Control / team panel | Mission `35`–`36` | Work `11`, agents `15`, events `30`, evidence `34`; only observable native child state displayed |
 | File tree / editing | Files `25` + Workbench `48` | World identity `21`, artifacts `29`, code `26`, office `22`, conflict/lease handling |
 | Browser / desktop view | Browser `23`, computer `24` | Managed execution `19`, Trust `12`, effect verification `34`, takeover resnapshot |
@@ -99,6 +101,52 @@ sequenceDiagram
 ```
 
 An agent-native subagent is not automatically a host Work child. Host delegation produces a PlanNode/Work attempt and explicit child contract; native child telemetry is an agent report unless independently observed. Failure of a Work attempt does not fail the Mission. Replacing an agent reconstructs context from durable state and reconciles execution environment before new side effects.
+
+## 3.1 Same logical chat, multiple external agent sessions
+
+```mermaid
+sequenceDiagram
+  actor User
+  participant UI as Composer / conversation
+  participant Session as Logical host Session
+  participant Bindings as Binding cache
+  participant Context as Handoff/context builder
+  participant A as Agent A native session
+  participant B as Agent B native session
+  User->>UI: Select Agent A and send turn
+  UI->>Session: append user turn; snapshot binding/model/grants
+  Session->>Bindings: get or attach A binding for logical Session
+  Bindings->>A: send native input + permitted host handoff refs
+  A-->>Session: response/events tagged Agent A
+  User->>UI: Select Agent B (idle turn boundary)
+  UI->>Context: build bounded packet from visible history + exact refs
+  Context-->>UI: previewable handoff; exclude private A state/secrets
+  UI->>Session: set active binding B; preserve conversation identity
+  Session->>Bindings: get or attach B binding (cache health/auth)
+  Bindings->>B: send same host conversation + scoped B loadout
+  B-->>Session: response/events tagged Agent B
+  Note over A,B: Native sessions and private memory never merge
+  Note over Session: Existing Work remains bound to the agent that started it
+```
+
+```mermaid
+flowchart LR
+  SET[Settings: Agents & models] --> ROSTER[Subagent roster]
+  ROSTER -->|Enable binding| MODEL[Verified model choices]
+  MODEL -->|Pin model / explicit agent-managed| POLICY[Versioned delegation policy]
+  LEAD[Selected lead agent] --> PICK{Child worker}
+  PICK -->|same profile| SELF[Fresh child session + pinned child model]
+  PICK -->|other enabled profile| OTHER[Separate binding/session]
+  POLICY --> SELF
+  POLICY --> OTHER
+  SELF --> WORK[One child Work via Work scheduler]
+  OTHER --> WORK
+  WORK --> TRUST[Attenuated grant + isolated resources]
+  TRUST --> RECEIPT[Typed receipt + evidence refs]
+  RECEIPT --> INTEGRATE[Separate integration and verification]
+```
+
+Host extensions reach the agent only by a supported, Work-scoped façade/overlay. The MCP/skills/plugin catalog is not part of the native agent session unless the adapter explicitly attaches the resolved subset. Credentials stay behind Core Guard/Vault. A disabled child worker or unselectable model is rejected before Work admission.
 
 ## 4. Governed and native effect paths
 

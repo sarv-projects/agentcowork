@@ -123,6 +123,16 @@ SubagentOptions {
 
 Host admission/delegation fields (`max_parallel` · `max_total_per_tree` · `max_depth` · per-lane concurrency) are Core-owned (`11` §3; DEC-031). Token/spend caps for an opaque engine are enforceable only if its adapter reports and honors them or the execution environment supplies a hard boundary. A spawn may request narrower limits only.
 
+### 7.2 User-configured host subagent roster and model pin
+
+`DelegationPolicyEntry` is the user's allowlist for host-created child Work, not a prompt suggestion. Settings → **Agents & models → [agent] → Subagents** contains one off-by-default `Available as a subagent` switch per binding. On enable, configure role(s), a provider-qualified model pin (or explicit `agent-managed` mode), compatible task types, scoped skill/MCP loadout ceiling, workspace/isolation, max parallel/depth and budget ceiling. Saving previews the effective policy; turning it off prevents new child admission and lets the user choose whether existing children finish or cancel.
+
+At spawn, the selected roster entry provides the worker binding and fixed model policy. A request may narrow role/resources/budget, but cannot choose a different model from the pinned one, activate a disabled worker, or widen skills/MCP/permissions. If the adapter accepts a per-session model override, bind that exact model before creating the child and record requested + observed model in the Run/receipt. If it cannot set the model, a pinned-model profile is ineligible; it must not silently fall back. `agent-managed` is a distinct mode, allowed only when enabled in the profile and surfaced to the user as unknown/agent-selected model.
+
+The same profile may be used as both lead and child. This creates a **new child session and context**; it does not fork the lead's private transcript or reuse the lead session. A child model may differ from the lead model only when that engine advertises and verifies model selection per session. Otherwise the child uses the profile's supported fixed/default model, with that constraint shown before enablement. Native subagents spawned inside the agent's own loop remain the engine's responsibility and are not created, configured or suppressed by this host roster.
+
+The UI's fast **Switch agent** action changes only which binding receives the next turn in the same logical host Session (`46` §2.1). It does not change a host child's worker selection or mutate a running Work. Model and extension grants are captured per turn/Work, so switching the lead does not retroactively alter active or completed children.
+
 ## 9. Model interaction
 
 - An external engine retains its own provider, model and reasoning configuration. Core's model picker calls a proven adapter configuration option when available; otherwise the engine opens its own supported settings/auth flow (`46` §2, `48` §3).
