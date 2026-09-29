@@ -92,25 +92,28 @@ pub fn search_endpoints_from_config() -> Vec<String> {
 
 /// The live feed transport: one `ureq` GET of the `searx.space` JSON document.
 ///
-/// FIX-09: the feed destination is pre-flighted through
-/// [`agentcowork_guard::netfloor::preflight_url`] immediately before the socket,
-/// so a Settings refresh can never be steered at link-local/cloud-metadata or
-/// LAN space. The feed URL is a shipped constant, but the seam is
-/// caller-supplied, so the check lives at the client rather than at the one
-/// call site.
+/// FIX-09: the feed destination is checked and pinned through
+/// [`agentcowork_guard::egress_http::GuardedHttpClient`] immediately before the
+/// request, so the caller-supplied transport seam cannot be steered at
+/// link-local/cloud-metadata or LAN space, rebound between check and connect,
+/// or redirected to another origin.
 pub struct UreqInstanceFeed;
 
 impl InstanceFeedTransport for UreqInstanceFeed {
     fn get_json(&self, url: &str) -> Result<serde_json::Value, String> {
-        agentcowork_guard::netfloor::preflight_url(url, agentcowork_guard::NetPolicy::default())
-            .map_err(|e| e.to_string())?;
-        let body = ureq::get(url)
-            .timeout(std::time::Duration::from_secs(15))
-            .call()
-            .map_err(|e| e.to_string())?
-            .into_string()
-            .map_err(|e| e.to_string())?;
-        serde_json::from_str(&body).map_err(|e| e.to_string())
+        let client = agentcowork_guard::egress_http::GuardedHttpClient::new(
+            url,
+            agentcowork_guard::NetPolicy::default(),
+            std::time::Duration::from_secs(15),
+        )
+        .map_err(|_| "Guard refused the search-feed destination".to_string())?;
+        let response = client
+            .request("GET", url, &[], None, 4 * 1024 * 1024)
+            .map_err(|_| "Guarded search-feed request failed".to_string())?;
+        if !(200..300).contains(&response.status) {
+            return Err(format!("search-feed returned HTTP {}", response.status));
+        }
+        serde_json::from_slice(&response.body).map_err(|_| "invalid search-feed JSON".to_string())
     }
 }
 

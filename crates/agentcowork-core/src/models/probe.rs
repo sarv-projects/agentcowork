@@ -131,15 +131,19 @@ pub fn find_runtime_processes() -> Vec<DiscoveredRuntime> {
 /// A denial is simply "not reachable" — the probe has no direct-client fallback.
 pub fn probe_openai_endpoint(base: &str) -> bool {
     let url = format!("{base}/v1/models");
+    probe_http_200(&url, Duration::from_secs(2))
+}
+
+pub(crate) fn probe_http_200(url: &str, timeout: Duration) -> bool {
     let Ok(client) = agentcowork_guard::egress_http::GuardedHttpClient::new(
-        &url,
+        url,
         agentcowork_guard::NetPolicy::default(),
-        Duration::from_secs(2),
+        timeout,
     ) else {
         return false;
     };
     client
-        .request("GET", &url, &[], None, 1024 * 1024)
+        .request("GET", url, &[], None, 1024 * 1024)
         .is_ok_and(|response| response.status == 200)
 }
 
@@ -250,24 +254,32 @@ fn parse_ollama_models(body: &str) -> Option<Vec<String>> {
 
 fn probe_ollama_models(probe_base: &str) -> Option<Vec<String>> {
     let url = format!("{probe_base}/api/tags");
-    agentcowork_guard::netfloor::preflight_url(&url, agentcowork_guard::NetPolicy::default())
-        .ok()?;
-    let response = ureq::get(&url)
-        .timeout(Duration::from_secs(2))
-        .call()
-        .ok()?;
-    parse_ollama_models(&response.into_string().ok()?)
+    let client = agentcowork_guard::egress_http::GuardedHttpClient::new(
+        &url,
+        agentcowork_guard::NetPolicy::default(),
+        Duration::from_secs(2),
+    )
+    .ok()?;
+    let response = client.request("GET", &url, &[], None, 1024 * 1024).ok()?;
+    if response.status != 200 {
+        return None;
+    }
+    parse_ollama_models(&String::from_utf8_lossy(&response.body))
 }
 
 fn fetch_openai_models(probe_base: &str) -> Option<Vec<String>> {
     let url = format!("{probe_base}/v1/models");
-    agentcowork_guard::netfloor::preflight_url(&url, agentcowork_guard::NetPolicy::default())
-        .ok()?;
-    let response = ureq::get(&url)
-        .timeout(Duration::from_secs(2))
-        .call()
-        .ok()?;
-    let value: serde_json::Value = serde_json::from_str(&response.into_string().ok()?).ok()?;
+    let client = agentcowork_guard::egress_http::GuardedHttpClient::new(
+        &url,
+        agentcowork_guard::NetPolicy::default(),
+        Duration::from_secs(2),
+    )
+    .ok()?;
+    let response = client.request("GET", &url, &[], None, 1024 * 1024).ok()?;
+    if response.status != 200 {
+        return None;
+    }
+    let value: serde_json::Value = serde_json::from_slice(&response.body).ok()?;
     let models = value.get("data")?.as_array()?;
     Some(
         models

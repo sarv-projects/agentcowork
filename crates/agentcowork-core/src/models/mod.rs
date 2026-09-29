@@ -249,19 +249,12 @@ impl ManagedServeHandle {
         match self.phase() {
             Ok(Some(_)) | Err(_) => RuntimeHealthState::Down,
             Ok(None) => {
-                // FIX-09: the health probe's destination is floored before the
-                // socket, so a runtime configured on a LAN/metadata address
-                // reports `Degraded` instead of being dialled.
-                let native_health = agentcowork_guard::netfloor::preflight_url(
+                // Local runtime health stays inside the Guard-pinned loopback
+                // transport; a configured endpoint cannot redirect elsewhere.
+                let native_health = probe::probe_http_200(
                     &format!("{}/health", self.base_url),
-                    agentcowork_guard::NetPolicy::default(),
-                )
-                .is_ok()
-                    && ureq::get(&format!("{}/health", self.base_url))
-                        .timeout(Duration::from_secs(1))
-                        .call()
-                        .map(|response| response.status() == 200)
-                        .unwrap_or(false);
+                    Duration::from_secs(1),
+                );
                 if native_health || probe_openai_endpoint(&self.base_url) {
                     RuntimeHealthState::Healthy
                 } else {
@@ -387,17 +380,7 @@ impl ModelsRuntime {
                     "managed runtime exited before health: {status}"
                 )));
             }
-            if agentcowork_guard::netfloor::preflight_url(
-                &format!("{base_url}/health"),
-                agentcowork_guard::NetPolicy::default(),
-            )
-            .is_ok()
-                && ureq::get(&format!("{base_url}/health"))
-                    .timeout(Duration::from_secs(1))
-                    .call()
-                    .map(|r| r.status() == 200)
-                    .unwrap_or(false)
-            {
+            if probe::probe_http_200(&format!("{base_url}/health"), Duration::from_secs(1)) {
                 return Ok(ManagedServeHandle {
                     child,
                     port,
@@ -461,17 +444,7 @@ impl ModelsRuntime {
                     "managed runtime exited before health: {status}"
                 )));
             }
-            if agentcowork_guard::netfloor::preflight_url(
-                &format!("{base_url}/v1/models"),
-                agentcowork_guard::NetPolicy::default(),
-            )
-            .is_ok()
-                && ureq::get(&format!("{base_url}/v1/models"))
-                    .timeout(Duration::from_secs(1))
-                    .call()
-                    .map(|r| r.status() == 200)
-                    .unwrap_or(false)
-            {
+            if probe::probe_http_200(&format!("{base_url}/v1/models"), Duration::from_secs(1)) {
                 return Ok(ManagedServeHandle {
                     child,
                     port,
