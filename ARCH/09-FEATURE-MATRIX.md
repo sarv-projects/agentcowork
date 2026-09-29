@@ -2,7 +2,7 @@
 
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P7). **This file owns links, never content:** requirements live in `ARCH/08-REQUIREMENTS.md`, designs in the module docs, tasks in `TODO.md`, evidence in `ARCH/42-EVIDENCE-MAP.md`.
 > **Purpose:** answer from one place — which requirements does a file implement · which requirements have no implementation · which acceptance tests are missing · which specs does a change affect.
-> **Current inventory (2026-09-28):** 343 unique requirement rows match the 343 active requirement headings in `08` (including remote/cloud ownership, cross-device access, DEC-056 UI reconciliation, DEC-058 machine observation/diagnostics, DEC-059 bounded candidate comparison, DEC-060 eligibility-aware interaction-path selection, and DEC-061 Rust MCP SDK integration behind Guard). Active `TODO.md` W0–W6 task IDs are linked below where assigned; new implementation tests and evidence remain pending.
+> **Current inventory (2026-09-29):** 343 unique requirement rows match the 343 active requirement headings in `08` (including remote/cloud ownership, cross-device access, DEC-056 UI reconciliation, DEC-058 machine observation/diagnostics, DEC-059 bounded candidate comparison, DEC-060 eligibility-aware interaction-path selection, DEC-061 Rust MCP SDK integration behind Guard, and DEC-062 latest-selection dequeue resolution). Active `TODO.md` W0–W6 task IDs are linked below where assigned; new implementation tests and evidence remain pending.
 
 ---
 
