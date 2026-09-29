@@ -1,6 +1,6 @@
 # 39 — Architecture delivery sequence and acceptance
 
-> Status: accepted target architecture 2026-09-28 under DEC-054/055/056/057/058; implementation pending. This is an architecture dependency plan; `TODO.md` W6 is the delivery-status tracker. `48` owns final interaction design, `49` outcome scenarios, `50` cross-plane maps, and `51` Machine Observer.
+> Status: accepted target architecture 2026-09-29 under DEC-054/055/056/057/058/060/061/062; implementation pending. This is an architecture dependency plan; `TODO.md` W6 is the delivery-status tracker. `48` owns final interaction design, `49` outcome scenarios, `50` cross-plane maps, and `51` Machine Observer. DEC-062's queued latest-selection resolution and DEC-061's MCP SDK qualification are delivery dependencies, not implementation evidence.
 
 ## Current-state delta (source observed, not completion claims)
 
