@@ -239,7 +239,7 @@ const VIEW_META: Record<ViewId, { label: string; icon: React.ElementType }> = {
   artifact: { label: 'Artifact', icon: MonitorSmartphone },
   desktop: { label: 'Computer use', icon: MonitorSmartphone },
   'tool-output': { label: 'Tool output', icon: FileText },
-  run: { label: 'Run', icon: SquareActivity },
+  run: { label: 'Live Desk', icon: SquareActivity },
 }
 
 function ViewportContent({ view }: { view: ViewId }) {

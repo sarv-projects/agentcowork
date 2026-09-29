@@ -403,6 +403,9 @@
 .live-dot {
   animation: live-pulse 1s ease-in-out infinite;
 }
+.live-desk-pulse {
+  animation: live-pulse 1.8s ease-in-out infinite;
+}
 
 /* Typewriter caret — 500ms/500ms per design doc */
 /* Three-dot typing indicator (chat streaming) */

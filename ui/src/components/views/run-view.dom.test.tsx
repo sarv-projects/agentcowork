@@ -172,6 +172,21 @@ describe('run surface — identity in the user’s vocabulary', () => {
   })
 })
 
+describe('Live Desk summary', () => {
+  test('pausing the displayed updates leaves the underlying work running', async () => {
+    installShell({ usage_snapshot: () => ({ total: {}, byKey: [], bySession: [] }) })
+    await setState({ sessions: [chat({ status: 'running' })], workEvents: [TOOL_STARTED] })
+    mounted = await mount(<RunView />)
+
+    expect(mounted.container.textContent ?? '').toContain('Live Desk')
+    expect(mounted.container.textContent ?? '').toContain('Working')
+    await click(mounted.container.querySelector<HTMLButtonElement>('button[aria-label="Pause Live Desk updates"]')!)
+
+    expect(mounted.container.textContent ?? '').toContain('Updates are paused')
+    expect(useAppStore.getState().sessions.find((item) => item.id === 'chat-1')?.status).toBe('running')
+  })
+})
+
 describe('run surface — context and usage', () => {
   test('reports the ledger split and names the reporter', async () => {
     installShell({
@@ -555,7 +570,7 @@ describe('run surface — disclosure is keyboard operable and persisted', () => 
   test('collapse all is one control and reports its own state', async () => {
     installShell({ usage_snapshot: () => ({ total: {}, byKey: [], bySession: [] }) })
     mounted = await mount(<RunView />)
-    const all = mounted.container.querySelector<HTMLButtonElement>('button[aria-pressed]')
+    const all = mounted.container.querySelector<HTMLButtonElement>('details button[aria-pressed]')
     expect(all?.getAttribute('aria-pressed')).toBe('false')
     expect(all?.textContent).toContain('Collapse all')
 
@@ -727,7 +742,7 @@ describe('run surface — a long trace stays inspectable', () => {
     installShell({ usage_snapshot: () => ({ total: {}, byKey: [], bySession: [] }) })
     await setState({ workEvents: [TOOL_STARTED, TOOL_FAILED] })
     mounted = await mount(<RunView />)
-    const live = mounted.container.querySelector('[aria-live="polite"]')
+    const live = mounted.container.querySelector('details [aria-live="polite"]')
     expect(live?.getAttribute('role')).toBe('status')
     expect(live?.textContent ?? '').toContain('1 step failed')
   })

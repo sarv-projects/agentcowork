@@ -44,6 +44,7 @@ import { RunArtifacts, collectProducedFiles } from '@/components/views/run-artif
 import { RunFolderFiles, RunMcpServers } from '@/components/views/run-inventory'
 import { RunOutcomeStrip } from '@/components/views/run-outcome'
 import { buildRunTrace, countRunSteps } from '@/components/views/run-projection'
+import { LiveDeskSummary } from '@/components/views/live-desk-summary'
 import { cn } from '@/lib/utils'
 
 type SectionId = 'outcome' | 'usage' | 'trace' | 'files' | 'folder' | 'mcp'
@@ -98,116 +99,119 @@ export default function RunView() {
       data-testid="run-view"
       className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-background"
     >
-      <RunHeader />
-
       <div className="min-h-0 flex-1 overflow-y-auto scroll-thin">
-        <RunSection
-          title="Outcome"
-          icon={ListChecks}
-          tone={!isOpen('outcome') && (card.conflicts.length > 0 || card.tests.some((t) => !t.passed)) ? 'alert' : 'default'}
-          meta={isOpen('outcome') ? undefined : outcomeMeta}
-          open={isOpen('outcome')}
-          onToggle={() => toggle('outcome')}
-        >
-          <RunOutcomeStrip card={card} />
-        </RunSection>
+        <div className="space-y-3 p-3">
+          <LiveDeskSummary title={chat?.title} sessionStatus={chat?.status} card={card} />
 
-        <RunSection
-          title="Context & usage"
-          icon={Database}
-          open={isOpen('usage')}
-          onToggle={() => toggle('usage')}
-        >
-          <RunUsageSection chatId={activeSessionId || null} />
-        </RunSection>
+          <details className="group rounded-xl border border-border bg-card/50">
+            <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-2 rounded-xl px-3 text-xs font-medium text-muted-foreground outline-none transition-colors hover:bg-accent/50 hover:text-foreground focus-visible:ring-2 focus-visible:ring-brand/60 [&::-webkit-details-marker]:hidden">
+              <span>Activity details</span>
+              <ChevronDown aria-hidden className="h-3.5 w-3.5 transition-transform group-open:rotate-180" />
+            </summary>
+            <div className="border-t border-border/70 px-1 pb-1">
+              <RunHeader />
+              <RunSection
+                title="Outcome"
+                icon={ListChecks}
+                tone={!isOpen('outcome') && (card.conflicts.length > 0 || card.tests.some((t) => !t.passed)) ? 'alert' : 'default'}
+                meta={isOpen('outcome') ? undefined : outcomeMeta}
+                open={isOpen('outcome')}
+                onToggle={() => toggle('outcome')}
+              >
+                <RunOutcomeStrip card={card} />
+              </RunSection>
 
-        <RunSection
-          title="Steps"
-          icon={SquareActivity}
-          // The alert tint only ever appears beside the written counts in the
-          // meta line, so it reinforces a word and never replaces one. Open,
-          // the rows themselves carry the status in words.
-          tone={!isOpen('trace') && problems > 0 ? 'alert' : 'default'}
-          meta={isOpen('trace') ? undefined : traceMeta(counts, steps.length)}
-          open={isOpen('trace')}
-          onToggle={() => toggle('trace')}
-        >
-          <RunTrace steps={steps} />
-        </RunSection>
+              <RunSection
+                title="Context & usage"
+                icon={Database}
+                open={isOpen('usage')}
+                onToggle={() => toggle('usage')}
+              >
+                <RunUsageSection chatId={activeSessionId || null} />
+              </RunSection>
 
-        <RunSection
-          title="Files"
-          icon={FileStack}
-          meta={isOpen('files') ? undefined : `${reportedFiles} reported`}
-          open={isOpen('files')}
-          onToggle={() => toggle('files')}
-        >
-          <RunArtifacts
-            workingDir={workingDir}
-            artifacts={artifacts}
-            touchedFiles={card.files}
-          />
-        </RunSection>
+              <RunSection
+                title="Steps"
+                icon={SquareActivity}
+                // The alert tint only ever appears beside the written counts in the
+                // meta line, so it reinforces a word and never replaces one. Open,
+                // the rows themselves carry the status in words.
+                tone={!isOpen('trace') && problems > 0 ? 'alert' : 'default'}
+                meta={isOpen('trace') ? undefined : traceMeta(counts, steps.length)}
+                open={isOpen('trace')}
+                onToggle={() => toggle('trace')}
+              >
+                <RunTrace steps={steps} />
+              </RunSection>
 
-        <RunSection
-          title="Working folder"
-          icon={FolderOpen}
-          meta={isOpen('folder') ? undefined : workingDir ?? 'none attached'}
-          open={isOpen('folder')}
-          onToggle={() => toggle('folder')}
-        >
-          <RunFolderFiles workingDir={workingDir} />
-        </RunSection>
+              <RunSection
+                title="Files"
+                icon={FileStack}
+                meta={isOpen('files') ? undefined : `${reportedFiles} reported`}
+                open={isOpen('files')}
+                onToggle={() => toggle('files')}
+              >
+                <RunArtifacts
+                  workingDir={workingDir}
+                  artifacts={artifacts}
+                  touchedFiles={card.files}
+                />
+              </RunSection>
 
-        <RunSection
-          title="MCP servers"
-          icon={Plug}
-          open={isOpen('mcp')}
-          onToggle={() => toggle('mcp')}
-        >
-          <RunMcpServers />
-        </RunSection>
+              <RunSection
+                title="Working folder"
+                icon={FolderOpen}
+                meta={isOpen('folder') ? undefined : workingDir ?? 'none attached'}
+                open={isOpen('folder')}
+                onToggle={() => toggle('folder')}
+              >
+                <RunFolderFiles workingDir={workingDir} />
+              </RunSection>
+
+              <RunSection
+                title="MCP servers"
+                icon={Plug}
+                open={isOpen('mcp')}
+                onToggle={() => toggle('mcp')}
+              >
+                <RunMcpServers />
+              </RunSection>
+
+              {/* Existing technical drill-downs stay reachable, but no longer
+                  crowd the everyday summary. */}
+              <footer className="border-t border-border bg-card/40 px-3 py-2">
+                <div className="mb-1.5 flex items-center justify-between gap-2">
+                  <span className="flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground/70">
+                    <Layers aria-hidden className="h-3 w-3" />
+                    More details
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setAll(!allCollapsed)}
+                    aria-pressed={allCollapsed}
+                    className="inline-flex h-5 items-center gap-1 rounded-md border border-border px-1.5 font-mono text-[9px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60"
+                  >
+                    <ChevronDown
+                      aria-hidden
+                      className={cn('h-2.5 w-2.5 transition-transform', allCollapsed && '-rotate-90')}
+                    />
+                    {allCollapsed ? 'Expand all' : 'Collapse all'}
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  <DrillButton label="Progress" icon={SquareActivity} onClick={() => addView('progress')} />
+                  <DrillButton label="Trace" icon={ScanSearch} onClick={() => addView('trajectory')} />
+                  <DrillButton label="Changes" icon={GitCompare} onClick={() => addView('diff')} />
+                  <DrillButton label="Audit" icon={ShieldCheck} onClick={() => addView('audit')} />
+                  {spooledOutput ? (
+                    <DrillButton label="Tool output" icon={Sparkles} onClick={() => addView('tool-output')} />
+                  ) : null}
+                </div>
+              </footer>
+            </div>
+          </details>
+        </div>
       </div>
-
-      {/* Drill-downs. The rail chrome and the tab strip are unchanged; these
-          only open lenses that already exist. */}
-      <footer className="shrink-0 border-t border-border bg-card/40 px-3 py-2">
-        <div className="mb-1.5 flex items-center justify-between gap-2">
-          <span className="flex items-center gap-1.5 font-mono text-[9px] uppercase tracking-wider text-muted-foreground/70">
-            <Layers aria-hidden className="h-3 w-3" />
-            Drill into
-          </span>
-          <button
-            type="button"
-            onClick={() => setAll(!allCollapsed)}
-            aria-pressed={allCollapsed}
-            className="inline-flex h-5 items-center gap-1 rounded-md border border-border px-1.5 font-mono text-[9px] text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60"
-          >
-            <ChevronDown
-              aria-hidden
-              className={cn('h-2.5 w-2.5 transition-transform', allCollapsed && '-rotate-90')}
-            />
-            {allCollapsed ? 'Expand all' : 'Collapse all'}
-          </button>
-        </div>
-        <div className="flex flex-wrap gap-1">
-          <DrillButton
-            label="Progress"
-            icon={SquareActivity}
-            onClick={() => addView('progress')}
-          />
-          <DrillButton label="Trace" icon={ScanSearch} onClick={() => addView('trajectory')} />
-          <DrillButton label="Changes" icon={GitCompare} onClick={() => addView('diff')} />
-          <DrillButton label="Audit" icon={ShieldCheck} onClick={() => addView('audit')} />
-          {spooledOutput ? (
-            <DrillButton
-              label="Tool output"
-              icon={Sparkles}
-              onClick={() => addView('tool-output')}
-            />
-          ) : null}
-        </div>
-      </footer>
     </div>
   )
 }
