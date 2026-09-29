@@ -56,108 +56,52 @@ function TypeIcon({ type, className }: { type: Artifact['type']; className?: str
   }
 }
 
-function Preview({ artifact }: { artifact: Artifact }) {
-  const type = artifact.type
-  switch (type) {
-    case 'xlsx':
-      return (
-        <div className="grid grid-cols-4 gap-px overflow-hidden rounded border border-border bg-border">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <div
-              key={i}
-              className={cn(
-                'h-4 bg-card px-1 font-mono text-[8px] leading-4',
-                i === 5 && 'bg-brand/10 text-brand'
-              )}
-            >
-              {i === 5 ? '1.8M' : ''}
-            </div>
-          ))}
+function ArtifactTile({ artifact }: { artifact: Artifact }) {
+  if (artifact.type === 'webapp') {
+    const state = artifact.server?.status
+    return (
+      <div className="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-xl border border-border bg-gradient-to-br from-emerald-950/70 via-zinc-950 to-brand/10">
+        <div className="absolute inset-x-0 top-0 flex h-7 items-center gap-1.5 border-b border-border/60 bg-background/20 px-3">
+          <span className="size-2 rounded-full bg-red-400/70" />
+          <span className="size-2 rounded-full bg-warning/70" />
+          <span className="size-2 rounded-full bg-emerald-400/70" />
         </div>
-      )
-    case 'docx':
-      return (
-        <div className="space-y-1.5">
-          <div className="h-1.5 w-1/3 rounded-full bg-muted-foreground/40" />
-          <div className="h-1.5 w-full rounded-full bg-muted-foreground/25" />
-          <div className="h-1.5 w-5/6 rounded-full bg-muted-foreground/25" />
-          <div className="h-1.5 w-4/5 rounded-full bg-muted-foreground/25" />
+        <div className="flex flex-col items-center gap-2 pt-5 text-center">
+          <MonitorSmartphone className="h-7 w-7 text-emerald-300/80" aria-hidden />
+          <span className="text-xs font-medium text-foreground">Interactive app</span>
+          <span className="font-mono text-[10px] text-muted-foreground">
+            {state === 'serving' && artifact.server
+              ? artifact.server.demo
+                ? 'Preview simulation'
+                : `Preview ready · 127.0.0.1:${artifact.server.port}`
+              : state === 'stopped' ? 'Preview is stopped' : 'Preview is not available yet'}
+          </span>
         </div>
-      )
-    case 'pptx':
-      return (
-        <div className="aspect-video w-full rounded border border-border bg-zinc-900/60 p-2">
-          <div className="h-1.5 w-2/3 rounded-full bg-brand/80" />
-          <div className="mt-1 h-1 w-1/2 rounded-full bg-muted-foreground/30" />
-          <div className="mt-3 flex h-8 items-end gap-1">
-            {[3, 5, 7, 5, 3].map((h, i) => (
-              <div
-                key={i}
-                className="flex-1 rounded-t bg-gradient-to-t from-brand-hover/70 to-brand/70"
-                style={{ height: `${h * 12}%` }}
-              />
-            ))}
-          </div>
-        </div>
-      )
-    case 'pdf':
-      return (
-        <div className="space-y-1 rounded border border-border bg-zinc-100 p-2">
-          <div className="h-1 w-1/2 rounded-full bg-zinc-800/60" />
-          <div className="h-0.5 w-full rounded-full bg-zinc-400/60" />
-          <div className="h-0.5 w-11/12 rounded-full bg-zinc-400/60" />
-          <div className="h-0.5 w-10/12 rounded-full bg-zinc-400/60" />
-          <div className="mt-1 inline-block rounded-sm bg-warning px-2 py-0.5 font-mono text-[8px] text-zinc-900">
-            $1.80M
-          </div>
-        </div>
-      )
-    case 'code':
-      return (
-        <div className="rounded border border-border bg-zinc-950 p-2 font-mono text-[9px] leading-tight">
-          <div>
-            <span className="text-violet-300">const</span>{' '}
-            <span className="text-sky-300">rev</span>{' '}
-            <span className="text-muted-foreground">=</span>{' '}
-            <span className="text-emerald-300">1_800_000</span>
-          </div>
-          <div>
-            <span className="text-violet-300">return</span>{' '}
-            <span className="text-sky-300">rev</span>{' '}
-            <span className="text-muted-foreground">*</span>{' '}
-            <span className="text-emerald-300">1.2</span>
-          </div>
-        </div>
-      )
-    case 'markdown':
-      return (
-        <div className="space-y-1">
-          <div className="h-2 w-1/2 rounded bg-foreground/70" />
-          <div className="h-1 w-full rounded bg-muted-foreground/30" />
-          <div className="h-1 w-3/4 rounded bg-muted-foreground/30" />
-        </div>
-      )
-    case 'image':
-      return (
-        <div className="aspect-video w-full rounded bg-gradient-to-br from-fuchsia-500/40 via-brand/30 to-warning/40" />
-      )
-    case 'webapp':
-      return (
-        <div className="relative aspect-video w-full overflow-hidden rounded border border-border bg-zinc-950">
-          <div className="absolute inset-x-0 top-0 flex h-4 items-center gap-1 border-b border-border/60 px-1.5">
-            <span className="size-1 rounded-full bg-red-400/70" />
-            <span className="size-1 rounded-full bg-warning/70" />
-            <span className="size-1 rounded-full bg-emerald-400/70" />
-          </div>
-          <div className="flex h-full items-center justify-center pt-3 text-[9px] text-emerald-300/80">
-            <MonitorSmartphone className="mr-1 h-3 w-3" />
-            live on 127.0.0.1:{artifact.server?.port ?? '…'}
-          </div>
-        </div>
-      )
-    default:
-      return null
+      </div>
+    )
   }
+
+  const label: Record<Exclude<Artifact['type'], 'webapp'>, string> = {
+    xlsx: 'Spreadsheet',
+    docx: 'Document',
+    pptx: 'Presentation',
+    pdf: 'PDF document',
+    code: 'Code file',
+    markdown: 'Markdown file',
+    image: 'Image file',
+  }
+
+  return (
+    <div className="flex aspect-video w-full items-center justify-center gap-3 rounded-xl border border-border bg-gradient-to-br from-card via-muted/40 to-brand/5 px-4">
+      <span className="grid size-12 shrink-0 place-items-center rounded-2xl border border-border bg-background/70 shadow-sm">
+        <TypeIcon type={artifact.type} className="h-6 w-6" />
+      </span>
+      <div className="min-w-0">
+        <div className="truncate text-sm font-medium text-foreground">{label[artifact.type]}</div>
+        <div className="mt-1 text-[10px] text-muted-foreground">Open to view the actual file</div>
+      </div>
+    </div>
+  )
 }
 
 interface Props {
@@ -220,7 +164,7 @@ export default function ArtifactCard({ artifact }: Props) {
       </div>
 
       <div className="px-3 pt-2.5 pb-3">
-        <Preview artifact={artifact} />
+        <ArtifactTile artifact={artifact} />
         <p className="mt-2 truncate font-mono text-[10px] text-muted-foreground">
           {artifact.preview}
         </p>

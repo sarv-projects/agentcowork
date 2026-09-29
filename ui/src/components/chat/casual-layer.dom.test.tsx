@@ -212,6 +212,31 @@ describe('assistant Markdown rendering', () => {
     expect(useAppStore.getState().browserUrl).toBe('https://images.example.test/bicycle.jpg')
     expect(useAppStore.getState().activeView).toBe('browse')
   })
+
+  test('artifact cards do not invent preview contents for files without a real thumbnail', async () => {
+    mounted = await mount(
+      <MessageBubble
+        message={{
+          id: 'message-artifact',
+          role: 'assistant',
+          content: 'The workbook is ready.',
+          timestamp: new Date().toISOString(),
+          artifacts: [{
+            id: 'artifact-sales',
+            name: 'Sales review.xlsx',
+            type: 'xlsx',
+            preview: 'Q2 source reconciled · Summary sheet updated',
+          }],
+        }}
+      />,
+    )
+    await tick()
+
+    expect(mounted.container.textContent).toContain('Spreadsheet')
+    expect(mounted.container.textContent).toContain('Q2 source reconciled · Summary sheet updated')
+    expect(mounted.container.textContent).not.toContain('$1.8M')
+    expect(mounted.container.textContent).not.toContain('1_800_000')
+  })
 })
 
 describe('inline consent', () => {
