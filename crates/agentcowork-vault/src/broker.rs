@@ -351,6 +351,8 @@ impl<'a> Broker<'a> {
         if !credential_safe_url(&url) {
             return Err(BrokerError::InsecureEndpoint(provider.to_string()));
         }
+        let agent = provider_agent_for(&url, self.floor_policy(provider), Some(timeout))
+            .map_err(guarded_setup_error)?;
         let endpoint = self.endpoints.get(provider).cloned();
         let keyless = endpoint.as_ref().map(|e| e.keyless).unwrap_or(false);
         let key = if keyless {
@@ -359,8 +361,6 @@ impl<'a> Broker<'a> {
             Some(self.ring.reveal_for_metadata_probe(provider)?)
         };
 
-        let agent = provider_agent_for(&url, self.floor_policy(provider), Some(timeout))
-            .map_err(guarded_setup_error)?;
         let mut req = agent.get(&url).set("Accept", "application/json").set(
             "User-Agent",
             &format!("AgentCowork/{}", env!("CARGO_PKG_VERSION")),
@@ -731,8 +731,6 @@ impl<'a> Broker<'a> {
         if !credential_safe_url(&url) {
             return Err(BrokerError::InsecureEndpoint(provider.to_string()));
         }
-        let agent = provider_agent_for(&url, self.floor_policy(provider), None)
-            .map_err(guarded_setup_error)?;
         let keyless = self
             .endpoints
             .get(provider)
@@ -746,6 +744,9 @@ impl<'a> Broker<'a> {
                 spent: self.budget.spent(session_id),
             });
         }
+
+        let agent = provider_agent_for(&url, self.floor_policy(provider), None)
+            .map_err(guarded_setup_error)?;
 
         let mut switches = 0u32;
         // P1.7: a 401 on an oauth provider refreshes the token exactly once
