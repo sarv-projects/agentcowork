@@ -6,6 +6,35 @@
 
 The review enumerated repository structure, then traced launch, agent registration, MCP/skill registration, scheduling, workflow execution, credential use and user-facing control through source. `ARCH/44-ABSORB-REGISTER.md` retains earlier research; this file records new source-grounded findings. Source references are immutable commit links where a pinned checkout was available. An absent source is recorded as a limit, not filled by inference. UI and market claims from vendor documentation are directional; no comparative usability study or benchmark has been run yet.
 
+## Latest upstream selection inventory (2026-09-29)
+
+These are read-only remote `HEAD` selections collected before implementation. A selection is not a source audit: rows without a current-head section below retain their prior focused or historical evidence and must be re-traced at the listed commit before code is adapted. This prevents a historical source path from being treated as current behavior.
+
+| Repository | Latest available `HEAD` | Current-head semantic status |
+|---|---|---|
+| [pacifio/atlas](https://github.com/pacifio/atlas) | `a34a6d44bf37d26d9a6f8f6fe1fab5ce0a92d8d1` | Focused audit recorded; no newer head than reviewed pin. |
+| [OpenCoworkAI/open-cowork](https://github.com/OpenCoworkAI/open-cowork) | `4c2cdfcf2ee7633ef27fe51109ba7ba0fbdc4a25` | Focused current-head audit recorded; full semantic audit not claimed. |
+| [different-ai/openwork](https://github.com/different-ai/openwork) | `a3b779914bfe4b41c79b64b1c0edb35f4a3b5254` | Focused current-head audit recorded; full semantic audit not claimed. |
+| [openchamber/openchamber](https://github.com/openchamber/openchamber) | `566ba61852526ab30800c3a0cb82e51825d8bc60` | Focused current-head audit recorded above; full semantic audit not claimed. |
+| [eigent-ai/eigent](https://github.com/eigent-ai/eigent) | `3ec6f4c3c8794789fcf0abf5b572fa309a355b8a` | Focused audit at current head recorded; full semantic audit not claimed. |
+| [OpenHands/OpenHands](https://github.com/OpenHands/OpenHands) | `b9d174c9ca36c27cd0b657779936ea2df29280e9` | Focused current-head audit recorded above; full semantic audit not claimed. |
+| [Mintplex-Labs/anything-llm](https://github.com/Mintplex-Labs/anything-llm) | `a355703427c67c5be17bc57c4c5d5d034e275444` | Focused audit at current head recorded; full semantic audit not claimed. |
+| [bytedance/UI-TARS-desktop](https://github.com/bytedance/UI-TARS-desktop) | `2ff41a9e515828c5bd5b276e493d73aa0bdf4a3a` | Prior focused audit; current-head source re-trace pending. |
+| [trycua/cua](https://github.com/trycua/cua) | `c3941497a5545b6b977c55962c29391da10bdc03` | Prior focused audit; current-head source re-trace pending. |
+| [GCWing/OpenBitFun](https://github.com/GCWing/OpenBitFun) | `9ad49de3fc26522f151ba57cd56f6d4573352a3f` | Prior focused audit; current-head source re-trace pending. |
+| [n8n-io/n8n](https://github.com/n8n-io/n8n) | `0f630329167896a1452a2d6c9b5e12cf6dce165b` | Prior focused audit; current-head source re-trace pending. |
+| [activepieces/activepieces](https://github.com/activepieces/activepieces) | `6bb9c33cd719c4e75e4bc23b2ba1142c94ec5cbe` | Prior focused audit; current-head source re-trace pending. |
+| [ruvnet/ruflo](https://github.com/ruvnet/ruflo) | `fce8e6da5a6edda3791367b244066e6c67730196` | Prior audit is at an older pin; current-head source re-trace pending. |
+| [superset-sh/superset](https://github.com/superset-sh/superset) | `a395d301759d01720c80c58dd2951649b272b7ab` | Focused audit at current head recorded; full semantic audit not claimed. |
+| [getpaseo/paseo](https://github.com/getpaseo/paseo) | `d59686189195080cc4c63264b2bb9e4ea7bbb42c` | Focused audit at current head recorded; full semantic audit not claimed. |
+| [mindsdb/mindshub](https://github.com/mindsdb/mindshub) | `780bbcbb8b9367c667e9b6af2aecc8277f24c0ad` | Prior focused audit; current-head source re-trace pending. |
+| [workany-ai/workany](https://github.com/workany-ai/workany) | `7bc87487a18f83b9f2854f5028be265ef2144781` | Prior focused audit; current-head source re-trace pending. |
+| [zhimaAi/ChatClaw](https://github.com/zhimaAi/ChatClaw) | `24cf23210f48daacd4d301bb771fc42745a42ee7` | Prior focused audit; current-head source re-trace pending. |
+| [lfnovo/open-notebook](https://github.com/lfnovo/open-notebook) | `3127f14ea9dbb519f0e4ddc64a0742ca644ba6ef` | Prior focused audit; current-head source re-trace pending. |
+| [LibreChat/LibreChat](https://github.com/LibreChat/LibreChat) | `63363a777612e0d37956cc5d233ac489f3a302c3` | Focused current-head audit recorded; full semantic audit not claimed. |
+| [libre-webui/libre-webui](https://github.com/libre-webui/libre-webui) | `1eef74012d958e51ec7afb26685eaf12cd228f28` | Partial deep audit recorded; repository-wide semantic audit remains incomplete. |
+| [code/app-open-artifacts](https://github.com/code/app-open-artifacts) and [13point5/open-artifacts](https://github.com/13point5/open-artifacts) | `c032aeb738dfe15777d9b75fabe9eb5adb76906c` | Same tree at current head; focused artifact audit recorded. |
+
 ## MCP SDK review (DEC-061)
 
 The official Rust SDK release list shows the signed `rmcp-v3.4.0` release dated 2026-09-15. At that immutable tag, [`streamable_http_client.rs`](https://github.com/modelcontextprotocol/rust-sdk/blob/rmcp-v3.4.0/crates/rmcp/src/transport/streamable_http_client.rs) defines a public `StreamableHttpClient` trait that injects the HTTP request/response boundary, and [`model.rs`](https://github.com/modelcontextprotocol/rust-sdk/blob/rmcp-v3.4.0/crates/rmcp/src/model.rs) includes both `ProtocolVersion::V_2026_07_28` and `V_2025_11_25`. It also declares `LATEST` as `2025-11-25`, so the host must explicitly negotiate/advertise the intended protocol version. The SDK feature graph distinguishes the generic HTTP client from its `reqwest` implementation in [`Cargo.toml`](https://github.com/modelcontextprotocol/rust-sdk/blob/rmcp-v3.4.0/crates/rmcp/Cargo.toml). The official [2026-07-28 SDK table](https://github.com/modelcontextprotocol/modelcontextprotocol/blob/main/docs/docs/2026-07-28/sdk.mdx) lists Rust as Tier 1; an older dated 2025-11-25 SDK table says Tier 2, so that older status is not current evidence.
