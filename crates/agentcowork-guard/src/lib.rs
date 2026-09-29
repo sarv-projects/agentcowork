@@ -46,6 +46,7 @@ pub mod deflection;
 pub mod diffcard;
 pub mod ecc;
 pub mod egress;
+pub mod egress_http;
 pub mod floors;
 pub mod fs_broker;
 pub mod granter;

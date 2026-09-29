@@ -14,11 +14,12 @@ use std::collections::{BTreeMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use agentcowork_audit::{AuditEvent, merkle::MerkleChain};
 use agentcowork_guard::CapabilityBroker;
 use agentcowork_guard::deflection::{DEFLECTION_AUDIT_KIND, DeflectionNudge, deflect_shell_bias};
+use agentcowork_guard::egress_http::GuardedHttpClient;
 use agentcowork_guard::{
     ConnectivityMode, DecisionPackage, EgressEngine, EgressVerdict, NetPolicy, Operation,
     ResourceBinding, RiskLevel, RiskTier, bind_exec_bytes, bind_path, bind_url, open_parent_dir,
@@ -2931,18 +2932,11 @@ impl ToolService {
             Some(u) if !u.is_empty() => u,
             _ => return json!({"ok": false, "error": "url required"}),
         };
-        // FIX-09: the pre-flight is here, at the socket, not only in
-        // `tool/exec`. `dispatch` is also reachable from any in-process caller
-        // of `ToolService`, so the destination floor is enforced immediately
-        // before the request — one egress path, no reliance on a caller having
-        // gone through the executor. The URL is user-supplied (a download the
-        // user asked for), so the desktop default policy applies: loopback and
-        // public hosts pass, the LAN and link-local/metadata floor does not.
-        if let Err(denied) =
-            agentcowork_guard::netfloor::preflight_url(url, agentcowork_guard::NetPolicy::default())
-        {
-            return json!({"ok": false, "error": denied.to_string()});
-        }
+        // FIX-09: dispatch is reachable from in-process callers too, so the
+        // Guard binding is enforced here immediately before network activity.
+        // Bind the Guard-approved DNS result to the actual request. A pure
+        // preflight followed by `ureq::get` would resolve the hostname again
+        // and permit DNS rebinding between the check and socket creation.
         let dir = args
             .get("dir")
             .and_then(Value::as_str)
@@ -2952,21 +2946,22 @@ impl ToolService {
             Err(e) => return json!({"ok": false, "error": e}),
         };
         let name = filename_from_url(url);
-        let mut bytes = Vec::new();
-        match ureq::get(url).call() {
-            Ok(resp) => {
-                use std::io::Read;
-                let reader = resp.into_reader();
-                let mut limited = reader.take(MAX_DOWNLOAD_BYTES as u64 + 1);
-                if limited.read_to_end(&mut bytes).is_err() {
-                    return json!({"ok": false, "error": "read failed"});
-                }
-                if bytes.len() > MAX_DOWNLOAD_BYTES {
-                    return json!({"ok": false, "error": "download exceeds 64 MiB cap"});
-                }
+        let client = match GuardedHttpClient::new(
+            url,
+            agentcowork_guard::NetPolicy::default(),
+            Duration::from_secs(60),
+        ) {
+            Ok(client) => client,
+            Err(error) => return json!({"ok": false, "error": error.to_string()}),
+        };
+        let response = match client.request("GET", url, &[], None, MAX_DOWNLOAD_BYTES) {
+            Ok(response) if (200..300).contains(&response.status) => response,
+            Ok(response) => {
+                return json!({"ok": false, "error": format!("download returned HTTP {}", response.status)});
             }
-            Err(e) => return json!({"ok": false, "error": e.to_string()}),
-        }
+            Err(error) => return json!({"ok": false, "error": error.to_string()}),
+        };
+        let bytes = response.body;
         let target = abs_dir.join(&name);
         let tmp = target.with_extension("tmp-agentcowork");
         match fs::write(&tmp, &bytes).and_then(|_| fs::rename(&tmp, &target)) {

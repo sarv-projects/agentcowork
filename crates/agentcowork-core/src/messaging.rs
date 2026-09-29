@@ -10,6 +10,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
+use std::time::Duration;
 
 /// A transport-level HTTP call seam (P6.9 adapters). The live adapters use
 /// `ureq`; tests inject a loopback mock so the adapter logic (message
@@ -23,12 +24,9 @@ pub trait HttpTransport {
 /// `ureq`-backed transport — the production path (outbound network is the
 /// adapter's only network touch; credentials never enter the sidecar).
 ///
-/// FIX-09: the destination floor is enforced here, at the socket. The webhook
-/// URL is user-configured (a channel the user connected), so the desktop
-/// default policy applies — loopback and public hosts pass, the LAN and the
-/// always-refused ranges (link-local/cloud metadata, multicast, reserved) do
-/// not. A denial is returned as a delivery failure with the floor's reason and
-/// there is no direct-client fallback.
+/// FIX-09: a Guard-approved resolution is pinned into this request, redirects
+/// are disabled, and response allocation is bounded. The webhook URL is
+/// user-configured, so the desktop default egress policy applies.
 #[derive(Debug, Default)]
 pub struct UreqTransport;
 
@@ -39,17 +37,30 @@ impl HttpTransport for UreqTransport {
         content_type: &str,
         body: &str,
     ) -> Result<String, MessagingError> {
-        if let Err(denied) =
-            agentcowork_guard::netfloor::preflight_url(url, agentcowork_guard::NetPolicy::default())
-        {
-            return Err(MessagingError::EgressDenied(denied.to_string()));
-        }
-        let resp = ureq::post(url)
-            .set("Content-Type", content_type)
-            .send_string(body)
+        let client = agentcowork_guard::egress_http::GuardedHttpClient::new(
+            url,
+            agentcowork_guard::NetPolicy::default(),
+            Duration::from_secs(20),
+        )
+        .map_err(|error| match error {
+            agentcowork_guard::egress_http::GuardedHttpError::EgressDenied => {
+                MessagingError::EgressDenied(error.to_string())
+            }
+            _ => MessagingError::DeliveryFailed,
+        })?;
+        let response = client
+            .request(
+                "POST",
+                url,
+                &[("Content-Type", content_type)],
+                Some(body.as_bytes()),
+                1024 * 1024,
+            )
             .map_err(|_| MessagingError::DeliveryFailed)?;
-        resp.into_string()
-            .map_err(|_| MessagingError::DeliveryFailed)
+        if !(200..300).contains(&response.status) {
+            return Err(MessagingError::DeliveryFailed);
+        }
+        String::from_utf8(response.body).map_err(|_| MessagingError::DeliveryFailed)
     }
 }
 
