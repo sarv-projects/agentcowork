@@ -105,25 +105,61 @@ impl HfClient {
         self
     }
 
+    fn repo_tree_url(&self, repo: &str) -> Result<String, HfError> {
+        let mut parts = repo.split('/');
+        let owner = parts.next().unwrap_or_default();
+        let model = parts.next().unwrap_or_default();
+        if owner.is_empty()
+            || model.is_empty()
+            || parts.next().is_some()
+            || [owner, model]
+                .iter()
+                .any(|part| *part == "." || *part == "..")
+        {
+            return Err(HfError::NotFound("invalid model repository id".into()));
+        }
+        let mut url = url::Url::parse(self.base.trim_end_matches('/'))
+            .map_err(|_| HfError::Network("invalid model hub endpoint".into()))?;
+        {
+            let mut path = url
+                .path_segments_mut()
+                .map_err(|_| HfError::Network("invalid model hub endpoint".into()))?;
+            path.pop_if_empty();
+            path.extend(["api", "models", owner, model, "tree", "main"]);
+        }
+        Ok(url.into())
+    }
+
     /// Live `tree/main` of a repo (no hardcoded ids — `repo` is caller data).
     ///
-    /// FIX-09: the Hub base is pre-flighted through
-    /// [`agentcowork_guard::netfloor::preflight_url`] before the socket. `base`
-    /// is injectable (test mock), so the floor lives at the client; the shipped
-    /// default is `https://huggingface.co`, and a re-pointed client still
-    /// cannot reach the LAN or cloud metadata.
+    /// FIX-09: the Hub API request uses Guard's checked-address-pinned client;
+    /// the API response is bounded and redirects are refused. `base` remains
+    /// injectable for loopback fixtures.
     pub fn repo_files(&self, repo: &str) -> Result<Vec<HfFile>, HfError> {
-        let url = format!("{}/api/models/{repo}/tree/main", self.base);
-        egress_preflight(&url)?;
-        let resp = self
-            .agent
-            .get(&url)
-            .call()
-            .map_err(|e| HfError::Network(e.to_string()))?;
-        let body = resp
-            .into_string()
-            .map_err(|e| HfError::Network(e.to_string()))?;
-        serde_json::from_str(&body).map_err(|e| HfError::NotFound(format!("{e}")))
+        let url = self.repo_tree_url(repo)?;
+        let client = agentcowork_guard::egress_http::GuardedHttpClient::new(
+            &url,
+            agentcowork_guard::NetPolicy::default(),
+            std::time::Duration::from_secs(15),
+        )
+        .map_err(|_| HfError::Network("Guard refused the model-hub destination".into()))?;
+        let response = client
+            .request(
+                "GET",
+                &url,
+                &[("Accept", "application/json")],
+                None,
+                16 * 1024 * 1024,
+            )
+            .map_err(|_| HfError::Network("Guarded model-hub request failed".into()))?;
+        if !(200..300).contains(&response.status) {
+            return Err(HfError::Network(format!(
+                "model hub returned HTTP {}",
+                response.status
+            )));
+        }
+        serde_json::from_slice(&response.body)
+            .map_err(|_| HfError::NotFound("invalid model-hub response".into()))
     }
 
     /// GGUF files in a repo (files whose path ends with `.gguf`).

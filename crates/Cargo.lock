@@ -192,6 +192,7 @@ dependencies = [
  "thiserror 2.0.19",
  "toml",
  "ureq",
+ "url",
  "urlencoding",
  "windows-sys 0.61.2",
  "x25519-dalek",
