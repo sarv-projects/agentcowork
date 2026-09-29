@@ -1,6 +1,6 @@
 # 03 — High-Level Architecture (HLD)
 
-> **Status:** Frozen v1 baseline, amended by DEC-054/055/056/057/058/059/060/061/062 (2026-09-29) — architecture root for **HOW** (see `ARCH/00-INDEX.md` §2). Module docs derive from this file; conflicts escalate to a `DEC` entry.
+> **Status:** Frozen v1 baseline, amended by DEC-054/055/056/057/058/059/060/061/062/063 (2026-09-29) — architecture root for **HOW** (see `ARCH/00-INDEX.md` §2). Module docs derive from this file; conflicts escalate to a `DEC` entry.
 > **Companion docs:** `ARCH/02-THESIS.md` (identity, principles) · `ARCH/06-DATA-MODEL.md` (entities) · `ARCH/07-CONTRACTS.md` (interfaces) · `ARCH/48-EXPERIENCE-SURFACES.md` (final UX HLD/LLD) · `ARCH/50-SYSTEM-BLUEPRINT.md` (amended whole-system maps) · `ARCH/51-MACHINE-OBSERVABILITY.md` (local observer service).
 > **SDD:** this doc is the L2 architecture layer — it satisfies behaviors registered in `ARCH/08-REQUIREMENTS.md` and must not contradict them; module → REQ traceability accrues in `ARCH/09-FEATURE-MATRIX.md`.
 > **Fleshed:** P7 (2026-09-26) — contract index (§3.1), failure model (§11), non-functional envelope (§12).
@@ -8,7 +8,7 @@
 
 ## 1. Shape
 
-> **DEC-054/055/056/057/058/059/060/061/062 amendment (2026-09-29):** Mission owns durable goals; Work owns execution attempts; the selected external agent owns its native reasoning loop, model, tools and private configuration. Core governs only shared Core capability calls. Workflow trigger ownership is fenced across local/cloud handoff and does not promise exactly-once external effects. Suitable structured API/connector/MCP/CLI paths precede target-specific browser or OS accessibility; vision and raw input remain fallbacks (DEC-060). `48` owns the nontechnical-first surface, `50` maps whole-system ownership, and `51` adds local machine telemetry without expanding the World Model. DEC-062 makes queued chat payloads durable independently of binding and resolves the latest valid conversation selection at dequeue, with no silent fallback.
+> **DEC-054/055/056/057/058/059/060/061/062/063 amendment (2026-09-29):** Mission owns durable goals; Work owns execution attempts; the selected external agent owns its native reasoning loop, model, tools and private configuration. Core governs and receipts only shared Core capability calls; native agent effects remain under their own policy and distinct provenance (DEC-063). Workflow trigger ownership is fenced across local/cloud handoff and does not promise exactly-once external effects. Suitable structured API/connector/MCP/CLI paths precede target-specific browser or OS accessibility; vision and raw input remain fallbacks (DEC-060). `48` owns the nontechnical-first surface, `50` maps whole-system ownership, and `51` adds local machine telemetry without expanding the World Model. DEC-062 makes queued chat payloads durable independently of binding and resolves the latest valid conversation selection at dequeue, with no silent fallback.
 
 ```mermaid
 flowchart TB

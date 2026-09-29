@@ -71,6 +71,7 @@
 | DEC-060 | One capability-selection preference: suitable authorized API/connector/MCP/CLI first, target-specific browser or OS accessibility next, vision after structured paths, raw input last; native agent tools remain agent-owned | Accepted target, implementation pending | 03, 08–09, 13–15, 23–24, 40, 46, 50 |
 | DEC-061 | Use the official Rust MCP SDK for protocol semantics behind Core-owned provider, policy, credential and Guard boundaries; inject a Guard-backed HTTP transport; qualify pinned SDK behavior before removing compatibility code | Accepted target, implementation pending | 04, 08–09, 14, 32, 44–45, TODO |
 | DEC-062 | Queued chat items resolve the latest conversation binding at dequeue time (agent, advertised model or agent-managed state, mode and access); queue content/references remain durable, but a stale binding snapshot is never silently reused; unavailable or unsupported latest selection pauses with an explicit resolution state | Locked | 08, 11, 15, 18, 30, 48–50, TODO |
+| DEC-063 | Clarify universal governance wording in DEC-002/010/022: the Work → Capability → Guard/Ticket/Receipt path governs Core-mediated effects; self-contained agents' native effects remain under their policy with distinct reported/observed provenance | Locked clarification under DEC-054 | 02–05, 07, 12, 15, 22, 29, 34, 46, SPEC |
 
 ## 2. Details
 
@@ -480,6 +481,16 @@ The latest selection is revalidated at dequeue. If the selected agent is offline
 **Reason:** The user expects a picker change to govern the next turn. Freezing a binding at queue time makes the visible picker misleading and can run a later action under stale permissions or stale availability. Content and references remain durable independently of the binding so a failed revalidation does not lose user work.
 
 **Status:** Locked. **Affects:** `08`, `09`, `11`, `15`, `18`, `30`, `48`, `49`, `50`, `TODO`.
+
+### DEC-063 — Clarify Core-mediated governance and receipt scope
+
+**Decision:** The universal effect-governance and receipt language in DEC-002, DEC-010 and DEC-022 applies to effects mediated by AgentCowork Core. A self-contained external agent's native tools and effects do not pass through Core's Work/Capability/Guard/Ticket/Receipt path unless that agent explicitly invokes a shared Core capability. Native effects remain under the agent's own policy and environment; AgentCowork may record them only as `agent_reported` or `native_observed` evidence, never as a Core ticket, receipt, or verified Core-mediated effect. There are no bypasses **within the Core-mediated path**. For a shared capability invocation, the full Core path and its receipt rules remain mandatory regardless of which agent requested it.
+
+**Reason:** DEC-054 established the native-agent boundary, and the current product specification, invariants, HLD, Trust, agent-plane and ecosystem docs already apply the Core path only to Core-mediated calls. Unqualified language in DEC-002 (“or the native agent”), DEC-010 (“every engine … passes the same Guard”) and DEC-022 (“every externally visible effect produces a durable receipt”) could imply that Core can intercept an external process's private tools or attest to effects it did not mediate. This clarification preserves the full Guard/Ticket/verification/receipt invariant for every Core call while making no claim that Core governs native calls.
+
+**Supersession scope:** This decision clarifies the scope of universal governance/receipt statements in DEC-002, DEC-010 and DEC-022; it does not otherwise alter them. The Core-mediated execution sequence, latency targets, verification, receipt requirements and vault custody remain unchanged. DEC-054 remains the authority for the broader external-agent boundary.
+
+**Status:** Locked clarification (2026-09-29). **Affects:** `02-THESIS`, `03-HLD`, `04-DECISIONS`, `05-INVARIANTS`, `07-CONTRACTS`, `12-TRUST`, `15-AGENT-PLANE`, `22-OFFICE`, `29-ARTIFACTS`, `34-EFFECT-VERIFICATION`, `46-ECOSYSTEM-ARCHITECTURE`, `AGENTCOWORK-SPEC.md`.
 
 ## 3. Pending decisions
 

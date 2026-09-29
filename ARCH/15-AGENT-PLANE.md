@@ -1,6 +1,6 @@
 # 15 — Agent plane (engine contract, delegation)
 
-> **Status:** Frozen v1 (frozen 2026-09-26; drafted P2). **Amended 2026-09-27 (DEC-052):** the first-party native agent is removed; this document now specifies the agent plane only.
+> **Status:** Frozen v1 (frozen 2026-09-26; drafted P2). **Amended 2026-09-27 (DEC-052):** the first-party native agent is removed; this document now specifies the agent plane only. **Scope clarification (DEC-063, 2026-09-29):** shared Core calls use the governed path; native external-agent effects remain under native policy and distinct provenance.
 > **P7 pass (2026-09-26):** line-checked; requirements seeded (now `REQ-AGENT-*`, Requirements section).
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
 > **Role:** the agent plane — the adapter contract each compatible external engine implements and the obligations AgentCowork holds over shared calls. No first-party reasoning engine is owned here (DEC-052). Engines keep native tools and policy; the same Core Guard applies to their shared Core calls (DEC-054, INV-12).
