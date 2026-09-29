@@ -42,6 +42,7 @@ import { explainError } from '@/lib/errors'
 import { saferMode, saferPrompt, differentlyPrompt, hasUndoableWork } from '@/lib/recovery'
 import { checkpointSummary, isMutatingMessage } from '@/lib/checkpoints'
 import ArtifactCard, { openArtifactInWorkspace } from './artifact-card'
+import { MermaidDiagram } from './mermaid-diagram'
 import { staggerStyle } from '@/lib/stagger'
 import McqInterruptCard from './mcq-interrupt-card'
 import ProgressSteps from './progress-steps'
@@ -50,7 +51,7 @@ import { TurnCheckpoint } from './turn-checkpoint'
 import { applyCitationMarks, citationAnchorId, formatCitationExport } from '@/lib/citations'
 import { speakText, speechSynthesisAvailable, stopSpeaking } from '@/lib/voice'
 
-function CodeBlock({ children, className, ...props }: React.ComponentProps<'code'> & { inline?: boolean }) {
+function CodeBlock({ children, className, renderMermaid = true, ...props }: React.ComponentProps<'code'> & { inline?: boolean; renderMermaid?: boolean }) {
   const [copied, setCopied] = useState(false)
   // Detect block code (inside <pre>) vs inline code by checking className or children type
   const isBlock = String(children).includes('\n') || (className && className.includes('language-'))
@@ -70,6 +71,10 @@ function CodeBlock({ children, className, ...props }: React.ComponentProps<'code
   }
 
   const codeContent = String(children).replace(/\n$/, '')
+
+  if (renderMermaid && className?.split(/\s+/).includes('language-mermaid')) {
+    return <MermaidDiagram source={codeContent} />
+  }
 
   return (
     <div className="group/code relative my-2 overflow-hidden rounded-md border border-border bg-zinc-950">
@@ -357,9 +362,12 @@ const mdComponents = {
   img: MarkdownImage,
 }
 
-function markdownComponentsFor(citationIds: ReadonlySet<string>, artifactsById: ReadonlyMap<string, Artifact>) {
+function markdownComponentsFor(citationIds: ReadonlySet<string>, artifactsById: ReadonlyMap<string, Artifact>, streaming: boolean) {
   return {
     ...mdComponents,
+    // Don't invoke the renderer while text is still arriving. ReactMarkdown
+    // can represent an unfinished fence as code, but it is not a committed diagram.
+    code: (props: React.ComponentProps<'code'>) => <CodeBlock {...props} renderMermaid={!streaming} />,
     a: ({ children, href, ...props }: React.ComponentProps<'a'>) => {
       if (href?.startsWith('#artifact/')) {
         try {
@@ -1192,6 +1200,7 @@ const MessageBubble = memo(function MessageBubble({ message, streaming }: Props)
               components={markdownComponentsFor(
                 new Set((message.citations ?? []).map((citation) => citationAnchorId(citation.index, message.id))),
                 new Map((message.artifacts ?? []).map((artifact) => [artifact.id, artifact])),
+                Boolean(streaming),
               )}
             >
               {applyCitationMarks(message.content, message.citations ?? [])}

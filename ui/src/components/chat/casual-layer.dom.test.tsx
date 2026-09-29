@@ -83,6 +83,25 @@ describe('casual tool activity', () => {
 })
 
 describe('partial assistant output', () => {
+  test('keeps an unfinished Mermaid fence as source until the message is complete', async () => {
+    mounted = await mount(
+      <MessageBubble
+        streaming
+        message={{
+          id: 'streaming-mermaid',
+          role: 'assistant',
+          content: '```mermaid\nflowchart LR\nA -->',
+          timestamp: new Date(1_000).toISOString(),
+        }}
+      />,
+    )
+    await tick()
+
+    expect(mounted.container.textContent).toContain('flowchart LR')
+    expect(mounted.container.querySelector('img[alt="Rendered diagram"]')).toBeNull()
+    expect(mounted.container.textContent).not.toContain('Rendering diagram')
+  })
+
   test('keeps the partial answer while raw error/request data waits for disclosure', async () => {
     mounted = await mount(
       <MessageBubble
