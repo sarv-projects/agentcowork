@@ -237,6 +237,34 @@ describe('assistant Markdown rendering', () => {
     expect(mounted.container.textContent).not.toContain('$1.8M')
     expect(mounted.container.textContent).not.toContain('1_800_000')
   })
+
+  test('an Office artifact without a file reference does not open its display name as a path', async () => {
+    mounted = await mount(
+      <MessageBubble
+        message={{
+          id: 'message-unresolved-artifact',
+          role: 'assistant',
+          content: 'The workbook is ready.',
+          timestamp: new Date().toISOString(),
+          artifacts: [{
+            id: 'artifact-unresolved-sales',
+            name: 'Sales review.xlsx',
+            type: 'xlsx',
+            preview: 'Summary sheet updated',
+          }],
+        }}
+      />,
+    )
+    await tick()
+
+    const open = Array.from(mounted.container.querySelectorAll<HTMLButtonElement>('button')).find((button) =>
+      button.textContent?.trim() === 'Open',
+    )
+    expect(open).toBeDefined()
+    await click(open!)
+    expect(useAppStore.getState().officePaths['office-xlsx']).toBeUndefined()
+    expect(useAppStore.getState().lastToast).toContain('no available file location or viewer')
+  })
 })
 
 describe('inline consent', () => {

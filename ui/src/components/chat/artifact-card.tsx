@@ -117,10 +117,19 @@ export default function ArtifactCard({ artifact }: Props) {
   const figures = preciseFigures(artifact)
 
   const openArtifact = () => {
-    const p = artifact.path ?? artifact.preview ?? artifact.name
-    if (/\.(xlsx|xlsm|docx|pptx|pdf)$/i.test(p) || /\.(xlsx|xlsm|docx|pptx|pdf)$/i.test(artifact.name)) {
-      const file = /\.(xlsx|xlsm|docx|pptx|pdf)$/i.test(p) ? p : artifact.name
-      useAppStore.getState().openOfficeDoc(file)
+    const officeType = ['xlsx', 'docx', 'pptx', 'pdf'].includes(artifact.type)
+    const officePath = artifact.path && /\.(xlsx|xlsm|docx|pptx|pdf)$/i.test(artifact.path)
+      ? artifact.path
+      : undefined
+
+    if (officeType || officePath) {
+      if (officePath) {
+        useAppStore.getState().openOfficeDoc(officePath)
+      } else if (artifact.view) {
+        setActiveView(artifact.view)
+      } else {
+        notify(`“${artifact.name}” has no available file location or viewer yet`, 'error')
+      }
       return
     }
     if (artifact.view) {
