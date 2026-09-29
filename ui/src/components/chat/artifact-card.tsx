@@ -6,7 +6,6 @@ import {
   Code,
   Copy,
   Download,
-  ExternalLink,
   File,
   FileSpreadsheet,
   FileText,
@@ -148,13 +147,19 @@ export default function ArtifactCard({ artifact }: Props) {
 
   return (
     <Card
-      onClick={() => openArtifact()}
-      className="group cursor-pointer gap-0 overflow-hidden border-border bg-card/60 p-0 transition-colors hover:border-brand/40"
+      className="group gap-0 overflow-hidden border-border bg-card/60 p-0 transition-colors hover:border-brand/40"
     >
       <div className="flex items-center justify-between border-b border-border px-3 py-2">
         <div className="flex min-w-0 items-center gap-2">
           <TypeIcon type={artifact.type} />
-          <span className="truncate font-mono text-xs text-foreground">{artifact.name}</span>
+          <button
+            type="button"
+            onClick={openArtifact}
+            aria-label={`Open ${artifact.name}`}
+            className="min-w-0 truncate text-left font-mono text-xs text-foreground underline-offset-2 hover:text-brand hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60"
+          >
+            {artifact.name}
+          </button>
         </div>
         {isLive && (
           <Badge
@@ -257,18 +262,6 @@ export default function ArtifactCard({ artifact }: Props) {
           >
             <Download className="h-3 w-3" />
             Save preview
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="ml-auto h-7 gap-1 px-2 text-[11px] text-brand hover:text-brand"
-            onClick={(e) => {
-              e.stopPropagation()
-              openArtifact()
-            }}
-          >
-            Open
-            <ExternalLink className="h-3 w-3" />
           </Button>
         </div>
       </div>

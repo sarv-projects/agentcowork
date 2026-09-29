@@ -364,9 +364,7 @@ describe('assistant Markdown rendering', () => {
     await tick()
 
     expect(mounted.container.textContent).toContain('File reference or viewer is not available yet')
-    const open = Array.from(mounted.container.querySelectorAll<HTMLButtonElement>('button')).find((button) =>
-      button.textContent?.trim() === 'Open',
-    )
+    const open = mounted.container.querySelector<HTMLButtonElement>('button[aria-label="Open Sales review.xlsx"]')
     expect(open).toBeDefined()
     await click(open!)
     expect(useAppStore.getState().officePaths['office-xlsx']).toBeUndefined()
