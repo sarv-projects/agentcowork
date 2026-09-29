@@ -115,6 +115,7 @@ dependencies = [
 name = "agentcowork-cdp"
 version = "0.1.0"
 dependencies = [
+ "agentcowork-guard",
  "agentcowork-types",
  "base64 0.22.1",
  "futures-util",

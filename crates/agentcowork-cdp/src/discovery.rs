@@ -131,15 +131,26 @@ fn check_loopback_url(ws_url: &str) -> Result<(), CdpError> {
 /// discovery forever.
 const PROBE_TIMEOUT: Duration = Duration::from_secs(5);
 
-/// Small GET helper over ureq with a hard timeout (dead ports must not hang
-/// discovery).
+/// Small Guard-pinned, bounded GET helper (dead ports must not hang discovery,
+/// and a checked loopback address cannot be rebound before connect).
 pub(crate) fn http_get(url: &str) -> Result<String, CdpError> {
-    let resp = ureq::get(url)
-        .timeout(PROBE_TIMEOUT)
-        .call()
-        .map_err(|e| CdpError::Http(format!("GET {url}: {e}")))?;
-    resp.into_string()
-        .map_err(|e| CdpError::Http(format!("GET {url}: {e}")))
+    let client = agentcowork_guard::egress_http::GuardedHttpClient::new(
+        url,
+        agentcowork_guard::NetPolicy::default(),
+        PROBE_TIMEOUT,
+    )
+    .map_err(|_| CdpError::Security("Guard refused the CDP discovery destination".into()))?;
+    let response = client
+        .request("GET", url, &[], None, 4 * 1024 * 1024)
+        .map_err(|_| CdpError::Http("Guarded CDP discovery request failed".into()))?;
+    if !(200..300).contains(&response.status) {
+        return Err(CdpError::Http(format!(
+            "CDP discovery returned HTTP {}",
+            response.status
+        )));
+    }
+    String::from_utf8(response.body)
+        .map_err(|_| CdpError::Http("CDP discovery response was not UTF-8".into()))
 }
 
 // ---------------------------------------------------------------------------

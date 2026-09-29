@@ -10,6 +10,7 @@ description = "AgentCowork CDP client — WebSocket client + discovery over syst
 serde = { workspace = true }
 # DEC-053 — the one `AGENTCOWORK_*`/legacy-`EVERYAIOS_*` env + data-home rule.
 agentcowork-types = { path = "../agentcowork-types" }
+agentcowork-guard = { path = "../agentcowork-guard" }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
 ureq = { workspace = true }
