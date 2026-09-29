@@ -15,6 +15,7 @@
 use base64::Engine as _;
 use rand::RngCore;
 use sha2::{Digest, Sha256};
+use std::io::Read;
 
 use crate::Vault;
 use crate::keyring::{KeyRing, KeySpec, KeyStatus};
@@ -140,23 +141,34 @@ impl<'a> AuthBridge<'a> {
         let redirect_uri = p.redirect_uri.clone();
         let scopes = p.scopes.clone();
         let authorize_url = p.authorize_url.clone();
+        let mut authorize = url::Url::parse(&authorize_url)
+            .map_err(|_| "invalid OAuth authorization endpoint".to_string())?;
+        if authorize.scheme() != "https"
+            || authorize.host_str().is_none()
+            || !authorize.username().is_empty()
+            || authorize.password().is_some()
+            || authorize.fragment().is_some()
+            || authorize.query().is_some()
+        {
+            return Err("invalid OAuth authorization endpoint".into());
+        }
+        authorize.query_pairs_mut().extend_pairs([
+            ("client_id", client_id.as_str()),
+            ("response_type", "code"),
+            ("scope", scopes.as_str()),
+            ("redirect_uri", redirect_uri.as_str()),
+            ("code_challenge", challenge.as_str()),
+            ("code_challenge_method", "S256"),
+            ("state", state.as_str()),
+            ("access_type", "offline"),
+            ("prompt", "consent"),
+        ]);
         self.pending
             .insert((provider.to_string(), state.clone()), verifier);
 
-        let mut query = String::new();
-        push_q(&mut query, "client_id", &client_id);
-        push_q(&mut query, "response_type", "code");
-        push_q(&mut query, "scope", &scopes);
-        push_q(&mut query, "redirect_uri", &redirect_uri);
-        push_q(&mut query, "code_challenge", &challenge);
-        push_q(&mut query, "code_challenge_method", "S256");
-        push_q(&mut query, "state", &state);
-        push_q(&mut query, "access_type", "offline");
-        push_q(&mut query, "prompt", "consent");
-
         Ok(BridgeStart {
             provider: provider.to_string(),
-            auth_url: format!("{authorize_url}?{query}"),
+            auth_url: authorize.into(),
             state,
         })
     }
@@ -260,28 +272,44 @@ fn code_challenge(verifier: &str) -> String {
     base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(digest)
 }
 
-fn push_q(query: &mut String, key: &str, value: &str) {
-    if !query.is_empty() {
-        query.push('&');
-    }
-    query.push_str(key);
-    query.push('=');
-    query.push_str(value);
-}
-
 /// POST an application/x-www-form-urlencoded body and parse the JSON reply.
 fn post_form(url: &str, form: &[(&str, &str)]) -> Result<serde_json::Value, String> {
-    let body: String = form
-        .iter()
-        .map(|(k, v)| format!("{k}={v}"))
-        .collect::<Vec<_>>()
-        .join("&");
-    let resp = ureq::post(url)
-        .set("Content-Type", "application/x-www-form-urlencoded")
-        .send_string(&body)
-        .map_err(|e| format!("token exchange failed: {e}"))?;
-    resp.into_json::<serde_json::Value>()
-        .map_err(|e| format!("token response unparseable: {e}"))
+    agentcowork_guard::netfloor::preflight_url(url, agentcowork_guard::NetPolicy::default())
+        .map_err(|denied| format!("token endpoint refused: {}", denied.reason))?;
+    let agent = ureq::AgentBuilder::new()
+        // OAuth responses must not silently move a code or token-bearing
+        // request to another origin. A redirect is returned to the caller.
+        .redirects(0)
+        .timeout(std::time::Duration::from_secs(15))
+        .build();
+    let response = match agent.post(url).send_form(form) {
+        Ok(response) => response,
+        Err(ureq::Error::Status(status, response)) => {
+            let value = read_json_bounded(response)?;
+            if value.get("error").is_some() {
+                return Ok(value);
+            }
+            return Err(format!("token exchange returned HTTP {status}"));
+        }
+        Err(ureq::Error::Transport(_)) => return Err("token exchange transport failed".into()),
+    };
+    read_json_bounded(response)
+        .map_err(|_| "token response was invalid or exceeded its size limit".into())
+}
+
+const MAX_TOKEN_RESPONSE_BYTES: u64 = 1024 * 1024;
+
+fn read_json_bounded(response: ureq::Response) -> Result<serde_json::Value, String> {
+    let mut bytes = Vec::new();
+    response
+        .into_reader()
+        .take(MAX_TOKEN_RESPONSE_BYTES + 1)
+        .read_to_end(&mut bytes)
+        .map_err(|_| "token response read failed".to_string())?;
+    if bytes.len() as u64 > MAX_TOKEN_RESPONSE_BYTES {
+        return Err("token response exceeded its size limit".into());
+    }
+    serde_json::from_slice(&bytes).map_err(|_| "token response was not valid JSON".into())
 }
 
 #[cfg(test)]
