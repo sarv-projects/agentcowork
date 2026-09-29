@@ -182,8 +182,48 @@ describe('Live Desk summary', () => {
     expect(mounted.container.textContent ?? '').toContain('Working')
     await click(mounted.container.querySelector<HTMLButtonElement>('button[aria-label="Pause Live Desk updates"]')!)
 
+    await setState({
+      workEvents: [
+        TOOL_STARTED,
+        envelope(2, { class: 'operational', event: { kind: 'file_touched', data: { path: 'summary.md', writer_id: 'agent-1' } } }, 1_700_000_002_000),
+      ],
+    })
+
     expect(mounted.container.textContent ?? '').toContain('Updates are paused')
+    expect(mounted.container.textContent ?? '').not.toContain('Worked with summary.md')
     expect(useAppStore.getState().sessions.find((item) => item.id === 'chat-1')?.status).toBe('running')
+
+    await click(mounted.container.querySelector<HTMLButtonElement>('button[aria-label="Resume Live Desk updates"]')!)
+    expect(mounted.container.textContent ?? '').toContain('Worked with summary.md')
+  })
+
+  test('shows recorded work updates and opens an actual assistant artifact in the workspace', async () => {
+    installShell({ usage_snapshot: () => ({ total: {}, byKey: [], bySession: [] }) })
+    const artifact = {
+      id: 'artifact-1',
+      name: 'Market notes.md',
+      type: 'markdown' as const,
+      preview: '# Market notes',
+      view: 'generative' as const,
+    }
+    await setState({
+      sessions: [chat({
+        status: 'completed',
+        messages: [{ id: 'm-1', role: 'assistant', content: '', timestamp: new Date().toISOString(), artifacts: [artifact] }],
+      })],
+      workEvents: [
+        envelope(1, { class: 'operational', event: { kind: 'file_touched', data: { path: '/reports/q3.xlsx', writer_id: 'agent-1' } } }, 1_700_000_000_000),
+        envelope(2, { class: 'domain', event: { kind: 'effect_verified', data: { effectId: 'effect-1', verified: true } } }, 1_700_000_001_000),
+      ],
+    })
+    mounted = await mount(<RunView />)
+
+    const summary = mounted.container.querySelector('[data-testid="live-desk-summary"]')!
+    expect(summary.textContent).toContain('Worked with q3.xlsx')
+    expect(summary.textContent).toContain('A change was verified')
+    expect(summary.textContent).toContain('Market notes.md')
+    await click(summary.querySelector<HTMLButtonElement>('button[aria-label="Open Market notes.md in the workspace"]')!)
+    expect(useAppStore.getState().activeView).toBe('generative')
   })
 })
 

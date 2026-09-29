@@ -41,6 +41,16 @@ describe('Live Desk summary projection', () => {
     expect(projection.status).toBe('waiting')
   })
 
+  test('keeps an outstanding attention item visible even if it is outside the recent activity list', () => {
+    const projection = projectLiveDesk({
+      sessionStatus: 'running',
+      card: card({ status: 'running' }),
+      needsAttention: true,
+    })
+
+    expect(projection.status).toBe('waiting')
+  })
+
   test('preserves scheduled and reconnecting states instead of implying idle', () => {
     expect(projectLiveDesk({ sessionStatus: 'scheduled', card: card() }).status).toBe('scheduled')
     expect(projectLiveDesk({ sessionStatus: 'reconnecting', card: card() }).status).toBe('reconnecting')

@@ -27,12 +27,13 @@ export function projectLiveDesk(input: {
   title?: string | null
   sessionStatus?: SessionStatus | null
   card: AgentCard
+  needsAttention?: boolean
 }): LiveDeskProjection {
   const { card } = input
   const sessionStatus = input.sessionStatus ?? 'idle'
   let status: LiveDeskStatus = 'ready'
 
-  if (sessionStatus === 'action-required' || card.awaitingInput) status = 'waiting'
+  if (sessionStatus === 'action-required' || card.awaitingInput || input.needsAttention) status = 'waiting'
   else if (sessionStatus === 'paused') status = 'paused'
   else if (sessionStatus === 'reconnecting') status = 'reconnecting'
   else if (sessionStatus === 'scheduled') status = 'scheduled'

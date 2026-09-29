@@ -45,6 +45,7 @@ import { RunFolderFiles, RunMcpServers } from '@/components/views/run-inventory'
 import { RunOutcomeStrip } from '@/components/views/run-outcome'
 import { buildRunTrace, countRunSteps } from '@/components/views/run-projection'
 import { LiveDeskSummary } from '@/components/views/live-desk-summary'
+import { hasPendingUserAction, projectLiveDeskUpdates } from '@/components/views/live-desk-activity'
 import { cn } from '@/lib/utils'
 
 type SectionId = 'outcome' | 'usage' | 'trace' | 'files' | 'folder' | 'mcp'
@@ -61,6 +62,8 @@ export default function RunView() {
 
   const [collapsed, setCollapsed] = usePref<SectionId[]>('runCollapsedSections', [])
   const card = useMemo(() => agentCardFromEvents(workEvents), [workEvents])
+  const updates = useMemo(() => projectLiveDeskUpdates(workEvents), [workEvents])
+  const hasPendingAction = useMemo(() => hasPendingUserAction(workEvents), [workEvents])
   const live = chat?.status === 'running'
   const workingDir = chat?.folder ?? taskFolder ?? null
   const steps = useMemo(
@@ -70,6 +73,10 @@ export default function RunView() {
   const counts = countRunSteps(steps)
   const artifacts = useMemo(
     () => (chat?.messages ?? []).flatMap((m) => m.artifacts ?? []),
+    [chat],
+  )
+  const assistantArtifacts = useMemo(
+    () => (chat?.messages ?? []).filter((message) => message.role === 'assistant').flatMap((message) => message.artifacts ?? []),
     [chat],
   )
   // The collapsed-section count is the de-duplicated reported-file count, the
@@ -101,7 +108,15 @@ export default function RunView() {
     >
       <div className="min-h-0 flex-1 overflow-y-auto scroll-thin">
         <div className="space-y-3 p-3">
-          <LiveDeskSummary title={chat?.title} sessionStatus={chat?.status} card={card} />
+          <LiveDeskSummary
+            key={`${activeSessionId}:${workEvents[0]?.workId ?? ''}`}
+            title={chat?.title}
+            sessionStatus={chat?.status}
+            card={card}
+            updates={updates}
+            needsAttention={hasPendingAction}
+            artifacts={assistantArtifacts}
+          />
 
           <details className="group rounded-xl border border-border bg-card/50">
             <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-2 rounded-xl px-3 text-xs font-medium text-muted-foreground outline-none transition-colors hover:bg-accent/50 hover:text-foreground focus-visible:ring-2 focus-visible:ring-brand/60 [&::-webkit-details-marker]:hidden">
