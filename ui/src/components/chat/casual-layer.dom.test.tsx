@@ -184,6 +184,27 @@ describe('assistant Markdown rendering', () => {
     expect(useAppStore.getState().activeView).toBe('browse')
   })
 
+  test('links inline citation markers to the source list for that exact message', async () => {
+    mounted = await mount(
+      <MessageBubble
+        message={{
+          id: 'message-citations',
+          role: 'assistant',
+          content: 'The report cites https://example.com/report.',
+          timestamp: new Date().toISOString(),
+          citations: [{ index: 1, title: 'Annual report', url: 'https://example.com/report' }],
+        }}
+      />,
+    )
+    await tick()
+
+    const marker = mounted.container.querySelector<HTMLAnchorElement>('a[href="#cite-message-citations-1"]')
+    expect(marker?.textContent).toBe('[^1]')
+    expect(mounted.container.querySelector('#cite-message-citations-1')?.textContent).toContain('Annual report')
+    expect(mounted.container.querySelector('#cite-1')).toBeNull()
+    expect(useAppStore.getState().browserUrl).not.toBe('https://example.com/report')
+  })
+
   test('shows remote images in an accessible placeholder and does not fetch until the user opens Browse', async () => {
     mounted = await mount(
       <MessageBubble

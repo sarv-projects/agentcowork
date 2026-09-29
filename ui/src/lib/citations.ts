@@ -12,8 +12,10 @@ export interface ChatCitation {
   source?: string
 }
 
-export function citationAnchorId(index: number): string {
-  return `cite-${index}`
+export function citationAnchorId(index: number, messageId?: string): string {
+  if (!messageId) return `cite-${index}`
+  const safeMessageId = messageId.replace(/[^a-zA-Z0-9_-]/g, '_')
+  return `cite-${safeMessageId}-${index}`
 }
 
 /** P51.7 — exportable dump: marked body + numbered source list. */

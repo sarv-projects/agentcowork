@@ -156,6 +156,52 @@ function MarkdownImage({ src, alt, title }: React.ComponentProps<'img'>) {
   )
 }
 
+interface CitationNode {
+  type: string
+  value?: string
+  url?: string
+  children?: CitationNode[]
+}
+
+function remarkCitationReferences(options: { messageId: string; indexes: number[] }) {
+  const knownIndexes = new Set(options.indexes)
+  return (tree: CitationNode) => {
+    const visit = (node: CitationNode) => {
+      if (!node.children) return
+      const next: CitationNode[] = []
+      for (const child of node.children) {
+        if (child.type !== 'text' || !child.value) {
+          visit(child)
+          next.push(child)
+          continue
+        }
+
+        const marker = /\[\^(\d+)\]/g
+        let offset = 0
+        let match: RegExpExecArray | null
+        while ((match = marker.exec(child.value))) {
+          const index = Number(match[1])
+          if (!knownIndexes.has(index)) continue
+          if (match.index > offset) next.push({ type: 'text', value: child.value.slice(offset, match.index) })
+          next.push({
+            type: 'link',
+            url: `#${citationAnchorId(index, options.messageId)}`,
+            children: [{ type: 'text', value: `[^${index}]` }],
+          })
+          offset = match.index + match[0].length
+        }
+        if (offset > 0) {
+          if (offset < child.value.length) next.push({ type: 'text', value: child.value.slice(offset) })
+        } else {
+          next.push(child)
+        }
+      }
+      node.children = next
+    }
+    visit(tree)
+  }
+}
+
 const mdComponents = {
   code: CodeBlock,
   pre: ({ children }: React.ComponentProps<'pre'>) => <>{children}</>,
@@ -210,31 +256,46 @@ const mdComponents = {
       ? <div className={className}>{children}</div>
       : <p className={className} {...props}>{children}</p>
   },
-  a: ({ children, href, ...props }: React.ComponentProps<'a'>) => {
-    const safeUrl = safeMarkdownWebUrl(href)
-    if (!safeUrl) {
-      return (
-        <span className="text-muted-foreground" title="This link cannot be opened from chat.">
-          {children}<span className="ml-1 text-[10px]">(link unavailable)</span>
-        </span>
-      )
-    }
-    return (
-      <a
-        {...props}
-        href={safeUrl}
-        rel="noreferrer"
-        onClick={(event) => {
-          event.preventDefault()
-          useAppStore.getState().openInBrowser(safeUrl)
-        }}
-        className="text-brand underline-offset-2 hover:underline"
-      >
-        {children}
-      </a>
-    )
-  },
   img: MarkdownImage,
+}
+
+function markdownComponentsFor(citationIds: ReadonlySet<string>) {
+  return {
+    ...mdComponents,
+    a: ({ children, href, ...props }: React.ComponentProps<'a'>) => {
+      const citationId = href?.startsWith('#') ? href.slice(1) : undefined
+      if (citationId && citationIds.has(citationId)) {
+        return (
+          <a {...props} href={href} className="text-brand underline-offset-2 hover:underline">
+            {children}
+          </a>
+        )
+      }
+
+      const safeUrl = safeMarkdownWebUrl(href)
+      if (!safeUrl) {
+        return (
+          <span className="text-muted-foreground" title="This link cannot be opened from chat.">
+            {children}<span className="ml-1 text-[10px]">(link unavailable)</span>
+          </span>
+        )
+      }
+      return (
+        <a
+          {...props}
+          href={safeUrl}
+          rel="noreferrer"
+          onClick={(event) => {
+            event.preventDefault()
+            useAppStore.getState().openInBrowser(safeUrl)
+          }}
+          className="text-brand underline-offset-2 hover:underline"
+        >
+          {children}
+        </a>
+      )
+    },
+  }
 }
 
 /** Live clock for in-flight work (reasoning/turn/tool). Ticks at ~4 Hz while
@@ -1001,9 +1062,18 @@ const MessageBubble = memo(function MessageBubble({ message, streaming }: Props)
           {/* P64.11 tier 3 — response body. */}
           <div className="prose prose-invert max-w-none">
             <ReactMarkdown
-              remarkPlugins={[remarkGfm, remarkMath]}
+              remarkPlugins={[
+                remarkGfm,
+                [remarkCitationReferences, {
+                  messageId: message.id,
+                  indexes: (message.citations ?? []).map((citation) => citation.index),
+                }],
+                remarkMath,
+              ]}
               rehypePlugins={[[rehypeKatex, katexOptions], rehypeHighlight]}
-              components={mdComponents}
+              components={markdownComponentsFor(new Set(
+                (message.citations ?? []).map((citation) => citationAnchorId(citation.index, message.id)),
+              ))}
             >
               {applyCitationMarks(message.content, message.citations ?? [])}
             </ReactMarkdown>
@@ -1019,7 +1089,7 @@ const MessageBubble = memo(function MessageBubble({ message, streaming }: Props)
         {message.citations && message.citations.length > 0 && (
           <ol className="mt-1 space-y-0.5 rounded-md border border-border/50 bg-background/40 px-2 py-1.5 text-[11px]">
             {message.citations.map((c) => (
-              <li key={c.index} id={citationAnchorId(c.index)} className="flex gap-1.5">
+              <li key={c.index} id={citationAnchorId(c.index, message.id)} className="flex gap-1.5">
                 <span className="font-mono text-muted-foreground">[^{c.index}]</span>
                 {/* A citation opens in the rail's Browse surface, not a bare
                     webview navigation: `openInBrowser` routes through
