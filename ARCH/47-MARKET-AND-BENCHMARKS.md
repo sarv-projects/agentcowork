@@ -1,6 +1,6 @@
 # 47 — Market capability evidence and comparison protocol
 
-> Status: research snapshot, 2026-09-28. Product features vary by plan, region, platform and rollout. Rows below state only what the linked first-party material supports; they are not measured superiority claims. `38` owns the user experience and quality requirements; `45` owns open-source source pins.
+> Status: research snapshot, 2026-09-29. Product features vary by plan, region, platform and rollout. Rows below state only what the linked first-party material supports; they are not measured superiority claims. `38` owns the user experience and quality requirements; `45` owns open-source source pins.
 
 ## Observed product directions
 
