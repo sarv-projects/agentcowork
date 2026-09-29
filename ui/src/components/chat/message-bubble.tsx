@@ -1,7 +1,8 @@
 'use client'
 
-import { memo, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { Children, isValidElement, memo, useEffect, useId, useMemo, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
 import rehypeHighlight from 'rehype-highlight'
@@ -13,8 +14,10 @@ import {
   ChevronRight,
   Copy,
   Download,
+  ExternalLink,
   Fingerprint,
   GitFork,
+  Image as ImageIcon,
   Pencil,
   Quote,
   RotateCw,
@@ -122,6 +125,37 @@ const katexOptions = {
   maxSize: 20,
 }
 
+function MarkdownImage({ src, alt, title }: React.ComponentProps<'img'>) {
+  const safeUrl = safeMarkdownWebUrl(src)
+  const description = alt?.trim()
+  return (
+    <figure className="my-3 max-w-full overflow-hidden rounded-xl border border-border bg-background/60">
+      <div className="flex min-h-36 flex-col items-center justify-center gap-2 bg-gradient-to-br from-muted/70 via-card to-muted/40 px-4 py-5 text-center sm:min-h-44">
+        <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background/80 text-muted-foreground">
+          <ImageIcon aria-hidden className="h-5 w-5" />
+        </span>
+        <p className="text-xs font-medium text-foreground">Image preview</p>
+        <p className="max-w-md text-[11px] leading-relaxed text-muted-foreground">
+          {description || 'This image has no text description.'}
+        </p>
+        {safeUrl ? (
+          <button
+            type="button"
+            onClick={() => useAppStore.getState().openInBrowser(safeUrl)}
+            className="mt-1 inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-border bg-background px-3 text-[11px] font-medium text-brand transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60"
+          >
+            <ExternalLink aria-hidden className="h-3 w-3" />
+            Open image in Browse
+          </button>
+        ) : (
+          <p className="text-[10px] text-muted-foreground">This image reference can’t be opened safely from chat.</p>
+        )}
+      </div>
+      {title ? <figcaption className="border-t border-border px-3 py-2 text-[10px] text-muted-foreground">{title}</figcaption> : null}
+    </figure>
+  )
+}
+
 const mdComponents = {
   code: CodeBlock,
   pre: ({ children }: React.ComponentProps<'pre'>) => <>{children}</>,
@@ -145,11 +179,37 @@ const mdComponents = {
       {children}
     </li>
   ),
-  p: ({ children, ...props }: React.ComponentProps<'p'>) => (
-    <p className="text-[12px] leading-relaxed text-foreground/90 [&:not(:first-child)]:mt-2" {...props}>
-      {children}
-    </p>
+  table: ({ children, ...props }: React.ComponentProps<'table'>) => (
+    <div
+      role="region"
+      aria-label="Response table. Scroll horizontally to view all columns."
+      tabIndex={0}
+      className="my-3 max-w-full overflow-x-auto rounded-lg border border-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/60"
+    >
+      <table className="w-full border-collapse text-left text-[11px]" {...props}>
+        {children}
+      </table>
+    </div>
   ),
+  th: ({ children, ...props }: React.ComponentProps<'th'>) => (
+    <th className="whitespace-nowrap border-b border-border bg-muted/60 px-3 py-2 font-semibold text-foreground" {...props}>
+      {children}
+    </th>
+  ),
+  td: ({ children, ...props }: React.ComponentProps<'td'>) => (
+    <td className="border-b border-border/60 px-3 py-2 align-top text-foreground/90" {...props}>
+      {children}
+    </td>
+  ),
+  p: ({ children, ...props }: React.ComponentProps<'p'>) => {
+    const hasBlockMedia = Children.toArray(children).some((child) =>
+      isValidElement(child) && (child.type === MarkdownImage || ['figure', 'div', 'table', 'pre'].includes(String(child.type))),
+    )
+    const className = 'text-[12px] leading-relaxed text-foreground/90 [&:not(:first-child)]:mt-2'
+    return hasBlockMedia
+      ? <div className={className}>{children}</div>
+      : <p className={className} {...props}>{children}</p>
+  },
   a: ({ children, href, ...props }: React.ComponentProps<'a'>) => {
     const safeUrl = safeMarkdownWebUrl(href)
     if (!safeUrl) {
@@ -174,6 +234,7 @@ const mdComponents = {
       </a>
     )
   },
+  img: MarkdownImage,
 }
 
 /** Live clock for in-flight work (reasoning/turn/tool). Ticks at ~4 Hz while
@@ -940,7 +1001,7 @@ const MessageBubble = memo(function MessageBubble({ message, streaming }: Props)
           {/* P64.11 tier 3 — response body. */}
           <div className="prose prose-invert max-w-none">
             <ReactMarkdown
-              remarkPlugins={[remarkMath]}
+              remarkPlugins={[remarkGfm, remarkMath]}
               rehypePlugins={[[rehypeKatex, katexOptions], rehypeHighlight]}
               components={mdComponents}
             >

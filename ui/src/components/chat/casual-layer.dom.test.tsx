@@ -140,6 +140,26 @@ describe('assistant Markdown rendering', () => {
     expect(mounted.container.textContent).toContain('Inline')
   })
 
+  test('renders GFM tables in a labelled keyboard-scrollable region', async () => {
+    mounted = await mount(
+      <MessageBubble
+        message={{
+          id: 'message-table',
+          role: 'assistant',
+          content: '| Month | Revenue |\n|:--|--:|\n| April | $12,400 |\n| May | $15,100 |',
+          timestamp: new Date().toISOString(),
+        }}
+      />,
+    )
+    await tick()
+
+    const region = mounted.container.querySelector('[role="region"][tabindex="0"]')
+    expect(region?.getAttribute('aria-label')).toContain('Scroll horizontally')
+    expect(region?.querySelectorAll('th')).toHaveLength(2)
+    expect(region?.querySelectorAll('tbody tr')).toHaveLength(2)
+    expect(region?.textContent).toContain('$15,100')
+  })
+
   test('routes web links through the in-app browser and leaves non-web links inert', async () => {
     mounted = await mount(
       <MessageBubble
@@ -161,6 +181,35 @@ describe('assistant Markdown rendering', () => {
 
     await click(safe!)
     expect(useAppStore.getState().browserUrl).toBe('https://example.com/research')
+    expect(useAppStore.getState().activeView).toBe('browse')
+  })
+
+  test('shows remote images in an accessible placeholder and does not fetch until the user opens Browse', async () => {
+    mounted = await mount(
+      <MessageBubble
+        message={{
+          id: 'message-images',
+          role: 'assistant',
+          content: '![A red bicycle by the river](https://images.example.test/bicycle.jpg "Bicycle")',
+          timestamp: new Date().toISOString(),
+        }}
+      />,
+    )
+    await tick()
+
+    expect(mounted.container.querySelector('img')).toBeNull()
+    expect(mounted.container.querySelector('p figure')).toBeNull()
+    expect(mounted.container.querySelector('p p, p div, p figure, p button')).toBeNull()
+    expect(mounted.container.textContent).toContain('A red bicycle by the river')
+    expect(mounted.container.textContent).toContain('Bicycle')
+    expect(useAppStore.getState().browserUrl).not.toBe('https://images.example.test/bicycle.jpg')
+
+    const open = Array.from(mounted.container.querySelectorAll<HTMLButtonElement>('button')).find((button) =>
+      button.textContent?.includes('Open image in Browse'),
+    )
+    expect(open).toBeDefined()
+    await click(open!)
+    expect(useAppStore.getState().browserUrl).toBe('https://images.example.test/bicycle.jpg')
     expect(useAppStore.getState().activeView).toBe('browse')
   })
 })
