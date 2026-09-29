@@ -113,6 +113,7 @@ dependencies = [
 name = "agentcowork-cdp"
 version = "0.1.0"
 dependencies = [
+ "agentcowork-guard",
  "agentcowork-types",
  "base64 0.22.1",
  "futures-util",
@@ -185,6 +186,7 @@ dependencies = [
  "thiserror 2.0.20",
  "toml 0.8.23",
  "ureq",
+ "url",
  "urlencoding",
  "windows-sys 0.61.2",
  "x25519-dalek",
@@ -239,6 +241,7 @@ dependencies = [
  "sha2",
  "thiserror 2.0.20",
  "toml 0.8.23",
+ "ureq",
  "url",
 ]
 
@@ -263,7 +266,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "thiserror 2.0.20",
- "ureq",
+ "url",
 ]
 
 [[package]]

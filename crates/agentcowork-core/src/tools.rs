@@ -4958,7 +4958,8 @@ mod tests {
 
         let dir = tempfile();
         let mut kernel_gate = svc(&dir);
-        // What the shell's `control_plane_limiter` builds: `with_defaults()`.
+        // What a fresh install with no rate-limit override resolves to; the
+        // production shell passes this same resolved value to both gates.
         let shell_gate = agentcowork_guard::RateLimiter::with_defaults();
         assert_eq!(
             kernel_gate.rate_limit_config(),

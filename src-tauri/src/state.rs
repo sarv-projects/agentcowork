@@ -27,6 +27,8 @@ use agentcowork_core::terminal::PtyHost;
 
 /// Shared state handed to every Tauri command via `State<'_, AppState>`.
 pub struct AppState {
+    /// One boot-resolved control-plane rate limit shared with the kernel tool gate.
+    pub control_plane_rate_limit: agentcowork_guard::RateLimitConfig,
     /// P0.2: the boot report line from `agentcowork-core::boot`.
     pub boot_report: Mutex<String>,
     /// P0.2: an initialized Guard-1 scanner (stub blocklist until P7.4).

@@ -84,12 +84,22 @@ pub const CHAT_EVENT: &str = "chat-event";
 /// One instance guards the whole `nativeCall`/Tauri IPC surface
 /// (`agentcowork-guard::ratelimit`). It is a `OnceLock` singleton rather than
 /// managed state because the gate has to be callable *before* a command's state
-/// is resolved, and because a limiter that could be swapped out from under the
-/// gate would be a limiter that can be turned off.
-fn control_plane_limiter() -> &'static agentcowork_guard::RateLimiter {
+/// is resolved. The one boot-resolved configuration is installed before the
+/// builder starts accepting invokes; a live limiter cannot be swapped out.
+fn control_plane_limiter_cell() -> &'static std::sync::OnceLock<agentcowork_guard::RateLimiter> {
     static LIMITER: std::sync::OnceLock<agentcowork_guard::RateLimiter> =
         std::sync::OnceLock::new();
-    LIMITER.get_or_init(agentcowork_guard::RateLimiter::with_defaults)
+    &LIMITER
+}
+
+fn control_plane_limiter() -> &'static agentcowork_guard::RateLimiter {
+    control_plane_limiter_cell().get_or_init(agentcowork_guard::RateLimiter::with_defaults)
+}
+
+/// Install the boot-resolved rate limit before Tauri accepts renderer calls.
+/// Repeated initialization is ignored: a live bucket map is never replaced.
+fn configure_control_plane_limiter(config: agentcowork_guard::RateLimitConfig) {
+    let _ = control_plane_limiter_cell().set(agentcowork_guard::RateLimiter::new(config));
 }
 
 /// Return the Tauri-created webview label used as the IPC rate-limit principal.
@@ -234,15 +244,17 @@ fn connect_chat_relay(
     let link = agentcowork_core::SidecarLink::new_with_activity(stdin, stdout, Some(activity));
     // J21: the relay shares the app's Guard-2 service, and loads the user's
     // `permissions.toml` escalation policy at boot.
-    let relay = agentcowork_core::ChatRelay::new_with_guard(
+    let relay = agentcowork_core::ChatRelay::try_new_with_guard_and_rate_limit(
         link,
         Arc::clone(&state.vault),
         Arc::clone(&state.guard_service),
+        state.control_plane_rate_limit,
         move |ev| {
             // Fire-and-forget: never let a UI emit failure break the relay.
             let _ = handle.emit(CHAT_EVENT, ev);
         },
-    );
+    )
+    .unwrap_or_else(|error| panic!("chat relay startup refused: {error}"));
     // P71.3f — mount the one readiness source: install/discovery facts plus the
     // live ACP handshake state. The picker façade, the delegation gate and the
     // turn gate all read this; mounted before the relay is published so no
@@ -753,6 +765,23 @@ pub fn run() {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let mut boot_report =
         agentcowork_core::boot(&args).unwrap_or_else(|e| format!("boot failed: {e}"));
+    let rate_limit_config = match agentcowork_core::Config::load() {
+        Ok(config) => {
+            let resolved = config.resolve_rate_limit(&std::collections::BTreeMap::new());
+            for warning in &resolved.warnings {
+                eprintln!(
+                    "agentcowork-desktop: ignored {} rate-limit layer: {}. {}",
+                    warning.layer, warning.reason, warning.migration
+                );
+            }
+            resolved.rate_limit_config()
+        }
+        Err(error) => {
+            eprintln!("agentcowork-desktop: rate-limit config unavailable; using shipped defaults: {error}");
+            agentcowork_core::config::default_rate_limit_config()
+        }
+    };
+    configure_control_plane_limiter(rate_limit_config);
     let guard = compiled_guard().clone();
     let data_dir = agentcowork_core::default_data_dir();
     let resolved = agentcowork_core::resolve_vault_key(&data_dir);
@@ -793,6 +822,7 @@ pub fn run() {
 
     tauri::Builder::default()
         .manage(AppState {
+            control_plane_rate_limit: rate_limit_config,
             boot_report: Mutex::new(boot_report),
             guard,
             vault: Arc::clone(&vault),

@@ -1138,6 +1138,24 @@ impl<W: Write + Send + 'static, R: Read + Send + 'static> ChatRelay<W, R> {
         guard: Arc<Mutex<GuardService>>,
         on_event: impl Fn(ChatWireEvent) + Send + 'static,
     ) -> Result<Self, ChatRelayError> {
+        Self::try_new_with_guard_and_rate_limit(
+            link,
+            vault,
+            guard,
+            crate::config::default_rate_limit_config(),
+            on_event,
+        )
+    }
+
+    /// Construct with the host's one resolved Trust configuration so the
+    /// shared-plane tool gate and the Tauri IPC gate enforce the same limits.
+    pub fn try_new_with_guard_and_rate_limit(
+        link: SidecarLink<W, R>,
+        vault: Arc<Mutex<Vault>>,
+        guard: Arc<Mutex<GuardService>>,
+        rate_limit_config: agentcowork_guard::RateLimitConfig,
+        on_event: impl Fn(ChatWireEvent) + Send + 'static,
+    ) -> Result<Self, ChatRelayError> {
         let egress = Arc::new(Mutex::new(agentcowork_guard::EgressEngine::new(
             agentcowork_guard::ConnectivityMode::ThirdParty,
         )));
@@ -1146,7 +1164,8 @@ impl<W: Write + Send + 'static, R: Read + Send + 'static> ChatRelay<W, R> {
             Arc::clone(&guard),
             crate::default_data_dir().join("workspace"),
             Arc::clone(&egress),
-        );
+        )
+        .with_rate_limit_config(rate_limit_config);
         tool_service.attach_capability_broker(Arc::clone(&capabilities));
         // P71.1 — the `delegate.*` façade seam: the same spawn policy and Work
         // Gateway the `subagent/*` arm uses, so delegation from an external
