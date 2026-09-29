@@ -138,8 +138,8 @@ impl AttachedServer {
     /// silently downgrades a third-party child to ambient execution.
     pub fn spawn_with_posture(
         posture: SandboxPosture,
-        scratch: &str,
-        network: &str,
+        _scratch: &str,
+        _network: &str,
         command: &str,
         args: &[&str],
     ) -> Result<Self, AttachError> {
@@ -154,7 +154,7 @@ impl AttachedServer {
                 // A backend error is returned to the caller. Falling back to
                 // ambient here would turn a failed security boundary into a
                 // successful-looking unconfined launch.
-                return Self::spawn_confined(scratch, network, command, args);
+                return Self::spawn_confined(_scratch, _network, command, args);
             }
             #[cfg(not(target_os = "linux"))]
             {
