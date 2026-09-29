@@ -163,6 +163,26 @@ interface CitationNode {
   children?: CitationNode[]
 }
 
+function containsKatexParseError(node: React.ReactNode): boolean {
+  return Children.toArray(node).some((child) => {
+    if (!isValidElement(child)) return false
+    const props = child.props as { mathcolor?: string; children?: React.ReactNode }
+    if (child.type === 'mstyle' && props.mathcolor === '#cc0000' && containsUnknownMathCommand(props.children)) return true
+    return containsKatexParseError(props.children)
+  })
+}
+
+function containsUnknownMathCommand(node: React.ReactNode): boolean {
+  return Children.toArray(node).some((child) => {
+    if (!isValidElement(child)) return false
+    const props = child.props as { children?: React.ReactNode }
+    if (child.type === 'mtext') {
+      return Children.toArray(props.children).some((text) => typeof text === 'string' && /^\\[a-z]+/i.test(text))
+    }
+    return containsUnknownMathCommand(props.children)
+  })
+}
+
 function remarkCitationReferences(options: { messageId: string; indexes: number[] }) {
   const knownIndexes = new Set(options.indexes)
   return (tree: CitationNode) => {
@@ -247,6 +267,18 @@ const mdComponents = {
       {children}
     </td>
   ),
+  span: ({ children, className, ...props }: React.ComponentProps<'span'>) => {
+    if (className?.split(/\s+/).includes('katex') && containsKatexParseError(children)) {
+      return (
+        <span role="note" className="inline-flex flex-wrap items-baseline gap-1 rounded bg-destructive/10 px-1 text-destructive">
+          <span className="sr-only">Math could not be rendered. The original expression follows.</span>
+          {children}
+          <span aria-hidden="true" className="text-[9px]">Math could not be rendered</span>
+        </span>
+      )
+    }
+    return <span className={className} {...props}>{children}</span>
+  },
   p: ({ children, ...props }: React.ComponentProps<'p'>) => {
     const hasBlockMedia = Children.toArray(children).some((child) =>
       isValidElement(child) && (child.type === MarkdownImage || ['figure', 'div', 'table', 'pre'].includes(String(child.type))),

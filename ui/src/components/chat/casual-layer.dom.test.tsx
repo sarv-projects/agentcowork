@@ -140,6 +140,26 @@ describe('assistant Markdown rendering', () => {
     expect(mounted.container.textContent).toContain('Inline')
   })
 
+  test('keeps an invalid equation readable with a local fallback label', async () => {
+    mounted = await mount(
+      <MessageBubble
+        message={{
+          id: 'message-bad-math',
+          role: 'assistant',
+          content: 'Valid color: $\\color{#cc0000}{x}$; this expression failed: $\\unknowncommand{x}$',
+          timestamp: new Date().toISOString(),
+        }}
+      />,
+    )
+    await tick()
+
+    const fallback = mounted.container.querySelector('[role="note"]')
+    expect(fallback?.textContent).toContain('Math could not be rendered.')
+    expect(fallback?.textContent).toContain('\\unknowncommand')
+    expect(mounted.container.querySelectorAll('[role="note"]')).toHaveLength(1)
+    expect(mounted.container.textContent).toContain('Valid color:')
+  })
+
   test('renders GFM tables in a labelled keyboard-scrollable region', async () => {
     mounted = await mount(
       <MessageBubble
