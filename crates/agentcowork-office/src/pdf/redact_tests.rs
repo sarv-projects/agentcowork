@@ -6,7 +6,9 @@
 //! every one of those assertions, which is the whole point of the fix.
 
 use lopdf::content::{Content, Operation};
-use lopdf::{Document, Object, Stream, dictionary};
+use lopdf::{
+    Document, EncryptionState, EncryptionVersion, Object, Permissions, Stream, dictionary,
+};
 
 use super::*;
 
@@ -282,6 +284,43 @@ fn redacted_text_is_gone_from_the_extracted_text() {
     assert!(after.contains("public footer"));
     let p2 = extract_page_text(&out, 2).unwrap();
     assert!(p2.contains("page two body"));
+}
+
+#[test]
+fn encrypted_pdf_is_refused_instead_of_partially_redacted() {
+    let mut document = Document::load_mem(&two_page_pdf()).unwrap();
+    // PDF encryption derives its key from the trailer file identifier.
+    // The tiny in-memory fixture intentionally omits one, so supply a stable
+    // pair before asking lopdf to encrypt it.
+    document.trailer.set(
+        "ID",
+        Object::Array(vec![
+            Object::String(
+                b"agentcowork-test-id".to_vec(),
+                lopdf::StringFormat::Hexadecimal,
+            ),
+            Object::String(
+                b"agentcowork-test-id".to_vec(),
+                lopdf::StringFormat::Hexadecimal,
+            ),
+        ]),
+    );
+    let encryption = EncryptionState::try_from(EncryptionVersion::V1 {
+        document: &document,
+        owner_password: "owner-password",
+        user_password: "user-password",
+        permissions: Permissions::default(),
+    })
+    .unwrap();
+    document.encrypt(&encryption).unwrap();
+    let mut encrypted = Vec::new();
+    document.save_to(&mut encrypted).unwrap();
+
+    let request = RedactRequest::new(vec![(1, [70.0, 696.0, 190.0, 704.0])]);
+    assert!(matches!(
+        redact_checked(&encrypted, &request, &RedactOptions::default()),
+        Err(PdfError::Encrypted)
+    ));
 }
 
 #[test]
