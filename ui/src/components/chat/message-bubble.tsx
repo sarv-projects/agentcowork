@@ -105,6 +105,23 @@ function CodeBlock({ children, className, ...props }: React.ComponentProps<'code
   )
 }
 
+function safeMarkdownWebUrl(href: string | undefined): string | null {
+  if (!href) return null
+  try {
+    const url = new URL(href)
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : null
+  } catch {
+    return null
+  }
+}
+
+const katexOptions = {
+  output: 'htmlAndMathml' as const,
+  trust: false,
+  maxExpand: 1000,
+  maxSize: 20,
+}
+
 const mdComponents = {
   code: CodeBlock,
   pre: ({ children }: React.ComponentProps<'pre'>) => <>{children}</>,
@@ -133,16 +150,30 @@ const mdComponents = {
       {children}
     </p>
   ),
-  a: ({ children, ...props }: React.ComponentProps<'a'>) => (
-    <a
-      className="text-brand underline-offset-2 hover:underline"
-      target="_blank"
-      rel="noreferrer"
-      {...props}
-    >
-      {children}
-    </a>
-  ),
+  a: ({ children, href, ...props }: React.ComponentProps<'a'>) => {
+    const safeUrl = safeMarkdownWebUrl(href)
+    if (!safeUrl) {
+      return (
+        <span className="text-muted-foreground" title="This link cannot be opened from chat.">
+          {children}<span className="ml-1 text-[10px]">(link unavailable)</span>
+        </span>
+      )
+    }
+    return (
+      <a
+        {...props}
+        href={safeUrl}
+        rel="noreferrer"
+        onClick={(event) => {
+          event.preventDefault()
+          useAppStore.getState().openInBrowser(safeUrl)
+        }}
+        className="text-brand underline-offset-2 hover:underline"
+      >
+        {children}
+      </a>
+    )
+  },
 }
 
 /** Live clock for in-flight work (reasoning/turn/tool). Ticks at ~4 Hz while
@@ -910,7 +941,7 @@ const MessageBubble = memo(function MessageBubble({ message, streaming }: Props)
           <div className="prose prose-invert max-w-none">
             <ReactMarkdown
               remarkPlugins={[remarkMath]}
-              rehypePlugins={[rehypeKatex, rehypeHighlight]}
+              rehypePlugins={[[rehypeKatex, katexOptions], rehypeHighlight]}
               components={mdComponents}
             >
               {applyCitationMarks(message.content, message.citations ?? [])}

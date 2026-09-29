@@ -121,6 +121,50 @@ describe('partial assistant output', () => {
   })
 })
 
+describe('assistant Markdown rendering', () => {
+  test('renders inline and display math through the bounded accessible KaTeX path', async () => {
+    mounted = await mount(
+      <MessageBubble
+        message={{
+          id: 'message-math',
+          role: 'assistant',
+          content: 'Inline $x^2$ and display:\n\n$$\\frac{a}{b}$$',
+          timestamp: new Date().toISOString(),
+        }}
+      />,
+    )
+    await tick()
+
+    expect(mounted.container.querySelectorAll('.katex')).toHaveLength(2)
+    expect(mounted.container.querySelector('.katex-mathml math')).not.toBeNull()
+    expect(mounted.container.textContent).toContain('Inline')
+  })
+
+  test('routes web links through the in-app browser and leaves non-web links inert', async () => {
+    mounted = await mount(
+      <MessageBubble
+        message={{
+          id: 'message-links',
+          role: 'assistant',
+          content: '[safe](https://example.com/research) [unsafe](javascript:alert(1)) [local](file:///private/report.pdf)',
+          timestamp: new Date().toISOString(),
+        }}
+      />,
+    )
+    await tick()
+
+    const safe = mounted.container.querySelector<HTMLAnchorElement>('a[href="https://example.com/research"]')
+    expect(safe).not.toBeNull()
+    expect(safe?.getAttribute('target')).toBeNull()
+    expect(mounted.container.textContent).toContain('unsafe(link unavailable)')
+    expect(mounted.container.textContent).toContain('local(link unavailable)')
+
+    await click(safe!)
+    expect(useAppStore.getState().browserUrl).toBe('https://example.com/research')
+    expect(useAppStore.getState().activeView).toBe('browse')
+  })
+})
+
 describe('inline consent', () => {
   test('names the Guard facts and keeps a real deny path', async () => {
     let answer: string | undefined
