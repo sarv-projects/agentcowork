@@ -128,7 +128,7 @@ importers:
         specifier: workspace:*
         version: link:../core-domain
       '@modelcontextprotocol/sdk':
-        specifier: ^1.29.0
+        specifier: 1.30.0
         version: 1.30.0(zod@4.4.3)
       cheerio:
         specifier: ^1.2.0
