@@ -31,6 +31,16 @@ These are read-only remote `HEAD` selections collected before implementation. A 
 | [workany-ai/workany](https://github.com/workany-ai/workany) | `7bc87487a18f83b9f2854f5028be265ef2144781` | Prior focused audit; current-head source re-trace pending. |
 | [zhimaAi/ChatClaw](https://github.com/zhimaAi/ChatClaw) | `24cf23210f48daacd4d301bb771fc42745a42ee7` | Prior focused audit; current-head source re-trace pending. |
 | [lfnovo/open-notebook](https://github.com/lfnovo/open-notebook) | `3127f14ea9dbb519f0e4ddc64a0742ca644ba6ef` | Prior focused audit; current-head source re-trace pending. |
+| [langgenius/dify](https://github.com/langgenius/dify) | `3f0032f20bf6ed0447e66c94f6aadf4e90f79e23` | Prior focused audit; current-head source re-trace pending. |
+| [iOfficeAI/AionUi](https://github.com/iOfficeAI/AionUi) | `6744099b279b991c17e31c243f0920477bd31cb6` | Prior focused audit; current-head source re-trace pending. |
+| [iOfficeAI/OfficeCLI](https://github.com/iOfficeAI/OfficeCLI) | `dc68d63f5285005a9e7c5943dfb321d93ee2a076` | Prior focused audit; current-head source re-trace pending. |
+| [zhayujie/CowAgent](https://github.com/zhayujie/CowAgent) | `06bd817b57c0ab4aa54765aa9b1d5780e7faed52` | Prior focused audit; current-head source re-trace pending. |
+| [agentscope-ai/QwenPaw](https://github.com/agentscope-ai/QwenPaw) | `777441721aa72db8e380d90e4d0481b05cbfd4cc` | Prior focused audit; current-head source re-trace pending. |
+| [NanmiCoder/cc-haha](https://github.com/NanmiCoder/cc-haha) | `2ec845d0848c8ea4d7cb66100d0a462123ea1c63` | Prior focused audit; current-head source re-trace pending. |
+| [simular-ai/Agent-S](https://github.com/simular-ai/Agent-S) | `3aa272d23d2994c7bbde1acbbe0ef8e8d06b8693` | Prior focused audit; current-head source re-trace pending. |
+| [pixel-agents-hq/pixel-agents](https://github.com/pixel-agents-hq/pixel-agents) | `3537e140c2094761beae748592aeb92ece8edfdd` | Prior focused audit; current-head source re-trace pending. |
+| [composio-community/open-claude-cowork](https://github.com/composio-community/open-claude-cowork) | `52335ef50fd033cb5ce87068be0b5b546fa5b73d` | Prior focused audit; current-head source re-trace pending. |
+| [Orkas-AI/Orkas](https://github.com/Orkas-AI/Orkas) | `72d0a311baea12964b7d44f8628713381b59ac94` | Prior focused audit; current-head source re-trace pending. |
 | [LibreChat/LibreChat](https://github.com/LibreChat/LibreChat) | `63363a777612e0d37956cc5d233ac489f3a302c3` | Focused current-head audit recorded; full semantic audit not claimed. |
 | [libre-webui/libre-webui](https://github.com/libre-webui/libre-webui) | `1eef74012d958e51ec7afb26685eaf12cd228f28` | Partial deep audit recorded; repository-wide semantic audit remains incomplete. |
 | [code/app-open-artifacts](https://github.com/code/app-open-artifacts) and [13point5/open-artifacts](https://github.com/13point5/open-artifacts) | `c032aeb738dfe15777d9b75fabe9eb5adb76906c` | Same tree at current head; focused artifact audit recorded. |
