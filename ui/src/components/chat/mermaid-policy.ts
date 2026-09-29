@@ -5,6 +5,16 @@ export type MermaidSourceCheck =
   | { ok: true; source: string }
   | { ok: false; reason: string }
 
+export function svgViewBoxSize(svg: string): { width: number; height: number } | null {
+  const root = svg.match(/<svg\b[^>]*>/i)?.[0]
+  const viewBox = root?.match(/\bviewBox\s*=\s*['"]\s*([\d.e+-]+)[ ,]+([\d.e+-]+)[ ,]+([\d.e+-]+)[ ,]+([\d.e+-]+)\s*['"]/i)
+  if (!viewBox) return null
+  const width = Number(viewBox[3])
+  const height = Number(viewBox[4])
+  if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) return null
+  return { width, height }
+}
+
 /** Validate user/model-provided Mermaid before passing it to the renderer. */
 export function checkMermaidSource(source: string): MermaidSourceCheck {
   const normalized = source.replace(/^\uFEFF/, '').trim()

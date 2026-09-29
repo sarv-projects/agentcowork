@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'bun:test'
-import { checkMermaidSource } from './mermaid-policy'
+import { checkMermaidSource, svgViewBoxSize } from './mermaid-policy'
 
 describe('Mermaid source policy', () => {
   it('accepts a normal diagram and strips surrounding whitespace', () => {
@@ -18,5 +18,11 @@ describe('Mermaid source policy', () => {
   it('rejects graphs over the connection cap', () => {
     const edges = Array.from({ length: 501 }, (_, index) => `n${index} --> n${index + 1}`).join('\n')
     expect(checkMermaidSource(`flowchart LR\n${edges}`)).toMatchObject({ ok: false })
+  })
+
+  it('reads finite, positive SVG viewBox dimensions for raster export', () => {
+    expect(svgViewBoxSize('<svg viewBox="0 0 640 480"></svg>')).toEqual({ width: 640, height: 480 })
+    expect(svgViewBoxSize('<svg viewBox="0 0 -1 480"></svg>')).toBeNull()
+    expect(svgViewBoxSize('<svg width="100%" height="auto"></svg>')).toBeNull()
   })
 })

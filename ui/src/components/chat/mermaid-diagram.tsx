@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useState } from 'react'
 import { AlertTriangle, Check, Copy, Download, RotateCw } from 'lucide-react'
-import { checkMermaidSource } from './mermaid-policy'
+import { checkMermaidSource, svgViewBoxSize } from './mermaid-policy'
 
 const RENDER_TIMEOUT_MS = 5_000
 
@@ -23,6 +23,7 @@ export function MermaidDiagram({ source }: { source: string }) {
   const [attempt, setAttempt] = useState(0)
   const [rendered, setRendered] = useState<RenderedDiagram | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [exportMessage, setExportMessage] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const check = checkMermaidSource(source)
 
@@ -95,7 +96,43 @@ export function MermaidDiagram({ source }: { source: string }) {
     link.href = url
     link.download = 'diagram.svg'
     link.click()
-    URL.revokeObjectURL(url)
+    window.setTimeout(() => URL.revokeObjectURL(url), 1_000)
+  }
+
+  const downloadPng = async () => {
+    if (!rendered) return
+    setExportMessage(null)
+    const size = svgViewBoxSize(rendered.svg)
+    if (!size) {
+      setExportMessage('PNG export is unavailable for this diagram. SVG download remains available.')
+      return
+    }
+    try {
+      const scale = Math.min(2, 4096 / Math.max(size.width, size.height))
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.max(1, Math.round(size.width * scale))
+      canvas.height = Math.max(1, Math.round(size.height * scale))
+      const context = canvas.getContext('2d')
+      if (!context) throw new Error('Canvas is unavailable')
+      const bitmap = await createImageBitmap(new Blob([rendered.svg], { type: 'image/svg+xml' }))
+      try {
+        context.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+      } finally {
+        bitmap.close()
+      }
+      const png = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('PNG conversion failed')), 'image/png')
+      })
+      const url = URL.createObjectURL(png)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = 'diagram.png'
+      link.click()
+      window.setTimeout(() => URL.revokeObjectURL(url), 1_000)
+      setExportMessage('PNG downloaded.')
+    } catch {
+      setExportMessage('PNG export is unavailable here. SVG download remains available.')
+    }
   }
 
   return (
@@ -124,9 +161,14 @@ export function MermaidDiagram({ source }: { source: string }) {
         </details>
         <div className="flex shrink-0 items-center gap-1">
           {rendered && (
-            <button type="button" onClick={downloadSvg} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2 text-[11px] text-muted-foreground hover:bg-accent hover:text-foreground" aria-label="Download diagram as SVG">
-              <Download aria-hidden className="h-3.5 w-3.5" /> SVG
-            </button>
+            <>
+              <button type="button" onClick={downloadSvg} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2 text-[11px] text-muted-foreground hover:bg-accent hover:text-foreground" aria-label="Download diagram as SVG">
+                <Download aria-hidden className="h-3.5 w-3.5" /> SVG
+              </button>
+              <button type="button" onClick={() => void downloadPng()} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2 text-[11px] text-muted-foreground hover:bg-accent hover:text-foreground" aria-label="Download diagram as PNG">
+                <Download aria-hidden className="h-3.5 w-3.5" /> PNG
+              </button>
+            </>
           )}
           <button type="button" onClick={() => void copySource()} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2 text-[11px] text-muted-foreground hover:bg-accent hover:text-foreground" aria-label="Copy diagram source">
             {copied ? <Check aria-hidden className="h-3.5 w-3.5" /> : <Copy aria-hidden className="h-3.5 w-3.5" />}
@@ -134,6 +176,7 @@ export function MermaidDiagram({ source }: { source: string }) {
           </button>
         </div>
       </figcaption>
+      {exportMessage && <div role="status" className="border-t border-border px-3 py-2 text-[11px] text-muted-foreground">{exportMessage}</div>}
     </figure>
   )
 }
