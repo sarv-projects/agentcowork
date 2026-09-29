@@ -25,6 +25,7 @@ The desired advantage is a hypothesis, **not a current result**. Official produc
 | Dimension | User-visible advantage to prove | Required evidence |
 |---|---|---|
 | First-run and chat | A nontechnical user gets a good answer/artifact without choosing a runtime mode or reading agent jargon | `TC-001…009`, blind usefulness review, first-run study |
+| Live Desk appeal and comprehension | People understand the goal, current activity, result and needed attention; motion makes changes easier to follow and remains comfortable, optional and truthful | `TC-070`; moderated nontechnical/student and technical cohorts; task comprehension, appeal, motion comfort, reduced-motion/static parity, accessibility and performance evidence |
 | Workbench and files | Browser, tree, code, PDF/Office and artifact editing remain in one contextual surface with honest fidelity | `TC-010…018`, round-trip/render comparisons, conflict tests |
 | External-agent ecosystem | Discovered agents keep native setups; shared MCP/skills/plugins are scoped and transparent | `TC-007/008/026`, config hash unchanged, permission audit |
 | Team and long horizon | Heterogeneous agents produce one verified result and recover after context/provider/environment loss | `TC-024…036`, integration rubric, fault injection, cost |

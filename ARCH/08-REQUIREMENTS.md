@@ -1712,11 +1712,11 @@ This registry answers one question per entry: **what behavior must this system e
 - **Status:** seeded
 
 #### REQ-UI-003 — Truthful state, never inferred as measured
-- **Statement:** GIVEN a value, state or progress affordance, WHEN the value is not measured, THEN the UI renders `—` or nothing and never a plausible guess, fabricated percentage, fake spinner or progress bar standing in for an unknown.
+- **Statement:** GIVEN a value, state or progress affordance, WHEN the value is not measured, THEN the UI renders `—` or nothing and never a plausible guess, fabricated percentage, fake determinate progress bar, or activity indicator standing in for work that is not in flight. A truthful indeterminate activity treatment is allowed only while an authoritative source says work is running.
 - **Priority:** must
 - **Source:** `ARCH/48-EXPERIENCE-SURFACES.md` §§1, 4.2, 9; `ev: ui/src/components/views/run-projection.tsx:33-56`; `ev: ui/src/lib/store.ts:191-194`
-- **Acceptance:** unknown figures render `—`/absent; no determinate progress without a measured value; no fake spinner on a Core-unavailable banner.
-- **Failure cases:** inferred value shown as measured → defect; fabricated progress → defect; spinner with no work in flight → defect.
+- **Acceptance:** unknown figures render `—`/absent; no determinate progress without a measured value; active Work may use an indeterminate indicator; a Core-unavailable banner never appears active.
+- **Failure cases:** inferred value shown as measured → defect; fabricated progress → defect; activity animation with no work in flight or only an unavailable/error state → defect.
 - **Tests:** pending
 - **Status:** seeded
 
@@ -3144,11 +3144,20 @@ This registry answers one question per entry: **what behavior must this system e
 - **Status:** accepted
 
 #### REQ-UXQ-012 — Active-work visualization stays evidence-backed
-- **Statement:** GIVEN an active or completed Work/Mission, WHEN its activity is rendered or replayed, THEN the view is a read-only projection of existing Mission/Work/events/artifacts/observations, user-facing labels are approachable, and every displayed action/count/target/provenance/verification resolves to evidence; unobserved activity stays generic or explicitly reported.
+- **Statement:** GIVEN an active or completed Work/Mission, WHEN its activity is rendered or replayed, THEN the view is a read-only projection of existing Mission/Work/events/artifacts/observations, user-facing labels are approachable, and every displayed action/count/target/provenance/verification resolves to evidence; optional bounded `ActivityDescriptor` metadata may enrich existing events/results without creating another event family, and absent/opaque activity stays generic or explicitly reported.
 - **Priority:** must
 - **Source:** DEC-064/065; `ARCH/38-EXPERIENCE-QUALITY.md`; `ARCH/48-EXPERIENCE-SURFACES.md` §§4.2–4.3
-- **Acceptance:** `TC-069` passes for Core-mediated, Core-observed, native-reported and opaque work; replay executes nothing; no inferred count, physical pointer motion or verification appears.
-- **Failure cases:** tool-name regex invents domain; native agent internals are presented as observed; API call rendered as fake UI; stale visual anchor remains; raw TUI obscures normal chat; a reported success receives verified styling.
+- **Acceptance:** `TC-069` passes for Core-mediated, Core-observed, native-reported and opaque work; optional activity descriptors remain bounded, provenance-bearing and backward-compatible with older events; replay executes nothing; no inferred count, physical pointer motion or verification appears.
+- **Failure cases:** tool-name regex invents domain; native agent internals are presented as observed; API call rendered as fake UI; missing descriptor is treated as failure rather than generic activity; stale visual anchor remains; raw TUI obscures normal chat; a reported success receives verified styling.
+- **Tests:** pending
+- **Status:** accepted
+
+#### REQ-UXQ-013 — Live Desk is clear, engaging, and motion-accessible
+- **Statement:** GIVEN an active or recently completed task, WHEN a person opens Live Desk, THEN its visual hierarchy explains the goal, meaningful workstreams, current state, outputs, blockers and checks in plain language; purposeful motion clarifies recorded state changes without implying an unobserved action or measured progress, and the same information remains available in a static and accessible representation.
+- **Priority:** must
+- **Source:** DEC-066; `ARCH/38-EXPERIENCE-QUALITY.md`; `ARCH/48-EXPERIENCE-SURFACES.md` §4.2.2; W3C WCAG 2.2.2/2.3.3; Apple Human Interface Guidelines Motion
+- **Acceptance:** `TC-070` passes for nontechnical and technical participants; motion respects system Reduced Motion and the in-product Static/Pause controls; pausing motion does not pause Work or suppress truthful text updates; pausing view updates freezes only the display, marks it stale, and does not pause Work; a waiting branch remains actionable while independent running workstreams continue to appear active; state changes are announced semantically; completion, progress and physical-input visuals are evidence-backed; hide/unmount stops optional presentation updates; rendering meets calibrated performance and usability targets.
+- **Failure cases:** motion obscures the task or controls; animation implies an API was clicked through or an unobserved action occurred; an unknown quantity appears determinate; a waiting branch falsely freezes or completes its Mission; Reduced Motion is ignored; pause stops execution or cannot stop animation; paused view appears current; status is conveyed only by color/movement; repeated frame/timer announcements overwhelm assistive technology; effect causes blocking input, layout shift or unbounded resource use.
 - **Tests:** pending
 - **Status:** accepted
 
@@ -3275,10 +3284,10 @@ This registry answers one question per entry: **what behavior must this system e
 | `MISSION` (7) | durable goal, adaptive plan, recovery and branch-local waits (DEC-054) | implementation pending |
 | `ECO` (7) | discovered-agent ecosystem and bounded candidate comparison (DEC-054/059) | implementation pending |
 | `LEARN` (2) | workflow/skill promotion and evaluation (DEC-054) | implementation pending |
-| `UXQ` (11) | 10 baseline + REQ-UXQ-011 System Workbench (DEC-058/059) | implementation pending |
+| `UXQ` (13) | 10 baseline + REQ-UXQ-011 System Workbench + REQ-UXQ-012/013 active-work truth and Live Desk quality/motion (DEC-058/059/065/066) | implementation pending |
 | `OBS` (10) | local machine observation and on-demand process diagnostics (introduced by DEC-058; consent UX refined by DEC-059) | implementation and device qualification pending |
 
-> **P9 verification (2026-09-26, historical):** registry integrity was recorded as 307 entries ↔ 307 matrix rows before later retirements. **DEC-054/055/056/057/058/059 amendment (2026-09-28):** current registry and matrix each contain 343 unique active `REQ-*` entries/rows across 31 domains (330 prior active + REQ-SEARCH-013 + REQ-UXQ-011 + REQ-OBS-001…010 + REQ-ECO-007). W0–W6 in `TODO.md` name implementation tasks; all newly associated tests/evidence remain pending. This count is an inventory, not verification of implementation.
+> **P9 verification (2026-09-26, historical):** registry integrity was recorded as 307 entries ↔ 307 matrix rows before later retirements. **DEC-054/055/056/057/058/059 amendment (2026-09-28, historical):** that pass recorded 343 active entries. **Current inventory (2026-09-29):** 346 unique active `REQ-*` headings match 346 matrix rows across 31 domains; amendments through DEC-066 include REQ-UXQ-013. W0–W6 in `TODO.md` name implementation tasks; the new Live Desk test/evidence remains pending. Counts are inventory only, not verification of implementation.
 
 ## 6. Related
 

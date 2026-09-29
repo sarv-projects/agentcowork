@@ -12,6 +12,14 @@ The review enumerated repository structure, then traced launch, agent registrati
 |---|---|---|
 | [Artifacts](https://antigravity.google/docs/artifacts?authuser=002), [Artifact Review](https://antigravity.google/docs/artifact-review/), [Generative UI](https://antigravity.google/blog/visualizing-with-the-help-of-antigravity), [CLI artifacts](https://www.antigravity.google/docs/cli/artifacts/) | Structured deliverables can be reviewed beside the conversation, previewed as rich/interactive content, opened for detail, and exported; review-before-apply is a useful control pattern. | Adapt artifact-first result cards, side-by-side review, isolated previews and export into `ARCH/29`/`48`. Resolve only typed, authorized, exact-version Artifact/File refs; never turn an arbitrary path in model text into an active link. This public documentation does not expose the private agent runtime, built-in skill contents, markup syntax or security implementation; do not copy undocumented `agent-embed`, `write_to_file`, CDN or CSP conventions. No upstream code was copied. |
 
+## Motion, reduced motion and nontechnical Live Desk usability (official guidance)
+
+| Official source | What it supports | AgentCowork adaptation and limit |
+|---|---|---|
+| [W3C WCAG 2.2.2: Pause, Stop, Hide](https://www.w3.org/WAI/WCAG22/Understanding/pause-stop-hide) | Qualifying automatically moving or auto-updating content presented alongside other content needs user control to pause, stop/hide, or control update frequency. | `48` provides a visible Pause motion/static choice and pauses presentation updates without pausing Work. WCAG is a conformance baseline, not a style/appeal benchmark. |
+| [W3C WCAG 2.3.3: Animation from Interactions](https://www.w3.org/WAI/WCAG21/Understanding/animation-from-interactions) | Nonessential motion triggered by interaction should be disableable. | `48` honors reduced-motion preference and ensures state has a static equivalent. |
+| [Apple Human Interface Guidelines: Motion](https://developer.apple.com/design/human-interface-guidelines/motion) | Motion should serve a purpose, remain optional, give concise feedback and remain cancellable. | Use as interaction-design guidance for brief, meaningful Live Desk transitions. It does not establish the right animation language for AgentCowork or its target users; TC-070 user studies are still required. |
+
 ## Latest upstream selection inventory (2026-09-29)
 
 These are read-only remote `HEAD` selections collected before implementation. A selection is not a source audit: rows without a current-head section below retain their prior focused or historical evidence and must be re-traced at the listed commit before code is adapted. This prevents a historical source path from being treated as current behavior.

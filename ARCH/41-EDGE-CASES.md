@@ -1,6 +1,6 @@
 # 41 — Edge Cases
 
-> **Status:** Frozen v1 (frozen 2026-09-26; drafted P4). The consolidated edge-case catalog. Each row names the scenario and the **required behavior**; the owning module doc carries detail. New edge cases discovered during review get a row here + a reference in the owning doc — no silent fixes.
+> **Status:** Frozen v1 baseline (2026-09-26), amended by DEC-066 for Live Desk motion edge cases. The consolidated edge-case catalog. Each row names the scenario and the **required behavior**; the owning module doc carries detail. New edge cases discovered during review get a row here + a reference in the owning doc — no silent fixes.
 > **P7 pass (2026-09-26):** coverage extended end-to-end — kernel (`10`), agent/model plane (`15`/`18`), runtime (`19`), code/search/comms (`26`–`28`), effect verification (`34`) and multi-agent coexistence get their own families; existing IDs and rows are unchanged.
 > **P7 memory merge (2026-09-26):** +12 entries — memory-grade store integrity, mutation-vs-injection semantics and multi-agent memory boundaries (EDGE-157/158, EDGE-170–179).
 > **P9 verification pass (2026-09-26):** read line-by-line; fixes applied where needed (owner-directed; re-freeze follows).
@@ -290,3 +290,15 @@ New edge cases are appended with the next free ID in their family, with: scenari
 | EDGE-215 | WSL is installed but distro is stopped or not selected | Do not start/install/enter it; host-level readings remain distinct from distro readings; show explicit unavailable reason. |
 | EDGE-216 | Service restarts after consent revocation or scope change | Old pipe grants and helper tokens are invalid; reconnect requires current Trust state, and a stale snapshot is never presented as fresh. |
 | EDGE-217 | Advanced process query targets another user, a protected process, or a field outside granted rights | Return typed per-field access-denied/unsupported status; never widen requested access, duplicate handles, read memory or infer the missing field. An exact optional elevated read still needs fresh user action and follows the one-shot helper flow. |
+
+## V. Live Desk motion and visual-state integrity (`38`, `48`, DEC-065/066)
+
+| ID | Scenario | Required behavior |
+|---|---|---|
+| EDGE-218 | Work is running but no measured progress events exist | A calm indeterminate activity treatment may appear while authoritative state is running; do not show a guessed percentage, step count, elapsed estimate or apparent repeated action. |
+| EDGE-219 | Work completes, fails, pauses, waits, is cancelled, or becomes unavailable while an activity animation is active | Stop the active treatment on the state transition and show the correct semantic status; stale timers/frames cannot restore a running appearance. |
+| EDGE-220 | User pauses motion, pauses view updates, chooses Static/Reduced, or system reduced-motion changes during work | Motion pause freezes transitions but keeps truthful semantic updates; view-update pause freezes only the display and shows stale state/time; static/reduced modes retain equivalent information; Work continues unless separately paused. |
+| EDGE-221 | Activity projection has a gap, old checkpoint, stale resource/anchor or uncertain provenance | Show “catching up,” stale or generic static state as appropriate; remove invalid highlight and never animate a guessed event or fake physical input. |
+| EDGE-222 | Live Desk is hidden, backgrounded, or its renderer is slow/crashed | Stop optional visual updates when hidden; drop obsolete render updates rather than backlogging; Work remains unaffected and reconnect rebuilds from canonical state. |
+| EDGE-223 | Screen reader, keyboard-only, high contrast, zoom, or reduced-motion user opens Live Desk | All task state/actions have semantic text and keyboard focus; announcements occur only for meaningful changes; color/motion is not the sole signal and layout remains operable. |
+| EDGE-224 | One Mission branch waits for a user answer while an independent branch is still running | Show the waiting branch as still and explain the needed answer; keep the active branch's own truthful status/motion visible; aggregate status says some work is waiting and other work continues. No mission-wide spinner or stopped/completed label may hide the mixed state. |
