@@ -1,10 +1,12 @@
-//! Bounded HTTP transport for vault-owned OAuth calls.
+//! Guard-bound HTTP transport for vault-owned requests.
 //!
 //! The vault owns credentials, so its outbound OAuth transport must not follow
 //! a redirect or allow the HTTP library to perform a second DNS lookup after
 //! the destination has been checked. This module pins the checked address set
-//! into a one-request `ureq` agent. It is intentionally narrow; general
-//! provider and connector egress remains tracked by `TASK-PROV-002`.
+//! into a one-request `ureq` agent. Each agent is scoped to one checked origin
+//! and disables redirects so credentials cannot be forwarded to another host.
+//! This does not yet provide asynchronous cancellation or a deadline for the
+//! blocking system resolver.
 
 use std::io::{self, Read};
 use std::net::{IpAddr, SocketAddr};
@@ -13,11 +15,46 @@ use std::time::Duration;
 
 /// Upper bound for OAuth token/error response bodies.
 pub(crate) const MAX_RESPONSE_BYTES: u64 = 1024 * 1024;
+/// Upper bound for a non-streaming provider completion body.
+pub(crate) const MAX_PROVIDER_RESPONSE_BYTES: u64 = 32 * 1024 * 1024;
 
 /// Build a one-request agent whose resolver returns only addresses checked by
 /// the canonical Guard destination floor. Automatic redirects are disabled,
 /// so that the pinned target cannot silently change origins.
 pub(crate) fn agent_for(url: &str) -> Result<ureq::Agent, EgressSetupError> {
+    let parsed = parse_endpoint(url)?;
+    if parsed.scheme() == "http"
+        && !matches!(
+            parsed
+                .host()
+                .map(|host| agentcowork_guard::netfloor::classify_url_host(&host)),
+            Some(agentcowork_guard::NetClass::Loopback)
+        )
+    {
+        return Err(EgressSetupError {
+            url: safe_origin(&parsed),
+            reason: "cleartext_oauth_endpoint",
+        });
+    }
+    build_agent(
+        url,
+        agentcowork_guard::NetPolicy::default(),
+        Some(Duration::from_secs(15)),
+    )
+}
+
+/// Build a checked provider agent using the endpoint's declared egress policy.
+/// `overall_timeout` is used for bounded metadata probes. Streaming calls use
+/// per-connect/read/write timeouts so a healthy long generation can continue.
+pub(crate) fn provider_agent_for(
+    url: &str,
+    policy: agentcowork_guard::NetPolicy,
+    overall_timeout: Option<Duration>,
+) -> Result<ureq::Agent, EgressSetupError> {
+    build_agent(url, policy, overall_timeout)
+}
+
+fn parse_endpoint(url: &str) -> Result<url::Url, EgressSetupError> {
     let parsed = url::Url::parse(url).map_err(|_| EgressSetupError {
         url: "<invalid-url>".into(),
         reason: "malformed",
@@ -33,29 +70,23 @@ pub(crate) fn agent_for(url: &str) -> Result<ureq::Agent, EgressSetupError> {
             reason: "invalid_endpoint",
         });
     }
-    if parsed.scheme() == "http"
-        && !matches!(
-            parsed
-                .host()
-                .map(|host| agentcowork_guard::netfloor::classify_url_host(&host)),
-            Some(agentcowork_guard::NetClass::Loopback)
-        )
-    {
-        return Err(EgressSetupError {
-            url: safe_origin(&parsed),
-            reason: "cleartext_oauth_endpoint",
-        });
-    }
+    Ok(parsed)
+}
 
-    let binding = agentcowork_guard::toctou::bind_url_with_policy(
-        url,
-        &[],
-        agentcowork_guard::NetPolicy::default(),
-    )
-    .map_err(|_| EgressSetupError {
-        url: safe_origin(&parsed),
-        reason: "destination_or_resolution_denied",
-    })?;
+fn build_agent(
+    url: &str,
+    policy: agentcowork_guard::NetPolicy,
+    overall_timeout: Option<Duration>,
+) -> Result<ureq::Agent, EgressSetupError> {
+    let parsed = parse_endpoint(url)?;
+
+    let binding =
+        agentcowork_guard::toctou::bind_url_with_policy(url, &[], policy).map_err(|_| {
+            EgressSetupError {
+                url: safe_origin(&parsed),
+                reason: "destination_or_resolution_denied",
+            }
+        })?;
     if binding.resolved_ips.is_empty() {
         return Err(EgressSetupError {
             url: safe_origin(&parsed),
@@ -77,14 +108,16 @@ pub(crate) fn agent_for(url: &str) -> Result<ureq::Agent, EgressSetupError> {
         pinned.push(SocketAddr::new(ip, port));
     }
 
-    Ok(ureq::AgentBuilder::new()
+    let mut builder = ureq::AgentBuilder::new()
         .redirects(0)
-        .timeout(Duration::from_secs(15))
         .timeout_connect(Duration::from_secs(5))
-        .timeout_read(Duration::from_secs(5))
-        .timeout_write(Duration::from_secs(5))
-        .resolver(move |_netloc: &str| Ok(pinned.clone()))
-        .build())
+        .timeout_read(Duration::from_secs(120))
+        .timeout_write(Duration::from_secs(30))
+        .resolver(move |_netloc: &str| Ok(pinned.clone()));
+    if let Some(timeout) = overall_timeout {
+        builder = builder.timeout(timeout);
+    }
+    Ok(builder.build())
 }
 
 fn safe_origin(url: &url::Url) -> String {
@@ -93,13 +126,21 @@ fn safe_origin(url: &url::Url) -> String {
 
 /// Read a response without allocating beyond the configured limit.
 pub(crate) fn read_bounded(response: ureq::Response) -> Result<Vec<u8>, ReadResponseError> {
+    read_bounded_to(response, MAX_RESPONSE_BYTES)
+}
+
+/// Read a provider response with an explicit allocation ceiling.
+pub(crate) fn read_bounded_to(
+    response: ureq::Response,
+    limit: u64,
+) -> Result<Vec<u8>, ReadResponseError> {
     let mut bytes = Vec::new();
     response
         .into_reader()
-        .take(MAX_RESPONSE_BYTES + 1)
+        .take(limit.saturating_add(1))
         .read_to_end(&mut bytes)
         .map_err(|_| ReadResponseError::Io)?;
-    if bytes.len() as u64 > MAX_RESPONSE_BYTES {
+    if bytes.len() as u64 > limit {
         return Err(ReadResponseError::TooLarge);
     }
     Ok(bytes)

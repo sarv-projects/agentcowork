@@ -13,10 +13,11 @@
 //! - No key / unknown provider → fail closed (error before any HTTP attempt).
 
 use std::collections::HashMap;
-use std::io::{BufRead, BufReader};
+use std::io::{BufRead, BufReader, Read};
 use std::time::Duration;
 
 use crate::Vault;
+use crate::guarded_http::{MAX_PROVIDER_RESPONSE_BYTES, provider_agent_for, read_bounded_to};
 use crate::keyring::{
     KeyRing, KeyRingError, KeyStatus, MAX_429_SWITCHES, RoutingPolicy, SelectedKey,
 };
@@ -185,13 +186,26 @@ pub struct ModelsProbe {
 /// deliberately checked here too, because this is the call that attaches the
 /// credential.
 pub fn credential_safe_url(url: &str) -> bool {
-    let url = url.trim();
-    if url.starts_with("https://") {
-        return true;
+    let Ok(parsed) = url::Url::parse(url.trim()) else {
+        return false;
+    };
+    if parsed.host_str().is_none()
+        || !parsed.username().is_empty()
+        || parsed.password().is_some()
+        || parsed.fragment().is_some()
+    {
+        return false;
     }
-    ["http://127.0.0.1", "http://localhost", "http://[::1]"]
-        .iter()
-        .any(|p| url.starts_with(p))
+    match parsed.scheme() {
+        "https" => true,
+        "http" => matches!(
+            parsed
+                .host()
+                .map(|host| agentcowork_guard::netfloor::classify_url_host(&host)),
+            Some(agentcowork_guard::NetClass::Loopback)
+        ),
+        _ => false,
+    }
 }
 
 /// Incremental native function-call fragment (`choices[0].delta.tool_calls`).
@@ -334,7 +348,9 @@ impl<'a> Broker<'a> {
         let url = self.models_url(provider)?;
         // The probe is the other credential-bearing path, so it runs the same
         // custody + egress floor checks as the chat path (INV-05, CTR-013).
-        self.egress_preflight(provider, &url)?;
+        if !credential_safe_url(&url) {
+            return Err(BrokerError::InsecureEndpoint(provider.to_string()));
+        }
         let endpoint = self.endpoints.get(provider).cloned();
         let keyless = endpoint.as_ref().map(|e| e.keyless).unwrap_or(false);
         let key = if keyless {
@@ -343,7 +359,8 @@ impl<'a> Broker<'a> {
             Some(self.ring.reveal_for_metadata_probe(provider)?)
         };
 
-        let agent = ureq::AgentBuilder::new().timeout(timeout).build();
+        let agent = provider_agent_for(&url, self.floor_policy(provider), Some(timeout))
+            .map_err(guarded_setup_error)?;
         let mut req = agent.get(&url).set("Accept", "application/json").set(
             "User-Agent",
             &format!("AgentCowork/{}", env!("CARGO_PKG_VERSION")),
@@ -361,31 +378,42 @@ impl<'a> Broker<'a> {
         Ok(match req.call() {
             Ok(resp) => {
                 let status = resp.status();
+                let body = read_bounded_to(resp, MAX_PROVIDER_RESPONSE_BYTES)
+                    .map(|bytes| String::from_utf8_lossy(&bytes).into_owned());
+                let body_ok = body.is_ok();
                 ModelsProbe {
-                    ok: (200..300).contains(&status),
+                    ok: (200..300).contains(&status) && body_ok,
                     status,
                     url,
-                    body: resp.into_string().unwrap_or_default(),
-                    error: None,
+                    body: body.clone().unwrap_or_default(),
+                    error: body
+                        .err()
+                        .map(|error| format!("provider response unavailable: {error:?}")),
                 }
             }
             // An answered error: the endpoint is reachable, so the status and
             // body (a 401/403/429 explains itself) are the honest observation.
-            Err(ureq::Error::Status(status, resp)) => ModelsProbe {
-                ok: false,
-                status,
-                url,
-                body: resp.into_string().unwrap_or_default(),
-                error: None,
-            },
+            Err(ureq::Error::Status(status, resp)) => {
+                let body = read_bounded_to(resp, MAX_PROVIDER_RESPONSE_BYTES)
+                    .map(|bytes| String::from_utf8_lossy(&bytes).into_owned());
+                ModelsProbe {
+                    ok: false,
+                    status,
+                    url,
+                    body: body.clone().unwrap_or_default(),
+                    error: body
+                        .err()
+                        .map(|error| format!("provider response unavailable: {error:?}")),
+                }
+            }
             // Nothing was answered at all — status 0 means "no response", never
             // a fabricated HTTP code.
-            Err(ureq::Error::Transport(t)) => ModelsProbe {
+            Err(ureq::Error::Transport(_)) => ModelsProbe {
                 ok: false,
                 status: 0,
                 url,
                 body: String::new(),
-                error: Some(t.to_string()),
+                error: Some("provider transport failed".into()),
             },
         })
     }
@@ -531,8 +559,8 @@ impl<'a> Broker<'a> {
             model,
             session_id,
             body,
-            |url, key, body| {
-                let mut req = ureq::post(url).set("Content-Type", "application/json");
+            |agent, url, key, body| {
+                let mut req = agent.post(url).set("Content-Type", "application/json");
                 if let Some(k) = key {
                     let (name, value) = authorization(&k.provider, &k.value);
                     req = req.set(name, &value);
@@ -626,8 +654,8 @@ impl<'a> Broker<'a> {
             model,
             session_id,
             body,
-            |url, key, body| {
-                let mut req = ureq::post(url).set("Content-Type", "application/json");
+            |agent, url, key, body| {
+                let mut req = agent.post(url).set("Content-Type", "application/json");
                 if let Some(k) = key {
                     let (name, value) = authorization(&k.provider, &k.value);
                     req = req.set(name, &value);
@@ -654,7 +682,9 @@ impl<'a> Broker<'a> {
                     Err(ureq::Error::Status(code, resp)) => {
                         Err(BrokerError::Http(code, read_snippet(resp)))
                     }
-                    Err(ureq::Error::Transport(t)) => Err(BrokerError::Transport(t.to_string())),
+                    Err(ureq::Error::Transport(_)) => {
+                        Err(BrokerError::Transport("provider transport failed".into()))
+                    }
                 }
             },
             // Cache-aware usage merged from the stream's usage chunks (A9).
@@ -685,18 +715,24 @@ impl<'a> Broker<'a> {
         model: &str,
         session_id: &str,
         body: serde_json::Value,
-        runner: impl Fn(&str, Option<&SelectedKey>, serde_json::Value) -> Result<T, BrokerError>,
+        runner: impl Fn(
+            &ureq::Agent,
+            &str,
+            Option<&SelectedKey>,
+            serde_json::Value,
+        ) -> Result<T, BrokerError>,
         usage_of: impl Fn(&T) -> Usage,
     ) -> Result<T, BrokerError> {
         let url = self.request_url(provider)?;
-        // INV-05 / REQ-PROV-008 — the one egress choke point. The destination is
-        // floor-checked *before* a credential is selected and before any socket
-        // is opened, and a denial is a typed error with no fallback route: there
-        // is no second attempt and no alternative host to try. Both checks are
-        // needed and neither subsumes the other — `credential_safe_url` refuses
-        // cleartext to a remote host, the floor refuses a destination class the
-        // policy does not permit (link-local, cloud metadata, reserved space).
-        self.egress_preflight(provider, &url)?;
+        // INV-05 / REQ-PROV-008 — bind the checked Guard destination set to the
+        // actual HTTP resolver before selecting a credential. This prevents a
+        // second DNS resolution from changing the destination and disables
+        // redirects. The agent is per-call and cannot be retargeted.
+        if !credential_safe_url(&url) {
+            return Err(BrokerError::InsecureEndpoint(provider.to_string()));
+        }
+        let agent = provider_agent_for(&url, self.floor_policy(provider), None)
+            .map_err(guarded_setup_error)?;
         let keyless = self
             .endpoints
             .get(provider)
@@ -728,7 +764,7 @@ impl<'a> Broker<'a> {
                 }
             };
 
-            match runner(&url, key.as_ref(), body.clone()) {
+            match runner(&agent, &url, key.as_ref(), body.clone()) {
                 Ok(result) => {
                     let usage = usage_of(&result);
                     // A keyless turn is genuinely $0 — never priced against a
@@ -919,14 +955,20 @@ fn map_ureq_result(
     result: Result<ureq::Response, ureq::Error>,
 ) -> Result<serde_json::Value, BrokerError> {
     match result {
-        Ok(resp) => resp
-            .into_json()
-            .map_err(|e| BrokerError::Transport(e.to_string())),
+        Ok(resp) => {
+            let bytes = read_bounded_to(resp, MAX_PROVIDER_RESPONSE_BYTES).map_err(|error| {
+                BrokerError::Transport(format!("provider response unavailable: {error:?}"))
+            })?;
+            serde_json::from_slice(&bytes)
+                .map_err(|_| BrokerError::Transport("provider returned invalid JSON".into()))
+        }
         Err(ureq::Error::Status(429, resp)) => Err(BrokerError::RateLimited {
             retry_after_secs: parse_retry_after(&resp),
         }),
         Err(ureq::Error::Status(code, resp)) => Err(BrokerError::Http(code, read_snippet(resp))),
-        Err(ureq::Error::Transport(t)) => Err(BrokerError::Transport(t.to_string())),
+        Err(ureq::Error::Transport(_)) => {
+            Err(BrokerError::Transport("provider transport failed".into()))
+        }
     }
 }
 
@@ -1285,11 +1327,16 @@ pub(crate) fn parse_sse_anthropic_with<R: BufRead>(
 }
 
 fn read_snippet(resp: ureq::Response) -> String {
-    resp.into_string()
-        .unwrap_or_default()
-        .chars()
-        .take(200)
-        .collect()
+    let mut bytes = Vec::new();
+    let _ = resp.into_reader().take(4096).read_to_end(&mut bytes);
+    String::from_utf8_lossy(&bytes).chars().take(200).collect()
+}
+
+fn guarded_setup_error(error: crate::guarded_http::EgressSetupError) -> BrokerError {
+    BrokerError::EgressDenied {
+        host: error.url,
+        reason: error.reason.into(),
+    }
 }
 /// Merge the cache-aware usage observed across a stream (A9). OpenAI-compatible
 /// providers put the full `usage` object in the LAST SSE chunk when
