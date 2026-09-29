@@ -298,6 +298,52 @@ describe('assistant Markdown rendering', () => {
     expect(mounted.container.textContent).not.toContain('1_800_000')
   })
 
+  test('saving an artifact preview exports a .txt preview instead of a fake Office file', async () => {
+    mounted = await mount(
+      <MessageBubble
+        message={{
+          id: 'message-save-preview',
+          role: 'assistant',
+          content: 'Workbook generated.',
+          timestamp: new Date().toISOString(),
+          artifacts: [{
+            id: 'artifact-save-preview',
+            name: 'Quarterly results.xlsx',
+            type: 'xlsx',
+            preview: 'Summary sheet updated',
+            view: 'office-xlsx',
+          }],
+        }}
+      />,
+    )
+    await tick()
+
+    let savedName = ''
+    let savedBlob: Blob | undefined
+    const originalCreateObjectURL = URL.createObjectURL
+    const originalAnchorClick = HTMLAnchorElement.prototype.click
+    URL.createObjectURL = (blob) => {
+      savedBlob = blob
+      return 'blob:preview-test'
+    }
+    HTMLAnchorElement.prototype.click = function () {
+      savedName = this.download
+    }
+    try {
+      const save = Array.from(mounted.container.querySelectorAll<HTMLButtonElement>('button')).find((button) =>
+        button.textContent?.includes('Save preview'),
+      )
+      expect(save?.title).toContain('does not export the original artifact')
+      await click(save!)
+      expect(savedName).toBe('Quarterly results.xlsx.preview.txt')
+      expect(savedBlob?.type).toBe('text/plain;charset=utf-8')
+      expect(await savedBlob?.text()).toBe('Summary sheet updated')
+    } finally {
+      URL.createObjectURL = originalCreateObjectURL
+      HTMLAnchorElement.prototype.click = originalAnchorClick
+    }
+  })
+
   test('an Office artifact without a file reference does not open its display name as a path', async () => {
     mounted = await mount(
       <MessageBubble

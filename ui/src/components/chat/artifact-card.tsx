@@ -236,20 +236,27 @@ export default function ArtifactCard({ artifact }: Props) {
             size="sm"
             variant="ghost"
             className="h-7 gap-1 px-2 text-[11px] text-muted-foreground hover:text-foreground"
+            disabled={!artifact.preview.trim()}
+            title="Saves the visible preview text as a .txt file; it does not export the original artifact."
             onClick={(e) => {
               e.stopPropagation()
-              const blob = new Blob([artifact.preview], { type: 'text/plain' })
+              if (!artifact.preview.trim()) {
+                notify('There is no preview text to save', 'error')
+                return
+              }
+              const blob = new Blob([artifact.preview], { type: 'text/plain;charset=utf-8' })
               const url = URL.createObjectURL(blob)
               const a = document.createElement('a')
               a.href = url
-              a.download = artifact.name.replace(/[^\w\-. ]+/g, '').trim() || 'artifact.txt'
+              const safeName = artifact.name.replace(/[^\w\-. ]+/g, '').trim() || 'artifact'
+              a.download = `${safeName}.preview.txt`
               a.click()
-              URL.revokeObjectURL(url)
-              notify('Artifact saved')
+              window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+              notify('Text preview saved; the original file is not included')
             }}
           >
             <Download className="h-3 w-3" />
-            Save
+            Save preview
           </Button>
           <Button
             size="sm"
