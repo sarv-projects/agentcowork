@@ -2,7 +2,7 @@
 
 > **Status:** Frozen v1 (frozen 2026-09-26; drafted P7). **This file owns links, never content:** requirements live in `ARCH/08-REQUIREMENTS.md`, designs in the module docs, tasks in `TODO.md`, evidence in `ARCH/42-EVIDENCE-MAP.md`.
 > **Purpose:** answer from one place — which requirements does a file implement · which requirements have no implementation · which acceptance tests are missing · which specs does a change affect.
-> **Current inventory (2026-09-29):** 346 unique requirement rows match the 346 active requirement headings in `08` across 31 domains, including DEC-066's user-centered Live Desk visual quality and motion accessibility requirement. Active `TODO.md` W0–W6 task IDs are linked below where assigned; new implementation tests and evidence remain pending.
+> **Current inventory (2026-09-30):** 347 unique requirement rows match the 347 active requirement headings in `08` across 31 domains, including proposed DEC-067's shared extension-market contract. Active `TODO.md` W0–W6 task IDs are linked below where assigned; new implementation tests and evidence remain pending.
 
 ---
 
@@ -288,6 +288,7 @@ One row per `REQ-*`. Status only from evidence.
 | `REQ-SKILL-012` | `31-SKILLS-PLUGINS` | pending | `—` | `EDGE-093` | `TASK-SKILL-002` | pending | planned |
 | `REQ-SKILL-013` | `31-SKILLS-PLUGINS` | pending | `—` | `EDGE-096` | `TASK-SKILL-003` | pending | planned |
 | `REQ-SKILL-014` | `31-SKILLS-PLUGINS`, `46-ECOSYSTEM-ARCHITECTURE` | pending | `DEC-064`, `DM-027`, `INV-41` | `TC-067` | `TASK-SKILL-002`, `TASK-ECO-002` | pending | planned |
+| `REQ-SKILL-015` | `31-SKILLS-PLUGINS`, `46-ECOSYSTEM-ARCHITECTURE` | pending | `DEC-067` | `TC-071` | `TASK-ECO-004` | pending | planned |
 | `REQ-CHAN-001` | `32-CHANNELS` | pending | `—` | — | `TASK-CHAN-003` | pending | planned |
 | `REQ-CHAN-002` | `32-CHANNELS` | pending | `INV-15` | — | `TASK-CHAN-003` | pending | planned |
 | `REQ-CHAN-003` | `32-CHANNELS` | pending | `DEC-009`, `CTR-022` | — | `TASK-CHAN-002`, `TASK-CHAN-003` | pending | planned |

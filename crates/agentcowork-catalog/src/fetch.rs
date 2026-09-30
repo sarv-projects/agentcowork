@@ -1,9 +1,11 @@
-//! P56.1 — the network half of the catalog refresh, plus the job body that
-//! ties fetch → pure decision → durable store together.
+//! P56.1 — pure catalog request/response shaping, plus the job body that ties
+//! a host-owned fetch → pure decision → durable store together.
 //!
-//! [`HttpFetch::get`] is the documented HTTP seam: a **conditional** GET of
-//! `https://models.dev/api.json` with `If-None-Match`, so the 4h job costs one
-//! 304 round-trip when nothing changed instead of re-downloading 4.6 MB.
+//! [`HttpFetch::get`] shapes a **conditional** GET of
+//! `https://models.dev/api.json` with `If-None-Match` and delegates all socket,
+//! DNS, redirect, timeout, and response-boundary work to
+//! [`CatalogHttpTransport`]. The four-hour job costs one 304 round-trip when
+//! nothing changed instead of re-downloading 4.6 MB.
 //!
 //! Deliberate choices:
 //!
@@ -16,12 +18,9 @@
 //! * A failed refresh **never deletes the cached snapshot**; it only records
 //!   the honest verdict in the meta so `catalog_status` can report it.
 //!
-//! `refresh_now` is exercised against a local HTTP fixture in tests (no live
-//! network), and the live leg is env-gated like every other client here.
+//! `refresh_now` is exercised against a fake host transport in tests (no local
+//! server or live network). The catalog crate owns no network client.
 
-use std::collections::BTreeMap;
-use std::net::ToSocketAddrs;
-use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use serde::Serialize;
@@ -32,7 +31,34 @@ use crate::store::{CatalogMeta, CatalogStore};
 /// Outbound timeout for the catalog fetch (the body is ~4.6 MB).
 pub const FETCH_TIMEOUT_SECS: u64 = 30;
 
-/// The catalog's HTTP client (one `ureq` agent, reused across refreshes).
+/// Maximum catalog response body accepted by the pure catalog layer.
+pub const MAX_CATALOG_RESPONSE_BYTES: usize = 8 * 1024 * 1024;
+
+/// A response returned by the host-owned catalog transport.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CatalogHttpResponse {
+    /// HTTP status returned by the endpoint.
+    pub status: u16,
+    /// Allowlisted cache metadata (currently only ETag).
+    pub etag: Option<String>,
+    /// Bounded response body.
+    pub body: Vec<u8>,
+}
+
+/// Host-owned network boundary. The catalog shapes requests and responses but
+/// never resolves hosts, opens sockets, follows redirects, or owns credentials.
+pub trait CatalogHttpTransport: Send + Sync {
+    /// Perform one bounded GET using the host's egress policy.
+    fn get(
+        &self,
+        url: &str,
+        headers: &[(String, String)],
+        timeout: Duration,
+        max_response_bytes: usize,
+    ) -> Result<CatalogHttpResponse, String>;
+}
+
+/// Pure request configuration for the catalog's one JSON snapshot URL.
 #[derive(Debug, Clone)]
 pub struct HttpFetch {
     timeout: Duration,
@@ -40,25 +66,6 @@ pub struct HttpFetch {
     /// Overridable for tests / a mirror. Never a different *path*: the
     /// catalog is only ever one JSON document.
     url: String,
-    /// P45.7 — one resolution and one reused HTTP agent per session.
-    /// `end_session` drops both so the next call cannot reuse a stale address.
-    session: Arc<Mutex<HostSession>>,
-}
-
-struct HostSession {
-    hosts: BTreeMap<String, Vec<String>>,
-    lookups: u64,
-    agent: Option<ureq::Agent>,
-}
-
-impl std::fmt::Debug for HostSession {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("HostSession")
-            .field("hosts", &self.hosts)
-            .field("lookups", &self.lookups)
-            .field("agent", &self.agent.is_some())
-            .finish()
-    }
 }
 
 impl Default for HttpFetch {
@@ -73,63 +80,7 @@ impl HttpFetch {
             timeout: Duration::from_secs(FETCH_TIMEOUT_SECS),
             user_agent: format!("AgentCowork/{}", env!("CARGO_PKG_VERSION")),
             url: MODELS_DEV_API_URL.to_string(),
-            session: Arc::new(Mutex::new(HostSession {
-                hosts: BTreeMap::new(),
-                lookups: 0,
-                agent: None,
-            })),
         }
-    }
-
-    /// Drop cached addresses and the reused agent. The next request resolves again.
-    pub fn end_session(&self) {
-        let mut session = self.session.lock().expect("dns session");
-        session.hosts.clear();
-        session.agent = None;
-    }
-
-    /// How many times this session has resolved a host. A second call in the
-    /// same session does not increase it.
-    pub fn resolution_count(&self) -> u64 {
-        self.session.lock().expect("dns session").lookups
-    }
-
-    fn host_of(url: &str) -> Option<String> {
-        let rest = url.split("://").nth(1)?;
-        let authority = rest.split(['/', '?', '#']).next().unwrap_or("");
-        let host = authority
-            .rsplit_once(':')
-            .map(|(h, _)| h)
-            .unwrap_or(authority);
-        let host = host.trim_matches(['[', ']']);
-        if host.is_empty() {
-            None
-        } else {
-            Some(host.to_string())
-        }
-    }
-
-    fn remember_host(session: &mut HostSession, host: &str) {
-        if session.hosts.contains_key(host) {
-            return;
-        }
-        let addrs = (host, 443)
-            .to_socket_addrs()
-            .map(|iter| iter.map(|addr| addr.to_string()).collect())
-            .unwrap_or_default();
-        session.hosts.insert(host.to_string(), addrs);
-        session.lookups = session.lookups.saturating_add(1);
-    }
-
-    fn agent(&self) -> ureq::Agent {
-        let mut session = self.session.lock().expect("dns session");
-        if let Some(host) = Self::host_of(&self.url) {
-            Self::remember_host(&mut session, &host);
-        }
-        if session.agent.is_none() {
-            session.agent = Some(ureq::AgentBuilder::new().timeout(self.timeout).build());
-        }
-        session.agent.clone().expect("agent")
     }
 
     /// Point the client at a mirror (tests use a loopback fixture).
@@ -157,31 +108,40 @@ impl HttpFetch {
         }
     }
 
-    /// One conditional GET. Never panics: every failure is a
-    /// [`FetchOutcome::Failed`] with the transport's own message.
-    pub fn get(&self, etag: Option<&str>) -> FetchOutcome {
-        let agent = self.agent();
-        let mut req = agent
-            .get(&self.url)
-            .set("Accept", "application/json")
-            .set("User-Agent", &self.user_agent);
+    /// One conditional GET through the caller's host-owned transport. Never
+    /// panics: every failure is a [`FetchOutcome::Failed`].
+    pub fn get(&self, transport: &dyn CatalogHttpTransport, etag: Option<&str>) -> FetchOutcome {
+        let mut headers = vec![
+            ("Accept".to_string(), "application/json".to_string()),
+            ("User-Agent".to_string(), self.user_agent.clone()),
+        ];
         if let Some(value) = Self::conditional_header(etag) {
-            req = req.set("If-None-Match", &value);
+            headers.push(("If-None-Match".to_string(), value));
         }
-        match req.call() {
-            Ok(resp) => {
-                let etag = resp.header("etag").unwrap_or("").to_string();
-                match resp.into_string() {
-                    Ok(body) => FetchOutcome::Fetched { etag, body },
-                    Err(e) => FetchOutcome::Failed(format!("reading api.json body: {e}")),
-                }
-            }
-            // `ureq` surfaces 3xx as an error; 304 is the one we want.
-            Err(ureq::Error::Status(304, _)) => FetchOutcome::NotModified,
-            Err(ureq::Error::Status(code, _)) => {
-                FetchOutcome::Failed(format!("models.dev returned HTTP {code}"))
-            }
-            Err(ureq::Error::Transport(t)) => FetchOutcome::Failed(format!("transport: {t}")),
+        let response = match transport.get(
+            &self.url,
+            &headers,
+            self.timeout,
+            MAX_CATALOG_RESPONSE_BYTES,
+        ) {
+            Ok(response) => response,
+            Err(error) => return FetchOutcome::Failed(error),
+        };
+        if response.body.len() > MAX_CATALOG_RESPONSE_BYTES {
+            return FetchOutcome::Failed(
+                "catalog response exceeded the configured byte limit".into(),
+            );
+        }
+        match response.status {
+            304 => FetchOutcome::NotModified,
+            200..=299 => match String::from_utf8(response.body) {
+                Ok(body) => FetchOutcome::Fetched {
+                    etag: response.etag.unwrap_or_default(),
+                    body,
+                },
+                Err(_) => FetchOutcome::Failed("catalog response was not valid UTF-8".into()),
+            },
+            status => FetchOutcome::Failed(format!("models.dev returned HTTP {status}")),
         }
     }
 }
@@ -215,42 +175,40 @@ pub fn probe_models_endpoint(
     anthropic: bool,
     headers: &[(String, String)],
     key: Option<&str>,
+    transport: &dyn CatalogHttpTransport,
 ) -> EndpointProbe {
     let base = base_url.trim().trim_end_matches('/');
     let url = format!("{base}/models");
-    // One agent for this probe call. Session reuse for catalog refresh is
-    // `HttpFetch::agent`; this probe is a single request.
-    let agent = ureq::AgentBuilder::new()
-        .timeout(Duration::from_secs(20))
-        .build();
-    let mut req = agent.get(&url).set("Accept", "application/json").set(
-        "User-Agent",
-        &format!("AgentCowork/{}", env!("CARGO_PKG_VERSION")),
-    );
-    for (k, v) in headers {
-        req = req.set(k, v);
-    }
+    let mut request_headers = vec![
+        ("Accept".to_string(), "application/json".to_string()),
+        (
+            "User-Agent".to_string(),
+            format!("AgentCowork/{}", env!("CARGO_PKG_VERSION")),
+        ),
+    ];
+    request_headers.extend(headers.iter().cloned());
     if let Some(k) = key {
         let k = k.trim();
         if !k.is_empty() {
-            req = if anthropic {
-                req.set("x-api-key", k)
+            request_headers.push(if anthropic {
+                ("x-api-key".to_string(), k.to_string())
             } else {
-                req.set("Authorization", &format!("Bearer {k}"))
-            };
+                ("Authorization".to_string(), format!("Bearer {k}"))
+            });
         }
     }
-    match req.call() {
-        Ok(resp) => {
-            let status = resp.status();
-            let body = resp.into_string().unwrap_or_default();
-            endpoint_probe_result(url, status, &body, None)
+    match transport.get(&url, &request_headers, Duration::from_secs(20), 1024 * 1024) {
+        Ok(response) if response.body.len() <= 1024 * 1024 => {
+            let body = String::from_utf8_lossy(&response.body);
+            endpoint_probe_result(url, response.status, &body, None)
         }
-        Err(ureq::Error::Status(code, resp)) => {
-            let body = resp.into_string().unwrap_or_default();
-            endpoint_probe_result(url, code, &body, None)
-        }
-        Err(ureq::Error::Transport(t)) => endpoint_probe_result(url, 0, "", Some(&t.to_string())),
+        Ok(_) => endpoint_probe_result(
+            url,
+            0,
+            "",
+            Some("provider response exceeded the configured byte limit"),
+        ),
+        Err(error) => endpoint_probe_result(url, 0, "", Some(&error)),
     }
 }
 
@@ -347,11 +305,16 @@ impl RefreshOutcome {
 ///   now, and the next conditional GET reuses the same ETag).
 /// * **Rejected / Failed** → write nothing to the snapshot and record the
 ///   honest verdict in the meta (last good bytes keep serving).
-pub fn refresh_now(store: &CatalogStore, client: &HttpFetch, now_ms: i64) -> RefreshOutcome {
+pub fn refresh_now(
+    store: &CatalogStore,
+    client: &HttpFetch,
+    transport: &dyn CatalogHttpTransport,
+    now_ms: i64,
+) -> RefreshOutcome {
     let prev_meta = store.load_meta();
     let prev = store.load();
     let etag = prev_meta.as_ref().and_then(CatalogMeta::if_none_match);
-    let outcome = client.get(etag);
+    let outcome = client.get(transport, etag);
     let (snapshot, decision) = apply_refresh(prev.as_ref(), outcome, now_ms);
     let mut persisted = false;
 
@@ -392,16 +355,54 @@ pub fn refresh_now(store: &CatalogStore, client: &HttpFetch, now_ms: i64) -> Ref
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Mutex;
 
-    #[test]
-    fn one_resolution_per_host_until_end_session() {
-        let fetch = HttpFetch::new().with_url("http://127.0.0.1:1/api.json");
-        let _ = fetch.get(None);
-        let _ = fetch.get(None);
-        assert_eq!(fetch.resolution_count(), 1);
-        fetch.end_session();
-        let _ = fetch.get(None);
-        assert_eq!(fetch.resolution_count(), 2);
+    #[derive(Default)]
+    struct FakeTransport {
+        response: Mutex<Option<Result<CatalogHttpResponse, String>>>,
+        requests: Mutex<Vec<(String, Vec<(String, String)>, Duration, usize)>>,
+    }
+
+    impl FakeTransport {
+        fn responding(status: u16, body: &str, etag: Option<&str>) -> Self {
+            Self {
+                response: Mutex::new(Some(Ok(CatalogHttpResponse {
+                    status,
+                    etag: etag.map(str::to_string),
+                    body: body.as_bytes().to_vec(),
+                }))),
+                requests: Mutex::new(Vec::new()),
+            }
+        }
+
+        fn failing(message: &str) -> Self {
+            Self {
+                response: Mutex::new(Some(Err(message.to_string()))),
+                requests: Mutex::new(Vec::new()),
+            }
+        }
+    }
+
+    impl CatalogHttpTransport for FakeTransport {
+        fn get(
+            &self,
+            url: &str,
+            headers: &[(String, String)],
+            timeout: Duration,
+            max_response_bytes: usize,
+        ) -> Result<CatalogHttpResponse, String> {
+            self.requests.lock().unwrap().push((
+                url.to_string(),
+                headers.to_vec(),
+                timeout,
+                max_response_bytes,
+            ));
+            self.response
+                .lock()
+                .unwrap()
+                .take()
+                .unwrap_or_else(|| Err("fixture response already consumed".into()))
+        }
     }
 
     use crate::live::CatalogSnapshot;
@@ -426,67 +427,70 @@ mod tests {
         format!("{{{}}}", rows.join(","))
     }
 
-    /// One-shot local HTTP fixture: serve `respond` to the first request and
-    /// return the base URL. Keeps the probe tests off the live network.
-    fn mock_server(respond: impl Fn(&str) -> (u16, String) + Send + 'static) -> String {
-        use std::io::{Read, Write};
-        use std::net::TcpListener;
-        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
-        let addr = listener.local_addr().unwrap();
-        std::thread::spawn(move || {
-            for stream in listener.incoming() {
-                let Ok(mut s) = stream else { continue };
-                let mut buf = [0u8; 8192];
-                let n = s.read(&mut buf).unwrap_or(0);
-                let req = String::from_utf8_lossy(&buf[..n]).to_string();
-                let (code, body) = respond(&req);
-                let head = format!(
-                    "HTTP/1.1 {code} OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
-                    body.len()
-                );
-                let _ = s.write_all(head.as_bytes());
-                let _ = s.write_all(body.as_bytes());
-            }
-        });
-        format!("http://{addr}")
-    }
-
     #[test]
-    fn probe_reports_models_and_sends_bearer_auth() {
-        let base = mock_server(|req| {
-            assert!(req.contains("GET /models"), "{req}");
-            assert!(req.contains("Authorization: Bearer sk-test"), "{req}");
-            (
-                200,
-                r#"{"data":[{"id":"a"},{"id":"b"},{"id":"c"}]}"#.to_string(),
-            )
-        });
-        let probe = probe_models_endpoint(&base, false, &[], Some("sk-test"));
+    fn probe_reports_models_and_sends_bearer_auth_through_transport() {
+        let transport =
+            FakeTransport::responding(200, r#"{"data":[{"id":"a"},{"id":"b"},{"id":"c"}]}"#, None);
+        let probe = probe_models_endpoint(
+            "https://provider.example/v1",
+            false,
+            &[],
+            Some("sk-test"),
+            &transport,
+        );
         assert!(probe.ok, "{probe:?}");
         assert_eq!(probe.status, 200);
         assert_eq!(probe.models, 3);
         assert!(probe.message.contains("3 models"));
+        let requests = transport.requests.lock().unwrap();
+        assert_eq!(requests[0].0, "https://provider.example/v1/models");
+        assert!(
+            requests[0]
+                .1
+                .iter()
+                .any(|(name, value)| { name == "Authorization" && value == "Bearer sk-test" })
+        );
+        assert_eq!(requests[0].2, Duration::from_secs(20));
     }
 
     #[test]
-    fn probe_uses_x_api_key_for_anthropic_and_counts_the_models_map() {
-        let base = mock_server(|req| {
-            assert!(req.contains("x-api-key: sk-ant"), "{req}");
-            assert!(!req.contains("Authorization: Bearer"), "{req}");
-            (
-                200,
-                r#"{"models":{"claude-x":{"id":"claude-x"}}}"#.to_string(),
-            )
-        });
-        let probe = probe_models_endpoint(&base, true, &[], Some("sk-ant"));
+    fn probe_uses_x_api_key_for_anthropic_and_counts_models_map() {
+        let transport =
+            FakeTransport::responding(200, r#"{"models":{"claude-x":{"id":"claude-x"}}}"#, None);
+        let probe = probe_models_endpoint(
+            "https://provider.example",
+            true,
+            &[],
+            Some("sk-ant"),
+            &transport,
+        );
         assert!(probe.ok, "{probe:?}");
         assert_eq!(probe.models, 1);
+        let requests = transport.requests.lock().unwrap();
+        assert!(
+            requests[0]
+                .1
+                .iter()
+                .any(|(name, value)| name == "x-api-key" && value == "sk-ant")
+        );
+        assert!(
+            !requests[0]
+                .1
+                .iter()
+                .any(|(name, _)| name == "Authorization")
+        );
     }
 
     #[test]
     fn probe_reports_a_bad_key_honestly() {
-        let base = mock_server(|_req| (401, r#"{"error":"invalid api key"}"#.to_string()));
-        let probe = probe_models_endpoint(&base, false, &[], Some("sk-wrong"));
+        let transport = FakeTransport::responding(401, r#"{"error":"invalid api key"}"#, None);
+        let probe = probe_models_endpoint(
+            "https://provider.example",
+            false,
+            &[],
+            Some("sk-wrong"),
+            &transport,
+        );
         assert!(!probe.ok);
         assert_eq!(probe.status, 401);
         assert!(probe.message.contains("401"), "{probe:?}");
@@ -495,21 +499,80 @@ mod tests {
 
     #[test]
     fn probe_sends_no_auth_for_a_keyless_provider() {
-        let base = mock_server(|req| {
-            assert!(!req.to_ascii_lowercase().contains("authorization"), "{req}");
-            (200, r#"{"data":[{"id":"big-pickle"}]}"#.to_string())
-        });
-        let probe = probe_models_endpoint(&base, false, &[], None);
+        let transport = FakeTransport::responding(200, r#"{"data":[{"id":"big-pickle"}]}"#, None);
+        let probe = probe_models_endpoint("https://provider.example", false, &[], None, &transport);
         assert!(probe.ok, "{probe:?}");
         assert_eq!(probe.models, 1);
+        assert!(
+            !transport.requests.lock().unwrap()[0]
+                .1
+                .iter()
+                .any(|(name, _)| name.eq_ignore_ascii_case("authorization"))
+        );
     }
 
     #[test]
-    fn probe_surfaces_a_dead_endpoint_as_a_transport_failure() {
-        let probe = probe_models_endpoint("http://127.0.0.1:1", false, &[], Some("sk"));
+    fn probe_surfaces_transport_failure_without_claiming_a_status() {
+        let transport = FakeTransport::failing("Guard refused destination");
+        let probe = probe_models_endpoint(
+            "https://provider.example",
+            false,
+            &[],
+            Some("sk"),
+            &transport,
+        );
         assert!(!probe.ok);
         assert_eq!(probe.status, 0);
         assert!(probe.message.contains("transport"), "{probe:?}");
+    }
+
+    #[test]
+    fn conditional_get_passes_etag_and_enforces_catalog_bounds() {
+        let transport = FakeTransport::responding(200, r#"{"providers":{}}"#, Some("e2"));
+        let fetch = HttpFetch::new();
+        assert!(matches!(
+            fetch.get(&transport, Some(" e1 ")),
+            FetchOutcome::Fetched { ref etag, .. } if etag == "e2"
+        ));
+        let requests = transport.requests.lock().unwrap();
+        assert!(
+            requests[0]
+                .1
+                .iter()
+                .any(|(name, value)| name == "If-None-Match" && value == "e1")
+        );
+        assert_eq!(requests[0].3, MAX_CATALOG_RESPONSE_BYTES);
+        assert_eq!(requests[0].2, Duration::from_secs(FETCH_TIMEOUT_SECS));
+    }
+
+    #[test]
+    fn conditional_get_handles_not_modified_and_rejects_oversized_or_invalid_body() {
+        let not_modified = FakeTransport::responding(304, "", None);
+        assert_eq!(
+            HttpFetch::new().get(&not_modified, Some("e1")),
+            FetchOutcome::NotModified
+        );
+
+        let oversized =
+            FakeTransport::responding(200, &"x".repeat(MAX_CATALOG_RESPONSE_BYTES + 1), None);
+        assert!(matches!(
+            HttpFetch::new().get(&oversized, None),
+            FetchOutcome::Failed(message) if message.contains("byte limit")
+        ));
+
+        let invalid = FakeTransport {
+            response: Mutex::new(Some(Ok(CatalogHttpResponse {
+                status: 200,
+                etag: None,
+                body: vec![0xff],
+            }))),
+            requests: Mutex::new(Vec::new()),
+        };
+        let _ = invalid;
+        assert!(matches!(
+            HttpFetch::new().get(&invalid, None),
+            FetchOutcome::Failed(message) if message.contains("UTF-8")
+        ));
     }
 
     #[test]
@@ -530,7 +593,7 @@ mod tests {
     }
 
     #[test]
-    fn failed_fetch_records_verdict_without_touching_the_snapshot() {
+    fn failed_fetch_preserves_the_last_good_snapshot() {
         let d = dir("failed");
         let store = CatalogStore::new(&d);
         let snap = CatalogSnapshot::parse("s", &big_body(120), 111, "e1").unwrap();
@@ -540,20 +603,17 @@ mod tests {
             fetched_at: 111,
         };
         store.save(&snap, &decision).unwrap();
-
-        // A client pointed at a dead port can't produce a snapshot.
-        let client = HttpFetch::new()
-            .with_url("http://127.0.0.1:1/api.json")
-            .with_timeout(Duration::from_millis(500));
-        // apply_refresh keeps the previous snapshot on failure, and the meta
-        // records the honest verdict.
-        let (kept, decision) = apply_refresh(Some(&snap), client.get(Some("e1")), 999);
+        let transport = FakeTransport::failing("Guard refused destination");
+        let (kept, decision) = apply_refresh(
+            Some(&snap),
+            HttpFetch::new().get(&transport, Some("e1")),
+            999,
+        );
         assert!(kept.is_some());
         assert!(!decision.accepted());
         let meta = CatalogMeta::from_snapshot(&snap, &decision);
         assert!(meta.last_failed);
         assert_eq!(meta.fetched_at, 111, "freshness stamp must not move");
-        // Store still loads the good snapshot.
         assert_eq!(store.load().unwrap().provider_count(), 120);
         let _ = std::fs::remove_dir_all(&d);
     }
@@ -573,8 +633,6 @@ mod tests {
                 },
             )
             .unwrap();
-
-        // Simulate the pure failure path the job takes when the GET throws.
         let (next, decision) = apply_refresh(Some(&snap), FetchOutcome::Failed("dns".into()), 500);
         assert!(next.is_some());
         assert!(!decision.accepted());

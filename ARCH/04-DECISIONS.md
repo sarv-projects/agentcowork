@@ -75,6 +75,7 @@
 | DEC-064 | Built-in host skill catalog is agent-neutral and lazy-loaded; resolve user/project/session/Work scopes without changing native agent stores; normalize artifact/file outputs into safe clickable, exact-version Workbench references and render agent activity in approachable host UI | Accepted target, implementation pending | 06–09, 15–16, 29–32, 37–38, 45–50, SPEC, TODO |
 | DEC-065 | Active-work visualization is a read-only projection over Mission/Work/events/artifacts; semantic activity is evidence-backed; domain anchors are ephemeral; continuous surface streaming is a separate, explicitly authorized capability and deferred pending design/qualification | Accepted target; stream deferred | 03–07, 11, 13–15, 19, 21–24, 29–30, 34–36, 38, 40–42, 48–50, TODO |
 | DEC-066 | Live Desk is a welcoming, animated, evidence-backed view: purposeful state transitions explain real work without implying unobserved actions; provide static/reduced-motion controls and measure nontechnical user comprehension and appeal | Accepted target, implementation pending | 00, 03–05, 08–09, 38, 40–42, 47–50, TODO |
+| DEC-067 | One product-neutral Shared Extension Market publishes a read-only, versioned metadata catalog; HorizonCode consumes it first and AgentCowork later, while installs, accounts, credentials, grants and runtimes remain product-local | Proposed | 00, 03–05, 08–09, 12–14, 31, 42, 45–50, SPEC, TODO |
 
 ## 2. Details
 
@@ -534,6 +535,22 @@ The motion system is local Experience rendering over DEC-065 projections. It add
 **Status:** Accepted target architecture (2026-09-29); implementation and user evidence pending. **Affects:** `00-INDEX`, `03-HLD`, `05-INVARIANTS`, `08-REQUIREMENTS`, `09-FEATURE-MATRIX`, `30-EVENTS` (presentation-only clarification), `38-EXPERIENCE-QUALITY`, `40-FLOWS`, `41-EDGE-CASES`, `42-EVIDENCE-MAP`, `47-MARKET-AND-BENCHMARKS`, `48-EXPERIENCE-SURFACES`, `49-TEST-CASES`, `50-SYSTEM-BLUEPRINT`, `TODO.md`.
 
 **References:** [W3C WCAG 2.2.2: Pause, Stop, Hide](https://www.w3.org/WAI/WCAG22/Understanding/pause-stop-hide); [W3C WCAG 2.3.3: Animation from Interactions](https://www.w3.org/WAI/WCAG21/Understanding/animation-from-interactions); [Apple Human Interface Guidelines: Motion](https://developer.apple.com/design/human-interface-guidelines/motion).
+
+### DEC-067 — Shared read-only extension market (proposal)
+
+**Status:** Proposed target architecture; implementation and adoption are pending.
+
+**Decision:** Use one product-neutral Shared Extension Market catalog for both HorizonCode and AgentCowork. HorizonCode is the first consumer; AgentCowork later consumes the same published catalog revision instead of building a second public index. The initial market is a controlled ingestion/review pipeline that publishes versioned JSON snapshots through a public read-only HTTPS endpoint/CDN. It indexes metadata and upstream package pointers; it does not host executable payloads, accept public submissions, keep marketplace accounts or ratings, or perform installation. Product clients may cache and filter the shared revision and later add explicitly scoped private sources.
+
+The shared catalog has four listing families: Connector/service, standalone MCP server, Agent Skills package, and plugin bundle. The broad-release goal is at least 500 unique source-resolvable, type-qualified listings, with 1,000 as the expansion target. The planning mix is 200 Connector/service records, 150 standalone MCP servers, 100 skills, and 50 plugin bundles. Mirrors, versions, alternate provider offers, and components nested inside a bundle do not inflate those counts. Service identity, provider offer, account Connection, capability, and permission grant remain different objects. Compatibility, source resolution, publisher verification, security review, official status, and installation remain separately evidenced claims.
+
+The existing local-first package review, confinement, Vault, Guard, scoped grants, and active-Work pinning remain authoritative. A market listing or Connector card cannot install a package, authorize an account, expose credentials, or grant a tool. The Core Capability Catalog (`13`) and model/provider catalog (`14`/model plane) are not merged with the Shared Extension Market.
+
+**Reason:** Official product sources describe different distribution surfaces rather than one common marketplace protocol. Codex documents portable plugin packages and local/repository catalogs; Claude Code documents Git-backed marketplace manifests; Grok Build documents plugin/skill/MCP marketplace compatibility; the MCP Registry provides MCP-server metadata; Agent Skills standardizes a package layout, not a universal marketplace service. A small shared read catalog can aggregate these source formats while preserving their identities and trust limits.
+
+**Status rule:** This remains a proposal. No shared service, endpoint, catalog snapshot, or 500-entry evidence exists. No code or skill-store admission schema changes follow from this proposal. Adoption requires the repository's documented review process.
+
+**Affects:** `00`, `03`, `08`, `09`, `31`, `42`, `45`, `46`, `48`, `49`, `50`, `SPEC`, `TODO.md`.
 
 ## 3. Pending decisions
 

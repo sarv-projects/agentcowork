@@ -70,6 +70,14 @@ Gmail, Google Drive/Sheets, Microsoft 365, Slack and similar services are host *
 
 If a native agent already has its own Google MCP/plugin/login, it remains a separate native path with its own credential owner and policy. It is listed as native/detected when observable and never merged with the host account or advertised as Core-governed. Duplicate service names are disambiguated by owner/account. User can pick the host account or the native agent path when both are eligible; the actual path and assurance are recorded.
 
+### 3.3 Shared Extension Market
+
+AgentCowork is a later client of the same product-neutral Shared Extension Market catalog first consumed by HorizonCode. Both clients read the same published catalog revision; AgentCowork does not run a second public-source crawl or fork the listing identity. The market covers four listing families: Connector/service, standalone MCP server, Agent Skills package, and plugin bundle. For a Connector, the market describes the service and provider offers; Core separately owns the user's account Connection, Vault credential reference, capability mapping, policy, and per-Work grant.
+
+The shared broad-release goal is at least 500 unique, source-resolvable, type-qualified records, with 1,000 as the expansion target. The initial planning mix is 200 Connector/services, 150 MCP servers, 100 skills, and 50 plugins. These counts are measured against the same canonical catalog snapshot for both products; source mirrors, versions, provider alternatives, and nested plugin components do not count again. Product-specific relevance and compatibility are separate projections and do not change shared listing identity.
+
+This distribution catalog is not the Core Capability Catalog (`13`), model/provider catalog (`14`/model plane), MCP runtime (`14`), or authorization system (`12`). It has no connection credentials, install state, grants, or execution authority. AgentCowork keeps local package inspection/install/activation under `31` and `12`, account setup under the existing connector and Vault owners, and all effects under Guard. Browsing the shared catalog is read-only. Remote community package installation and updates remain deferred until the trust and package-delivery gates in `31` are qualified.
+
 ## 4. Shared browser, desktop and SaaS plane
 
 The agent may choose its own native path. Core advertises optional shared operations through negotiated ACP MCP server entries, MCP tool facades or adapter-supported tool injection, plus short task-specific instructions. No unconditional prompt ranking that forces shared office/browser/computer-use over native tools. The host recommendation ladder is structured API connector → site/native MCP → DOM browser → accessibility/desktop computer use → visual fallback, chosen by reliability, permissions and user preference. An engine may decline a shared tool; UI must show the path actually used.

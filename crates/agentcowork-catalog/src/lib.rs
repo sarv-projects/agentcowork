@@ -31,8 +31,8 @@ pub use discovery::{
     DiscoveryInventory, ManagedResource, ResourceCard, ResourceCounts, ResourceKind,
 };
 pub use fetch::{
-    EndpointProbe, HttpFetch, RefreshOutcome, count_models, endpoint_probe_result,
-    probe_models_endpoint, refresh_now,
+    CatalogHttpResponse, CatalogHttpTransport, EndpointProbe, HttpFetch, RefreshOutcome,
+    count_models, endpoint_probe_result, probe_models_endpoint, refresh_now,
 };
 pub use gateway::{GatewayError, GatewayRouter, RouteResult, TaskHint};
 pub use live::{

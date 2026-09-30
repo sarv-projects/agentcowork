@@ -10,4 +10,3 @@ description = "P14 — model catalog: models.dev steal (doc 66) — vendorable m
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
-ureq = { workspace = true }

@@ -83,6 +83,10 @@ flowchart TB
 | Machine Observer | Current measurements, provider status and bounded local metric history | World identity, file traversal, machine mutation, Core policy |
 | Model Plane | Model catalog, routing, adapter normalization; credential **use** via vault | Holding credentials (vault owns custody) |
 
+### Shared Extension Market boundary
+
+The Shared Extension Market is an external, product-neutral metadata source, not a Core subsystem or execution plane. `31` owns AgentCowork's read-only catalog client, cache, compatibility projection, and local extension lifecycle. The market publishes one versioned catalog revision for HorizonCode first and AgentCowork later. `13` still owns the Core semantic capability catalog/resolver; `14` owns runtime provider/MCP adapters; the existing model catalog remains about model/provider records. Market records never carry account credentials, installation state, authorization, or an execution grant.
+
 ## 3. Module map
 
 > `Depends on` lists primary dependencies. Every edge MUST have a named contract in `ARCH/07-CONTRACTS.md` (P1) or the owning module doc.

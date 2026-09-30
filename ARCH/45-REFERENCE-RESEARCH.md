@@ -234,6 +234,23 @@ This comparison asks a narrower question than whether a product has “MCP,” �
 
 Sources above are targeted source-path evidence at the recorded pins. They do not claim every line of each repository was read or that upstream tests were executed; where full-repository coverage is claimed, the separate audit manifest is authoritative.
 
+## 2026-09-30 — Shared Extension Market and source compatibility
+
+The product/docs review checked the official distribution and protocol sources on 2026-09-30. This records public behavior and design evidence, not an implementation audit of vendor internals.
+
+| Source | Verified scope | Design implication |
+|---|---|---|
+| [OpenAI plugin packaging](https://developers.openai.com/plugins/build/plugins) and [plugin directory/marketplace help](https://help.openai.com/en/articles/20001256-plugins-in-chatgpt-and-codex) | Portable plugin packages can combine a manifest, skills, MCP configuration, hooks and assets. Public directory distribution and local/repository marketplaces are distinct surfaces. | Ingest documented package/source formats; do not assume one source is the complete public catalog or that all surfaces expose the same install behavior. |
+| [Claude Code marketplace docs](https://code.claude.com/docs/en/plugin-marketplaces) and [plugin docs](https://code.claude.com/docs/en/plugins) | Marketplaces are Git-backed catalogs with plugin bundles and source-specific manifests. | Treat a marketplace as a source adapter; preserve source identity and raw manifest, and do not assume access to a private/hosted directory. |
+| [Grok Build skills/plugins/marketplaces](https://docs.x.ai/build/features/skills-plugins-marketplaces) and pinned [Grok plugin guide](https://github.com/xai-org/grok-build/blob/2bdd1d6a6369de0e8c68132ea4539e9abd9e14a8/crates/codegen/xai-grok-pager/docs/user-guide/09-plugins.md) | Plugin distribution can bundle skills, agents, hooks, MCP and other components; documented Claude-compatible sources exist. | Normalize the outer listing and compatibility claims; keep component runtimes product-local. |
+| [MCP Registry API](https://github.com/modelcontextprotocol/registry/blob/main/docs/reference/api/official-registry-api.md) | The Registry is an MCP server metadata source with versioned records and pagination/update behavior, not a general connector, skill, or plugin directory. | Ingest MCP entries through a dedicated source adapter; keep service/Connector listings separate. |
+| [Agent Skills specification](https://agentskills.io/specification) | Defines a portable skill directory and `SKILL.md` structure; it is not a universal marketplace service. | Discover packages through approved Git/market sources and keep content lazy-loaded and untrusted. |
+| [Grok hosted connector catalog](https://docs.x.ai/grok/connectors) | A user-facing service/connector catalog and OAuth-backed account connections are distinct from the Grok Build plugin catalog. | Model Connector/service identity separately from provider choice and the user's authenticated Connection. |
+
+**Synthesis:** These systems expose compatible pieces but do not provide one common marketplace API or shared OAuth account store. The proposed neutral market is therefore one controlled catalog-ingestion/build service that publishes versioned, read-only JSON snapshots through HTTPS. Product clients consume the same catalog revision and maintain only local caches, compatibility filtering, installs, connections, grants, and execution state. Start without package hosting, user submissions, accounts, ratings, or auto-updates; keep payloads at upstream sources. Search over the snapshot and show four familiar families: Connectors/services, MCP servers, Skills, and Plugins. The broad-release target is 500 unique source-resolvable records and 1,000 as an expansion target, with 200/150/100/50 planning allocations. This is a proposed service shape and target, not an existing endpoint, inventory, or verified count.
+
+**Limit:** Public docs can establish documented formats and endpoints only. They do not establish comprehensive access to vendor-owned hosted directories, permission to scrape them, availability of vendor OAuth tokens to another product, or operational quality of any package. No implementation/schema was copied.
+
 ## Computer use, browser, Office and agent visualization
 
 Libre WebUI and the source paths in `24`/`37` informed the input-lease and demonstration contracts. The rest of this set was inventoried and reviewed by targeted source paths; none is a claim of full repository line coverage or upstream test success.

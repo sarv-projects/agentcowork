@@ -105,6 +105,8 @@ Every **Core-mediated** externally visible effect follows `Work → Capability �
 
 Skills teach (activation-scoped, relevance-loaded); bundled `cowork/*` host skills are lazily exposed across compatible bindings through supported overlays without changing native stores; plugins extend at declared surfaces only, through a review gate, with no Core patching. Code-bearing host plugins run only under a qualified confinement backend; they are unavailable where required confinement is absent. Content-only skills/templates follow untrusted-content rules and do not gain execution rights. Licensing rules from `44` apply to any reuse. → `31`.
 
+HorizonCode is the first client of one product-neutral Shared Extension Market; AgentCowork is designed to consume the same read-only catalog and revision later. It lists Connector/service identities, standalone MCP servers, Skills-format packages, and plugin bundles from approved sources. Catalog visibility is metadata only: it does not install, connect, authenticate, enable, activate, or execute anything. The shared catalog goal is at least 500 unique source-resolvable listings for its first broad release, with 1,000 as the expansion target. Host-local installation, account Connections, secrets, grants, compatibility decisions, and execution remain governed by this product's own owners (`31`, `12`–`14`).
+
 ## 13. Evidence & acceptance
 
 - Evidence rules and the acceptance map: `ARCH/42-EVIDENCE-MAP.md`. “Implemented” ≠ verified; Windows readiness requires real acceptance records.
@@ -116,7 +118,7 @@ No OS replacement · no forced single browser/model/agent/format · no vendoring
 
 ## 15. Deferrals (explicit)
 
-A2A transport implementation · remote/cloud environments · mobile surfaces · content indexing (W7) · vectors/consolidation in memory · cross-device sync · marketplace/auto-update for plugins · visual workflow editor · service-backed background nudge for closed apps. Each has a trigger in its module doc.
+A2A transport implementation · remote/cloud environments · mobile surfaces · content indexing (W7) · vectors/consolidation in memory · cross-device sync · remote community package installation/publication and plugin auto-update (read-only shared catalog browsing is a discovery target, not an install path) · visual workflow editor · service-backed background nudge for closed apps. Each has a trigger in its module doc.
 
 ## 16. Open questions
 

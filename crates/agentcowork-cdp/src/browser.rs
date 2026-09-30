@@ -9,7 +9,7 @@ use crate::discovery::read_devtools_active_port;
 use crate::{BrowserEndpoint, CdpError};
 use serde::{Deserialize, Serialize};
 use std::env;
-use std::io::{Cursor, Read};
+use std::io::Cursor;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::time::{Duration, Instant};
@@ -852,16 +852,24 @@ pub fn install_chrome_for_testing(json_url: Option<&str>) -> Result<PathBuf, Cdp
 }
 
 fn download_zip(url: &str) -> Result<Vec<u8>, CdpError> {
-    let resp = ureq::get(url)
-        .call()
-        .map_err(|e| CdpError::Http(format!("cft download {url}: {e}")))?;
-    let mut bytes = Vec::new();
-    resp.into_reader()
-        .take(MAX_DOWNLOAD_BYTES)
-        .read_to_end(&mut bytes)
-        .map_err(|e| CdpError::Http(format!("cft download {url}: {e}")))?;
+    let client = agentcowork_guard::egress_http::GuardedHttpClient::new(
+        url,
+        agentcowork_guard::NetPolicy::default(),
+        Duration::from_secs(300),
+    )
+    .map_err(|_| CdpError::Security("Guard refused the browser archive destination".into()))?;
+    let response = client
+        .request("GET", url, &[], None, MAX_DOWNLOAD_BYTES as usize)
+        .map_err(|_| CdpError::Http("Guarded browser archive request failed".into()))?;
+    if !(200..300).contains(&response.status) {
+        return Err(CdpError::Http(format!(
+            "browser archive returned HTTP {} (redirects are not followed)",
+            response.status
+        )));
+    }
+    let bytes = response.body;
     if bytes.is_empty() {
-        return Err(CdpError::Http(format!("cft download {url}: empty body")));
+        return Err(CdpError::Http("browser archive was empty".into()));
     }
     Ok(bytes)
 }
@@ -1042,6 +1050,28 @@ mod tests {
             std::fs::read_to_string(&bin).unwrap(),
             "#!/bin/sh\necho mock-chrome\n"
         );
+    }
+
+    #[test]
+    fn browser_archive_download_refuses_redirects() {
+        use std::io::{Read as _, Write as _};
+
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = listener.local_addr().unwrap();
+        let server = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut request = [0_u8; 1024];
+            let _ = stream.read(&mut request).unwrap();
+            stream
+                .write_all(b"HTTP/1.1 302 Found\r\nLocation: /payload\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")
+                .unwrap();
+        });
+
+        let url = format!("http://{address}/archive.zip");
+        let error = download_zip(&url).unwrap_err();
+        server.join().unwrap();
+
+        assert!(error.to_string().contains("redirects are not followed"));
     }
 
     // ---- P10.4: system Chrome/Edge detection + fallback (all 3 platforms) --

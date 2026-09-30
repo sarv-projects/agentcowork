@@ -21,16 +21,49 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use agentcowork_catalog::{
-    apply_observations, base_registry, endpoint_probe_result, refresh_now, Auth, CatalogSnapshot,
-    CatalogStore, EndpointProbe, HttpFetch, ObservationStore, ProfileFormat, ProfileModel,
-    ProfileSource, ProfileStore, ProviderObservation, ProviderObservationsFile, ProviderProfile,
-    ProviderProfilesFile, ProviderRegistry, RefreshDecision, RefreshOutcome, DEFAULT_REFRESH_SECS,
+    apply_observations, base_registry, endpoint_probe_result, refresh_now, Auth, CatalogHttpResponse,
+    CatalogHttpTransport, CatalogSnapshot, CatalogStore, EndpointProbe, HttpFetch, ObservationStore,
+    ProfileFormat, ProfileModel, ProfileSource, ProfileStore, ProviderObservation,
+    ProviderObservationsFile, ProviderProfile, ProviderProfilesFile, ProviderRegistry,
+    RefreshDecision, RefreshOutcome, DEFAULT_REFRESH_SECS,
 };
 use agentcowork_vault::{Broker, KeyRing, ProviderEndpoint, WireTransport};
 use serde_json::{json, Value};
 use tauri::{Manager, State};
 
 use crate::AppState;
+
+/// Host-owned adapter: catalog requests cross the shared Guard boundary here.
+struct GuardedCatalogTransport;
+
+impl CatalogHttpTransport for GuardedCatalogTransport {
+    fn get(
+        &self,
+        url: &str,
+        headers: &[(String, String)],
+        timeout: Duration,
+        max_response_bytes: usize,
+    ) -> Result<CatalogHttpResponse, String> {
+        let client = agentcowork_guard::egress_http::GuardedHttpClient::new(
+            url,
+            agentcowork_guard::NetPolicy::default(),
+            timeout,
+        )
+        .map_err(|_| "Guard refused catalog destination".to_string())?;
+        let header_refs: Vec<(&str, &str)> = headers
+            .iter()
+            .map(|(name, value)| (name.as_str(), value.as_str()))
+            .collect();
+        let response = client
+            .request("GET", url, &header_refs, None, max_response_bytes)
+            .map_err(|_| "Guarded catalog request failed".to_string())?;
+        Ok(CatalogHttpResponse {
+            status: response.status,
+            etag: response.safe_headers.get("etag").cloned(),
+            body: response.body,
+        })
+    }
+}
 
 /// P56.1 — the catalog's runtime owner: the durable store plus a refresh gate
 /// so the 4h timer and a manual Settings refresh never fetch concurrently.
@@ -81,7 +114,12 @@ impl CatalogState {
                 };
             }
         }
-        refresh_now(&self.store, &HttpFetch::new(), now)
+        refresh_now(
+            &self.store,
+            &HttpFetch::new(),
+            &GuardedCatalogTransport,
+            now,
+        )
     }
 
     /// The cheap status half (never parses the snapshot).
@@ -677,7 +715,13 @@ pub fn probe_provider(state: &AppState, provider: &str, key: Option<&str>) -> Va
         .as_ref()
         .map(|e| e.headers.clone())
         .unwrap_or_default();
-    let probe = agentcowork_catalog::probe_models_endpoint(&base, is_anthropic, &headers, key);
+    let probe = agentcowork_catalog::probe_models_endpoint(
+        &base,
+        is_anthropic,
+        &headers,
+        key,
+        &GuardedCatalogTransport,
+    );
     // P44.4 write-back — this is the observation, and it used to be dropped
     // here. Recording it durably (keyed by canonical id) is what lets the
     // registry, the routing feed and the UI report *observed* truth instead of

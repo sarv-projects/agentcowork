@@ -13,7 +13,6 @@ agentcowork-types = { path = "../agentcowork-types" }
 agentcowork-guard = { path = "../agentcowork-guard" }
 serde_json = { workspace = true }
 thiserror = { workspace = true }
-ureq = { workspace = true }
 tokio = { workspace = true }
 tokio-tungstenite = { workspace = true }
 futures-util = { workspace = true }

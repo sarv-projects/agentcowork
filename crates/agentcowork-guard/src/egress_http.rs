@@ -23,6 +23,9 @@ pub struct GuardedHttpClient {
 pub struct GuardedHttpResponse {
     /// The HTTP status returned by the endpoint.
     pub status: u16,
+    /// Allowlisted non-sensitive response metadata. Only `etag` is currently
+    /// retained because it is needed for conditional catalog refreshes.
+    pub safe_headers: std::collections::BTreeMap<String, String>,
     /// Response body, bounded by the request's byte limit.
     pub body: Vec<u8>,
 }
@@ -116,6 +119,10 @@ impl GuardedHttpClient {
             Err(ureq::Error::Transport(_)) => return Err(GuardedHttpError::Transport),
         };
         let status = response.status();
+        let mut safe_headers = std::collections::BTreeMap::new();
+        if let Some(etag) = response.header("etag") {
+            safe_headers.insert("etag".to_string(), etag.to_string());
+        }
         let mut bytes = Vec::new();
         response
             .into_reader()
@@ -127,6 +134,7 @@ impl GuardedHttpClient {
         }
         Ok(GuardedHttpResponse {
             status,
+            safe_headers,
             body: bytes,
         })
     }
@@ -150,4 +158,45 @@ fn parse_url(url: &str) -> Result<url::Url, GuardedHttpError> {
         return Err(GuardedHttpError::InvalidEndpoint);
     }
     Ok(parsed)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::{Read, Write};
+    use std::net::TcpListener;
+    use std::thread;
+
+    #[test]
+    fn response_keeps_only_allowlisted_etag_metadata() {
+        let listener = TcpListener::bind(("127.0.0.1", 0)).expect("loopback listener");
+        let address = listener.local_addr().expect("listener address");
+        let server = thread::spawn(move || {
+            let (mut stream, _) = listener.accept().expect("request accepted");
+            let mut request = [0_u8; 2048];
+            let _ = stream.read(&mut request).expect("request read");
+            stream
+                .write_all(
+                    b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nETag: \"catalog-v1\"\r\nX-Secret: must-not-escape\r\nConnection: close\r\n\r\nok",
+                )
+                .expect("response written");
+        });
+
+        let endpoint = format!("http://127.0.0.1:{}/", address.port());
+        let client =
+            GuardedHttpClient::new(&endpoint, NetPolicy::default(), Duration::from_secs(2))
+                .expect("loopback endpoint is allowed");
+        let response = client
+            .request("GET", &endpoint, &[], None, 16)
+            .expect("bounded response");
+        server.join().expect("server thread");
+
+        assert_eq!(response.status, 200);
+        assert_eq!(response.body, b"ok");
+        assert_eq!(
+            response.safe_headers.get("etag").map(String::as_str),
+            Some("\"catalog-v1\"")
+        );
+        assert_eq!(response.safe_headers.len(), 1);
+    }
 }

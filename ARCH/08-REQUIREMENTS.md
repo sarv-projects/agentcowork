@@ -2651,6 +2651,15 @@ This registry answers one question per entry: **what behavior must this system e
 - **Tests:** pending
 - **Status:** accepted
 
+#### REQ-SKILL-015 — Both products browse one shared extension catalog
+- **Statement:** GIVEN a supported Shared Extension Market revision, WHEN either product browses connectors/services, MCP servers, skill packages, or plugin bundles, THEN it reads the same product-neutral metadata revision and preserves source identity, package family, host compatibility, and evidence state without creating install, account, permission, or execution state.
+- **Priority:** must
+- **Source:** proposed DEC-067; `ARCH/31-SKILLS-PLUGINS.md` §6.1; `ARCH/46-ECOSYSTEM-ARCHITECTURE.md` §3.3; HorizonCode `ARCH/21-DISCOVERY.md` shared-market contract.
+- **Acceptance:** `TC-071` passes with both clients bound to the same dated snapshot/revision; source/package families and compatibility evidence survive normalization; broad-release snapshot contains at least 500 unique source-resolvable type-qualified listings, reported by family/source, with a measured path toward 1,000. Duplicate mirrors, versions, alternate providers, and nested bundle components do not inflate counts. Catalog browsing and refresh create no install, Connection, credential, grant, package execution, or active-Work mutation.
+- **Failure cases:** a client silently builds a divergent public catalog; duplicate/provider/version records inflate coverage; an upstream error looks fresh; a listing implies compatibility or safety without evidence; reading the catalog starts install/auth/activation; the catalog contains user secrets.
+- **Tests:** pending (`TC-071`)
+- **Status:** proposed
+
 ### Channels (`CHAN`)
 
 #### REQ-CHAN-001 — Surfaces are projections; Core is the only brain
@@ -3278,7 +3287,7 @@ This registry answers one question per entry: **what behavior must this system e
 | `COMMS` (13) | drafted above + expanded in pass `28` | verified during pass `28` ✅ (2026-09-26) |
 | `ART` (12) | drafted above + expanded in pass `29` | verified during pass `29` ✅ (2026-09-26) |
 | `EVENTS` (12) | drafted above + expanded in pass `30` | verified during pass `30` ✅ (2026-09-26) |
-| `SKILL` (13) | drafted above + expanded in pass `31` | verified during pass `31` ✅ (2026-09-26) |
+| `SKILL` (15) | drafted above + expanded in pass `31`; proposed shared catalog (DEC-067) | prior baseline verified during pass `31` ✅ (2026-09-26); amendment pending |
 | `CHAN` (14) | 13 baseline + REQ-CHAN-014 cross-device access (DEC-055) | baseline verified during pass `32` ✅ (2026-09-26); amendment implementation pending |
 | `VERIFY` (13) | drafted above + expanded in pass `34` | verified during pass `34` ✅ (2026-09-26) |
 | `MISSION` (7) | durable goal, adaptive plan, recovery and branch-local waits (DEC-054) | implementation pending |
@@ -3287,7 +3296,7 @@ This registry answers one question per entry: **what behavior must this system e
 | `UXQ` (13) | 10 baseline + REQ-UXQ-011 System Workbench + REQ-UXQ-012/013 active-work truth and Live Desk quality/motion (DEC-058/059/065/066) | implementation pending |
 | `OBS` (10) | local machine observation and on-demand process diagnostics (introduced by DEC-058; consent UX refined by DEC-059) | implementation and device qualification pending |
 
-> **P9 verification (2026-09-26, historical):** registry integrity was recorded as 307 entries ↔ 307 matrix rows before later retirements. **DEC-054/055/056/057/058/059 amendment (2026-09-28, historical):** that pass recorded 343 active entries. **Current inventory (2026-09-29):** 346 unique active `REQ-*` headings match 346 matrix rows across 31 domains; amendments through DEC-066 include REQ-UXQ-013. W0–W6 in `TODO.md` name implementation tasks; the new Live Desk test/evidence remains pending. Counts are inventory only, not verification of implementation.
+> **P9 verification (2026-09-26, historical):** registry integrity was recorded as 307 entries ↔ 307 matrix rows before later retirements. **DEC-054/055/056/057/058/059 amendment (2026-09-28, historical):** that pass recorded 343 active entries. **Current inventory (2026-09-30):** 347 unique active `REQ-*` headings match 347 matrix rows across 31 domains; the latest proposed amendment is DEC-067/REQ-SKILL-015. W0–W6 in `TODO.md` name implementation tasks; the new Live Desk test/evidence remains pending. Counts are inventory only, not verification of implementation.
 
 ## 6. Related
 
